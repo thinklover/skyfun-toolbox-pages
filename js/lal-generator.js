@@ -205,6 +205,8 @@
 
     let tplAutoTimer = null;
     let tplFieldsBound = false;
+    /** 使用者手動改過內文時，不再被範本自動覆寫 */
+    let contentManuallyEdited = false;
 
     function getSelectedLetterTemplate() {
         const id = $('lal-tpl-select')?.value;
@@ -408,6 +410,7 @@
         const ta = $('lal-content');
         if (!tpl || !ta) return false;
         updateLeaseTermFields();
+        contentManuallyEdited = false;
         ta.value = renderLetterBody(tpl);
         if (!silent) {
             const st = $('lal-status');
@@ -417,6 +420,7 @@
     }
 
     function scheduleApplyLetterTemplate() {
+        if (contentManuallyEdited) return;
         clearTimeout(tplAutoTimer);
         tplAutoTimer = setTimeout(() => applyLetterTemplate(true), 400);
     }
@@ -767,6 +771,7 @@
         ['sender', 'receiver', 'cc'].forEach(clearParties);
         const c = $('lal-content');
         if (c) c.value = '';
+        contentManuallyEdited = false;
         const sel = $('lal-tpl-select');
         if (sel) sel.value = '';
         const fields = $('lal-tpl-fields');
@@ -958,8 +963,6 @@
                 alert('請選擇範本並填寫契約資訊，或直接輸入內文。');
                 return;
             }
-        } else if (getSelectedLetterTemplate()) {
-            applyLetterTemplate(true);
         }
 
         const finalContent = ($('lal-content')?.value || '').trim();
@@ -1009,7 +1012,11 @@
                 clearParties('cc');
             }
         });
-        $('btn-lal-clear-content')?.addEventListener('click', () => { if ($('lal-content')) $('lal-content').value = ''; });
+        $('btn-lal-clear-content')?.addEventListener('click', () => {
+            if ($('lal-content')) $('lal-content').value = '';
+            contentManuallyEdited = false;
+        });
+        $('lal-content')?.addEventListener('input', () => { contentManuallyEdited = true; });
         $('btn-lal-clear-all')?.addEventListener('click', () => {
             if (confirm('清除全部資料？')) clearAll();
         });

@@ -1,12 +1,18 @@
 {
   "title": "業務周會檔案",
   "description": "管理部週會簡報與相關表單，依日期整理；每週更新後請將 PDF 放入 files 資料夾並更新此清單。",
-  "updatedAt": "2026-08-30",
+  "updatedAt": "2026-09-07",
   "sections": [
     {
       "id": "weekly-slides",
       "title": "週會簡報",
       "items": [
+        {
+          "sortDate": "2026-09-07",
+          "dateLabel": "115/09/07",
+          "title": "業務週會",
+          "file": "./files/2026-09-07_業務週會.pdf"
+        },
         {
           "sortDate": "2025-08-31",
           "dateLabel": "115/08/31",

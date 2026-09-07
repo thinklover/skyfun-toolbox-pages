@@ -1114,6 +1114,152 @@ begin
 end;
 $$;
 
+-- Base / award points (quality ×2 applied at review or via set_quality sync)
+create or replace function public.admin_qa_base_points(p_user_id uuid, p_event_type text)
+returns int
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if coalesce(p_event_type, 'ask') = 'answer' then return 2; end if;
+  return 1;
+end;
+$$;
+
+create or replace function public.admin_qa_award_points(
+  p_user_id uuid,
+  p_event_type text,
+  p_quality boolean default false
+)
+returns int
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare v_pts int;
+begin
+  v_pts := admin_qa_base_points(p_user_id, p_event_type);
+  if coalesce(p_quality, false) then
+    v_pts := v_pts * 2;
+  end if;
+  return v_pts;
+end;
+$$;
+
+-- Sync point_events when quality is toggled after approval
+create or replace function public.admin_qa_sync_quality_points(
+  p_kind text,
+  p_id uuid,
+  p_enabled boolean
+)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_event public.admin_qa_point_events%rowtype;
+  v_new_pts int;
+begin
+  if p_kind = 'question' then
+    select * into v_event
+    from public.admin_qa_point_events
+    where question_id = p_id and event_type = 'ask' and status = 'approved'
+    order by reviewed_at desc nulls last
+    limit 1;
+  elsif p_kind = 'answer' then
+    select * into v_event
+    from public.admin_qa_point_events
+    where answer_id = p_id and event_type = 'answer' and status = 'approved'
+    order by reviewed_at desc nulls last
+    limit 1;
+  else
+    return 0;
+  end if;
+
+  if not found then
+    return 0;
+  end if;
+
+  v_new_pts := admin_qa_award_points(v_event.user_id, v_event.event_type, coalesce(p_enabled, false));
+  if v_event.points is distinct from v_new_pts then
+    update public.admin_qa_point_events set points = v_new_pts where id = v_event.id;
+  end if;
+  return v_new_pts;
+end;
+$$;
+
+create or replace function public.admin_qa_admin_set_quality(
+  p_secret text,
+  p_kind text,
+  p_id uuid,
+  p_enabled boolean
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_pts int;
+begin
+  if not public.toolbox_check_admin(p_secret) then
+    return json_build_object('ok', false, 'error', '後台密碼錯誤');
+  end if;
+  if p_kind = 'question' then
+    update public.admin_qa_questions set is_quality = coalesce(p_enabled, false)
+    where id = p_id and ask_review_status = 'approved' returning id into p_id;
+    if not found then return json_build_object('ok', false, 'error', '找不到已通過的問題'); end if;
+  elsif p_kind = 'answer' then
+    update public.admin_qa_answers set is_quality = coalesce(p_enabled, false)
+    where id = p_id and review_status = 'approved' returning id into p_id;
+    if not found then return json_build_object('ok', false, 'error', '找不到已通過的回答'); end if;
+  else
+    return json_build_object('ok', false, 'error', '類型無效');
+  end if;
+  v_pts := admin_qa_sync_quality_points(p_kind, p_id, coalesce(p_enabled, false));
+  return json_build_object('ok', true, 'enabled', coalesce(p_enabled, false), 'points', v_pts);
+end;
+$$;
+
+create or replace function public.admin_qa_admin_set_quality(
+  p_secret text,
+  p_kind text,
+  p_id uuid,
+  p_enabled boolean,
+  p_token text default ''
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_pts int;
+begin
+  if not public.toolbox_check_admin(p_secret) then
+    return json_build_object('ok', false, 'error', '後台密碼錯誤');
+  end if;
+  if not admin_qa_can_set_quality(admin_qa_user_id(p_token)) then
+    return json_build_object('ok', false, 'error', '您沒有優質認定權限');
+  end if;
+  if p_kind = 'question' then
+    update public.admin_qa_questions set is_quality = coalesce(p_enabled, false)
+    where id = p_id and ask_review_status = 'approved' returning id into p_id;
+    if not found then return json_build_object('ok', false, 'error', '找不到已通過的問題'); end if;
+  elsif p_kind = 'answer' then
+    update public.admin_qa_answers set is_quality = coalesce(p_enabled, false)
+    where id = p_id and review_status = 'approved' returning id into p_id;
+    if not found then return json_build_object('ok', false, 'error', '找不到已通過的回答'); end if;
+  else
+    return json_build_object('ok', false, 'error', '類型無效');
+  end if;
+  v_pts := admin_qa_sync_quality_points(p_kind, p_id, coalesce(p_enabled, false));
+  return json_build_object('ok', true, 'enabled', coalesce(p_enabled, false), 'points', v_pts);
+end;
+$$;
+
 grant execute on function public.admin_qa_validate_category(text) to anon, authenticated;
 grant execute on function public.admin_qa_list(text, text, int, int, text) to anon, authenticated;
 grant execute on function public.admin_qa_get(text, uuid) to anon, authenticated;

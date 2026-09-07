@@ -5,6 +5,7 @@
     'use strict';
 
     window.SITE_FILE_SEARCH_INDEX = [
+        { file: './docs/weekly-meeting/files/2026-09-07_業務週會.pdf', title: '115/09/07 業務週會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0907 0907' },
         { file: './docs/weekly-meeting/files/2025-08-31_管理部週會.pdf', title: '115/08/31 管理部週會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 管理部 0831' },
         { file: './docs/weekly-meeting/files/2025-08-24_管理部週會_預審複審分工調整.pdf', title: '115/08/24 預審複審分工調整', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 預審 複審 0907 0824' },
         { file: './docs/weekly-meeting/files/領款收據_1150601版_星鴻.pdf', title: '領款收據 1150601版（星鴻）', category: '檔案 · PDF · 業務周會', keywords: '領款 收據 星鴻 周會 表單' },
