@@ -5,9 +5,10 @@
     'use strict';
 
     window.SITE_FILE_SEARCH_INDEX = [
-        { file: './docs/weekly-meeting/files/0907業務周會.pdf', title: '115/09/07 0907業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0907 軍公教 優存 代管 信任租 BLL 東吳' },
-        { file: './docs/weekly-meeting/files/2025-08-31_管理部週會.pdf', title: '115/08/31 管理部週會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 管理部 0831' },
-        { file: './docs/weekly-meeting/files/2025-08-24_管理部週會_預審複審分工調整.pdf', title: '115/08/24 預審複審分工調整', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 預審 複審 0907 0824' },
+        { file: './docs/weekly-meeting/files/0914業務周會.pdf', title: '115/09/14 0914業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0914 獎金 結績 廣告 591 複審 解約 催收 SOP 本票 強制執行' },
+        { file: './docs/weekly-meeting/files/0907業務周會.pdf', title: '115/09/07 0907業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0907 軍公教 優存 代管 信任租 獎金 結績 證照 印鑑 星鴻 星華 BLL 東吳' },
+        { file: './docs/weekly-meeting/files/2025-08-31_管理部週會.pdf', title: '115/08/31 0831業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0831 高專 寄居蟹 轉銜 300億 租金補貼 解編 激勵' },
+        { file: './docs/weekly-meeting/files/2025-08-24_管理部週會_預審複審分工調整.pdf', title: '115/08/24 0824業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 0824 預審 複審 300億 租金補貼 第一產物 轉保 0907' },
         { file: './docs/weekly-meeting/files/領款收據_1150601版_星鴻.pdf', title: '領款收據 1150601版（星鴻）', category: '檔案 · PDF · 業務周會', keywords: '領款 收據 星鴻 周會 表單' },
         { file: './docs/weekly-meeting/files/領款收據_1150601版_星華.pdf', title: '領款收據 1150601版（星華）', category: '檔案 · PDF · 業務周會', keywords: '領款 收據 星華 周會 表單' },
         { file: './01.場勘+招租1160210.docx', title: '01.場勘+招租1160210', category: '檔案 · DOCX · 租管師專區', keywords: '場勘 招租 範本 新人' },
@@ -46,6 +47,8 @@
         { file: './docs/租賃管理部-跨區管理獎金辦法-1150120版.docx', title: '租賃管理部-跨區管理獎金辦法', category: '檔案 · DOCX · 獎金辦法', keywords: '獎金 獎金辦法 跨區 管理 租賃管理部 kpi' },
         { file: './docs/獎金辦法-租管師獎金暨考核辦法-1140211版.docx', title: '租管師獎金暨考核辦法', category: '檔案 · DOCX · 獎金辦法', keywords: '獎金 獎金辦法 考核 租管師 點數 kpi' },
         { file: './docs/獎懲辦法-租管師未申請修繕-1140714版.docx', title: '租管師未申請修繕獎懲辦法', category: '檔案 · DOCX · 獎金辦法', keywords: '獎懲 修繕 補助 租管師 獎金' },
+        { file: './docs/forms/複審檢核表_Word版.docx', title: '複審檢核表（Word 版）', category: '檔案 · DOCX · 各式表單', keywords: '複審 檢核 預審 表單 Word 業務周會' },
+        { file: './docs/forms/星鴻租管部_房租欠款還款協議書_正式公版.pdf', title: '房租欠款還款協議書（正式公版）', category: '檔案 · PDF · 各式表單', keywords: '還款 協議 欠租 催收 房租 星鴻 業務周會' },
         { file: './docs/forms/115Y_09_租金補貼租賃契約變更申請書.docx', title: '租金補貼租賃契約變更申請書', category: '檔案 · DOCX · 各式表單', keywords: '租金補貼 租補 契約變更 300億 表單' },
         { file: './115Y_03_自願撤案(放棄)中央擴大租金補貼切結書.pdf', title: '115Y_03 自願撤案（放棄）中央擴大租金補貼切結書', category: '檔案 · PDF · 各式表單', keywords: '115Y 自願撤案 放棄 租金補貼 租補 切結書 300億 表單' },
         { file: './115Y_11_租金補貼金融機構帳戶變更切結書.pdf', title: '115Y_11 租金補貼金融機構帳戶變更切結書', category: '檔案 · PDF · 各式表單', keywords: '115Y 租金補貼 租補 帳戶變更 金融機構 切結書 300億 表單' },

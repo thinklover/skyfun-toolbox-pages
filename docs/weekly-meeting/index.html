@@ -35,8 +35,27 @@
     }
     .back:hover { border-color: var(--accent); color: var(--accent); }
     h1 { font-size: 1.65rem; margin: 0 0 6px; letter-spacing: 0.02em; }
-    .sub { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
-    .meta { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+    .sub { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+    .meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+    .search-wrap { margin-bottom: 20px; }
+    .search {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='5'/%3E%3Cpath d='M12 12l4 4'/%3E%3C/svg%3E") 14px center no-repeat;
+      font: inherit;
+      font-size: 15px;
+      color: var(--ink);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+    .search:focus {
+      outline: none;
+      border-color: #a5b4fc;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    .search-hint { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+    .search-count { margin: 0 0 12px; font-size: 13px; color: var(--muted); font-weight: 700; }
     section { margin-bottom: 28px; }
     section h2 {
       font-size: 13px; font-weight: 800; letter-spacing: 0.08em; color: var(--muted);
@@ -44,18 +63,40 @@
     }
     .list { display: grid; gap: 10px; }
     .item {
-      display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+      display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start;
       padding: 14px 16px; background: var(--card); border: 1px solid var(--border);
       border-radius: var(--radius); box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .item:hover { border-color: #c7d2fe; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1); }
+    .item.is-hidden { display: none; }
     .date {
       min-width: 72px; padding: 6px 10px; border-radius: 10px; background: var(--accent-soft);
       color: #4338ca; font-size: 12px; font-weight: 800; text-align: center; white-space: nowrap;
+      margin-top: 2px;
     }
-    .item-title { font-weight: 700; font-size: 15px; }
-    .item-title small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .item-main { min-width: 0; }
+    .item-title { font-weight: 700; font-size: 15px; line-height: 1.4; }
+    .item-toggle {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 6px; padding: 0; border: 0; background: none;
+      color: #4f46e5; font: inherit; font-size: 12px; font-weight: 700;
+      cursor: pointer; text-align: left;
+    }
+    .item-toggle:hover { color: #4338ca; text-decoration: underline; }
+    .item-topics {
+      display: none;
+      margin-top: 8px; padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      font-weight: 500; color: var(--muted); font-size: 12px; line-height: 1.55;
+    }
+    .item.is-open .item-topics { display: block; }
+    .item-topics mark {
+      background: #fef08a;
+      color: inherit;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
     .dl {
       display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 10px;
       background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; text-decoration: none;
@@ -67,6 +108,11 @@
       margin-top: 32px; padding: 14px 16px; border-radius: var(--radius);
       background: #fffbeb; border: 1px solid #fde68a; font-size: 13px; color: #92400e;
     }
+    @media (max-width: 560px) {
+      .item { grid-template-columns: 1fr; }
+      .date { justify-self: start; }
+      .dl { justify-self: start; }
+    }
   </style>
 </head>
 <body>
@@ -77,47 +123,163 @@
     <h1>📂 業務周會檔案</h1>
     <p class="sub">管理部週會簡報與相關表單，依日期整理供業務下載。</p>
     <p class="meta" id="meta">載入中…</p>
+    <div class="search-wrap" id="search-wrap" hidden>
+      <input type="search" id="search" class="search" placeholder="搜尋周會檔案，例：代管、獎金、預審、收據…" autocomplete="off" />
+      <p class="search-hint">可搜尋日期、檔名、議題標題或關鍵字</p>
+      <p class="search-count" id="search-count" hidden></p>
+    </div>
     <div id="content"></div>
     <p class="note">每週周會後請由管理員上傳最新 PDF 至本頁。若有缺檔或連結失效，請聯繫管理部。</p>
   </div>
   <script>
-    (async function () {
+    (function () {
       const root = document.getElementById('content');
       const meta = document.getElementById('meta');
-      try {
-        const res = await fetch('./manifest.json?t=' + Date.now());
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        meta.textContent = '最後更新：' + (data.updatedAt || '—');
-        if (!data.sections?.length) {
-          root.innerHTML = '<p class="empty">尚無檔案</p>';
-          return;
-        }
-        root.innerHTML = data.sections.map(function (sec) {
-          const items = (sec.items || []).slice().sort(function (a, b) {
-            return String(b.sortDate || '').localeCompare(String(a.sortDate || ''));
-          });
-          if (!items.length) return '';
-          const rows = items.map(function (it) {
-            const href = it.file || '#';
-            const name = (href.split('/').pop() || 'download.pdf');
-            return '<article class="item">' +
-              '<span class="date">' + esc(it.dateLabel || it.sortDate || '—') + '</span>' +
-              '<div class="item-title">' + esc(it.title || name) +
-              (it.subtitle ? '<small>' + esc(it.subtitle).replace(/\n/g, '<br>') + '</small>' : '') + '</div>' +
-              '<a class="dl" href="' + escAttr(href) + '" download="' + escAttr(name) + '" target="_blank" rel="noopener">⬇ 下載</a>' +
-              '</article>';
-          }).join('');
-          return '<section><h2>' + esc(sec.title || '') + '</h2><div class="list">' + rows + '</div></section>';
-        }).join('');
-      } catch (err) {
-        meta.textContent = '';
-        root.innerHTML = '<p class="err">無法載入檔案清單：' + esc(String(err.message || err)) + '</p>';
-      }
+      const searchWrap = document.getElementById('search-wrap');
+      const searchInput = document.getElementById('search');
+      const searchCount = document.getElementById('search-count');
+      let manifestData = null;
+
       function esc(s) {
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
       function escAttr(s) { return esc(s); }
+
+      function itemHaystack(it, secTitle) {
+        const href = it.file || '';
+        const name = href.split('/').pop() || '';
+        return [
+          it.title,
+          it.subtitle,
+          it.dateLabel,
+          it.sortDate,
+          it.keywords,
+          secTitle,
+          name
+        ].filter(Boolean).join(' ').toLowerCase();
+      }
+
+      function tokenizeQuery(q) {
+        return String(q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+      }
+
+      function itemMatches(it, secTitle, tokens) {
+        if (!tokens.length) return true;
+        const hay = itemHaystack(it, secTitle);
+        return tokens.every(function (t) { return hay.indexOf(t) !== -1; });
+      }
+
+      function highlightText(text, tokens) {
+        if (!tokens.length || !text) return esc(text || '');
+        let safe = esc(text);
+        tokens.forEach(function (t) {
+          if (t.length < 1) return;
+          const re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+          safe = safe.replace(re, '<mark>$1</mark>');
+        });
+        return safe;
+      }
+
+      function topicCount(subtitle) {
+        if (!subtitle) return 0;
+        return String(subtitle).split('\n').filter(function (line) { return line.trim(); }).length;
+      }
+
+      function renderItem(it, secTitle, tokens) {
+        const href = it.file || '#';
+        const name = (href.split('/').pop() || 'download.pdf');
+        const title = highlightText(it.title || name, tokens);
+        const count = topicCount(it.subtitle);
+        const subtitle = count
+          ? highlightText(it.subtitle, tokens).replace(/\n/g, '<br>')
+          : '';
+        const autoOpen = tokens.length > 0 && count > 0;
+        const openClass = autoOpen ? ' is-open' : '';
+        let mainHtml = '<div class="item-main"><div class="item-title">' + title + '</div>';
+        if (subtitle) {
+          mainHtml +=
+            '<button type="button" class="item-toggle" aria-expanded="' + (autoOpen ? 'true' : 'false') + '" data-count="' + count + '">' +
+            (autoOpen ? '▾ 收起議題' : '▸ 展開議題（' + count + '）') +
+            '</button>' +
+            '<div class="item-topics">' + subtitle + '</div>';
+        }
+        mainHtml += '</div>';
+        return '<article class="item' + openClass + '" data-searchable="1">' +
+          '<span class="date">' + esc(it.dateLabel || it.sortDate || '—') + '</span>' +
+          mainHtml +
+          '<a class="dl" href="' + escAttr(href) + '" download="' + escAttr(name) + '" target="_blank" rel="noopener">⬇ 下載</a>' +
+          '</article>';
+      }
+
+      function renderList(query) {
+        if (!manifestData?.sections?.length) {
+          root.innerHTML = '<p class="empty">尚無檔案</p>';
+          return;
+        }
+        const tokens = tokenizeQuery(query);
+        let total = 0;
+        let matched = 0;
+        const html = manifestData.sections.map(function (sec) {
+          const items = (sec.items || []).slice().sort(function (a, b) {
+            return String(b.sortDate || '').localeCompare(String(a.sortDate || ''));
+          });
+          if (!items.length) return '';
+          const rows = items.filter(function (it) {
+            total += 1;
+            const ok = itemMatches(it, sec.title, tokens);
+            if (ok) matched += 1;
+            return ok;
+          }).map(function (it) {
+            return renderItem(it, sec.title, tokens);
+          }).join('');
+          if (!rows) return '';
+          return '<section><h2>' + esc(sec.title || '') + '</h2><div class="list">' + rows + '</div></section>';
+        }).join('');
+
+        if (!html) {
+          root.innerHTML = '<p class="empty">找不到符合「' + esc(query) + '」的檔案，請換個關鍵字試試。</p>';
+        } else {
+          root.innerHTML = html;
+        }
+
+        if (tokens.length) {
+          searchCount.hidden = false;
+          searchCount.textContent = '找到 ' + matched + ' 筆（共 ' + total + ' 筆）';
+        } else {
+          searchCount.hidden = true;
+          searchCount.textContent = '';
+        }
+      }
+
+      searchInput?.addEventListener('input', function () {
+        renderList(searchInput.value);
+      });
+
+      root.addEventListener('click', function (e) {
+        const btn = e.target.closest('.item-toggle');
+        if (!btn) return;
+        const item = btn.closest('.item');
+        if (!item) return;
+        const open = !item.classList.contains('is-open');
+        item.classList.toggle('is-open', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        const count = btn.getAttribute('data-count') || '0';
+        btn.textContent = open ? '▾ 收起議題' : '▸ 展開議題（' + count + '）';
+      });
+
+      (async function () {
+        try {
+          const res = await fetch('./manifest.json?t=' + Date.now());
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          manifestData = await res.json();
+          meta.textContent = '最後更新：' + (manifestData.updatedAt || '—');
+          searchWrap.hidden = false;
+          renderList('');
+        } catch (err) {
+          meta.textContent = '';
+          root.innerHTML = '<p class="err">無法載入檔案清單：' + esc(String(err.message || err)) + '</p>';
+        }
+      })();
     })();
   </script>
 </body>
