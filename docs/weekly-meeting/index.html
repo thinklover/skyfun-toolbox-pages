@@ -104,7 +104,7 @@
             return '<article class="item">' +
               '<span class="date">' + esc(it.dateLabel || it.sortDate || '—') + '</span>' +
               '<div class="item-title">' + esc(it.title || name) +
-              (it.subtitle ? '<small>' + esc(it.subtitle) + '</small>' : '') + '</div>' +
+              (it.subtitle ? '<small>' + esc(it.subtitle).replace(/\n/g, '<br>') + '</small>' : '') + '</div>' +
               '<a class="dl" href="' + escAttr(href) + '" download="' + escAttr(name) + '" target="_blank" rel="noopener">⬇ 下載</a>' +
               '</article>';
           }).join('');
