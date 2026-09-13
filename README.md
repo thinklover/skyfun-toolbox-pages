@@ -6,10 +6,11 @@
 | 版本 | 網址 |
 |------|------|
 | **正式站（自訂網域）** | https://toolbox.skyfunsystem.com/ |
-| GitHub Pages 鏡像 | https://thinklover.github.io/skyfun-toolbox-pages/ |
+| GitHub Pages | https://thinklover.github.io/skyfun-toolbox-pages/ |
 | Render 完整版 | https://skyfun-toolbox-api.onrender.com |
 
-> push 後需執行 `deploy-publish.ps1`（POST Cloud Build webhook），約 **4 分鐘** 後 `toolbox.skyfunsystem.com` 才會更新。若沒看到改動請 **Ctrl+F5** 強制重新整理。
+> **push 到 `main` 後**，GitHub Actions 會自動部署（約 2 分鐘）。自訂網域需 DNS 指向 GitHub Pages（`toolbox` → CNAME `thinklover.github.io`）。  
+> 若仍使用舊版 Cloud Build 主機，可額外執行 `deploy-publish.ps1`；若正式站未更新，請先 **Ctrl+F5**，或暫用 GitHub Pages 網址確認。
 
 ## 更新並部署
 
