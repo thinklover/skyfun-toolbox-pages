@@ -129,7 +129,7 @@
       el.innerHTML = window.buildSkyfunDepartmentSelectHtml(selected);
       return;
     }
-    const fallback = ['北一處', '北二處', '北三處', '基一處', '桃一處', '竹一處', '宜一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處', '彰一處', '嘉一處', '南一處', '南二處', '高一處', '高二處', '行政管理部', '總經理室', '租賃管理部', '客服部', '客滿部', '財務部'];
+    const fallback = ['北一處', '北二處', '北三處', '基一處', '桃一處', '竹一處', '宜一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處', '彰一處', '嘉一處', '南一處', '南二處', '高一處', '高二處', '行政管理部', '總經理室', '租賃管理部', '電銷部', '客服部', '客滿部', '財務部'];
     const sel = String(selected || '').trim();
     el.innerHTML = '<option value="">請選擇處別</option>' +
       fallback.map((o) => `<option value="${escHtml(o)}"${o === sel ? ' selected' : ''}>${escHtml(o)}</option>`).join('');
@@ -157,9 +157,9 @@
       </blockquote>
       <p id="toolbox-auth-mode-hint" class="lite-auth-hint">輸入帳號與密碼即可進入。第一次登入請先註冊。</p>
       <label for="toolbox-auth-username">帳號</label>
-      <input id="toolbox-auth-username" type="text" maxlength="40" autocomplete="username" placeholder="至少 3 碼" />
+      <input id="toolbox-auth-username" type="text" maxlength="40" autocomplete="username" placeholder="請與公司系統相同" />
       <label for="toolbox-auth-password">密碼</label>
-      <input id="toolbox-auth-password" type="password" maxlength="72" autocomplete="current-password" placeholder="至少 6 碼" />
+      <input id="toolbox-auth-password" type="password" maxlength="72" autocomplete="current-password" placeholder="請與公司系統相同" />
       <div id="toolbox-auth-register-extra" class="hidden">
         <label for="toolbox-auth-password2">確認密碼</label>
         <input id="toolbox-auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再輸入一次" />

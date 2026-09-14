@@ -31,6 +31,37 @@
     .team-cell { min-width: 11rem; }
     .team-cell select { font-size: 0.75rem; padding: 0.35rem 0.45rem; margin-bottom: 0.25rem; }
     .row-missing td { background: rgba(120, 53, 15, 0.12); }
+    .team-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); gap: 0.3rem; }
+    .team-stat {
+      border: 1px solid #334155; border-radius: 0.45rem; padding: 0.28rem 0.25rem;
+      background: #0f172a; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      font: inherit; color: inherit; width: 100%;
+    }
+    .team-stat:hover:not(.is-zero) { border-color: #64748b; }
+    .team-stat-name { font-size: 0.58rem; color: #94a3b8; line-height: 1.15; word-break: break-all; }
+    .team-stat-num { font-size: 0.88rem; font-weight: 800; color: #f8fafc; margin-top: 0.08rem; line-height: 1.1; }
+    .team-stat.is-zero { cursor: default; opacity: 0.55; }
+    .team-stat.is-zero .team-stat-num { color: #475569; font-weight: 600; }
+    .team-stat.is-hot { border-color: #fbbf24; background: rgba(120, 53, 15, 0.22); }
+    .team-stat.is-hot .team-stat-num { color: #fcd34d; }
+    .team-stat.is-missing { border-color: #f87171; background: rgba(127, 29, 29, 0.18); }
+    .team-stat.is-active { border-color: #2dd4bf; background: rgba(15, 118, 110, 0.28); box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.35); }
+    .team-stat.is-active .team-stat-num { color: #5eead4; }
+    .team-detail {
+      border: 1px solid #334155; border-radius: 0.65rem; background: #0f172a; padding: 0.55rem 0.65rem;
+    }
+    .team-detail-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.35rem; margin-bottom: 0.45rem; }
+    .team-detail-title { font-size: 0.78rem; font-weight: 700; color: #99f6e4; }
+    .team-detail-clear { border: 0; background: transparent; color: #94a3b8; font-size: 0.72rem; cursor: pointer; text-decoration: underline; }
+    .team-detail-list { display: flex; flex-wrap: wrap; gap: 0.35rem; max-height: 8.5rem; overflow-y: auto; }
+    .team-detail-item {
+      font-size: 0.72rem; border: 1px solid #334155; border-radius: 0.45rem; padding: 0.28rem 0.45rem;
+      background: #1e293b; color: #e2e8f0; white-space: nowrap;
+    }
+    .team-detail-item .name { font-weight: 700; color: #f8fafc; }
+    .team-detail-item .user { color: #94a3b8; margin-left: 0.25rem; }
+    .team-detail-item .st { margin-left: 0.35rem; }
+    .row-team-highlight td { background: rgba(15, 118, 110, 0.12); }
   </style>
 </head>
 <body class="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
@@ -49,6 +80,20 @@
   </section>
 
   <section class="card p-4 hidden space-y-3" id="main-panel">
+    <div id="team-stats-panel" class="space-y-2 pb-1 border-b border-slate-700">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-sm font-bold text-teal-200">各處申請帳號總數</h2>
+        <p class="text-xs text-slate-500" id="team-stats-total">—</p>
+      </div>
+      <div class="team-stats" id="team-stats-grid"></div>
+      <div class="team-detail hidden" id="team-detail-panel">
+        <div class="team-detail-head">
+          <p class="team-detail-title" id="team-detail-title">—</p>
+          <button type="button" class="team-detail-clear" id="team-detail-clear">清除篩選</button>
+        </div>
+        <div class="team-detail-list" id="team-detail-list"></div>
+      </div>
+    </div>
     <div class="flex flex-wrap items-end gap-3">
       <div class="min-w-[10rem]">
         <label class="block text-xs text-slate-400 mb-1">篩選狀態</label>
@@ -84,6 +129,8 @@
       let client = null;
       let secret = '';
       let allUsers = [];
+      let statsUsers = [];
+      let selectedTeamFilter = null;
 
       function cfg() {
         const c = window.SKYFUN_SUPABASE || {};
@@ -134,15 +181,132 @@
         return `<select data-team-for="${esc(userId)}">${html}</select>`;
       }
 
+      function knownDepartments() {
+        if (Array.isArray(window.SKYFUN_DEPARTMENTS) && window.SKYFUN_DEPARTMENTS.length) {
+          return window.SKYFUN_DEPARTMENTS.slice();
+        }
+        return ['北一處', '北二處', '北三處', '基一處', '桃一處', '竹一處', '宜一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處', '彰一處', '嘉一處', '南一處', '南二處', '高一處', '高二處', '行政管理部', '總經理室', '租賃管理部', '電銷部', '客服部', '客滿部', '財務部'];
+      }
+
+      function userTeamKey(u) {
+        return String(u.team || '').trim() || '（未填處別）';
+      }
+
+      function usersForTeam(teamKey) {
+        return statsUsers.filter((u) => userTeamKey(u) === teamKey);
+      }
+
+      function renderTeamDetail(teamKey) {
+        const panel = document.getElementById('team-detail-panel');
+        const titleEl = document.getElementById('team-detail-title');
+        const listEl = document.getElementById('team-detail-list');
+        if (!panel || !titleEl || !listEl) return;
+        if (!teamKey) {
+          panel.classList.add('hidden');
+          listEl.innerHTML = '';
+          return;
+        }
+        const users = usersForTeam(teamKey).slice().sort((a, b) => {
+          const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return tb - ta;
+        });
+        panel.classList.remove('hidden');
+        titleEl.textContent = teamKey + ' · 共 ' + users.length + ' 人申請';
+        if (!users.length) {
+          listEl.innerHTML = '<span class="text-xs text-slate-500">尚無申請紀錄</span>';
+          return;
+        }
+        listEl.innerHTML = users.map((u) => {
+          const name = esc(u.name) || '—';
+          const username = esc(u.username) || '—';
+          return '<div class="team-detail-item"><span class="name">' + name + '</span><span class="user">' + username + '</span><span class="st">' + badge(u.status) + '</span></div>';
+        }).join('');
+      }
+
+      function setTeamFilter(teamKey) {
+        if (teamKey && !usersForTeam(teamKey).length) return;
+        selectedTeamFilter = selectedTeamFilter === teamKey ? null : teamKey;
+        renderTeamStats(statsUsers);
+        renderTeamDetail(selectedTeamFilter);
+        renderRows(allUsers);
+        if (selectedTeamFilter) {
+          document.getElementById('msg').textContent = '已篩選：' + selectedTeamFilter;
+        }
+      }
+
+      function clearTeamFilter() {
+        selectedTeamFilter = null;
+        renderTeamStats(statsUsers);
+        renderTeamDetail(null);
+        renderRows(allUsers);
+        document.getElementById('msg').textContent = '';
+      }
+
+      function renderTeamStats(allUsersForStats) {
+        const grid = document.getElementById('team-stats-grid');
+        const totalEl = document.getElementById('team-stats-total');
+        if (!grid || !totalEl) return;
+        const counts = {};
+        const pendingCounts = {};
+        (allUsersForStats || []).forEach((u) => {
+          const t = userTeamKey(u);
+          counts[t] = (counts[t] || 0) + 1;
+          if (u.status === 'pending') pendingCounts[t] = (pendingCounts[t] || 0) + 1;
+        });
+        const rows = [];
+        knownDepartments().forEach((name) => {
+          rows.push({
+            name,
+            count: counts[name] || 0,
+            pending: pendingCounts[name] || 0,
+            kind: 'dept'
+          });
+          delete counts[name];
+          delete pendingCounts[name];
+        });
+        Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b, 'zh-Hant')).forEach((name) => {
+          rows.push({
+            name,
+            count: counts[name],
+            pending: pendingCounts[name] || 0,
+            kind: name === '（未填處別）' ? 'missing' : 'other'
+          });
+        });
+        const total = (allUsersForStats || []).length;
+        const pendingTotal = (allUsersForStats || []).filter((u) => u.status === 'pending').length;
+        totalEl.textContent = '合計 ' + total + ' 個帳號' + (pendingTotal ? '（待核准 ' + pendingTotal + ' 個）' : '');
+        grid.innerHTML = rows.map((row) => {
+          const cls = [
+            'team-stat',
+            row.count === 0 ? 'is-zero' : '',
+            row.count > 0 && row.kind === 'dept' ? 'is-hot' : '',
+            row.kind === 'missing' && row.count > 0 ? 'is-missing' : '',
+            row.kind === 'other' && row.count > 0 ? 'is-hot' : '',
+            selectedTeamFilter === row.name ? 'is-active' : ''
+          ].filter(Boolean).join(' ');
+          const title = row.pending > 0 ? '點擊查看 · 待核准 ' + row.pending : '點擊查看申請名單';
+          return '<button type="button" class="' + cls + '" data-team="' + esc(row.name) + '" title="' + title + '" ' + (row.count === 0 ? 'disabled' : '') + '><div class="team-stat-name">' + esc(row.name) + '</div><div class="team-stat-num">' + row.count + '</div></button>';
+        }).join('');
+      }
+
       function renderRows(users) {
         const missingOnly = document.getElementById('filter-missing-team').checked;
-        const list = missingOnly
+        let list = missingOnly
           ? users.filter((u) => !String(u.team || '').trim())
-          : users;
+          : users.slice();
+        if (selectedTeamFilter) {
+          list = list.filter((u) => userTeamKey(u) === selectedTeamFilter);
+        }
+        const suffix = [
+          missingOnly ? '缺處別' : '',
+          selectedTeamFilter ? selectedTeamFilter : ''
+        ].filter(Boolean).join(' · ');
         document.getElementById('count').textContent =
-          `共 ${list.length} 筆` + (missingOnly ? '（缺處別）' : '');
+          `共 ${list.length} 筆` + (suffix ? `（${suffix}）` : '');
         document.getElementById('rows').innerHTML = list.map((u) => {
           const missing = !String(u.team || '').trim();
+          const teamHit = selectedTeamFilter && userTeamKey(u) === selectedTeamFilter;
           const acts = [];
           if (u.status === 'pending') {
             acts.push(`<button type="button" class="act-btn act-ok" data-act="active" data-id="${u.id}">核准</button>`);
@@ -152,7 +316,7 @@
           } else if (u.status === 'disabled' || u.status === 'rejected') {
             acts.push(`<button type="button" class="act-btn act-ok" data-act="active" data-id="${u.id}">重新核准</button>`);
           }
-          return `<tr class="${missing ? 'row-missing' : ''}">
+          return `<tr class="${missing ? 'row-missing' : ''}${teamHit ? ' row-team-highlight' : ''}">
             <td>${esc(u.username) || '—'}${missing ? '<span class="badge-missing">缺處別</span>' : ''}${u.adminQaDoublePoints ? '<span class="badge-double">✓ 雙倍</span>' : ''}</td>
             <td>${esc(u.name) || '—'}</td>
             <td class="team-cell">
@@ -178,11 +342,25 @@
         }).join('');
       }
 
+      async function loadTeamStats() {
+        const data = await rpc('toolbox_admin_list', { p_secret: secret, p_status: null });
+        if (!data?.ok) throw new Error(data?.error || '讀取失敗');
+        statsUsers = data.users || [];
+        if (selectedTeamFilter && !usersForTeam(selectedTeamFilter).length) {
+          selectedTeamFilter = null;
+        }
+        renderTeamStats(statsUsers);
+        renderTeamDetail(selectedTeamFilter);
+      }
+
       async function loadList() {
         const status = document.getElementById('filter').value;
-        const data = await rpc('toolbox_admin_list', { p_secret: secret, p_status: status || null });
-        if (!data?.ok) throw new Error(data?.error || '讀取失敗');
-        allUsers = data.users || [];
+        const [listData] = await Promise.all([
+          rpc('toolbox_admin_list', { p_secret: secret, p_status: status || null }),
+          loadTeamStats()
+        ]);
+        if (!listData?.ok) throw new Error(listData?.error || '讀取失敗');
+        allUsers = listData.users || [];
         renderRows(allUsers);
         document.getElementById('msg').textContent = '';
       }
@@ -257,6 +435,14 @@
 
       document.getElementById('filter').addEventListener('change', () => loadList().catch(() => {}));
       document.getElementById('filter-missing-team').addEventListener('change', () => renderRows(allUsers));
+
+      document.getElementById('team-stats-grid').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-team]');
+        if (!btn || btn.disabled) return;
+        setTeamFilter(btn.dataset.team);
+      });
+
+      document.getElementById('team-detail-clear').addEventListener('click', clearTeamFilter);
 
       document.getElementById('rows').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-act]');

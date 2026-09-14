@@ -26,7 +26,7 @@
         '高二處',
     ];
 
-    window.SKYFUN_STANDALONE_DEPARTMENTS = ['行政管理部', '總經理室', '租賃管理部', '客服部', '客滿部', '財務部'];
+    window.SKYFUN_STANDALONE_DEPARTMENTS = ['行政管理部', '總經理室', '租賃管理部', '電銷部', '客服部', '客滿部', '財務部'];
 
     window.SKYFUN_DEPARTMENTS = window.SKYFUN_BUSINESS_OFFICES.concat(window.SKYFUN_STANDALONE_DEPARTMENTS);
 
@@ -50,9 +50,11 @@
             html += `<option value="${escapeHtml(o)}"${o === sel ? ' selected' : ''}>${escapeHtml(o)}</option>`;
         });
         html += '</optgroup>';
+        html += '<optgroup label="其他部門">';
         window.SKYFUN_STANDALONE_DEPARTMENTS.forEach((o) => {
             html += `<option value="${escapeHtml(o)}"${o === sel ? ' selected' : ''}>${escapeHtml(o)}</option>`;
         });
+        html += '</optgroup>';
         return html;
     };
 })();
