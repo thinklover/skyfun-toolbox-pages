@@ -996,7 +996,9 @@ begin
 end;
 $$;
 
--- Google Sheet 匯出用檢視（之後 Apps Script 讀此表或 RPC）
+-- Google Sheet 同步 RPC 見 admin-qa-sheets-sync.sql
+
+-- Google Sheet 匯出用檢視（Apps Script 讀 RPC admin_qa_sheets_sync_pull）
 create or replace view public.admin_qa_points_export as
 select
   e.id,

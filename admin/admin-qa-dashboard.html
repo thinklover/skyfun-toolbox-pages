@@ -70,9 +70,35 @@
     .points-table tr:hover td { background: rgba(15, 23, 42, 0.55); }
     .points-table .rank { color: #fcd34d; font-weight: 800; width: 2.5rem; }
     .points-table .total { color: #5eead4; font-weight: 800; }
+    .points-visual { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+    @media (min-width: 900px) {
+      .points-visual { grid-template-columns: 1.1fr 0.9fr; }
+      .points-visual-charts { grid-column: 1 / -1; display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 0.75rem; }
+    }
+    .points-panel { border: 1px solid #334155; border-radius: 0.75rem; background: #0f172a; padding: 0.75rem; }
+    .points-panel-title { font-size: 0.78rem; font-weight: 800; color: #94a3b8; margin-bottom: 0.55rem; letter-spacing: 0.02em; }
+    .points-podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; align-items: end; }
+    .podium-card {
+      border: 1px solid #334155; border-radius: 0.65rem; padding: 0.55rem 0.45rem; text-align: center; background: #1e293b;
+    }
+    .podium-card.is-first { border-color: #fbbf24; background: linear-gradient(180deg, rgba(120,53,15,.35), #1e293b); transform: translateY(-0.15rem); }
+    .podium-card.is-second { border-color: #94a3b8; }
+    .podium-card.is-third { border-color: #b45309; }
+    .podium-medal { font-size: 1.15rem; line-height: 1; }
+    .podium-name { font-size: 0.78rem; font-weight: 800; color: #f8fafc; margin-top: 0.25rem; line-height: 1.25; word-break: break-all; }
+    .podium-meta { font-size: 0.62rem; color: #94a3b8; margin-top: 0.15rem; }
+    .podium-score { font-size: 1.05rem; font-weight: 900; color: #5eead4; margin-top: 0.2rem; }
+    .podium-card.is-first .podium-score { color: #fcd34d; font-size: 1.25rem; }
+    .points-insights { display: flex; flex-direction: column; gap: 0.45rem; }
+    .insight-item { font-size: 0.8rem; color: #cbd5e1; line-height: 1.45; padding: 0.45rem 0.55rem; border-radius: 0.55rem; background: #1e293b; border: 1px solid #334155; }
+    .insight-item strong { color: #99f6e4; }
+    .insight-item.is-highlight { border-color: #fbbf24; background: rgba(120, 53, 15, 0.18); }
+    .chart-box { position: relative; height: 14rem; }
+    .chart-box.is-sm { height: 11rem; }
+    .points-empty-visual { color: #64748b; font-size: 0.82rem; padding: 1rem 0.5rem; text-align: center; }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+<body class="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
   <header>
     <h1 class="text-2xl font-black text-teal-300">行政 QA 檢核後台</h1>
     <p class="text-slate-400 text-sm mt-1">小組長檢核提問／回答、管理所有問題 · <a class="text-teal-300 underline" href="../index.html">回工具箱</a></p>
@@ -90,6 +116,8 @@
   <section class="card p-4 hidden space-y-4" id="main-panel">
     <div class="flex flex-wrap items-center gap-3">
       <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
+      <button type="button" id="btn-sheets-sync" class="text-sm px-3 py-1.5 rounded-lg bg-indigo-700 text-white font-bold">手動同步試算表</button>
+      <p class="text-xs text-slate-500 w-full">點數：小組長按「通過」才認列 · 試算表：每日 08:00 依核准日期匯入（可手動同步）</p>
       <p class="text-sm text-slate-400" id="count">—</p>
       <p class="text-sm text-teal-300" id="reviewer-info">—</p>
     </div>
@@ -126,7 +154,7 @@
     </div>
 
     <div id="tab-points" class="tab-panel hidden space-y-3">
-      <h2 class="section-title">所有人點數（依檢核通過時間）</h2>
+      <h2 class="section-title">所有人點數（小組長核准後才計入 · 依核准時間）</h2>
       <div class="points-filters">
         <div class="field">
           <label for="points-from">開始日期</label>
@@ -146,6 +174,26 @@
       </div>
       <div class="points-summary" id="points-summary"></div>
       <p class="text-xs text-slate-500" id="points-range">—</p>
+      <div class="points-visual" id="points-visual">
+        <div class="points-panel">
+          <div class="points-panel-title">🏆 前三名</div>
+          <div class="points-podium" id="points-podium"></div>
+        </div>
+        <div class="points-panel">
+          <div class="points-panel-title">📊 分析結果</div>
+          <div class="points-insights" id="points-insights"></div>
+        </div>
+        <div class="points-visual-charts">
+          <div class="points-panel">
+            <div class="points-panel-title">個人總點 TOP 10</div>
+            <div class="chart-box"><canvas id="points-chart-rank"></canvas></div>
+          </div>
+          <div class="points-panel">
+            <div class="points-panel-title">提問 vs 回答點數</div>
+            <div class="chart-box is-sm"><canvas id="points-chart-mix"></canvas></div>
+          </div>
+        </div>
+      </div>
       <div class="points-table-wrap">
         <table class="points-table">
           <thead>
@@ -162,6 +210,7 @@
     </div>
   </section>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
     (function () {
       const SECRET_KEY = 'skyfun-admin-qa-secret';
@@ -171,6 +220,8 @@
       let activeTab = 'pending';
       let expandedQuestionId = null;
       let canSetQuality = false;
+      let pointsRankChart = null;
+      let pointsMixChart = null;
 
       function toolboxSession() {
         try {
@@ -196,6 +247,28 @@
 
       function rpcArgs(extra) {
         return Object.assign({ p_secret: secret, p_token: toolboxToken() }, extra || {});
+      }
+
+      function sheetsSyncUrl() {
+        return String(window.SKYFUN_QA_SHEETS_SYNC_URL || '').trim();
+      }
+
+      async function triggerSheetsSync(silent) {
+        const url = sheetsSyncUrl();
+        if (!url) {
+          if (!silent) {
+            document.getElementById('msg').textContent = '尚未設定 SKYFUN_QA_SHEETS_SYNC_URL（Apps Script Web App）';
+          }
+          return null;
+        }
+        try {
+          await fetch(url, { method: 'POST', mode: 'no-cors', body: '{}' });
+          if (!silent) document.getElementById('msg').textContent = '已手動觸發試算表同步（依核准日期寫入日報表）';
+          return true;
+        } catch (e) {
+          if (!silent) document.getElementById('msg').textContent = '試算表同步觸發失敗：' + (e.message || '未知錯誤');
+          return false;
+        }
       }
 
       function updateReviewerInfo(name) {
@@ -542,10 +615,195 @@
         }
       }
 
+      function pct(part, total) {
+        if (!total) return '0%';
+        return Math.round((part / total) * 1000) / 10 + '%';
+      }
+
+      function destroyPointsCharts() {
+        if (pointsRankChart) { pointsRankChart.destroy(); pointsRankChart = null; }
+        if (pointsMixChart) { pointsMixChart.destroy(); pointsMixChart = null; }
+      }
+
+      function teamTotals(rows) {
+        const map = {};
+        (rows || []).forEach(function (row) {
+          const team = String(row.team || '').trim() || '（未填處別）';
+          if (!map[team]) map[team] = { team: team, points: 0, users: 0 };
+          map[team].points += Number(row.totalPoints || 0);
+          map[team].users += 1;
+        });
+        return Object.values(map).sort(function (a, b) { return b.points - a.points; });
+      }
+
+      function buildPointsInsights(summary, rows) {
+        const insights = [];
+        const total = Number(summary.totalPoints || 0);
+        const askPts = Number(summary.askPoints || 0);
+        const ansPts = Number(summary.answerPoints || 0);
+        const userCount = Number(summary.userCount || 0);
+        const eventCount = Number(summary.eventCount || 0);
+        const top = rows[0];
+        const second = rows[1];
+        const avg = userCount ? Math.round((total / userCount) * 10) / 10 : 0;
+
+        if (!rows.length) {
+          return ['<div class="insight-item">此區間尚無點數資料，無法產生分析。</div>'];
+        }
+
+        insights.push(
+          '<div class="insight-item is-highlight"><strong>🏆 第一名：</strong>' +
+          esc(top.userName || '—') +
+          '（' + esc(top.team || '—') + '）· 總點 <strong>' + esc(top.totalPoints || 0) + '</strong> 點' +
+          '（提問 ' + esc(top.askPoints || 0) + ' · 回答 ' + esc(top.answerPoints || 0) + '）</div>'
+        );
+
+        if (second) {
+          const gap = Number(top.totalPoints || 0) - Number(second.totalPoints || 0);
+          insights.push(
+            '<div class="insight-item"><strong>差距：</strong>第二名 ' + esc(second.userName || '—') +
+            ' ' + esc(second.totalPoints || 0) + ' 點，領先 <strong>' + gap + '</strong> 點</div>'
+          );
+        }
+
+        insights.push(
+          '<div class="insight-item"><strong>整體：</strong>共 ' + userCount + ' 人參與 · 累計 ' + total +
+          ' 點 · 人均 ' + avg + ' 點 · 檢核通過 ' + eventCount + ' 次</div>'
+        );
+
+        insights.push(
+          '<div class="insight-item"><strong>結構：</strong>提問 ' + askPts + ' 點（' + pct(askPts, total) +
+          '）· 回答 ' + ansPts + ' 點（' + pct(ansPts, total) + '）</div>'
+        );
+
+        const teams = teamTotals(rows);
+        if (teams.length) {
+          const lead = teams[0];
+          insights.push(
+            '<div class="insight-item"><strong>處別最高：</strong>' + esc(lead.team) +
+            ' · ' + lead.points + ' 點（' + lead.users + ' 人）</div>'
+          );
+        }
+
+        const askKing = rows.slice().sort(function (a, b) { return Number(b.askPoints || 0) - Number(a.askPoints || 0); })[0];
+        const ansKing = rows.slice().sort(function (a, b) { return Number(b.answerPoints || 0) - Number(a.answerPoints || 0); })[0];
+        if (askKing && Number(askKing.askPoints || 0) > 0) {
+          insights.push(
+            '<div class="insight-item"><strong>提問王：</strong>' + esc(askKing.userName || '—') +
+            ' · ' + esc(askKing.askPoints || 0) + ' 點（' + esc(askKing.askCount || 0) + ' 次）</div>'
+          );
+        }
+        if (ansKing && Number(ansKing.answerPoints || 0) > 0) {
+          insights.push(
+            '<div class="insight-item"><strong>回答王：</strong>' + esc(ansKing.userName || '—') +
+            ' · ' + esc(ansKing.answerPoints || 0) + ' 點（' + esc(ansKing.answerCount || 0) + ' 次）</div>'
+          );
+        }
+
+        return insights;
+      }
+
+      function renderPointsPodium(rows) {
+        const el = document.getElementById('points-podium');
+        if (!el) return;
+        const medals = ['🥇', '🥈', '🥉'];
+        const cls = ['is-first', 'is-second', 'is-third'];
+        const top3 = (rows || []).slice(0, 3);
+        if (!top3.length) {
+          el.innerHTML = '<div class="points-empty-visual">尚無排行資料</div>';
+          return;
+        }
+        while (top3.length < 3) top3.push(null);
+        el.innerHTML = top3.map(function (row, i) {
+          if (!row) {
+            return '<div class="podium-card"><div class="podium-medal">' + medals[i] + '</div><div class="podium-name">—</div><div class="podium-score">0</div></div>';
+          }
+          return (
+            '<div class="podium-card ' + cls[i] + '">' +
+            '<div class="podium-medal">' + medals[i] + '</div>' +
+            '<div class="podium-name">' + esc(row.userName || '—') + '</div>' +
+            '<div class="podium-meta">' + esc(row.team || '—') + '</div>' +
+            '<div class="podium-score">' + esc(row.totalPoints || 0) + ' 點</div>' +
+            '<div class="podium-meta">提問 ' + esc(row.askPoints || 0) + ' · 回答 ' + esc(row.answerPoints || 0) + '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+
+      function renderPointsCharts(summary, rows) {
+        destroyPointsCharts();
+        const rankCanvas = document.getElementById('points-chart-rank');
+        const mixCanvas = document.getElementById('points-chart-mix');
+        if (!window.Chart || !rankCanvas || !mixCanvas) return;
+
+        const top10 = (rows || []).slice(0, 10);
+        const labels = top10.map(function (r) { return String(r.userName || r.username || '—'); });
+        const askData = top10.map(function (r) { return Number(r.askPoints || 0); });
+        const ansData = top10.map(function (r) { return Number(r.answerPoints || 0); });
+
+        if (top10.length) {
+          pointsRankChart = new Chart(rankCanvas, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [
+                { label: '提問點', data: askData, backgroundColor: 'rgba(99, 102, 241, 0.75)', borderRadius: 4, stack: 'pts' },
+                { label: '回答點', data: ansData, backgroundColor: 'rgba(20, 184, 166, 0.75)', borderRadius: 4, stack: 'pts' }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { labels: { color: '#cbd5e1', boxWidth: 12, font: { size: 11 } } },
+                tooltip: {
+                  callbacks: {
+                    footer: function (items) {
+                      const idx = items[0]?.dataIndex;
+                      if (idx == null || !top10[idx]) return '';
+                      return '總點 ' + (top10[idx].totalPoints || 0);
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { stacked: true, ticks: { color: '#94a3b8', maxRotation: 45, minRotation: 0, font: { size: 10 } }, grid: { color: 'rgba(51,65,85,0.35)' } },
+                y: { stacked: true, beginAtZero: true, ticks: { color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(51,65,85,0.35)' } }
+              }
+            }
+          });
+        }
+
+        const askPts = Number(summary.askPoints || 0);
+        const ansPts = Number(summary.answerPoints || 0);
+        if (askPts + ansPts > 0) {
+          pointsMixChart = new Chart(mixCanvas, {
+            type: 'doughnut',
+            data: {
+              labels: ['提問點', '回答點'],
+              datasets: [{
+                data: [askPts, ansPts],
+                backgroundColor: ['rgba(99, 102, 241, 0.85)', 'rgba(20, 184, 166, 0.85)'],
+                borderColor: ['#312e81', '#0f766e'],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom', labels: { color: '#cbd5e1', boxWidth: 12, font: { size: 11 } } }
+              }
+            }
+          });
+        }
+      }
+
       function renderPointsReport(data) {
         const summaryEl = document.getElementById('points-summary');
         const rangeEl = document.getElementById('points-range');
         const rowsEl = document.getElementById('points-rows');
+        const insightsEl = document.getElementById('points-insights');
         const summary = data.summary || {};
         const rows = data.rows || [];
         const from = data.dateFrom || '';
@@ -559,6 +817,11 @@
         rangeEl.textContent = from || to
           ? '區間：' + (from || '最早') + ' ～ ' + (to || '最新')
           : '區間：全部時間';
+
+        renderPointsPodium(rows);
+        if (insightsEl) insightsEl.innerHTML = buildPointsInsights(summary, rows).join('');
+        renderPointsCharts(summary, rows);
+
         if (!rows.length) {
           rowsEl.innerHTML = '<tr><td colspan="9" class="empty">此區間尚無點數紀錄。</td></tr>';
           return;
@@ -626,6 +889,9 @@
         if (!data?.ok) throw new Error(data?.error || '更新失敗');
         await loadList();
         if (activeTab === 'pending') await loadAll();
+        if (action === 'approved') {
+          document.getElementById('msg').textContent = '已核准並認列點數，試算表將於每日 08:00 依核准日期匯入';
+        }
       }
 
       async function setQuality(kind, id, enabled) {
@@ -676,6 +942,10 @@
         loadList().catch(function (e) {
           document.getElementById('msg').textContent = e.message;
         });
+      });
+
+      document.getElementById('btn-sheets-sync').addEventListener('click', function () {
+        triggerSheetsSync(false);
       });
 
       document.querySelectorAll('.tab-btn').forEach(function (btn) {
