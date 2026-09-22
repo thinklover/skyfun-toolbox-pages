@@ -117,7 +117,7 @@
     <div class="flex flex-wrap items-center gap-3">
       <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
       <button type="button" id="btn-sheets-sync" class="text-sm px-3 py-1.5 rounded-lg bg-indigo-700 text-white font-bold">手動同步試算表</button>
-      <p class="text-xs text-slate-500 w-full">點數：小組長按「通過」才認列 · 試算表：每日 08:00 依核准日期匯入（可手動同步）</p>
+      <p class="text-xs text-slate-500 w-full">點數：小組長按「通過」才認列 · 試算表同步請用試算表選單「行政 QA」（立即同步／安裝每天 08:00）。後台按鈕需有效的 Apps Script 網路應用程式網址。</p>
       <p class="text-sm text-slate-400" id="count">—</p>
       <p class="text-sm text-teal-300" id="reviewer-info">—</p>
     </div>
@@ -255,19 +255,25 @@
 
       async function triggerSheetsSync(silent) {
         const url = sheetsSyncUrl();
+        const sheetHint =
+          '請改開試算表 → 選單「行政 QA → 立即同步點數（手動）」。若 8:00 沒跑，再點「安裝每天早上 8:00 自動同步」。Apps Script 執行記錄若有紅字，把錯誤貼給我。';
         if (!url) {
-          if (!silent) {
-            document.getElementById('msg').textContent =
-              '尚未設定手動同步網址。請先在試算表部署 Apps Script「網路應用程式」，把 URL 填進 js/supabase-config.js 的 SKYFUN_QA_SHEETS_SYNC_URL；或改用試算表選單「行政 QA → 立即同步點數（手動）」。每日 08:00 仍會自動同步。';
-          }
+          if (!silent) document.getElementById('msg').textContent = '後台手動同步網址未設定。' + sheetHint;
           return null;
         }
         try {
-          await fetch(url, { method: 'POST', mode: 'no-cors', body: '{}' });
-          if (!silent) document.getElementById('msg').textContent = '已手動觸發試算表同步（依核准日期寫入日報表）';
+          // Web App 若已失效會開到 Google 404；真正可靠的是試算表內建選單
+          const w = window.open(url, '_blank', 'noopener,noreferrer');
+          if (!w) {
+            await fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-store' });
+          }
+          if (!silent) {
+            document.getElementById('msg').textContent =
+              '已嘗試開啟同步連結。若出現「無法開啟」或試算表沒更新：' + sheetHint;
+          }
           return true;
         } catch (e) {
-          if (!silent) document.getElementById('msg').textContent = '試算表同步觸發失敗：' + (e.message || '未知錯誤');
+          if (!silent) document.getElementById('msg').textContent = '後台觸發失敗。' + sheetHint;
           return false;
         }
       }
