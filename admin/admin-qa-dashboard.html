@@ -6,7 +6,7 @@
   <title>行政 QA 檢核 — 星鴻工具箱</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../js/supabase-config.js"></script>
+  <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
   <style>
     body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
     .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
@@ -318,8 +318,13 @@
 
       function reviewPassedMeta(status, reviewedAt) {
         if (!reviewedAt) return '';
-        if (status === 'approved') return ' · 檢核通過 ' + esc(fmt(reviewedAt));
-        if (status === 'rejected') return ' · 檢核 ' + esc(fmt(reviewedAt));
+        const t = esc(fmt(reviewedAt));
+        if (status === 'approved') {
+          return '<div class="mt-1 text-sm font-semibold text-emerald-300">檢核通過時間：' + t + '</div>';
+        }
+        if (status === 'rejected') {
+          return '<div class="mt-1 text-sm font-semibold text-rose-300">檢核時間：' + t + '</div>';
+        }
         return '';
       }
 
@@ -502,8 +507,8 @@
             '<div class="all-row-main">' +
             '<div class="item-title">' + esc(q.title) + ' ' + statusBadge(q.askReviewStatus) + qualityBadge('question', q.isQuality) + qualityBadge('answer', q.hasQualityAnswer) + '</div>' +
             '<div class="item-meta">' + esc(q.askerName) + ' · ' + esc(fmt(q.createdAt)) +
-            reviewPassedMeta(q.askReviewStatus, q.askReviewedAt) +
             ' · 回答 ' + esc(q.answerCount || 0) + '</div>' +
+            reviewPassedMeta(q.askReviewStatus, q.askReviewedAt) +
             (q.body ? '<div class="item-body">' + esc(q.body) + '</div>' : '') +
             noteBox(q.askReviewNote) +
             '</div>' +
@@ -529,9 +534,9 @@
           '<div class="flex flex-wrap justify-between gap-2 mb-2">' +
           '<strong class="text-teal-300">' + esc(q.title) + '</strong>' +
           '<button type="button" class="act-btn act-view" id="btn-close-detail">關閉</button></div>' +
-          '<div class="item-meta">' + esc(q.askerName) + ' · ' + esc(fmt(q.createdAt)) +
-          reviewPassedMeta(q.askReviewStatus, q.askReviewedAt) +
+          '<div class="item-meta">' + esc(q.askerName) + ' · 送出 ' + esc(fmt(q.createdAt)) +
           ' · ' + statusBadge(q.askReviewStatus) + qualityBadge('question', q.isQuality) + '</div>' +
+          reviewPassedMeta(q.askReviewStatus, q.askReviewedAt) +
           '<div class="item-body mt-2">' + esc(q.body || '（無補充）') + '</div>' +
           attachmentsHtml(q.images, q.files) +
           noteBox(q.askReviewNote) +
@@ -540,9 +545,9 @@
           (answers.length ? answers.map(function (a) {
             return (
               '<div class="item mb-2' + (a.isQuality ? ' item--quality' : '') + '">' +
-              '<div class="item-meta">' + esc(a.answererName) + ' · ' + esc(fmt(a.createdAt)) +
-              reviewPassedMeta(a.reviewStatus, a.reviewedAt) +
+              '<div class="item-meta">' + esc(a.answererName) + ' · 送出 ' + esc(fmt(a.createdAt)) +
               ' · ' + statusBadge(a.reviewStatus) + qualityBadge('answer', a.isQuality) + '</div>' +
+              reviewPassedMeta(a.reviewStatus, a.reviewedAt) +
               '<div class="item-body">' + esc(a.body) + '</div>' +
               attachmentsHtml(a.images, a.files) +
               noteBox(a.reviewNote) +
