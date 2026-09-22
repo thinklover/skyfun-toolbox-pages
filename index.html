@@ -217,6 +217,98 @@
             background: #fff1f2;
             color: #be123c;
         }
+        .term-handover-overlay {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 10050 !important;
+            display: none;
+            align-items: stretch;
+            justify-content: center;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.58);
+        }
+        .term-handover-overlay.is-open {
+            display: flex;
+        }
+        .term-handover-dialog {
+            width: min(36rem, 100%);
+            max-height: min(96dvh, 52rem);
+            margin: auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 1.25rem;
+            background: #fff;
+            border: 1px solid #c7d2fe;
+            box-shadow: 0 24px 64px rgba(15, 23, 42, 0.35);
+            padding: 1.25rem 1.35rem 1.4rem;
+        }
+        body.term-handover-open {
+            overflow: hidden !important;
+        }
+        #term-case-save-btn.need-save {
+            outline: 3px solid #f59e0b;
+            animation: term-save-pulse 1.4s ease-in-out infinite;
+        }
+        @keyframes term-save-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, .55); }
+            50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+        }
+        .term-handover-launch {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: center;
+            gap: 0.7rem;
+            min-height: 3.6rem;
+            padding: 0.85rem 1rem;
+            appearance: none;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 1.1rem;
+            border: 3px solid #9a3412;
+            background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%);
+            color: #fff7ed;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            box-shadow: 0 10px 28px rgba(234, 88, 12, 0.38);
+            text-align: left;
+        }
+        .term-handover-launch:hover {
+            filter: brightness(1.05);
+            background: linear-gradient(180deg, #fdba74 0%, #c2410c 100%);
+        }
+        .term-handover-launch:active {
+            transform: translateY(1px);
+        }
+        .term-handover-launch-ico {
+            font-size: 1.7rem;
+            line-height: 1;
+        }
+        .term-handover-launch-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 0.05rem;
+        }
+        .term-handover-launch-copy strong {
+            font-size: 1.25rem;
+            line-height: 1.15;
+        }
+        .term-handover-launch-copy small {
+            font-size: 0.78rem;
+            font-weight: 800;
+            opacity: 0.95;
+        }
+        @media (max-width: 640px) {
+            .term-handover-launch {
+                position: sticky;
+                top: 4.1rem;
+                z-index: 35;
+                min-height: 4rem;
+            }
+            .term-handover-launch-copy strong {
+                font-size: 1.35rem;
+            }
+        }
         .depref-date-picker {
             position: absolute;
             width: 0;
@@ -6003,7 +6095,7 @@
             </button>
             <div class="bg-gradient-to-br from-indigo-50 via-white to-slate-50 rounded-[2rem] p-6 border border-indigo-200 shadow-lg">
                 <h2 class="text-3xl font-bold text-slate-900 mb-2 text-center">📄 催收解約專區</h2>
-                <p class="text-slate-600 mb-6 text-center max-w-2xl mx-auto leading-relaxed">欠租催收工具（文件產生器、期程試算、強制執行、<strong>調解流程圖</strong>）與包租／轉租解約退還試算；下方可展開「包租約解約文件」清單與點交流程。</p>
+                <p class="text-slate-600 mb-6 text-center max-w-2xl mx-auto leading-relaxed">欠租催收工具與解約流程：先在下方<strong>查地址</strong>，看房東／房客後再選包租或轉租試算、暫存，或開<strong>現場點交</strong>。</p>
                 <section class="mb-6 rounded-2xl border-2 border-violet-200 bg-gradient-to-b from-violet-50/90 to-white p-4 md:p-5 shadow-md">
                     <h3 class="text-lg md:text-xl font-black text-violet-950 text-center mb-4">催收工具</h3>
                     <div class="mb-5">
@@ -6024,16 +6116,80 @@
                         </div>
                     </div>
                 </section>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button onclick="showPage('business-bao-deposit-refund')" class="btn btn-block btn-center btn-xl tone-indigo">
-                        🧮 包租解約退還金額試算
-                    </button>
-                    <button onclick="showPage('business-deposit-refund')" class="btn btn-block btn-center btn-xl tone-indigo">
-                        🧮 轉租解約退還金額試算<br/>（代租代管適用）
-                    </button>
+                <div class="rounded-[1.25rem] border-2 border-emerald-300/90 bg-gradient-to-br from-emerald-50/80 via-white to-indigo-50/40 p-4 md:p-6 space-y-4 shadow-sm mb-6">
+                    <h3 class="text-lg font-black text-emerald-950 text-center">解約案件 · 先查地址</h3>
+                    <p class="text-xs text-slate-600 text-center leading-relaxed max-w-xl mx-auto">輸入租賃地址後查詢，會同時顯示<strong>房東</strong>與<strong>房客</strong>。再決定先做包租或轉租解約、暫存，或開現場點交。</p>
+                    <p class="text-sm md:text-base font-bold text-center leading-relaxed max-w-xl mx-auto text-orange-600">現場點交也可透過<strong class="text-orange-700">星鴻 - 管理部小助手(工具箱)官方帳號</strong>快速開啟工具箱，進入現場點交。</p>
+                    <div class="flex flex-col sm:flex-row gap-2 sm:items-end">
+                        <div class="flex-1 space-y-1">
+                            <label class="block text-slate-700 font-semibold text-sm" for="term-hub-address">租賃地址<span class="text-rose-600">＊</span></label>
+                            <input id="term-hub-address" type="text" autocomplete="street-address" placeholder="路街巷弄號，與公司系統相同"
+                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                        </div>
+                        <button type="button" id="term-hub-lookup-btn" class="btn tone-emerald px-5 py-3 font-bold shrink-0" disabled>查詢</button>
+                    </div>
+                    <p id="term-hub-status" class="text-sm text-slate-600 leading-relaxed">請先填租賃地址。</p>
+                    <div id="term-hub-result" class="hidden space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="rounded-xl border border-indigo-200 bg-white/95 p-4 space-y-2">
+                                <div class="text-sm font-bold text-indigo-950">房東（包租）</div>
+                                <div id="term-hub-landlord-list" class="space-y-2"></div>
+                                <p id="term-hub-landlord-empty" class="hidden text-xs text-slate-500">此地址查無包租房東</p>
+                            </div>
+                            <div class="rounded-xl border border-violet-200 bg-white/95 p-4 space-y-2">
+                                <div class="text-sm font-bold text-violet-950">房客（轉租）</div>
+                                <div id="term-hub-tenant-list" class="space-y-2"></div>
+                                <p id="term-hub-tenant-empty" class="hidden text-xs text-slate-500">此地址查無轉租房客</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2 justify-center">
+                            <button type="button" id="term-hub-open-bao" class="btn tone-indigo px-4 py-2.5 font-bold" disabled>包租解約</button>
+                            <button type="button" id="term-hub-open-zhuan" class="btn tone-indigo px-4 py-2.5 font-bold" disabled>轉租解約</button>
+                            <button type="button" id="term-hub-save-draft" class="btn tone-emerald px-4 py-2.5 font-bold" disabled>暫存案件</button>
+                        </div>
+                        <p id="term-hub-draft-hint" class="text-[11px] text-slate-500 text-center leading-relaxed hidden">已暫存。可稍後從下方「暫存案件」載入，或進試算頁繼續。</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 sm:items-center pt-1 border-t border-emerald-200/80">
+                        <label class="text-sm font-semibold text-slate-700 shrink-0" for="term-hub-case-list">暫存案件</label>
+                        <select id="term-hub-case-list" class="flex-1 px-3 py-2 border-2 border-slate-200 rounded-xl bg-white text-sm">
+                            <option value="">— 選擇暫存 —</option>
+                        </select>
+                        <button type="button" id="term-hub-handover-btn" class="btn tone-slate-mid px-4 py-2.5 font-bold shrink-0">📍 現場點交</button>
+                        <button type="button" id="term-hub-delete-btn" class="btn tone-rose px-4 py-2.5 shrink-0">刪除</button>
+                    </div>
+                    <div id="term-hub-case-parties" class="hidden rounded-xl border-2 border-indigo-200 bg-indigo-50/70 p-4 space-y-3">
+                        <div class="text-sm font-bold text-indigo-950">此暫存案件對象</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                            <div class="rounded-lg bg-white border border-indigo-100 px-3 py-2">
+                                <div class="text-[11px] text-slate-500 font-semibold">房東</div>
+                                <div id="term-hub-case-landlord" class="font-bold text-slate-900">—</div>
+                            </div>
+                            <div class="rounded-lg bg-white border border-violet-100 px-3 py-2">
+                                <div class="text-[11px] text-slate-500 font-semibold">房客</div>
+                                <div id="term-hub-case-tenant" class="font-bold text-slate-900">—</div>
+                            </div>
+                        </div>
+                        <p id="term-hub-case-addr" class="text-xs text-slate-600 leading-relaxed"></p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            <button type="button" id="term-hub-case-open-bao" class="btn tone-indigo px-4 py-2.5 font-bold w-full">包租解約（帶入資料）</button>
+                            <button type="button" id="term-hub-case-open-zhuan" class="btn tone-indigo px-4 py-2.5 font-bold w-full">轉租解約（帶入資料）</button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">選暫存後可直接開包租／轉租解約帶入資料，或點「現場點交」填水電／屋況。</p>
                 </div>
-                <div class="mt-4 text-center">
-                    <a href="./%E5%85%AC%E5%91%8A%20%E6%88%BF%E5%B1%8B%E7%A7%9F%E8%B3%83%E7%B5%82%E6%AD%A2%E5%8D%94%E8%AD%B0%E6%9B%B8_%E9%BB%9E%E4%BA%A4%E6%B8%85%E5%96%AE%E6%9A%A8%E8%B2%BB%E7%94%A8%E7%B5%90%E7%AE%97%E8%A1%A8%E6%94%B9%E7%89%88.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">📄 房屋租賃終止協議書（點交清單暨費用結算表改版）</a>
+                <details class="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                    <summary class="cursor-pointer text-sm font-semibold text-slate-700 select-none">手動進入試算頁（進階）</summary>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                        <button type="button" onclick="showPage('business-bao-deposit-refund')" class="btn btn-block btn-center btn-xl tone-indigo">
+                            🧮 包租解約退還金額試算
+                        </button>
+                        <button type="button" onclick="showPage('business-deposit-refund')" class="btn btn-block btn-center btn-xl tone-indigo">
+                            🧮 轉租解約退還金額試算<br/>（代租代管適用）
+                        </button>
+                    </div>
+                </details>
+                <div class="mt-2 text-center">
+                    <a href="./docs/forms/termination-agreement.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">📄 空白解約單範本</a>
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-indigo-200/70">
@@ -6278,15 +6434,54 @@
                     <p class="text-slate-600 text-sm max-w-2xl mx-auto leading-relaxed">以「總押金」為起點，將水電瓦斯、其他扣款與欠繳（含帳期欠租試算、提前解約違約金）自押金沖抵；<span class="font-semibold text-slate-800">合約起租日之「幾號」即每月繳租日</span>，供帳期核對與溢繳週期對齊。若<strong>有溢繳應退</strong>，於④選「有」後依實際解約日試算（已填起租日者依<strong>繳租週期</strong>天數分攤；未填則依解約月曆法天數備援）併入淨額，選「無」則不計。試算結果僅供內部核對，實際仍以契約、收據及公司流程為準。</p>
                 </div>
 
-                <div class="rounded-[1.25rem] border-2 border-indigo-200/90 bg-gradient-to-br from-indigo-50/90 via-white to-slate-50 p-4 md:p-6 space-y-5 shadow-sm">
-                    <h3 class="text-lg font-black text-indigo-950 flex flex-wrap items-center gap-2">⓪ 解約日與押金、月租</h3>
-                    <p class="text-xs text-slate-600 leading-relaxed">規則摘要：<span class="font-semibold text-slate-800">實際解約日若早於「告知解約日＋一個曆法月−1日」</span>，加扣 <span class="font-semibold text-slate-800">一個月租金</span>作提前解約違約金（例：告知 5/13 → 須 ≥ 6/12 解約才免扣）。<span class="font-semibold text-slate-800">合約起租日之「幾號」即為每月繳租日</span>，③ 帳期欠租與 ④ 溢繳週期對齊皆以此為準。④須選「有溢繳」才會把溢繳應退併入淨額。</p>
-
+                <div class="rounded-[1.25rem] border-2 border-emerald-300/90 bg-gradient-to-br from-emerald-50/80 via-white to-indigo-50/40 p-4 md:p-6 space-y-5 shadow-sm no-print">
+                    <h3 class="text-lg font-black text-emerald-950 flex flex-wrap items-center gap-2">📋 案件資料</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">資料由<strong>催收解約專區</strong>帶入。請補填日期等欄位後點<strong>暫存</strong>；可先暫存再開機繼續。現場點交請回專區入口。</p>
+                    <input type="hidden" id="term-case-active-id" value="" />
+                    <input type="hidden" id="term-case-erp-json" value="" />
+                    <input type="hidden" id="term-case-match-no" value="" />
+                    <input type="hidden" id="term-case-lease-start" value="" />
+                    <input type="hidden" id="term-case-handover-date" value="" />
+                    <input type="hidden" id="term-case-handover-water" value="" />
+                    <input type="hidden" id="term-case-handover-electric" value="" />
+                    <input type="hidden" id="term-case-handover-gas" value="" />
+                    <input type="hidden" id="term-case-handover-util-payer" value="" />
+                    <input type="hidden" id="term-case-handover-water-meter" value="" />
+                    <input type="hidden" id="term-case-handover-electric-meter" value="" />
+                    <input type="hidden" id="term-case-handover-gas-meter" value="" />
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-2 sm:col-span-2">
+                            <label class="block text-slate-700 font-semibold text-sm" for="term-case-address">租賃地址<span class="text-rose-600">＊</span></label>
+                            <input id="term-case-address" type="text" autocomplete="street-address" placeholder="由專區帶入"
+                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-slate-700 font-semibold text-sm" for="term-case-office-id">營業處／分公司<span class="text-rose-600">＊</span></label>
+                            <select id="term-case-office-id" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-sm font-semibold text-slate-800">
+                                <option value="hq">企業總部</option>
+                            </select>
+                            <p id="term-case-office-hint" class="text-[11px] text-slate-500 leading-relaxed">解約單甲方（公司）地址／電話依此營業處帶入。</p>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-slate-700 font-semibold text-sm" for="term-case-tenant-name">房客姓名</label>
+                            <input id="term-case-tenant-name" type="text" autocomplete="name" placeholder="由專區帶入"
+                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                        </div>
+                    </div>
                     <div class="rounded-xl border border-indigo-200 bg-white/95 p-4 space-y-3">
-                        <div class="text-sm font-bold text-indigo-900">告知解約日、實際解約日與合約起租日</div>
+                        <div class="text-sm font-bold text-indigo-900">合約起租日、告知解約日與實際解約日</div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="space-y-2">
-                                <label class="block text-slate-700 font-semibold text-sm">告知解約日</label>
+                                <label class="block text-slate-700 font-semibold text-sm">合約起租日</label>
+                                <div class="depref-date-wrap">
+                                    <input id="depref-lease-start-date" type="text" inputmode="numeric" autocomplete="off" placeholder="由專區帶入" lang="zh-TW"
+                                           class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                                    <button type="button" class="depref-date-picker-btn" data-picker-for="depref-lease-start-date" aria-label="以日曆選日期">選日期</button>
+                                    <input type="date" class="depref-date-picker" data-picker-for="depref-lease-start-date" tabindex="-1" aria-hidden="true" />
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm">告知解約日<span class="text-rose-600">＊</span></label>
                                 <div class="depref-date-wrap">
                                     <input id="depref-notice-date" type="text" inputmode="numeric" autocomplete="off" placeholder="例：115/08/23" lang="zh-TW"
                                            class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
@@ -6295,7 +6490,7 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <label class="block text-slate-700 font-semibold text-sm">實際解約日</label>
+                                <label class="block text-slate-700 font-semibold text-sm">實際解約日<span class="text-rose-600">＊</span></label>
                                 <div class="depref-date-wrap">
                                     <input id="depref-exit-full-date" type="text" inputmode="numeric" autocomplete="off" placeholder="例：115/08/23" lang="zh-TW"
                                            class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
@@ -6303,24 +6498,103 @@
                                     <input type="date" class="depref-date-picker" data-picker-for="depref-exit-full-date" tabindex="-1" aria-hidden="true" />
                                 </div>
                             </div>
-                            <div class="space-y-2">
-                                <label class="block text-slate-700 font-semibold text-sm">合約起租日</label>
-                                <div class="depref-date-wrap">
-                                    <input id="depref-lease-start-date" type="text" inputmode="numeric" autocomplete="off" placeholder="例：115/08/23" lang="zh-TW"
-                                           class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
-                                    <button type="button" class="depref-date-picker-btn" data-picker-for="depref-lease-start-date" aria-label="以日曆選日期">選日期</button>
-                                    <input type="date" class="depref-date-picker" data-picker-for="depref-lease-start-date" tabindex="-1" aria-hidden="true" />
-                                </div>
-                            </div>
                         </div>
-                        <p class="text-[11px] text-slate-500">日期請填<strong>民國年</strong>，例：115/08/23；可手動輸入，或點右側<strong>選日期</strong>按鈕（選完自動換算民國年）</p>
+                        <p class="text-[11px] text-slate-500">日期請填<strong>民國年</strong>，例：115/08/23；可手動輸入，或點右側<strong>選日期</strong>按鈕。若同址已有包租暫存，告知／實際解約日會自動帶入，仍可再改。</p>
+                        <div id="depref-payment-brief" class="hidden rounded-lg border border-indigo-100 bg-indigo-50/70 px-3 py-2.5 space-y-1"></div>
                         <p id="depref-lease-rent-due-hint" class="text-[11px] text-indigo-900/90 font-semibold leading-relaxed"></p>
                         <p id="depref-notice-rule-hint" class="text-[11px] text-indigo-900 font-semibold leading-relaxed"></p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm" for="term-case-reason">解約原因（今乙方因）<span class="text-rose-600">＊</span></label>
+                                <select id="term-case-reason" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-sm font-semibold text-slate-800">
+                                    <option value="">— 請選擇解約原因 —</option>
+                                </select>
+                            </div>
+                            <div id="term-case-reason-note-wrap" class="space-y-2 hidden">
+                                <label class="block text-slate-700 font-semibold text-sm" for="term-case-reason-note">其他原因說明</label>
+                                <input id="term-case-reason-note" type="text" maxlength="80" placeholder="上面沒有出現的原因"
+                                       class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                            </div>
+                            <input type="hidden" id="term-case-bao-to-mgmt" value="no" />
+                        </div>
                     </div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <button type="button" id="term-case-save-btn" class="btn tone-slate-mid px-4 py-2.5 font-bold">暫存</button>
+                        <button type="button" id="term-case-pdf-btn" class="btn tone-emerald px-4 py-2.5 font-bold">下載已填解約單</button>
+                    </div>
+                    <p id="term-case-pdf-status" class="text-sm text-slate-600 leading-relaxed"></p>
+                    <p id="term-case-save-hint" class="hidden text-sm font-bold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed">有未儲存變更，請點「暫存」。同一帳號用手機登入就能看到。</p>
+                    <p id="term-case-lookup-status" class="text-sm text-slate-600 leading-relaxed">請確認帶入資料後補填日期，並點「暫存」。</p>
+                    <div id="term-case-erp-summary" class="hidden rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-1"></div>
+                    <details class="toolbox-details rounded-xl border border-slate-200 bg-white/95 p-4 space-y-3">
+                        <summary class="flex items-center justify-between gap-2 text-sm font-bold text-slate-900 cursor-pointer list-none">
+                            <span>甲乙方與簽約日（點開可改）</span>
+                            <span class="acc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <p class="text-[11px] text-slate-500 leading-relaxed mt-3">甲方為公司（星鴻股份有限公司），地址／電話依上方所選<strong>營業處</strong>帶入。簽約日取自秘書管理「合約審核」。乙方為房客。</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm">簽約日</label>
+                                <div class="depref-date-wrap">
+                                    <input id="term-case-sign-date" type="text" inputmode="numeric" autocomplete="off" placeholder="例：114/12/17" lang="zh-TW"
+                                           class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                                    <button type="button" class="depref-date-picker-btn" data-picker-for="term-case-sign-date" aria-label="以日曆選日期">選日期</button>
+                                    <input type="date" class="depref-date-picker" data-picker-for="term-case-sign-date" tabindex="-1" aria-hidden="true" />
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm" for="term-case-tenant-id">乙方身分證字號</label>
+                                <input id="term-case-tenant-id" type="text" maxlength="20" placeholder="查詢後帶入"
+                                       class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm" for="term-case-tenant-phone">乙方電話</label>
+                                <input id="term-case-tenant-phone" type="text" maxlength="20" placeholder="查詢後帶入"
+                                       class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                            </div>
+                        </div>
+                        <input type="hidden" id="term-case-lease-end" value="" />
+                        <p id="term-case-company-party-line" class="text-xs text-slate-600">甲方：星鴻股份有限公司　統編 85103034　台北市萬華區中華路一段106號　(02) 7755-2669</p>
+                    </details>
 
-                    <div class="rounded-xl border border-violet-200/90 bg-white/95 p-4 space-y-4">
-                        <div class="text-sm font-bold text-violet-950">押金與月租</div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <details class="toolbox-details rounded-xl border border-amber-200 bg-white/95 p-4 space-y-3">
+                        <summary class="flex items-center justify-between gap-2 text-sm font-bold text-amber-950 cursor-pointer list-none">
+                            <span>退還帳戶（點開可改）</span>
+                            <span class="acc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <p class="text-[11px] text-slate-500 leading-relaxed mt-3">查詢時會從公司「房客管理」明細帶入<strong>房客帳戶</strong>與存摺封面（姓名＋身分證比對）。下載解約單會套印帳戶；點交前初稿不填「押租金尚剩餘」數字，點交完成後再下載完整版。簽立本票在<strong>現場點交</strong>填寫。</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="space-y-1">
+                                <label class="block text-xs font-semibold text-slate-600" for="term-case-bank-name">銀行</label>
+                                <input id="term-case-bank-name" type="text" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="block text-xs font-semibold text-slate-600" for="term-case-bank-branch">分行</label>
+                                <input id="term-case-bank-branch" type="text" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="block text-xs font-semibold text-slate-600" for="term-case-bank-account-name">戶名</label>
+                                <input id="term-case-bank-account-name" type="text" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm" />
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-slate-600" for="term-case-bank-account-no">帳號</label>
+                            <input id="term-case-bank-account-no" type="text" inputmode="numeric" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm" />
+                        </div>
+                        <input type="hidden" id="term-case-passbook-json" value="" />
+                        <div id="term-case-passbook-wrap" class="hidden rounded-lg border border-amber-100 bg-amber-50/50 p-3 space-y-2">
+                            <div class="text-xs font-semibold text-amber-950">存摺封面（下載解約單時會附在最後一頁）</div>
+                            <img id="term-case-passbook-preview" alt="存摺封面預覽" class="max-h-40 max-w-full rounded-md border border-amber-200 object-contain bg-white" />
+                            <p id="term-case-passbook-meta" class="text-[11px] text-slate-500"></p>
+                        </div>
+                    </details>
+
+                    <details class="toolbox-details rounded-xl border border-violet-200/90 bg-white/95 p-4 space-y-4">
+                        <summary class="flex items-center justify-between gap-2 text-sm font-bold text-violet-950 cursor-pointer list-none">
+                            <span>押金與月租（點開可改）</span>
+                            <span class="acc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
                             <div class="space-y-2">
                                 <label class="block text-slate-700 font-semibold text-sm">月租金（NT$）</label>
                                 <input id="depref-rent" type="number" inputmode="numeric" min="0" step="1" placeholder="例如 18000"
@@ -6341,8 +6615,8 @@
                                        class="depref-in w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-200" />
                             </div>
                             <div class="space-y-2 sm:col-span-2">
-                                <label class="block text-slate-700 font-semibold text-sm">或直接填寫「契約總押金」（有填則以此為準，不再用月租×月數）</label>
-                                <input id="depref-deposit-override" type="number" inputmode="numeric" min="0" step="1" placeholder="空白＝用月租金 × 押金月數"
+                                <label class="block text-slate-700 font-semibold text-sm">契約總押金（以合約為準；有填則不再用月租×月數）</label>
+                                <input id="depref-deposit-override" type="number" inputmode="numeric" min="0" step="1" placeholder="查約後自動帶入契約押金"
                                        class="depref-in w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-200" />
                             </div>
                         </div>
@@ -6350,7 +6624,7 @@
                             <span class="text-sm font-bold text-slate-700">試算用總押金</span>
                             <span id="depref-deposit-total-display" class="text-xl font-black text-violet-900 tabular-nums">NT$ 0</span>
                         </div>
-                    </div>
+                    </details>
                 </div>
 
                 <div class="rounded-[1.25rem] border border-sky-200 bg-sky-50/50 p-4 md:p-5 space-y-4">
@@ -6395,9 +6669,12 @@
                     </div>
                 </div>
 
-                <div class="rounded-[1.25rem] border border-rose-200 bg-rose-50/40 p-4 md:p-5 space-y-4">
-                    <h3 class="text-lg font-black text-rose-950 flex items-center gap-2">③ 欠繳（帳期試算，自押金沖抵）</h3>
-                    <p class="text-xs text-slate-600 leading-relaxed">欠租金額由下方<strong>欠租帳期試算</strong>產生；每月繳租日為 <span class="font-semibold text-slate-800">⓪ 合約起租日之「幾號」</span>，與首次欠繳繳租日不一致時，摘要會提醒核對。</p>
+                <details class="toolbox-details rounded-[1.25rem] border border-rose-200 bg-rose-50/40 p-4 md:p-5 space-y-4">
+                    <summary class="flex items-center justify-between gap-2 text-lg font-black text-rose-950 cursor-pointer list-none">
+                        <span>③ 欠繳（帳期試算，點開可改）</span>
+                        <span class="acc-chevron" aria-hidden="true"></span>
+                    </summary>
+                    <p class="text-xs text-slate-600 leading-relaxed">欠租金額由下方<strong>欠租帳期試算</strong>產生；每月繳租日為 <span class="font-semibold text-slate-800">⓪ 合約起租日之「幾號」</span>，與首次欠繳繳租日不一致時，摘要會提醒核對。查詢後會自動帶入，一般不必展開。</p>
 
                     <div class="rounded-[1.35rem] border-2 border-rose-500 bg-gradient-to-br from-rose-100/90 via-white to-rose-50/90 p-5 md:p-7 shadow-lg shadow-rose-200/40 ring-1 ring-rose-300/60 space-y-5">
                         <div class="flex flex-wrap items-center gap-3">
@@ -6421,10 +6698,14 @@
                         <p id="depref-billing-arrears-summary" class="text-base md:text-lg text-rose-950 font-bold leading-relaxed min-h-[3.5rem] bg-white/80 rounded-xl border border-rose-200/80 px-4 py-3"></p>
                         <ul id="depref-billing-arrears-detail" class="hidden rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-2 space-y-0"></ul>
                     </div>
-                </div>
+                </details>
 
-                <div class="rounded-[1.25rem] border border-emerald-200 bg-emerald-50/50 p-4 md:p-5 space-y-4">
-                    <h3 class="text-lg font-black text-emerald-950 flex items-center gap-2">④ 溢繳應退（加回應退總額）</h3>
+                <details class="toolbox-details rounded-[1.25rem] border border-emerald-200 bg-emerald-50/50 p-4 md:p-5 space-y-4">
+                    <summary class="flex items-center justify-between gap-2 text-lg font-black text-emerald-950 cursor-pointer list-none">
+                        <span>④ 溢繳應退（點開可改）</span>
+                        <span class="acc-chevron" aria-hidden="true"></span>
+                    </summary>
+                    <h3 class="sr-only">④ 溢繳應退（加回應退總額）</h3>
                     <p class="text-xs text-slate-600 leading-relaxed">若本件<strong>有</strong>「已先收整月租金、提前解約應退之差額」，請選「有溢繳」；系統依最上方<strong>實際解約日</strong>試算（解約當日計入使用）：已填<strong>合約起租日</strong>者，以該起租日之「幾號」界定<strong>繳租週期</strong>，日租金＝月租÷該期天數，應退＝日租金×解約日次日起至該期末日天數；未填起租日則依解約月曆法天數比例備援。並以 <span class="font-semibold text-slate-800">合約起租日之每月繳租日</span>判斷是否為「同號對齊」不計應退。若<strong>無</strong>此情形，請選「無溢繳」，溢繳不計入淨額。</p>
 
                     <div class="rounded-xl border border-emerald-300/70 bg-white/90 p-4 space-y-3">
@@ -6473,7 +6754,7 @@
                                class="w-full px-4 py-3 border-2 border-emerald-300 rounded-xl bg-emerald-50/90 text-emerald-950 font-black text-lg tabular-nums cursor-default shadow-inner"
                                value="0" />
                     </div>
-                </div>
+                </details>
 
                 <div id="depref-result" class="rounded-[1.5rem] border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-white p-5 md:p-6 space-y-4">
                     <div class="font-extrabold text-purple-950 text-lg">試算結果</div>
@@ -6525,11 +6806,25 @@
                         <div id="depref-out-grand" class="text-2xl md:text-3xl font-black text-purple-900 tabular-nums">NT$ 0</div>
                         <p id="depref-out-note" class="text-xs text-slate-600 leading-relaxed"></p>
                     </div>
-                    <div class="no-print rounded-xl border border-purple-200 bg-white p-4 flex flex-col sm:flex-row flex-wrap gap-3 items-center justify-between">
-                        <p class="text-sm text-slate-700">試算結果請自行抄錄至公司結算表，或使用下方空白表單。</p>
-                        <div class="flex flex-wrap gap-2">
-                            <a href="./%E5%85%AC%E5%91%8A%20%E6%88%BF%E5%B1%8B%E7%A7%9F%E8%B3%83%E7%B5%82%E6%AD%A2%E5%8D%94%E8%AD%B0%E6%9B%B8_%E9%BB%9E%E4%BA%A4%E6%B8%85%E5%96%AE%E6%9A%A8%E8%B2%BB%E7%94%A8%E7%B5%90%E7%AE%97%E8%A1%A8%E6%94%B9%E7%89%88.pdf" target="_blank" rel="noopener noreferrer" class="btn tone-slate-mid px-4 py-2">開啟空白解約單</a>
+                    <div id="term-case-form-guide-panel" class="no-print rounded-xl border border-teal-200 bg-teal-50/40 p-4 space-y-3">
+                        <div class="text-sm font-bold text-teal-950">📋 解約單欄位對照（套印參考）</div>
+                        <p class="text-xs text-slate-600">依試算結果對照公司 Word／PDF 解約結算表佔位符；金額請再與契約、收據核對。</p>
+                        <div class="overflow-x-auto rounded-lg border border-teal-100 bg-white">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-teal-50/80 text-left text-slate-600">
+                                        <th class="px-3 py-2 font-semibold">解約單欄位</th>
+                                        <th class="px-3 py-2 font-semibold">試算值</th>
+                                        <th class="px-3 py-2 font-semibold">備註</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="term-case-form-guide"></tbody>
+                            </table>
                         </div>
+                    </div>
+                    <div class="no-print rounded-xl border border-purple-200 bg-white p-4 flex flex-col sm:flex-row flex-wrap gap-3 items-center justify-between">
+                        <p class="text-sm text-slate-700">可先印初稿帶去現場（會帶帳戶、不填剩餘押金數字）；點交完成後再下載完整版。</p>
+                        <a href="./docs/forms/termination-agreement.pdf" target="_blank" rel="noopener noreferrer" class="btn tone-slate-mid px-4 py-2">開啟空白解約單</a>
                     </div>
                 </div>
 
@@ -6549,17 +6844,59 @@
             <div class="bg-white rounded-[2rem] p-6 md:p-8 border border-purple-200 shadow-lg space-y-6">
                 <div class="text-center space-y-2">
                     <h2 class="text-3xl font-bold text-purple-900 mb-1">🧮 包租解約退還金額試算</h2>
+                    <p class="text-slate-600 text-sm max-w-2xl mx-auto leading-relaxed">流程與轉租解約相同，但<strong>甲方＝房東、乙方＝星鴻（房客）</strong>。查詢時會依房東姓名搜尋<strong>國泰虛擬帳號匯出備註</strong>帶入金流對照；欠繳／溢繳仍請人工核對後填入。退還帳戶帶入<strong>房客虛擬帳號</strong>（不附存摺封面）。</p>
                 </div>
 
-                <div class="rounded-[1.25rem] border-2 border-indigo-200/90 bg-gradient-to-br from-indigo-50/90 via-white to-slate-50 p-4 md:p-6 space-y-5 shadow-sm">
-                    <h3 class="text-lg font-black text-indigo-950 flex flex-wrap items-center gap-2">⓪ 解約日與押金、月租</h3>
-                    <p class="text-xs text-slate-600 leading-relaxed">規則摘要：<span class="font-semibold text-slate-800">實際解約日若早於「告知解約日＋一個曆法月−1日」</span>，加扣 <span class="font-semibold text-slate-800">一個月租金</span>作提前解約違約金（例：告知 5/13 → 須 ≥ 6/12 解約才免扣），金額為<strong>約定月租整額</strong>。<span class="font-semibold text-slate-800">合約起租日之「幾號」即為每月繳租日</span>，③ 帳期欠租與 ④ 溢繳週期對齊皆以此為準；③④試算用月租於包租件另依二代健保／預扣換算實匯金額（見頁首說明）。④須選「有溢繳」才會把溢繳應退併入「房東應退還公司」淨額。</p>
-
+                <div class="rounded-[1.25rem] border-2 border-emerald-300/90 bg-gradient-to-br from-emerald-50/80 via-white to-indigo-50/40 p-4 md:p-6 space-y-5 shadow-sm no-print">
+                    <h3 class="text-lg font-black text-emerald-950 flex flex-wrap items-center gap-2">📋 案件資料</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">資料由<strong>催收解約專區</strong>帶入。請補填日期等欄位後點<strong>暫存</strong>；可先暫存再開機繼續。現場點交請回專區入口。<strong>已依備註帶入虛擬帳號匯出紀錄（請核對）</strong>；欠繳／溢繳仍手動填入。</p>
+                    <input type="hidden" id="bao-term-active-id" value="" />
+                    <input type="hidden" id="bao-term-erp-json" value="" />
+                    <input type="hidden" id="bao-term-match-no" value="" />
+                    <input type="hidden" id="bao-term-lease-start" value="" />
+                    <input type="hidden" id="bao-term-handover-date" value="" />
+                    <input type="hidden" id="bao-term-handover-water" value="" />
+                    <input type="hidden" id="bao-term-handover-electric" value="" />
+                    <input type="hidden" id="bao-term-handover-gas" value="" />
+                    <input type="hidden" id="bao-term-handover-util-payer" value="" />
+                    <input type="hidden" id="bao-term-handover-water-meter" value="" />
+                    <input type="hidden" id="bao-term-handover-electric-meter" value="" />
+                    <input type="hidden" id="bao-term-handover-gas-meter" value="" />
+                    <input type="hidden" id="baoref-deposit-overpay-amt" value="0" />
+                    <input type="hidden" id="baoref-deposit-overpay-note" value="" />
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-2 sm:col-span-2">
+                            <label class="block text-slate-700 font-semibold text-sm" for="bao-term-address">租賃地址<span class="text-rose-600">＊</span></label>
+                            <input id="bao-term-address" type="text" autocomplete="street-address" placeholder="由專區帶入"
+                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-slate-700 font-semibold text-sm" for="bao-term-office-id">營業處／分公司<span class="text-rose-600">＊</span></label>
+                            <select id="bao-term-office-id" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-sm font-semibold text-slate-800">
+                                <option value="hq">企業總部</option>
+                            </select>
+                            <p id="bao-term-office-hint" class="text-[11px] text-slate-500 leading-relaxed">解約單乙方（公司）地址／電話依此營業處帶入。</p>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-slate-700 font-semibold text-sm" for="bao-term-landlord-name">房東姓名（出租人／甲方）</label>
+                            <input id="bao-term-landlord-name" type="text" autocomplete="name" placeholder="由專區帶入"
+                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                        </div>
+                    </div>
                     <div class="rounded-xl border border-indigo-200 bg-white/95 p-4 space-y-3">
-                        <div class="text-sm font-bold text-indigo-900">告知解約日、實際解約日與合約起租日</div>
+                        <div class="text-sm font-bold text-indigo-900">合約起租日、告知解約日與實際解約日</div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="space-y-2">
-                                <label class="block text-slate-700 font-semibold text-sm">告知解約日</label>
+                                <label class="block text-slate-700 font-semibold text-sm">合約起租日</label>
+                                <div class="depref-date-wrap">
+                                    <input id="baoref-lease-start-date" type="text" inputmode="numeric" autocomplete="off" placeholder="由專區帶入" lang="zh-TW"
+                                           class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                                    <button type="button" class="depref-date-picker-btn" data-picker-for="baoref-lease-start-date" aria-label="以日曆選日期">選日期</button>
+                                    <input type="date" class="depref-date-picker" data-picker-for="baoref-lease-start-date" tabindex="-1" aria-hidden="true" />
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm">告知解約日<span class="text-rose-600">＊</span></label>
                                 <div class="depref-date-wrap">
                                     <input id="baoref-notice-date" type="text" inputmode="numeric" autocomplete="off" placeholder="例：115/08/23" lang="zh-TW"
                                            class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
@@ -6568,7 +6905,7 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <label class="block text-slate-700 font-semibold text-sm">實際解約日</label>
+                                <label class="block text-slate-700 font-semibold text-sm">實際解約日<span class="text-rose-600">＊</span></label>
                                 <div class="depref-date-wrap">
                                     <input id="baoref-exit-full-date" type="text" inputmode="numeric" autocomplete="off" placeholder="例：115/08/23" lang="zh-TW"
                                            class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
@@ -6576,24 +6913,106 @@
                                     <input type="date" class="depref-date-picker" data-picker-for="baoref-exit-full-date" tabindex="-1" aria-hidden="true" />
                                 </div>
                             </div>
-                            <div class="space-y-2">
-                                <label class="block text-slate-700 font-semibold text-sm">合約起租日</label>
-                                <div class="depref-date-wrap">
-                                    <input id="baoref-lease-start-date" type="text" inputmode="numeric" autocomplete="off" placeholder="例：115/08/23" lang="zh-TW"
-                                           class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
-                                    <button type="button" class="depref-date-picker-btn" data-picker-for="baoref-lease-start-date" aria-label="以日曆選日期">選日期</button>
-                                    <input type="date" class="depref-date-picker" data-picker-for="baoref-lease-start-date" tabindex="-1" aria-hidden="true" />
-                                </div>
-                            </div>
                         </div>
-                        <p class="text-[11px] text-slate-500">日期請填<strong>民國年</strong>，例：115/08/23；可手動輸入，或點右側<strong>選日期</strong>按鈕（選完自動換算民國年）</p>
+                        <p class="text-[11px] text-slate-500">日期請填<strong>民國年</strong>，例：115/08/23</p>
                         <p id="baoref-lease-rent-due-hint" class="text-[11px] text-indigo-900/90 font-semibold leading-relaxed"></p>
                         <p id="baoref-notice-rule-hint" class="text-[11px] text-indigo-900 font-semibold leading-relaxed"></p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm" for="bao-term-reason">解約原因（出租人）<span class="text-rose-600">＊</span></label>
+                                <select id="bao-term-reason" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-sm font-semibold text-slate-800">
+                                    <option value="">— 請選擇解約原因 —</option>
+                                </select>
+                            </div>
+                            <div id="bao-term-reason-note-wrap" class="space-y-2 hidden">
+                                <label class="block text-slate-700 font-semibold text-sm" for="bao-term-reason-note">房客因素說明</label>
+                                <input id="bao-term-reason-note" type="text" maxlength="80" placeholder="請簡述房客因素"
+                                       class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                            </div>
+                            <input type="hidden" id="bao-term-bao-to-mgmt" value="no" />
+                        </div>
                     </div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <button type="button" id="bao-term-save-btn" class="btn tone-slate-mid px-4 py-2.5 font-bold">暫存</button>
+                        <button type="button" id="bao-term-pdf-btn" class="btn tone-emerald px-4 py-2.5 font-bold">下載已填解約單</button>
+                    </div>
+                    <p id="bao-term-pdf-status" class="text-sm text-slate-600 leading-relaxed"></p>
+                    <p id="bao-term-save-hint" class="hidden text-sm font-bold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed">有未儲存變更，請點「暫存」。</p>
+                    <p id="bao-term-lookup-status" class="text-sm text-slate-600 leading-relaxed">請確認帶入資料後補填日期，並點「暫存」。</p>
+                    <div id="bao-term-erp-summary" class="hidden rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-1"></div>
+                    <details class="toolbox-details rounded-xl border border-slate-200 bg-white/95 p-4 space-y-3">
+                        <summary class="flex items-center justify-between gap-2 text-sm font-bold text-slate-900 cursor-pointer list-none">
+                            <span>甲乙方與簽約日（點開可改）</span>
+                            <span class="acc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <p class="text-[11px] text-slate-500 leading-relaxed mt-3">進頁會自動帶入房東身分證／電話／通訊地址與簽約日；乙方為星鴻股份有限公司，地址／電話依上方所選<strong>營業處</strong>帶入。</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm">簽約日</label>
+                                <div class="depref-date-wrap">
+                                    <input id="bao-term-sign-date" type="text" inputmode="numeric" autocomplete="off" placeholder="例：114/12/17" lang="zh-TW"
+                                           class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                                    <button type="button" class="depref-date-picker-btn" data-picker-for="bao-term-sign-date" aria-label="以日曆選日期">選日期</button>
+                                    <input type="date" class="depref-date-picker" data-picker-for="bao-term-sign-date" tabindex="-1" aria-hidden="true" />
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm" for="bao-term-landlord-id">甲方（房東）身分證／統編</label>
+                                <input id="bao-term-landlord-id" type="text" maxlength="20" placeholder="進頁自動帶入"
+                                       class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-slate-700 font-semibold text-sm" for="bao-term-landlord-phone">甲方電話</label>
+                                <input id="bao-term-landlord-phone" type="text" maxlength="20" placeholder="進頁自動帶入"
+                                       class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-slate-700 font-semibold text-sm" for="bao-term-landlord-address">甲方通訊地址</label>
+                            <input id="bao-term-landlord-address" type="text" placeholder="房東通訊地址"
+                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                        </div>
+                        <input type="hidden" id="bao-term-lease-end" value="" />
+                        <p id="bao-term-company-party-line" class="text-xs text-slate-600">乙方：星鴻股份有限公司　統編 85103034　台北市萬華區中華路一段106號　(02) 7755-2669</p>
+                    </details>
 
-                    <div class="rounded-xl border border-violet-200/90 bg-white/95 p-4 space-y-4">
-                        <div class="text-sm font-bold text-violet-950">押金與月租</div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <details class="toolbox-details rounded-xl border border-amber-200 bg-white/95 p-4 space-y-3">
+                        <summary class="flex items-center justify-between gap-2 text-sm font-bold text-amber-950 cursor-pointer list-none">
+                            <span>退還帳戶（房客虛擬帳號，點開可改）</span>
+                            <span class="acc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <p class="text-[11px] text-slate-500 leading-relaxed mt-3">包租件退還押金匯入<strong>房客虛擬帳號</strong>（進頁自動帶入）。銀行固定<strong>國泰世華銀行 西門分行</strong>。不附存摺封面、不簽立本票。下載解約單會套印虛擬帳號；點交前初稿不填「押租金尚剩餘」數字。</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="space-y-1">
+                                <label class="block text-xs font-semibold text-slate-600" for="bao-term-bank-name">銀行／類型</label>
+                                <input id="bao-term-bank-name" type="text" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm" value="國泰世華銀行" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="block text-xs font-semibold text-slate-600" for="bao-term-bank-branch">分行</label>
+                                <input id="bao-term-bank-branch" type="text" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm" value="西門分行" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="block text-xs font-semibold text-slate-600" for="bao-term-bank-account-name">戶名</label>
+                                <input id="bao-term-bank-account-name" type="text" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm" value="星鴻股份有限公司" />
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-slate-600" for="bao-term-bank-account-no">虛擬帳號</label>
+                            <input id="bao-term-bank-account-no" type="text" inputmode="numeric" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm" />
+                        </div>
+                    </details>
+                </div>
+
+                <div class="rounded-[1.25rem] border-2 border-indigo-200/90 bg-gradient-to-br from-indigo-50/90 via-white to-slate-50 p-4 md:p-6 space-y-5 shadow-sm">
+                    <h3 class="text-lg font-black text-indigo-950 flex flex-wrap items-center gap-2">⓪ 解約日與押金、月租</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">規則摘要：<span class="font-semibold text-slate-800">實際解約日若早於「告知解約日＋一個曆法月−1日」</span>，加扣 <span class="font-semibold text-slate-800">一個月租金</span>作提前解約違約金。虛擬帳號匯出明細可作對照；金額欄位請<strong>核對後手動輸入</strong>。</p>
+
+                    <details class="toolbox-details rounded-xl border border-violet-200/90 bg-white/95 p-4 space-y-4">
+                        <summary class="flex items-center justify-between gap-2 text-sm font-bold text-violet-950 cursor-pointer list-none">
+                            <span>押金與月租（點開可改）</span>
+                            <span class="acc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
                             <div class="space-y-2">
                                 <label class="block text-slate-700 font-semibold text-sm">月租金（NT$）</label>
                                 <input id="baoref-rent" type="number" inputmode="numeric" min="0" step="1" placeholder="例如 18000"
@@ -6606,6 +7025,7 @@
                                     <input id="baoref-mgmt-fee" type="number" inputmode="numeric" min="0" step="1" disabled
                                            placeholder="每月管理費金額（NT$），與租金同繳入公司"
                                            class="baoref-in w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
+                                    <p class="text-[11px] text-slate-500 leading-relaxed">查約時月租／管理費依<strong>同址轉租約</strong>帶入（與轉租解約相同）；押金仍依<strong>包租約</strong>。</p>
                                 </div>
                             </div>
                             <div class="space-y-2">
@@ -6614,16 +7034,17 @@
                                        class="baoref-in w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-200" />
                             </div>
                             <div class="space-y-2 sm:col-span-2">
-                                <label class="block text-slate-700 font-semibold text-sm">或直接填寫「契約總押金」（有填則以此為準，不再用月租×月數）</label>
-                                <input id="baoref-deposit-override" type="number" inputmode="numeric" min="0" step="1" placeholder="空白＝用月租金 × 押金月數"
+                                <label class="block text-slate-700 font-semibold text-sm">契約總押金（＝月租金 × 押金月數）</label>
+                                <input id="baoref-deposit-override" type="number" inputmode="numeric" min="0" step="1" placeholder="查約後＝月租×月數"
                                        class="baoref-in w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                                <p id="baoref-deposit-overpay-hint" class="hidden text-[11px] text-amber-900 font-semibold leading-relaxed"></p>
                             </div>
                         </div>
                         <div class="rounded-xl border border-violet-300/80 bg-violet-50/50 px-4 py-3 flex flex-wrap items-baseline justify-between gap-2">
                             <span class="text-sm font-bold text-slate-700">試算用總押金</span>
                             <span id="baoref-deposit-total-display" class="text-xl font-black text-violet-900 tabular-nums">NT$ 0</span>
                         </div>
-                    </div>
+                    </details>
                 </div>
 
                 <div class="rounded-[1.25rem] border border-sky-200 bg-sky-50/50 p-4 md:p-5 space-y-4">
@@ -6668,8 +7089,11 @@
                     </div>
                 </div>
 
-                <div class="rounded-[1.25rem] border border-rose-200 bg-rose-50/40 p-4 md:p-5 space-y-4">
-                    <h3 class="text-lg font-black text-rose-950 flex items-center gap-2">③ 欠繳（帳期試算，自押金沖抵）</h3>
+                <details class="toolbox-details rounded-[1.25rem] border border-rose-200 bg-rose-50/40 p-4 md:p-5 space-y-4">
+                    <summary class="flex items-center justify-between gap-2 text-lg font-black text-rose-950 cursor-pointer list-none">
+                        <span>③ 欠繳（帳期試算，點開可改）</span>
+                        <span class="acc-chevron" aria-hidden="true"></span>
+                    </summary>
                     <p class="text-xs text-slate-600 leading-relaxed">欠租金額由下方<strong>欠租帳期試算</strong>產生；每月繳租日為 <span class="font-semibold text-slate-800">⓪ 合約起租日之「幾號」</span>，與首次欠繳繳租日不一致時，摘要會提醒核對。</p>
 
                     <div class="rounded-[1.35rem] border-2 border-rose-500 bg-gradient-to-br from-rose-100/90 via-white to-rose-50/90 p-5 md:p-7 shadow-lg shadow-rose-200/40 ring-1 ring-rose-300/60 space-y-5">
@@ -6694,11 +7118,15 @@
                         <p id="baoref-billing-arrears-summary" class="text-base md:text-lg text-rose-950 font-bold leading-relaxed min-h-[3.5rem] bg-white/80 rounded-xl border border-rose-200/80 px-4 py-3"></p>
                         <ul id="baoref-billing-arrears-detail" class="hidden rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-2 space-y-0"></ul>
                     </div>
-                </div>
+                </details>
 
-                <div class="rounded-[1.25rem] border border-emerald-200 bg-emerald-50/50 p-4 md:p-5 space-y-4">
-                    <h3 class="text-lg font-black text-emerald-950 flex items-center gap-2">④ 溢繳應退（加回應退總額）</h3>
-                    <p class="text-xs text-slate-600 leading-relaxed">若本件<strong>有</strong>「已先收整月租金、提前解約應退之差額」，請選「有溢繳」；系統依最上方<strong>實際解約日</strong>試算（解約當日計入使用）：已填<strong>合約起租日</strong>者，以該起租日之「幾號」界定<strong>繳租週期</strong>，應退＝(約定月租＋管理費)×未使用天數÷該期天數，再扣回<strong>整月</strong>二代健保／預扣代扣（與公司實匯「月租−代扣＋管理費」一致；代扣不按天數比例）；未填起租日則依解約月曆法天數比例備援。並以 <span class="font-semibold text-slate-800">合約起租日之每月繳租日</span>判斷是否為「同號對齊」不計應退。若<strong>無</strong>此情形，請選「無溢繳」，溢繳不計入「房東應退還公司」淨額。</p>
+                <details class="toolbox-details rounded-[1.25rem] border border-emerald-200 bg-emerald-50/50 p-4 md:p-5 space-y-4">
+                    <summary class="flex items-center justify-between gap-2 text-lg font-black text-emerald-950 cursor-pointer list-none">
+                        <span>④ 溢繳應退（點開可改）</span>
+                        <span class="acc-chevron" aria-hidden="true"></span>
+                    </summary>
+                    <h3 class="sr-only">④ 溢繳應退（加回應退總額）</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">若本件<strong>有</strong>「已先收整月租金、提前解約應退之差額」或「實匯押金高於契約押金」等溢繳，請選「有溢繳」。月租／管理費與<strong>轉租約相同</strong>；系統可依虛擬帳號匯出自動帶入押金溢繳（實匯−契約），仍請核對。解約當日計入使用；應退＝(月租＋管理費)×未使用天數÷該期天數（再扣整月代扣）。若<strong>無</strong>溢繳，請選「無溢繳」。</p>
 
                     <div class="rounded-xl border border-emerald-300/70 bg-white/90 p-4 space-y-3">
                         <div class="text-sm font-bold text-emerald-900">本件是否計入溢繳</div>
@@ -6732,12 +7160,12 @@
                         <ul id="baoref-overpay-detail" class="hidden mt-2 pt-2 border-t border-emerald-100 space-y-0"></ul>
                     </div>
 
-                    <div class="rounded-xl border border-emerald-300/70 bg-white/90 p-4 space-y-2">
-                        <label for="baoref-overpay-manual" class="block text-slate-700 font-semibold text-sm">其他溢繳應退（手動輸入，NT$）</label>
+                    <div id="baoref-overpay-manual-wrap" class="rounded-xl border border-emerald-300/70 bg-white/90 p-4 space-y-2">
+                        <label for="baoref-overpay-manual" class="block text-slate-700 font-semibold text-sm">其他溢繳應退（僅「無溢繳」時可備註；有溢繳時改由④試算）</label>
                         <input id="baoref-overpay-manual" type="number" inputmode="numeric" min="0" step="1" disabled
-                               placeholder="其他溢繳費用（例如房客多匯款應退還）"
+                               placeholder="有溢繳時不使用手動輸入，避免與④試算重複"
                                class="baoref-in w-full px-4 py-3 border-2 border-emerald-200 rounded-xl bg-white text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:border-slate-200 disabled:cursor-not-allowed" />
-                        <p class="text-[11px] text-slate-500 leading-relaxed">須先選「有溢繳」才可輸入；與④試算應退一併計入下方合計。</p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">勾選「有溢繳」後，手動欄會隱藏；應退金額只走上方④日租金／管理費試算。</p>
                     </div>
 
                     <div class="space-y-2">
@@ -6746,7 +7174,7 @@
                                class="w-full px-4 py-3 border-2 border-emerald-300 rounded-xl bg-emerald-50/90 text-emerald-950 font-black text-lg tabular-nums cursor-default shadow-inner"
                                value="0" />
                     </div>
-                </div>
+                </details>
 
                 <div id="baoref-result" class="rounded-[1.5rem] border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-white p-5 md:p-6 space-y-4">
                     <div class="font-extrabold text-purple-950 text-lg">試算結果</div>
@@ -6799,8 +7227,9 @@
                         <p id="baoref-out-note" class="text-xs text-slate-600 leading-relaxed"></p>
                     </div>
                     <div class="no-print rounded-xl border border-purple-200 bg-white p-4 flex flex-col sm:flex-row flex-wrap gap-3 items-center justify-between">
-                        <p class="text-sm text-slate-700">試算結果請自行抄錄至公司結算表，或使用下方空白表單。</p>
+                        <p class="text-sm text-slate-700">試算完成後可下載已填解約單（甲方房東／乙方星鴻；帳戶為虛擬帳號）。</p>
                         <div class="flex flex-wrap gap-2">
+                            <button type="button" id="bao-term-pdf-btn-bottom" class="btn tone-emerald px-4 py-2 font-bold">下載已填解約單</button>
                             <a href="./%E5%85%AC%E5%91%8A%20%E6%88%BF%E5%B1%8B%E7%A7%9F%E8%B3%83%E7%B5%82%E6%AD%A2%E5%8D%94%E8%AD%B0%E6%9B%B8_%E9%BB%9E%E4%BA%A4%E6%B8%85%E5%96%AE%E6%9A%A8%E8%B2%BB%E7%94%A8%E7%B5%90%E7%AE%97%E8%A1%A8%E6%94%B9%E7%89%88.pdf" target="_blank" rel="noopener noreferrer" class="btn tone-slate-mid px-4 py-2">開啟空白解約單</a>
                         </div>
                     </div>
@@ -8946,6 +9375,10 @@
         <script src="./js/photo-guide-preview.js"></script>
         <script src="./js/nb-api-config.js"></script>
         <script src="./js/nb-api-base.js"></script>
+        <script src="./js/termination-agreement-pdf.js?v=20260921-overpay-span3"></script>
+        <script src="./js/termination-case.js?v=20260920-bao-mode1"></script>
+        <script src="./js/termination-bao-case.js?v=20260921-end-tenant1"></script>
+        <script src="./js/termination-hub.js?v=20260921-end-tenant1"></script>
         <script src="./js/skyfun-job-titles.js"></script>
         <script src="./js/skyfun-departments.js"></script>
         <script src="./js/toolbox-auth.js?v=20260905-2"></script>
@@ -9471,12 +9904,178 @@
             const period = seg.cycleLabel || '';
             const periodNote = period ? `租期 ${period}，` : '';
             const overlap = seg.overlapLabel || '';
-            const isPartial = deprefProrateSegIsPartial(seg);
+            const isPartial = seg.kind === 'daily' || deprefProrateSegIsPartial(seg);
+            const label = isPartial ? '日租金欠款' : (kind || '整期欠繳');
             const daysPart = isPartial
-                ? `${deprefFmtDaily(seg.dailyRent)} 元/天 × ${seg.days} 天（${overlap}）`
+                ? `${deprefFmtDaily(seg.dailyRent)} 元/天 × ${seg.days} 天（${overlap}｜解約日＝租金最後一天）`
                 : `${deprefFmtDaily(seg.dailyRent)} 元/天 × ${seg.days} 天`;
             const prefix = Number.isFinite(index) ? `${index}. ` : '';
-            return `${prefix}${kind}｜${periodNote}${daysPart} ＝ ${amt.toLocaleString('zh-TW')} 元`;
+            const gross = Math.round(Number(seg.gross) || 0);
+            const received = Math.round(Number(seg.received) || 0);
+            let creditNote = '';
+            if (received > 0) {
+                if (gross > 0 && amt <= 0) {
+                    creditNote = `（應計 ${gross.toLocaleString('zh-TW')} − 已匯 ${received.toLocaleString('zh-TW')} ＝ 0，已沖抵）`;
+                } else if (gross > 0) {
+                    creditNote = `（應計 ${gross.toLocaleString('zh-TW')} − 已匯 ${received.toLocaleString('zh-TW')}）`;
+                } else {
+                    creditNote = `（已匯 ${received.toLocaleString('zh-TW')}）`;
+                }
+            }
+            return `${prefix}${label}｜${periodNote}${daysPart} ＝ ${amt.toLocaleString('zh-TW')} 元${creditNote}`;
+        }
+
+        /**
+         * 催收總明細常仍列整期（系統尚未解約）：已完整經過之繳租期保留整期金額；
+         * 實際解約日所落之當期改切「日租金欠款」（解約日＝租金最後一天）；
+         * 若該期已有匯款（含日租金部分繳），自應計金額扣抵已收；
+         * 若解約日超出總明細最後一期，再補算後續日租金。
+         */
+        function deprefBillingFromCompanyLedger(companyLedger, monthlyRent, exitStr, prefix) {
+            const rent = Number(monthlyRent);
+            const empty = { fullMonths: 0, partialDays: 0, amount: 0, summary: '', lines: [] };
+            if (!companyLedger || !Number.isFinite(rent) || rent <= 0) return empty;
+            const exit = deprefParseISODate(exitStr);
+            const unpaid = Array.isArray(companyLedger.unpaid) ? companyLedger.unpaid : [];
+            if (!exit) {
+                return deprefComputeBillingArrears(monthlyRent, companyLedger.first || '', exitStr, prefix);
+            }
+            if (!unpaid.length) {
+                return deprefComputeBillingArrears(monthlyRent, companyLedger.first || '', exitStr, prefix);
+            }
+            const exitD = deprefDateOnlyLocal(exit);
+            const dueDay = deprefGetRentDueDayFromLeaseStart(prefix);
+            const useCycle = Number.isFinite(dueDay) && dueDay >= 1 && dueDay <= 31;
+            const lines = [];
+            let total = 0;
+            let lastPeriodEnd = null;
+            let creditedTotal = 0;
+
+            function lineReceived(u) {
+                return Math.round(Number(u && (u.received != null ? u.received : u.paid)) || 0);
+            }
+
+            function pushSeg(seg, u) {
+                const gross = Math.round(Number(seg.amount) || 0);
+                const received = u ? lineReceived(u) : Math.round(Number(seg.received) || 0);
+                const credit = Math.min(Math.max(0, received), Math.max(0, gross));
+                const net = Math.max(0, gross - credit);
+                if (credit > 0) creditedTotal += credit;
+                lines.push({
+                    cycleLabel: seg.cycleLabel,
+                    overlapLabel: seg.overlapLabel,
+                    cycleDays: seg.cycleDays,
+                    days: seg.days,
+                    dailyRent: seg.dailyRent,
+                    amount: net,
+                    gross: gross,
+                    received: credit,
+                    kind: seg.kind || (deprefProrateSegIsPartial(seg) ? 'daily' : 'full')
+                });
+                total += net;
+            }
+
+            for (let i = 0; i < unpaid.length; i++) {
+                const u = unpaid[i];
+                const due = deprefParseISODate(u.dueDate);
+                if (!due) continue;
+                const dueD = deprefDateOnlyLocal(due);
+                if (dueD > exitD) break;
+
+                let ps = dueD;
+                let pe;
+                if (useCycle) {
+                    ps = deprefRentPeriodStartContaining(dueD, dueDay);
+                    if (dueD.getTime() !== ps.getTime()) ps = dueD;
+                    pe = deprefRentPeriodEndInclusive(ps, dueDay);
+                } else {
+                    const y = dueD.getFullYear();
+                    const m = dueD.getMonth();
+                    const ny = m === 11 ? y + 1 : y;
+                    const nm = m === 11 ? 0 : m + 1;
+                    const nextDue = deprefDueDateInMonth(ny, nm, dueD.getDate());
+                    pe = deprefDateOnlyLocal(new Date(nextDue.getTime() - 86400000));
+                }
+                const cycleDays = deprefCountInclusiveDaysLocal(ps, pe);
+                if (cycleDays <= 0) continue;
+                lastPeriodEnd = pe;
+
+                if (exitD <= pe) {
+                    const days = deprefCountInclusiveDaysLocal(dueD, exitD);
+                    if (days <= 0) break;
+                    if (days >= cycleDays) {
+                        // 整期：催收 arrears 已扣已收
+                        pushSeg({
+                            cycleLabel: `${deprefFormatDateTW(ps)}～${deprefFormatDateTW(pe)}`,
+                            overlapLabel: `${deprefFormatDateTW(ps)}～${deprefFormatDateTW(pe)}`,
+                            cycleDays,
+                            days: cycleDays,
+                            dailyRent: rent / cycleDays,
+                            amount: Math.round(Number(u.arrears) || rent),
+                            kind: 'full'
+                        }, null);
+                    } else {
+                        // 日租金應計 − 該期已匯（含日租金匯款）
+                        pushSeg({
+                            cycleLabel: `${deprefFormatDateTW(ps)}～${deprefFormatDateTW(pe)}`,
+                            overlapLabel: `${deprefFormatDateTW(dueD)}～${deprefFormatDateTW(exitD)}`,
+                            cycleDays,
+                            days,
+                            dailyRent: rent / cycleDays,
+                            amount: rent * (days / cycleDays),
+                            kind: 'daily'
+                        }, u);
+                    }
+                    break;
+                }
+
+                // 完整經過之帳期：用催收餘額（已扣已收）
+                pushSeg({
+                    cycleLabel: `${deprefFormatDateTW(ps)}～${deprefFormatDateTW(pe)}`,
+                    overlapLabel: `${deprefFormatDateTW(ps)}～${deprefFormatDateTW(pe)}`,
+                    cycleDays,
+                    days: cycleDays,
+                    dailyRent: rent / cycleDays,
+                    amount: Math.round(Number(u.arrears) || rent),
+                    kind: 'full'
+                }, null);
+            }
+
+            if (lastPeriodEnd && exitD > lastPeriodEnd) {
+                const contStart = deprefDateOnlyLocal(new Date(lastPeriodEnd.getTime() + 86400000));
+                const extra = useCycle
+                    ? deprefProrateByRentBillingCyclesDetail(rent, contStart, exitD, dueDay)
+                    : deprefProratePartialByCalendarMonthsDetail(rent, contStart, exitD);
+                (extra.lines || []).forEach(function (seg) {
+                    seg.kind = deprefProrateSegIsPartial(seg) ? 'daily' : 'full';
+                    pushSeg(seg, null);
+                });
+            }
+
+            const amount = Math.round(total);
+            const dailySegs = lines.filter(function (l) { return l.kind === 'daily' || deprefProrateSegIsPartial(l); });
+            const ledgerNote = unpaid.length
+                ? '催收總明細仍列整期（系統尚未解約，僅對照）：' + unpaid.map(function (l) {
+                    const rec = lineReceived(l);
+                    const recNote = rec > 0 ? '（已匯 ' + rec.toLocaleString('zh-TW') + '）' : '';
+                    return (l.dueDate || '') + ' 欠 ' + Math.round(Number(l.arrears) || 0).toLocaleString('zh-TW') + recNote;
+                }).join('、') + '，合計 ' + Math.round(Number(companyLedger.arrears) || 0).toLocaleString('zh-TW') + ' 元。'
+                : '';
+            const creditNote = creditedTotal > 0
+                ? '已帶入催收匯款沖抵日租金／欠款 ' + creditedTotal.toLocaleString('zh-TW') + ' 元。'
+                : '';
+            const dailyNote = dailySegs.length
+                ? '解約當期日租金（解約日＝租金最後一天）：' + dailySegs.map(function (s) {
+                    const g = Math.round(Number(s.gross) || s.amount);
+                    const r = Math.round(Number(s.received) || 0);
+                    if (r > 0) {
+                        return (s.overlapLabel || '') + ' 應計 ' + g.toLocaleString('zh-TW') + ' − 已匯 ' + r.toLocaleString('zh-TW') + ' ＝ ' + Math.round(s.amount).toLocaleString('zh-TW') + ' 元';
+                    }
+                    return (s.overlapLabel || '') + ' ' + deprefFmtDaily(s.dailyRent) + ' 元/天 × ' + s.days + ' 天＝' + Math.round(s.amount).toLocaleString('zh-TW') + ' 元';
+                }).join('；') + '。'
+                : '';
+            const summary = '欠租試算 ' + amount.toLocaleString('zh-TW') + ' 元。' + creditNote + dailyNote + ledgerNote;
+            return { fullMonths: 0, partialDays: 0, amount: amount, summary: summary, lines: lines };
         }
 
         function deprefRenderCalcDetailList(el, items) {
@@ -9565,6 +10164,7 @@
             feeEl.disabled = !on;
             if (!on) feeEl.value = '';
         }
+        window.deprefSyncMgmtFeeInput = deprefSyncMgmtFeeInput;
 
         /** 管理費與租金同繳入公司時：④溢繳、③欠租皆依與租金相同之繳租週期／曆法比例試算 */
         function deprefComputeMgmtFeeAmounts(monthlyMgmtFee, prefix, ovEnabled, firstMissedStr, exitFullStr) {
@@ -9668,6 +10268,7 @@
             function run() {
                 wireDeprefRocDatePickers(document.getElementById('page-business-deposit-refund'));
                 wireDeprefRocDatePickers(document.getElementById('page-business-bao-deposit-refund'));
+                wireDeprefRocDatePickers(document.getElementById('term-case-handover-modal'));
             }
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
             else run();
@@ -10010,12 +10611,16 @@
                 if (deprefIsRentCycleBoundary(exitStr, dueDay, mdCal)) {
                     return { overpay: 0, used: Math.round(rent), ready: true, missing: '', boundary: true, unusedDays: 0, cycleDays: 0, usedDays: 0 };
                 }
-                const ps = deprefRentPeriodStartContaining(exitD, dueDay);
+                // 以「解約次日」所屬繳租週期為準（例：25 號繳租、解約 6/24 → 週期 6/25～7/24 全未使用）
+                const fromD = deprefDateOnlyLocal(new Date(exitD.getFullYear(), exitD.getMonth(), exitD.getDate() + 1));
+                const ps = deprefRentPeriodStartContaining(fromD, dueDay);
                 const pe = deprefRentPeriodEndInclusive(ps, dueDay);
                 const cycleDays = deprefCountInclusiveDaysLocal(ps, pe);
                 if (cycleDays <= 0) return { ...none, missing: 'md' };
-                const usedDays = deprefCountInclusiveDaysLocal(ps, exitD);
-                const unusedDays = cycleDays - usedDays;
+                const usedEnd = exitD < ps ? null : exitD > pe ? pe : exitD;
+                const usedDays = usedEnd ? deprefCountInclusiveDaysLocal(ps, usedEnd) : 0;
+                const unusedStart = fromD < ps ? ps : fromD;
+                const unusedDays = unusedStart > pe ? 0 : deprefCountInclusiveDaysLocal(unusedStart, pe);
                 if (unusedDays <= 0) {
                     return { overpay: 0, used: Math.round(rent), ready: true, missing: '', boundary: false, unusedDays: 0, cycleDays, usedDays };
                 }
@@ -10102,6 +10707,34 @@
             deprefSyncMgmtFeeInput(prefix);
             const rent = deprefParseMoney(prefix + 'rent');
             const isLandlordBao = party === 'landlord';
+            // 包租：從 ERP／隱藏欄帶入押金溢繳並自動勾「有溢繳」
+            if (isLandlordBao) {
+                let depOvAmt = Math.round(deprefParseMoney(prefix + 'deposit-overpay-amt') || 0);
+                if (!(depOvAmt > 50)) {
+                    try {
+                        const erpRaw = document.getElementById('bao-term-erp-json')?.value;
+                        const erp = erpRaw ? JSON.parse(erpRaw) : null;
+                        const fromErp = Math.round(Number(erp?.depositOverpay) || 0);
+                        if (fromErp > 50) {
+                            depOvAmt = fromErp;
+                            const amtEl = document.getElementById(prefix + 'deposit-overpay-amt');
+                            const noteEl = document.getElementById(prefix + 'deposit-overpay-note');
+                            if (amtEl) amtEl.value = String(fromErp);
+                            if (noteEl) noteEl.value = String(erp.depositOverpayNote || '');
+                        }
+                    } catch (_) {
+                        /* ignore */
+                    }
+                }
+                if (depOvAmt > 50) {
+                    const yesEl = document.getElementById(prefix + 'overpay-yes');
+                    const noEl = document.getElementById(prefix + 'overpay-no');
+                    if (yesEl && noEl && !yesEl.checked) {
+                        yesEl.checked = true;
+                        noEl.checked = false;
+                    }
+                }
+            }
             const withholdAdj = isLandlordBao ? baorefRentNetForWithholding(rent) : { net: rent, note: '' };
             const rentBillingOverpay = withholdAdj.net;
             const depMonths = Math.max(0, parseFloat(document.getElementById(prefix + 'deposit-months')?.value) || 0);
@@ -10121,10 +10754,36 @@
             const firstMissedStr = document.getElementById(prefix + 'first-missed-due-date')?.value?.trim() ?? '';
 
             const noticePenalty = deprefComputeNoticePenalty(rent, noticeStr, exitFullStr);
-            const billing = deprefComputeBillingArrears(rentBillingOverpay, firstMissedStr, exitFullStr, prefix);
+            let billing = deprefComputeBillingArrears(rentBillingOverpay, firstMissedStr, exitFullStr, prefix);
+            let companyLedger = null;
+            try {
+                const raw = document.getElementById('term-case-erp-json')?.value;
+                if (raw && prefix === 'depref-' && window.TerminationCase) {
+                    const erp = JSON.parse(raw);
+                    const view = window.TerminationCase.computeLedgerView
+                        ? window.TerminationCase.computeLedgerView(erp, exitFullStr)
+                        : null;
+                    if (view && (view.arrears > 0 || (view.unpaid && view.unpaid.length))) {
+                        companyLedger = view;
+                    }
+                }
+            } catch (e) {}
             deprefSyncArrearsOverpayControls(prefix);
             const ovEnabled = deprefIsOverpayEnabled(prefix);
-            const mgmtAmt = deprefComputeMgmtFeeAmounts(mgmtFeeMonthly, prefix, ovEnabled, firstMissedStr, exitFullStr);
+            let mgmtAmt = deprefComputeMgmtFeeAmounts(mgmtFeeMonthly, prefix, ovEnabled, firstMissedStr, exitFullStr);
+            if (companyLedger) {
+                const missed = firstMissedStr || companyLedger.first || '';
+                // 催收總明細常仍是整期：完整帳期保留；解約當期另切日租金（解約日＝租金最後一天）
+                billing = deprefBillingFromCompanyLedger(companyLedger, rentBillingOverpay, exitFullStr, prefix);
+                if (!(billing.amount > 0) && !(billing.lines && billing.lines.length)) {
+                    billing = deprefComputeBillingArrears(rentBillingOverpay, missed, exitFullStr, prefix);
+                }
+                if (mgmtFeeMonthly > 0) {
+                    mgmtAmt = deprefComputeMgmtFeeAmounts(mgmtFeeMonthly, prefix, ovEnabled, missed, exitFullStr);
+                } else {
+                    mgmtAmt = { arrears: 0, overpay: 0, arrearsLines: [] };
+                }
+            }
 
             let ovd = deprefComputeOverpayDetail(rentBillingOverpay, prefix);
             if (isLandlordBao && ovEnabled) {
@@ -10132,33 +10791,56 @@
                 ovd = { ...ovd, overpay: baoRefund.overpay, used: baoRefund.used };
             }
             let mgmtOverpay = isLandlordBao && ovEnabled ? 0 : mgmtAmt.overpay;
+            const baoDepositOverpay = isLandlordBao && ovEnabled
+                ? Math.round(deprefParseMoney(prefix + 'deposit-overpay-amt') || 0)
+                : 0;
             const rawAutoOverpay = ovEnabled ? ovd.overpay : 0;
-            const rawManualOverpay = ovEnabled ? deprefParseMoney(prefix + 'overpay-manual') : 0;
+            const rawManualOverpay = ovEnabled && !isLandlordBao ? deprefParseMoney(prefix + 'overpay-manual') : 0;
             const ex = deprefResolveArrearsOverpayExclusion({
                 firstMissedStr,
                 ovEnabled,
                 billingAmount: billing.amount,
                 mgmtArrears: mgmtAmt.arrears,
-                autoOverpay: rawAutoOverpay,
+                autoOverpay: rawAutoOverpay + baoDepositOverpay,
                 manualOverpay: rawManualOverpay,
                 mgmtOverpay
             });
             const billingArrears = ex.billingAmount;
             const mgmtArrears = ex.mgmtArrears;
-            const autoOverpay = ex.autoOverpay;
+            // 拆回：日租金溢繳 vs 押金溢繳（exclusion 可能整包壓成 0）
+            let autoOverpay = 0;
+            let depositOverpayPart = 0;
+            if (ex.suppressed === 'overpay') {
+                autoOverpay = 0;
+                depositOverpayPart = 0;
+            } else if (isLandlordBao) {
+                const kept = Math.round(Number(ex.autoOverpay) || 0);
+                depositOverpayPart = Math.min(baoDepositOverpay, kept);
+                autoOverpay = Math.max(0, kept - depositOverpayPart);
+            } else {
+                autoOverpay = ex.autoOverpay;
+            }
             const manualOverpay = ex.manualOverpay;
             mgmtOverpay = ex.mgmtOverpay;
             const overpayEnabledFinal = ovEnabled && ex.suppressed !== 'overpay';
 
-            const rentArrearsLines = billingArrears > 0
-                ? (billing.lines || []).map((seg, i) =>
-                    deprefProrateLineLabel(isLandlordBao ? '租金欠繳（實匯房東）' : '租金欠繳', seg, i + 1)
-                )
+            const hasRentCredit = (billing.lines || []).some((s) => Math.round(Number(s.received) || 0) > 0);
+            const rentArrearsLines = (billingArrears > 0 || hasRentCredit)
+                ? (billing.lines || [])
+                    .filter((seg) => Math.round(seg.amount) > 0 || Math.round(Number(seg.received) || 0) > 0 || Math.round(Number(seg.gross) || 0) > 0)
+                    .map((seg, i) => {
+                        const isPartial = seg.kind === 'daily' || deprefProrateSegIsPartial(seg);
+                        const base = isPartial
+                            ? '日租金欠款'
+                            : (isLandlordBao ? '整期欠繳（實匯房東）' : '整期欠繳');
+                        return deprefProrateLineLabel(base, seg, i + 1);
+                    })
                 : [];
             const mgmtArrearsLines = mgmtArrears > 0
-                ? (mgmtAmt.arrearsLines || []).map((seg, i) =>
-                    deprefProrateLineLabel('管理費欠繳', seg, rentArrearsLines.length + i + 1)
-                )
+                ? (mgmtAmt.arrearsLines || []).map((seg, i) => {
+                    const isPartial = seg.kind === 'daily' || deprefProrateSegIsPartial(seg);
+                    return deprefProrateLineLabel(isPartial ? '日租金欠款（管理費）' : '整期欠繳（管理費）', seg, rentArrearsLines.length + i + 1);
+                })
                 : [];
             deprefRenderCalcDetailList(document.getElementById(prefix + 'billing-arrears-detail'), rentArrearsLines.concat(mgmtArrearsLines));
 
@@ -10177,10 +10859,10 @@
 
             const sumBill = document.getElementById(prefix + 'billing-arrears-summary');
             if (sumBill) {
-                let billText = billingArrears > 0 || mgmtArrears > 0 ? (billing.summary || '') : '';
+                let billText = billingArrears > 0 || mgmtArrears > 0 || hasRentCredit ? (billing.summary || '') : '';
                 if (ex.suppressed === 'arrears') {
                     billText = ex.arrearsNote;
-                } else if (billingArrears <= 0 && mgmtArrears <= 0 && firstMissedStr && billing.summary) {
+                } else if (billingArrears <= 0 && mgmtArrears <= 0 && !hasRentCredit && firstMissedStr && billing.summary) {
                     billText = billing.summary;
                 }
                 if (isLandlordBao && withholdAdj.note && billingArrears > 0) {
@@ -10207,16 +10889,30 @@
 
             const arrearsTotal = billingArrears + mgmtArrears + noticePenalty + arrearsLate;
             const manualEl = document.getElementById(prefix + 'overpay-manual');
-            if (manualEl) {
+            if (isLandlordBao) {
+                // 包租：有溢繳只走④試算，不併用手動（避免與日租金重複）
+                if (manualEl) {
+                    manualEl.value = '';
+                    manualEl.disabled = true;
+                }
+                const manWrap = document.getElementById('baoref-overpay-manual-wrap');
+                if (manWrap) manWrap.classList.toggle('hidden', !!overpayEnabledFinal);
+            } else if (manualEl) {
                 manualEl.disabled = !overpayEnabledFinal;
                 if (!overpayEnabledFinal) manualEl.value = '';
             }
-            const overpay = Math.round(autoOverpay + manualOverpay + mgmtOverpay);
+            const overpay = Math.round(
+              autoOverpay + depositOverpayPart + (isLandlordBao ? 0 : manualOverpay) + mgmtOverpay
+            );
 
             const usedEl = document.getElementById(prefix + 'overpay-display-used');
             const refEl = document.getElementById(prefix + 'overpay-display-refund');
             if (usedEl) usedEl.textContent = formatNT(overpayEnabledFinal ? ovd.used : 0);
-            if (refEl) refEl.textContent = formatNT(overpayEnabledFinal ? autoOverpay + mgmtOverpay : 0);
+            if (refEl) {
+                refEl.textContent = formatNT(
+                    overpayEnabledFinal ? autoOverpay + depositOverpayPart + mgmtOverpay : 0
+                );
+            }
 
             let overpayDetailLines = [];
             if (overpayEnabledFinal) {
@@ -10233,16 +10929,22 @@
                         overpayDetailLines.push(
                             `④ 包租溢繳應退：（約定月租 ${Math.round(rent).toLocaleString('zh-TW')} 元＋管理費 ${Math.round(mgmtFeeMonthly).toLocaleString('zh-TW')} 元）÷ ${ovd.cycleDays} 天 ＝ 日租金 ${deprefFmtDaily(grossDaily)} 元 × ${ovd.unusedDays} 天（未使用）− 整月代扣 ${Math.round(withhold).toLocaleString('zh-TW')} 元 ＝ ${Math.round(autoOverpay).toLocaleString('zh-TW')} 元`
                         );
-                    } else if (ovd.boundary) {
+                    } else if (ovd.boundary && autoOverpay <= 0) {
                         overpayDetailLines.push(
-                            `④ 包租溢繳：解約日與每月繳租日同號對齊，不計溢繳應退（對照整月約定月租 ${Math.round(rent).toLocaleString('zh-TW')} 元）。`
+                            `④ 日租金溢繳：解約日與每月繳租日同號對齊，不計日租金溢繳（對照整月約定月租 ${Math.round(rent).toLocaleString('zh-TW')} 元）。`
                         );
                     }
-                } else {
-                    overpayDetailLines = deprefBuildOverpayDetailLines(ovd, rentBillingOverpay, isLandlordBao ? '④ 租金（實匯）' : '④ 租金');
+                } else if (!isLandlordBao) {
+                    overpayDetailLines = deprefBuildOverpayDetailLines(ovd, rentBillingOverpay, '④ 租金');
                     if (mgmtOverpay > 0 || (mgmtAmt.overpayLines && mgmtAmt.overpayLines.length)) {
                         overpayDetailLines = overpayDetailLines.concat(mgmtAmt.overpayLines);
                     }
+                }
+                if (isLandlordBao && depositOverpayPart > 50) {
+                    const depNote =
+                        document.getElementById(prefix + 'deposit-overpay-note')?.value?.trim() ||
+                        `實匯押金高於契約押金，溢繳 ${depositOverpayPart.toLocaleString('zh-TW')} 元`;
+                    overpayDetailLines.push(`④ 押金溢繳：${depNote}`);
                 }
             }
             deprefRenderCalcDetailList(document.getElementById(prefix + 'overpay-detail'), overpayDetailLines);
@@ -10265,8 +10967,14 @@
                     hintOv.textContent = '';
                 } else if (ovd.boundary) {
                     hintOv.textContent = '實際解約日之「幾號」與合約起租日之每月繳租日同號對齊，不計溢繳應退；對照列顯示整月租金。';
-                } else if (ovd.ready && autoOverpay === 0 && ovd.used === 0 && manualOverpay <= 0) {
+                } else if (ovd.ready && autoOverpay === 0 && depositOverpayPart <= 0 && ovd.used === 0 && manualOverpay <= 0) {
                     hintOv.textContent = '目前溢繳試算為 0（若解約在當月最後一日亦同）。';
+                } else if (isLandlordBao && depositOverpayPart > 50) {
+                    hintOv.textContent =
+                        '已自動勾選溢繳：押金溢繳 ' +
+                        depositOverpayPart.toLocaleString('zh-TW') +
+                        ' 元已併入④合計' +
+                        (autoOverpay > 0 ? '；另含日租金未使用溢繳。' : '。');
                 } else if (isLandlordBao && ovd.ready && autoOverpay > 0) {
                     hintOv.textContent = '包租④：(約定月租＋管理費)×未使用天數比例 − 整月二代健保／預扣代扣；管理費已併入試算，不再另列管理費先繳應退。';
                 } else {
@@ -10287,6 +10995,8 @@
                 grandElPre.dataset.depositBalance = String(depositBalance);
                 grandElPre.dataset.deductTotal = String(deductTotal);
                 grandElPre.dataset.totalDeposit = String(totalDeposit);
+                grandElPre.dataset.rentArrears = String(billingArrears);
+                grandElPre.dataset.mgmtArrears = String(mgmtArrears);
             }
 
             const disp = document.getElementById(prefix + 'deposit-total-display');
@@ -10361,6 +11071,10 @@
                     grandEl.classList.add('text-slate-700');
                     grandBox.className = 'rounded-xl border-2 border-slate-300 bg-slate-50/80 p-4 text-center space-y-1 transition-colors duration-200';
                 }
+            }
+
+            if (prefix === 'depref-' && window.TerminationCase?.onCalcUpdated) {
+                window.TerminationCase.onCalcUpdated();
             }
 
             const note = document.getElementById(prefix + 'out-note');
@@ -11515,6 +12229,97 @@
         </script>
         <script src="./js/qa-knowledge-35plan.js"></script>
 </div>
+    </div>
+
+    <div id="term-case-handover-modal" class="term-handover-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="term-case-handover-title" data-dismiss="1">
+        <div class="term-handover-dialog space-y-4" data-dismiss="0">
+            <h4 id="term-case-handover-title" class="text-lg font-black text-indigo-950">現場點交</h4>
+            <p class="text-xs text-slate-600">填寫實際點交日與現場應扣項目。完成後金額與解約單欄位會直接顯示在本視窗，不必往下捲頁。</p>
+            <input type="hidden" id="term-case-handover-id" value="" />
+            <div class="space-y-2">
+                <label class="block text-slate-700 font-semibold text-sm">實際點交日</label>
+                <div class="depref-date-wrap">
+                    <input id="term-handover-exit-date" type="text" inputmode="numeric" placeholder="例：115/10/17" lang="zh-TW"
+                           class="depref-date-roc w-full px-4 py-3 border-2 border-slate-200 rounded-xl" />
+                    <button type="button" class="depref-date-picker-btn" data-picker-for="term-handover-exit-date" aria-label="以日曆選日期">選日期</button>
+                    <input type="date" class="depref-date-picker" data-picker-for="term-handover-exit-date" tabindex="-1" aria-hidden="true" />
+                </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">可比實際解約日早。例如解約 10/20、17 號先點交，這裡填 10/17；解約單第五點結算日與水電數字都看這裡，點交後水電由出租人負擔。</p>
+            </div>
+            <div id="term-handover-promissory-wrap" class="space-y-2">
+                <label class="block text-slate-700 font-semibold text-sm" for="term-case-promissory">簽立本票（現場確認後再填）</label>
+                <select id="term-case-promissory" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-sm font-semibold text-slate-800">
+                    <option value="">— 請選擇 —</option>
+                    <option value="yes">有</option>
+                    <option value="no">無</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-slate-700 font-semibold text-sm" for="term-handover-util-payer">水電瓦斯費由誰結清</label>
+                <select id="term-handover-util-payer" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-sm font-semibold text-slate-800">
+                    <option value="">— 請選擇 —</option>
+                    <option value="agent-deposit">業務結清（押金扣除）</option>
+                    <option value="landlord-deposit">房東結清（押金扣除）</option>
+                    <option value="tenant">房客結清</option>
+                </select>
+                <p class="text-[11px] text-slate-500 leading-relaxed"><strong>押金扣除</strong>→套印「三、欠繳」並自押金扣；<strong>房客結清</strong>→套印「五、相關費結算」（不扣押金）。點交日為<strong>當天</strong>（＝今天或＝實際解約日）且選房客結清：第五點不套印、亦不扣匯費 30 元。</p>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">水費金額</label><input id="term-handover-water" type="number" min="0" step="1" class="w-full px-3 py-2 border rounded-lg" /></div>
+                <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">電費金額</label><input id="term-handover-electric" type="number" min="0" step="1" class="w-full px-3 py-2 border rounded-lg" /></div>
+                <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">瓦斯金額</label><input id="term-handover-gas" type="number" min="0" step="1" class="w-full px-3 py-2 border rounded-lg" /></div>
+            </div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-3 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="text-sm font-bold text-amber-950">其他扣項（可多筆，最多 4 筆）</div>
+                    <button type="button" id="term-handover-extra-add-btn" class="btn btn-sm tone-slate-mid font-bold">＋ 新增扣項</button>
+                </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">清潔、修繕、鑰匙等現場扣除項目，套印至終止協議書第六點。提前解約違約金若試算已有且此處未填，下載時仍會自動帶入。</p>
+                <div id="term-handover-extra-items" data-extra-items="handover" class="space-y-2"></div>
+            </div>
+            <div id="term-handover-result" class="hidden rounded-xl border border-teal-200 bg-teal-50/70 p-4 space-y-3">
+                <div class="text-sm font-bold text-teal-950">點交試算結果</div>
+                <div id="term-handover-result-amount" class="text-xl font-black text-indigo-950 tabular-nums"></div>
+                <p id="term-handover-result-note" class="text-xs text-slate-600 leading-relaxed"></p>
+                <details class="rounded-lg border border-teal-100 bg-white">
+                    <summary class="cursor-pointer px-3 py-2 text-sm font-semibold text-slate-700 list-none flex items-center justify-between gap-2">
+                        <span>解約單欄位對照（點開查看）</span>
+                        <span class="text-xs font-normal text-slate-400">預設收合</span>
+                    </summary>
+                    <div class="overflow-x-auto border-t border-teal-100">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-teal-50/80 text-left text-slate-600">
+                                    <th class="px-3 py-2 font-semibold">解約單欄位</th>
+                                    <th class="px-3 py-2 font-semibold">填入金額／日期</th>
+                                    <th class="px-3 py-2 font-semibold">備註</th>
+                                </tr>
+                            </thead>
+                            <tbody id="term-handover-result-guide"></tbody>
+                        </table>
+                    </div>
+                </details>
+            </div>
+            <div id="term-handover-pdf-confirm" class="hidden rounded-xl border border-indigo-200 bg-indigo-50/80 p-4 space-y-3">
+                <div class="text-sm font-bold text-indigo-950">請依照範本填寫現場的解約單</div>
+                <p class="text-sm text-slate-700 leading-relaxed">
+                    下載對照用第 3、4 頁後，直接對照範本數字填到業務印出的紙本解約單即可。
+                </p>
+                <p id="term-handover-pdf-status" class="text-xs text-slate-600 leading-relaxed"></p>
+                <div class="flex flex-wrap gap-2 justify-end">
+                    <button type="button" id="term-handover-pdf-confirm-cancel" class="btn tone-slate-soft px-4 py-2">稍後再說</button>
+                    <button type="button" id="term-handover-pdf-confirm-ok" class="btn tone-indigo px-4 py-2 font-bold">確認並下載對照用第 3、4 頁</button>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 pt-1">
+                <p id="term-handover-draft-status" class="text-xs leading-relaxed text-right text-amber-800 font-semibold">若無法現場結算金額請暫存</p>
+                <div class="flex flex-wrap gap-2 justify-end">
+                    <button type="button" id="term-case-handover-cancel" class="btn tone-slate-soft px-4 py-2">關閉</button>
+                    <button type="button" id="term-case-handover-draft" class="btn tone-slate-mid px-4 py-2 font-bold">暫存</button>
+                    <button type="button" id="term-case-handover-submit" class="btn tone-indigo px-4 py-2 font-bold">完成點交試算</button>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>

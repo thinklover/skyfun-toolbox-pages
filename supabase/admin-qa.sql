@@ -452,11 +452,13 @@ begin
           id, title, body, status, category,
           ask_review_status as "askReviewStatus",
           ask_review_note as "askReviewNote",
+          ask_reviewed_at as "askReviewedAt",
           asker_id as "askerId",
           asker_name as "askerName",
           created_at as "createdAt",
           coalesce(images, '{}'::text[]) as images,
           coalesce(files, '{}'::text[]) as files,
+          is_quality as "isQuality",
           admin_qa_is_double_points(asker_id) as "isDoublePoints"
         from public.admin_qa_questions
         where id = p_question_id
@@ -470,9 +472,11 @@ begin
           answerer_name as "answererName",
           review_status as "reviewStatus",
           review_note as "reviewNote",
+          reviewed_at as "reviewedAt",
           created_at as "createdAt",
           coalesce(images, '{}'::text[]) as images,
           coalesce(files, '{}'::text[]) as files,
+          is_quality as "isQuality",
           admin_qa_is_double_points(answerer_id) as "isDoublePoints"
         from public.admin_qa_answers
         where question_id = p_question_id
@@ -847,6 +851,7 @@ begin
           q.asker_name as "askerName",
           q.ask_review_status as "askReviewStatus",
           q.ask_review_note as "askReviewNote",
+          q.ask_reviewed_at as "askReviewedAt",
           q.status,
           q.created_at as "createdAt",
           q.is_quality as "isQuality",
@@ -886,8 +891,12 @@ begin
           id, title, body, status,
           ask_review_status as "askReviewStatus",
           ask_review_note as "askReviewNote",
+          ask_reviewed_at as "askReviewedAt",
           asker_name as "askerName",
-          created_at as "createdAt"
+          created_at as "createdAt",
+          is_quality as "isQuality",
+          coalesce(images, '{}'::text[]) as images,
+          coalesce(files, '{}'::text[]) as files
         from public.admin_qa_questions where id = p_question_id
       ) q
     ),
@@ -899,7 +908,11 @@ begin
           answerer_name as "answererName",
           review_status as "reviewStatus",
           review_note as "reviewNote",
-          created_at as "createdAt"
+          reviewed_at as "reviewedAt",
+          created_at as "createdAt",
+          is_quality as "isQuality",
+          coalesce(images, '{}'::text[]) as images,
+          coalesce(files, '{}'::text[]) as files
         from public.admin_qa_answers
         where question_id = p_question_id
         order by created_at
