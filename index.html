@@ -6687,7 +6687,7 @@
                             </div>
                             <span class="shrink-0 rounded-full bg-rose-600 text-white text-xs font-black px-3 py-1 shadow">帳期</span>
                         </div>
-                        <p class="text-sm md:text-base text-slate-800 font-semibold leading-relaxed border-l-4 border-rose-500 pl-3">試算區間為「首次欠繳之繳租日」至「實際解約日」（含首尾日）。已填 <strong>⓪ 合約起租日</strong>時：以起租日之「幾號」為<strong>每月繳租日</strong>界定每一期（例：每月 5 號繳租＝該期 <strong>本月 5 日～次月 4 日</strong>），<strong>日租金＝月租÷該期天數</strong>，再依與上開區間之重疊天數累加。未填起租日時，暫以曆法月分段試算。</p>
+                        <p class="text-sm md:text-base text-slate-800 font-semibold leading-relaxed border-l-4 border-rose-500 pl-3">試算區間為「首次欠繳之繳租日」至「實際解約日」（含首尾日）。已填 <strong>⓪ 合約起租日</strong>時：以起租日之「幾號」為<strong>每月繳租日</strong>起算每一期，期末依<strong>民法一個月</strong>（有相當日→相當日前一日，如 5 號＝本月 5 日～次月 4 日；無相當日→次月末日，如 31 號遇小月＝8/31～9/30），<strong>日租金＝月租÷該期天數</strong>，再依與上開區間之重疊天數累加。未填起租日時，暫以曆法月分段試算。</p>
                         <div class="space-y-2">
                             <label class="block text-slate-900 font-bold text-base">首次欠繳之繳租日（該期應繳未繳的起始繳租日）</label>
                             <div class="depref-date-wrap depref-date-wrap--rose">
@@ -7107,7 +7107,7 @@
                             </div>
                             <span class="shrink-0 rounded-full bg-rose-600 text-white text-xs font-black px-3 py-1 shadow">帳期</span>
                         </div>
-                        <p class="text-sm md:text-base text-slate-800 font-semibold leading-relaxed border-l-4 border-rose-500 pl-3">試算區間為「首次欠繳之繳租日」至「實際解約日」（含首尾日）。已填 <strong>⓪ 合約起租日</strong>時：以起租日之「幾號」為<strong>每月繳租日</strong>界定每一期（例：每月 5 號繳租＝該期 <strong>本月 5 日～次月 4 日</strong>），<strong>日租金＝月租÷該期天數</strong>，再依與上開區間之重疊天數累加。未填起租日時，暫以曆法月分段試算。</p>
+                        <p class="text-sm md:text-base text-slate-800 font-semibold leading-relaxed border-l-4 border-rose-500 pl-3">試算區間為「首次欠繳之繳租日」至「實際解約日」（含首尾日）。已填 <strong>⓪ 合約起租日</strong>時：以起租日之「幾號」為<strong>每月繳租日</strong>起算每一期，期末依<strong>民法一個月</strong>（有相當日→相當日前一日，如 5 號＝本月 5 日～次月 4 日；無相當日→次月末日，如 31 號遇小月＝8/31～9/30），<strong>日租金＝月租÷該期天數</strong>，再依與上開區間之重疊天數累加。未填起租日時，暫以曆法月分段試算。</p>
                         <div class="space-y-2">
                             <label class="block text-slate-900 font-bold text-base">首次欠繳之繳租日（該期應繳未繳的起始繳租日）</label>
                             <div class="depref-date-wrap depref-date-wrap--rose">
@@ -9377,7 +9377,7 @@
         <script src="./js/photo-guide-preview.js"></script>
         <script src="./js/nb-api-config.js"></script>
         <script src="./js/nb-api-base.js"></script>
-        <script src="./js/termination-agreement-pdf.js?v=20260921-overpay-span3"></script>
+        <script src="./js/termination-agreement-pdf.js?v=20260923-civil-month"></script>
         <script src="./js/termination-case.js?v=20260920-bao-mode1"></script>
         <script src="./js/termination-bao-case.js?v=20260921-end-tenant1"></script>
         <script src="./js/termination-hub.js?v=20260921-end-tenant1"></script>
@@ -10316,23 +10316,36 @@
             return deprefDateOnlyLocal(new Date(y, monthIndex, d));
         }
 
-        /** 下一個繳租週期首日（自本期繳租日起算次月同日，並做月底對齊） */
-        function deprefNextRentPeriodStart(periodStart, dueDay) {
+        /**
+         * 自週期首日起算「一個月」的末日（民法第 121 條）
+         * - 次月有與起算日相當之日 → 該相當日之前一日（例 6/5～7/4、7/31～8/30）
+         * - 次月無相當日 → 次月之末日（例 8/31～9/30、1/31～2/28）
+         */
+        function deprefOneCivilMonthEndInclusive(periodStart) {
             const y = periodStart.getFullYear();
             const m = periodStart.getMonth();
+            const d = periodStart.getDate();
             const ny = m === 11 ? y + 1 : y;
             const nm = m === 11 ? 0 : m + 1;
-            return deprefDueDateInMonth(ny, nm, dueDay);
+            const dimNext = deprefDim(ny, nm);
+            if (d > dimNext) {
+                return deprefDateOnlyLocal(new Date(ny, nm, dimNext));
+            }
+            return deprefDateOnlyLocal(new Date(ny, nm, d - 1));
         }
 
-        /** 本期末日＝次一繳租日前一日（含首尾：例 6/5 繳的一期為 6/5～7/4） */
-        function deprefRentPeriodEndInclusive(periodStart, dueDay) {
-            const nxt = deprefNextRentPeriodStart(periodStart, dueDay);
-            const t = nxt.getTime() - 86400000;
-            return deprefDateOnlyLocal(new Date(t));
+        /** 本期末日＝自本期首日起一個月（民法）；dueDay 僅供尋找週期起點 */
+        function deprefRentPeriodEndInclusive(periodStart, _dueDay) {
+            return deprefOneCivilMonthEndInclusive(periodStart);
         }
 
-        /** 含某日之「繳租週期」首日 */
+        /** 下一個繳租週期首日＝本期末日之次日 */
+        function deprefNextRentPeriodStart(periodStart, dueDay) {
+            const pe = deprefRentPeriodEndInclusive(periodStart, dueDay);
+            return deprefDateOnlyLocal(new Date(pe.getFullYear(), pe.getMonth(), pe.getDate() + 1));
+        }
+
+        /** 含某日之「繳租週期」首日（對齊合約繳租日；小月則落在該月末日） */
         function deprefRentPeriodStartContaining(day, dueDay) {
             const D = deprefDateOnlyLocal(day);
             let y = D.getFullYear();
@@ -10343,6 +10356,14 @@
                 const py = pm < 0 ? y - 1 : y;
                 const pmAdj = pm < 0 ? 11 : pm;
                 candidate = deprefDueDateInMonth(py, pmAdj, dueDay);
+            }
+            // 若候選首日所屬「一個月」已結束於 D 之前，改採次期首日
+            let guard = 0;
+            while (guard < 3) {
+                const pe = deprefOneCivilMonthEndInclusive(candidate);
+                if (D <= pe) return candidate;
+                candidate = deprefDateOnlyLocal(new Date(pe.getFullYear(), pe.getMonth(), pe.getDate() + 1));
+                guard += 1;
             }
             return candidate;
         }
@@ -10462,7 +10483,7 @@
             let modeNote = '';
             if (leaseDt && Number.isFinite(dueDay) && dueDay >= 1 && dueDay <= 31) {
                 prorateDetail = deprefProrateByRentBillingCyclesDetail(rent, startD, exitD, dueDay);
-                modeNote = '依「合約起租日之每月繳租日」界定每期（例：每月 5 號繳租＝該期當月 5 日～次月 4 日），日租金＝月租÷該期天數，再依與欠繳區間重疊天數累加。';
+                modeNote = '依「合約起租日之每月繳租日」起算每期，期末依民法一個月（有相當日→相當日前一日；無相當日→次月末日，例 8/31～9/30），日租金＝月租÷該期天數，再依與欠繳區間重疊天數累加。';
             } else {
                 prorateDetail = deprefProratePartialByCalendarMonthsDetail(rent, startD, exitD);
                 modeNote = '未填「合約起租日」或無法取得繳租日，暫依「曆法月」分段（月租÷該曆法月天數×天數）；補齊起租日後即改依繳租週期計算。';

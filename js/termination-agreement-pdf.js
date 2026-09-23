@@ -219,6 +219,18 @@
     return new Date(y, monthIndex, Math.min(dueDay, last));
   }
 
+  /** 民法第 121 條：自首日起一個月之末日 */
+  function oneCivilMonthEndInclusive(periodStart) {
+    const y = periodStart.getFullYear();
+    const m = periodStart.getMonth();
+    const d = periodStart.getDate();
+    const ny = m === 11 ? y + 1 : y;
+    const nm = m === 11 ? 0 : m + 1;
+    const last = new Date(ny, nm + 1, 0).getDate();
+    if (d > last) return new Date(ny, nm, last);
+    return new Date(ny, nm, d - 1);
+  }
+
   function rentPeriodStartContaining(day, dueDay) {
     let y = day.getFullYear();
     let m = day.getMonth();
@@ -228,14 +240,22 @@
       const py = pm < 0 ? y - 1 : y;
       candidate = dueDateInMonth(py, pm < 0 ? 11 : pm, dueDay);
     }
+    let guard = 0;
+    while (guard < 3) {
+      const pe = oneCivilMonthEndInclusive(candidate);
+      if (day <= pe) return candidate;
+      candidate = addDays(pe, 1);
+      guard += 1;
+    }
     return candidate;
   }
 
-  function rentPeriodEndInclusive(periodStart, dueDay) {
-    const y = periodStart.getFullYear();
-    const m = periodStart.getMonth();
-    const nxt = dueDateInMonth(m === 11 ? y + 1 : y, m === 11 ? 0 : m + 1, dueDay);
-    return addDays(nxt, -1);
+  function rentPeriodEndInclusive(periodStart, _dueDay) {
+    return oneCivilMonthEndInclusive(periodStart);
+  }
+
+  function nextRentPeriodStart(periodStart, dueDay) {
+    return addDays(rentPeriodEndInclusive(periodStart, dueDay), 1);
   }
 
   /** 溢繳未使用區間：解約日次日～「解約次日所屬繳租週期」末日（繳租日＝起租日之幾號） */

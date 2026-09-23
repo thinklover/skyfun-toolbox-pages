@@ -18,10 +18,32 @@ var QA_SYNC_CONFIG = {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('行政 QA')
-    .addItem('立即同步點數（手動）', 'syncAdminQaPoints')
+    .addItem('立即同步點數（手動）', 'syncAdminQaPointsMenu')
+    .addItem('檢查同步設定', 'diagnoseQaSync')
     .addItem('安裝每天早上 8:00 自動同步', 'installDailySyncTrigger')
     .addItem('列出所有工作表名稱', 'listWorksheetNames')
     .addToUi();
+}
+
+/**
+ * 編輯器按 ▶ 時 SpreadsheetApp.getUi() 會卡住（只顯示「開始執行」）。
+ * 優先用 alert；失敗則寫入執行記錄＋toast。
+ */
+function notify_(title, message) {
+  var text = String(message || '');
+  Logger.log((title ? '[' + title + ']\n' : '') + text);
+  console.log((title ? '[' + title + ']\n' : '') + text);
+  try {
+    SpreadsheetApp.getUi().alert(title || '行政 QA', text, SpreadsheetApp.getUi().ButtonSet.OK);
+    return;
+  } catch (e1) {
+    /* 從編輯器執行時無試算表 UI */
+  }
+  try {
+    SpreadsheetApp.getActiveSpreadsheet().toast(text.substring(0, 180), title || '行政 QA', 20);
+  } catch (e2) {
+    /* ignore */
+  }
 }
 
 function doGet() {
@@ -44,12 +66,100 @@ function installDailySyncTrigger() {
     .everyDays(1)
     .inTimezone('Asia/Taipei')
     .create();
-  SpreadsheetApp.getUi().alert('已設定每天早上 8:00（台北時間）自動同步行政 QA 點數。\n\n小組長核准後的點數，會依「核准日期」寫入日報表對應列。');
+  notify_('行政 QA', '已設定每天早上 8:00（台北時間）自動同步。\n請到「執行記錄」確認沒有紅字。');
 }
 
 /** 舊版選單相容 */
 function installAutoSyncTrigger() {
   installDailySyncTrigger();
+}
+
+/** 選單用：同步後跳出結果（含 skipped） */
+function syncAdminQaPointsMenu() {
+  try {
+    var result = syncAdminQaPoints();
+    var lines = [];
+    lines.push(result.message || (result.ok ? '同步完成' : '同步失敗'));
+    lines.push('（紀錄日＝檢核通過日）');
+    lines.push('更新既有列：' + (result.updated || 0));
+    lines.push('新增該日列：' + (result.created || 0));
+    lines.push('標記已同步：' + (result.marked || 0));
+    lines.push('拉取筆數：' + (result.pulled || 0));
+    var skipped = result.skipped || result.unmatched || [];
+    if (skipped.length) {
+      lines.push('');
+      lines.push('已跳過（試算表無此姓名）：');
+      skipped.slice(0, 12).forEach(function (u) {
+        lines.push(
+          '- ' + (u.workDate || '') + '／' + (u.matchName || '') + '／' + (u.totalPoints || 0) + ' 點' +
+          (u.reason ? '（' + u.reason + '）' : '')
+        );
+      });
+      if (skipped.length > 12) lines.push('…共 ' + skipped.length + ' 筆');
+    }
+    notify_('同步結果', lines.join('\n'));
+    return result;
+  } catch (err) {
+    notify_('同步失敗', String(err && err.message ? err.message : err));
+    throw err;
+  }
+}
+
+/** 檢查 Script properties／工作表／能否連上 Supabase（不寫入） */
+function diagnoseQaSync() {
+  var lines = [];
+  try {
+    var cfg = getQaSyncConfig_();
+    lines.push('SUPABASE_URL：' + (cfg.SUPABASE_URL ? '有' : '缺'));
+    lines.push('SUPABASE_ANON_KEY：' + (cfg.SUPABASE_ANON_KEY ? '有（' + String(cfg.SUPABASE_ANON_KEY).length + ' 字）' : '缺'));
+    lines.push('ADMIN_SECRET：' + (cfg.ADMIN_SECRET ? '有（' + String(cfg.ADMIN_SECRET).length + ' 字）' : '缺'));
+    lines.push('SHEET_NAME：' + (cfg.SHEET_NAME || '（空）'));
+    lines.push('SHEET_GID：' + (cfg.SHEET_GID || '（空）'));
+
+    var sheet = resolveTargetSheet_(cfg);
+    if (!sheet) {
+      lines.push('');
+      lines.push('找不到目標工作表。現有：' + listWorksheetNames_().join('、'));
+      notify_('檢查同步設定', lines.join('\n'));
+      return;
+    }
+    lines.push('目標工作表：' + sheet.getName() + ' (gid=' + sheet.getSheetId() + ')');
+
+    try {
+      var layout = findDailyPerfLayout_(sheet, cfg);
+      lines.push('標題列：第 ' + (layout.headerRow + 1) + ' 列');
+      lines.push('資料起始列：第 ' + layout.dataStartRow + ' 列');
+      lines.push('欄位：姓名 col' + layout.nameCol + '／日期 col' + layout.dateCol + '／行政QA col' + layout.qaCol);
+    } catch (layoutErr) {
+      lines.push('標題列錯誤：' + String(layoutErr.message || layoutErr));
+    }
+
+    var pull = supabaseRpc_(cfg, 'admin_qa_sheets_sync_pull', { p_secret: cfg.ADMIN_SECRET });
+    if (!pull.ok) {
+      lines.push('');
+      lines.push('Supabase 連線失敗：' + (pull.error || JSON.stringify(pull)));
+      lines.push('（常見原因：ADMIN_SECRET 與後台密碼不一致）');
+    } else {
+      var rows = pull.rows || [];
+      lines.push('');
+      lines.push('待同步列數：' + rows.length);
+      rows.slice(0, 8).forEach(function (r) {
+        lines.push('- ' + (r.workDate || '') + '／' + (r.matchName || '') + '／' + (r.totalPoints || 0) + ' 點');
+      });
+    }
+
+    var triggers = ScriptApp.getProjectTriggers().filter(function (t) {
+      return t.getHandlerFunction() === 'syncAdminQaPoints';
+    });
+    lines.push('');
+    lines.push('08:00 觸發器：' + (triggers.length ? '已安裝 ' + triggers.length + ' 個' : '尚未安裝（請點選單安裝）'));
+
+    notify_('檢查同步設定', lines.join('\n'));
+  } catch (err) {
+    lines.push('');
+    lines.push('錯誤：' + String(err && err.message ? err.message : err));
+    notify_('檢查失敗', lines.join('\n'));
+  }
 }
 
 function syncAdminQaPoints() {
@@ -60,7 +170,7 @@ function syncAdminQaPoints() {
   var rows = pull.rows || [];
   var eventIds = pull.eventIds || [];
   if (!rows.length) {
-    return { ok: true, updated: 0, unmatched: [], message: '沒有待同步資料' };
+    return { ok: true, updated: 0, unmatched: [], pulled: 0, marked: 0, message: '沒有待同步資料' };
   }
 
   var sheet = resolveTargetSheet_(cfg);
@@ -71,21 +181,65 @@ function syncAdminQaPoints() {
 
   var layout = findDailyPerfLayout_(sheet, cfg);
   var updated = 0;
-  var unmatched = [];
+  var created = 0;
+  var skipped = [];
   var ackIds = [];
+  var known = collectKnownNames_(sheet, layout, cfg);
 
   rows.forEach(function (row) {
-    var target = findTargetRow_(sheet, layout, row, cfg);
-    if (!target) {
-      unmatched.push({
+    var name = String(row.matchName || row.displayName || '').trim();
+    if (!name) {
+      skipped.push({
         workDate: row.workDate,
-        matchName: row.matchName,
+        matchName: '(無名)',
         totalPoints: row.totalPoints,
+        reason: '無名',
       });
       return;
     }
-    sheet.getRange(target.row, layout.qaCol).setValue(Number(row.totalPoints) || 0);
-    updated += 1;
+
+    var canonical = resolveCanonicalName_(name, known);
+    // 試算表姓名欄／下拉完全沒此人 → 跳過
+    if (!canonical) {
+      skipped.push({
+        workDate: row.workDate,
+        matchName: name,
+        totalPoints: row.totalPoints,
+        reason: '試算表無此姓名',
+      });
+      return;
+    }
+
+    // 用試算表既有寫法對姓名，避免下拉驗證不符
+    var rowForMatch = Object.assign({}, row, {
+      matchName: canonical,
+      displayName: canonical,
+    });
+
+    var target = findTargetRow_(sheet, layout, rowForMatch, cfg);
+    if (!target) {
+      // 有姓名、無該日列 → 新增一列後寫入
+      target = appendDailyPerfRow_(sheet, layout, {
+        workDate: row.workDate,
+        matchName: canonical,
+        displayName: canonical,
+        totalPoints: row.totalPoints,
+      });
+      if (!target) {
+        skipped.push({
+          workDate: row.workDate,
+          matchName: canonical,
+          totalPoints: row.totalPoints,
+          reason: '無法新增列',
+        });
+        return;
+      }
+      created += 1;
+    } else {
+      setValueBypassValidation_(sheet.getRange(target.row, layout.qaCol), Number(row.totalPoints) || 0);
+      updated += 1;
+    }
+
     (row.eventIds || []).forEach(function (id) {
       if (ackIds.indexOf(id) < 0) ackIds.push(id);
     });
@@ -102,9 +256,16 @@ function syncAdminQaPoints() {
   return {
     ok: true,
     updated: updated,
-    unmatched: unmatched,
+    created: created,
+    unmatched: skipped,
+    skipped: skipped,
     pulled: rows.length,
     marked: ackIds.length,
+    message: skipped.length
+      ? (updated || created ? '部分寫入成功，其餘已跳過（無此姓名）' : '沒有可寫入的列（試算表無此姓名）')
+      : created
+        ? '同步成功（含新增該日列）'
+        : '同步成功',
   };
 }
 
@@ -146,7 +307,7 @@ function supabaseRpc_(cfg, fn, payload) {
 
 function listWorksheetNames() {
   var names = listWorksheetNames_();
-  SpreadsheetApp.getUi().alert('此試算表的工作表：\n\n' + names.join('\n'));
+  notify_('工作表名稱', names.join('\n'));
   return names;
 }
 
@@ -276,6 +437,123 @@ function findTargetRow_(sheet, layout, row, cfg) {
   return null;
 }
 
+/** 收集試算表姓名欄已出現過的名字（下拉名單／既有列）→ { 正規化名: 試算表原始字串 } */
+function collectKnownNames_(sheet, layout, cfg) {
+  var lastRow = Math.min(sheet.getLastRow(), layout.dataStartRow + cfg.MAX_SCAN_ROWS);
+  var map = {};
+  function add(raw) {
+    var original = String(raw || '').trim();
+    var n = normalizeName_(original);
+    if (!n) return;
+    if (!map[n]) map[n] = original;
+  }
+  if (lastRow >= layout.dataStartRow) {
+    var numRows = lastRow - layout.dataStartRow + 1;
+    var names = sheet.getRange(layout.dataStartRow, layout.nameCol, numRows, 1).getValues();
+    for (var i = 0; i < names.length; i++) add(names[i][0]);
+  }
+  try {
+    var sample = sheet.getRange(layout.dataStartRow, layout.nameCol);
+    var rule = sample.getDataValidation();
+    if (rule) {
+      var criteria = rule.getCriteriaType();
+      var values = rule.getCriteriaValues();
+      if (criteria === SpreadsheetApp.DataValidationCriteria.VALUE_IN_LIST && values && values[0]) {
+        values[0].forEach(add);
+      } else if (criteria === SpreadsheetApp.DataValidationCriteria.VALUE_IN_RANGE && values && values[0]) {
+        values[0].getValues().forEach(function (r) {
+          r.forEach(add);
+        });
+      }
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  return map;
+}
+
+/** 回傳試算表裡的標準姓名字串；找不到則 null */
+function resolveCanonicalName_(name, knownMap) {
+  var n = normalizeName_(name);
+  if (!n) return null;
+  if (knownMap[n]) return knownMap[n];
+  for (var key in knownMap) {
+    if (!knownMap.hasOwnProperty(key)) continue;
+    if (key.indexOf(n) >= 0 || n.indexOf(key) >= 0) return knownMap[key];
+  }
+  return null;
+}
+
+/**
+ * 有姓名、無該日列 → 新增一列
+ * 紀錄日一律＝檢核通過日（row.workDate，來自 reviewed_at 台北日期）
+ */
+function appendDailyPerfRow_(sheet, layout, row) {
+  var name = String(row.matchName || row.displayName || '').trim();
+  var workDate = String(row.workDate || '').trim(); // YYYY-MM-DD＝檢核通過日
+  if (!name || !workDate) return null;
+
+  var insertAt = nextEmptyDataRow_(sheet, layout);
+  var dateRange = sheet.getRange(insertAt, layout.dateCol);
+  var dateVal = parseIsoDateLocal_(workDate);
+  trySetValue_(dateRange, dateVal || workDate);
+  try {
+    dateRange.setNumberFormat('yyyy/MM/dd');
+  } catch (eFmt) {
+    /* ignore */
+  }
+  trySetValue_(sheet.getRange(insertAt, layout.nameCol), name);
+  setValueBypassValidation_(sheet.getRange(insertAt, layout.qaCol), Number(row.totalPoints) || 0);
+  return { row: insertAt, created: true };
+}
+
+function nextEmptyDataRow_(sheet, layout) {
+  var last = Math.max(sheet.getLastRow(), layout.dataStartRow - 1);
+  var scanEnd = Math.max(last, layout.dataStartRow);
+  var maxCol = Math.max(layout.dateCol, layout.nameCol, layout.qaCol);
+  var bottom = layout.dataStartRow - 1;
+  if (scanEnd >= layout.dataStartRow) {
+    var values = sheet.getRange(layout.dataStartRow, 1, scanEnd - layout.dataStartRow + 1, maxCol).getValues();
+    for (var i = 0; i < values.length; i++) {
+      var dateCell = values[i][layout.dateCol - 1];
+      var nameCell = values[i][layout.nameCol - 1];
+      if (String(dateCell || '').trim() || String(nameCell || '').trim()) {
+        bottom = layout.dataStartRow + i;
+      }
+    }
+  }
+  return bottom + 1;
+}
+
+function parseIsoDateLocal_(isoDate) {
+  var m = String(isoDate || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function trySetValue_(range, value) {
+  try {
+    range.setValue(value);
+  } catch (e) {
+    setValueBypassValidation_(range, value);
+  }
+}
+
+/** 略過儲存格資料驗證後寫入（僅用於行政QA分數） */
+function setValueBypassValidation_(range, value) {
+  try {
+    range.setValue(value);
+    return;
+  } catch (e2) {
+    try {
+      range.clearDataValidations();
+      range.setValue(value);
+    } catch (e3) {
+      throw new Error('無法寫入 ' + range.getA1Notation() + '：' + String(e3.message || e3));
+    }
+  }
+}
+
 function buildNameCandidates_(row) {
   var list = [];
   [row.matchName, row.displayName, row.username].forEach(function (v) {
@@ -293,29 +571,46 @@ function nameMatches_(sheetName, candidates) {
 }
 
 function sameWorkDate_(cell, isoDate) {
+  // isoDate＝檢核通過日 YYYY-MM-DD
   if (!isoDate) return false;
+  var want = String(isoDate).trim();
+  var got = cellToIsoDate_(cell);
+  return !!got && got === want;
+}
+
+/** 試算表儲存格 → YYYY-MM-DD（與檢核通過日同一格式） */
+function cellToIsoDate_(cell) {
+  if (cell === null || cell === undefined || cell === '') return '';
   if (Object.prototype.toString.call(cell) === '[object Date]' && !isNaN(cell.getTime())) {
-    return Utilities.formatDate(cell, 'Asia/Taipei', 'yyyy-MM-dd') === isoDate;
+    // 用日曆年月日，避免時區把日期往前推一天
+    return (
+      cell.getFullYear() +
+      '-' +
+      pad2_(cell.getMonth() + 1) +
+      '-' +
+      pad2_(cell.getDate())
+    );
   }
   var s = String(cell || '').trim();
-  if (!s) return false;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s === isoDate;
-  if (/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(s)) {
-    var p = s.split('/');
-    return isoDate === p[0] + '-' + pad2_(p[1]) + '-' + pad2_(p[2]);
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(s)) {
+    var p = s.split(/[\/\s]/);
+    return p[0] + '-' + pad2_(p[1]) + '-' + pad2_(p[2]);
   }
-  if (/^\d{1,2}\/\d{1,2}$/.test(s)) {
-    var y = isoDate.slice(0, 4);
-    var mp = s.split('/');
-    return isoDate === y + '-' + pad2_(mp[0]) + '-' + pad2_(mp[1]);
+  // 民國 yyy/MM/dd
+  if (/^\d{2,3}\/\d{1,2}\/\d{1,2}/.test(s)) {
+    var r = s.split('/');
+    var y = Number(r[0]) + 1911;
+    return y + '-' + pad2_(r[1]) + '-' + pad2_(r[2]);
   }
   try {
     var d = new Date(s);
     if (!isNaN(d.getTime())) {
-      return Utilities.formatDate(d, 'Asia/Taipei', 'yyyy-MM-dd') === isoDate;
+      return d.getFullYear() + '-' + pad2_(d.getMonth() + 1) + '-' + pad2_(d.getDate());
     }
   } catch (e) {}
-  return false;
+  return '';
 }
 
 function normalizeName_(s) {
