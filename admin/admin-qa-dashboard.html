@@ -42,6 +42,9 @@
     .all-row-main { flex: 1 1 12rem; min-width: 0; }
     .all-row-actions { flex: 0 0 auto; }
     .detail-panel { border: 1px solid #475569; border-radius: 0.75rem; padding: 0.85rem; margin-top: 0.5rem; background: #020617; }
+    .all-inline-detail { margin-top: 0.65rem; border-top: 1px dashed #334155; padding-top: 0.65rem; }
+    .all-inline-detail[hidden] { display: none !important; }
+    .item.is-expanded { border-color: #14b8a6; box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.25); }
     .item-images { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.55rem; }
     .item-images a { display: block; width: 4.5rem; height: 4.5rem; border-radius: 0.45rem; overflow: hidden; border: 1px solid #475569; }
     .item-images img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -150,7 +153,6 @@
       </div>
       <p class="text-xs text-slate-500" id="all-count">—</p>
       <div id="all-questions"></div>
-      <div id="all-detail" class="detail-panel hidden"></div>
     </div>
 
     <div id="tab-points" class="tab-panel hidden space-y-3">
@@ -322,16 +324,33 @@
         try { return new Date(iso).toLocaleString('zh-TW'); } catch { return iso; }
       }
 
-      function reviewPassedMeta(status, reviewedAt) {
-        if (!reviewedAt) return '';
-        const t = esc(fmt(reviewedAt));
+      function reviewPassedMeta(status, reviewedAt, reviewedBy) {
+        if (!reviewedAt && !reviewedBy) return '';
+        const t = reviewedAt ? esc(fmt(reviewedAt)) : '—';
+        const who = String(reviewedBy || '').trim();
+        const by = who ? ' · 通過者：' + esc(who) : '';
         if (status === 'approved') {
-          return '<div class="mt-1 text-sm font-semibold text-emerald-300">檢核通過時間：' + t + '</div>';
+          return '<div class="mt-1 text-sm font-semibold text-emerald-300">檢核通過時間：' + t + by + '</div>';
         }
         if (status === 'rejected') {
-          return '<div class="mt-1 text-sm font-semibold text-rose-300">檢核時間：' + t + '</div>';
+          const rejBy = who ? ' · 檢核者：' + esc(who) : '';
+          return '<div class="mt-1 text-sm font-semibold text-rose-300">檢核時間：' + t + rejBy + '</div>';
         }
         return '';
+      }
+
+      function clearAllInlineDetails(exceptId) {
+        document.querySelectorAll('#all-questions [data-all-id]').forEach(function (art) {
+          if (exceptId && art.getAttribute('data-all-id') === exceptId) return;
+          art.classList.remove('is-expanded');
+          const slot = art.querySelector('.all-inline-detail');
+          if (slot) {
+            slot.hidden = true;
+            slot.innerHTML = '';
+          }
+          const viewBtn = art.querySelector('[data-all-act="view"]');
+          if (viewBtn) viewBtn.textContent = '查看';
+        });
       }
 
       function statusBadge(status) {
@@ -514,35 +533,33 @@
             '<div class="item-title">' + esc(q.title) + ' ' + statusBadge(q.askReviewStatus) + qualityBadge('question', q.isQuality) + qualityBadge('answer', q.hasQualityAnswer) + '</div>' +
             '<div class="item-meta">' + esc(q.askerName) + ' · ' + esc(fmt(q.createdAt)) +
             ' · 回答 ' + esc(q.answerCount || 0) + '</div>' +
-            reviewPassedMeta(q.askReviewStatus, q.askReviewedAt) +
+            reviewPassedMeta(q.askReviewStatus, q.askReviewedAt, q.askReviewedBy) +
             (q.body ? '<div class="item-body">' + esc(q.body) + '</div>' : '') +
             noteBox(q.askReviewNote) +
             '</div>' +
             '<div class="all-row-actions">' +
             '<button type="button" class="act-btn act-view" data-all-act="view" data-id="' + esc(q.id) + '">查看</button>' +
             '<button type="button" class="act-btn act-del" data-all-act="delete" data-id="' + esc(q.id) + '">刪除</button>' +
-            '</div></div></article>'
+            '</div></div>' +
+            '<div class="all-inline-detail detail-panel" hidden></div>' +
+            '</article>'
           );
         }).join('');
       }
 
-      function renderAllDetail(data) {
-        const panel = document.getElementById('all-detail');
+      function allDetailHtml(data) {
         if (!data?.ok) {
-          panel.classList.remove('hidden');
-          panel.innerHTML = '<p class="text-rose-300">' + esc(data?.error || '讀取失敗') + '</p>';
-          return;
+          return '<p class="text-rose-300">' + esc(data?.error || '讀取失敗') + '</p>';
         }
         const q = data.question;
         const answers = data.answers || [];
-        panel.classList.remove('hidden');
-        panel.innerHTML =
+        return (
           '<div class="flex flex-wrap justify-between gap-2 mb-2">' +
           '<strong class="text-teal-300">' + esc(q.title) + '</strong>' +
-          '<button type="button" class="act-btn act-view" id="btn-close-detail">關閉</button></div>' +
+          '<button type="button" class="act-btn act-view" data-all-act="close" data-id="' + esc(q.id) + '">關閉</button></div>' +
           '<div class="item-meta">' + esc(q.askerName) + ' · 送出 ' + esc(fmt(q.createdAt)) +
           ' · ' + statusBadge(q.askReviewStatus) + qualityBadge('question', q.isQuality) + '</div>' +
-          reviewPassedMeta(q.askReviewStatus, q.askReviewedAt) +
+          reviewPassedMeta(q.askReviewStatus, q.askReviewedAt, q.askReviewedBy) +
           '<div class="item-body mt-2">' + esc(q.body || '（無補充）') + '</div>' +
           attachmentsHtml(q.images, q.files) +
           noteBox(q.askReviewNote) +
@@ -553,18 +570,35 @@
               '<div class="item mb-2' + (a.isQuality ? ' item--quality' : '') + '">' +
               '<div class="item-meta">' + esc(a.answererName) + ' · 送出 ' + esc(fmt(a.createdAt)) +
               ' · ' + statusBadge(a.reviewStatus) + qualityBadge('answer', a.isQuality) + '</div>' +
-              reviewPassedMeta(a.reviewStatus, a.reviewedAt) +
+              reviewPassedMeta(a.reviewStatus, a.reviewedAt, a.reviewedBy) +
               '<div class="item-body">' + esc(a.body) + '</div>' +
               attachmentsHtml(a.images, a.files) +
               noteBox(a.reviewNote) +
               (a.reviewStatus === 'approved' ? qualityToggle('answer', a.id, a.isQuality) : '') +
               '</div>'
             );
-          }).join('') : '<p class="empty">尚無回答</p>');
-        document.getElementById('btn-close-detail')?.addEventListener('click', function () {
-          panel.classList.add('hidden');
-          expandedQuestionId = null;
-        });
+          }).join('') : '<p class="empty">尚無回答</p>')
+        );
+      }
+
+      function renderAllDetail(data, article) {
+        if (!article) return;
+        clearAllInlineDetails(article.getAttribute('data-all-id'));
+        const slot = article.querySelector('.all-inline-detail');
+        if (!slot) return;
+        article.classList.add('is-expanded');
+        slot.hidden = false;
+        slot.innerHTML = allDetailHtml(data);
+        const viewBtn = article.querySelector('[data-all-act="view"]');
+        if (viewBtn) viewBtn.textContent = '收合';
+        try {
+          article.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (_) { /* ignore */ }
+      }
+
+      function closeAllDetail() {
+        expandedQuestionId = null;
+        clearAllInlineDetails();
       }
 
       async function loadPending() {
@@ -594,10 +628,7 @@
         if (expandedQuestionId) {
           const still = items.some(function (q) { return q.id === expandedQuestionId; });
           if (still) await openAllDetail(expandedQuestionId);
-          else {
-            expandedQuestionId = null;
-            document.getElementById('all-detail').classList.add('hidden');
-          }
+          else closeAllDetail();
         }
       }
 
@@ -886,9 +917,25 @@
       }
 
       async function openAllDetail(id) {
+        const article = document.querySelector('#all-questions [data-all-id="' + String(id).replace(/"/g, '') + '"]');
+        if (!article) {
+          closeAllDetail();
+          return;
+        }
+        if (expandedQuestionId === id && !article.querySelector('.all-inline-detail')?.hidden) {
+          closeAllDetail();
+          return;
+        }
         expandedQuestionId = id;
+        const slot = article.querySelector('.all-inline-detail');
+        if (slot) {
+          slot.hidden = false;
+          slot.innerHTML = '<p class="empty">載入中…</p>';
+          article.classList.add('is-expanded');
+        }
         const data = await rpc('admin_qa_admin_get_question', adminArgs({ p_question_id: id }));
-        renderAllDetail(data);
+        if (expandedQuestionId !== id) return;
+        renderAllDetail(data, article);
       }
 
       async function deleteQuestion(id, title) {
@@ -896,10 +943,7 @@
         const data = await rpc('admin_qa_admin_delete_question', adminArgs({ p_question_id: id }));
         if (!data?.ok) throw new Error(data?.error || '刪除失敗');
         document.getElementById('msg').textContent = data.message || '已刪除';
-        if (expandedQuestionId === id) {
-          expandedQuestionId = null;
-          document.getElementById('all-detail').classList.add('hidden');
-        }
+        if (expandedQuestionId === id) closeAllDetail();
         await loadList();
         if (activeTab === 'all') await loadPending();
       }
@@ -1030,7 +1074,7 @@
           });
       });
 
-      document.getElementById('all-detail').addEventListener('change', function (e) {
+      document.getElementById('all-questions').addEventListener('change', function (e) {
         const cb = e.target.closest('.set-quality');
         if (!cb) return;
         setQuality(cb.dataset.kind, cb.dataset.id, cb.checked).catch(function (err) {
@@ -1045,6 +1089,10 @@
         const id = btn.dataset.id;
         const row = btn.closest('[data-all-id]');
         const title = row?.querySelector('.item-title')?.textContent?.trim() || '此問題';
+        if (btn.dataset.allAct === 'close') {
+          closeAllDetail();
+          return;
+        }
         if (btn.dataset.allAct === 'view') {
           openAllDetail(id).catch(function (err) {
             document.getElementById('msg').textContent = err.message;

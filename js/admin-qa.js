@@ -94,14 +94,17 @@
     }
   }
 
-  function reviewPassedMeta(status, reviewedAt) {
-    if (!reviewedAt) return '';
-    const t = esc(fmtDate(reviewedAt));
+  function reviewPassedMeta(status, reviewedAt, reviewedBy) {
+    if (!reviewedAt && !reviewedBy) return '';
+    const t = reviewedAt ? esc(fmtDate(reviewedAt)) : '—';
+    const who = String(reviewedBy || '').trim();
+    const by = who ? ' · 通過者：' + esc(who) : '';
     if (status === 'approved') {
-      return '<p class="aqa-item-meta aqa-item-meta--passed">檢核通過時間：' + t + '</p>';
+      return '<p class="aqa-item-meta aqa-item-meta--passed">檢核通過時間：' + t + by + '</p>';
     }
     if (status === 'rejected') {
-      return '<p class="aqa-item-meta aqa-item-meta--rejected">檢核時間：' + t + '</p>';
+      const rejBy = who ? ' · 檢核者：' + esc(who) : '';
+      return '<p class="aqa-item-meta aqa-item-meta--rejected">檢核時間：' + t + rejBy + '</p>';
     }
     return '';
   }
@@ -508,7 +511,7 @@
         '</div>' +
         '<p class="aqa-item-meta">' + categoryBadge(q.category) +
         '<span class="aqa-role aqa-role--ask">提問</span> ' + esc(q.askerName) + ' · 送出 ' + esc(fmtDate(q.createdAt)) + '</p>' +
-        reviewPassedMeta(q.askReviewStatus, q.askReviewedAt) +
+        reviewPassedMeta(q.askReviewStatus, q.askReviewedAt, q.askReviewedBy) +
         '<div class="aqa-detail-body">' + esc(q.body || '（無補充說明）') + '</div>' +
         attachmentsHtml(q.images, q.files) +
         reviewNoteHtml(q.askReviewStatus, q.askReviewNote) +
@@ -526,7 +529,7 @@
                 reviewBadge(a.reviewStatus) +
                 '</div>' +
                 '<p class="aqa-item-meta">送出 ' + esc(fmtDate(a.createdAt)) + '</p>' +
-                reviewPassedMeta(a.reviewStatus, a.reviewedAt) +
+                reviewPassedMeta(a.reviewStatus, a.reviewedAt, a.reviewedBy) +
                 '<div class="aqa-detail-body">' + esc(a.body) + '</div>' +
                 attachmentsHtml(a.images, a.files) +
                 reviewNoteHtml(a.reviewStatus, a.reviewNote) +
