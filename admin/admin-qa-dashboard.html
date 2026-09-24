@@ -22,7 +22,9 @@
     .item-answer-label { color: #94a3b8; }
     .act-btn { border: 0; border-radius: 0.45rem; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-right: 0.35rem; margin-top: 0.5rem; }
     .act-ok { background: #15803d; color: #fff; }
+    .act-ok:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; opacity: 0.85; }
     .act-no { background: #b91c1c; color: #fff; }
+    .need-answer-hint { margin-top: 0.45rem; font-size: 0.78rem; font-weight: 700; color: #fbbf24; }
     .act-del { background: #7f1d1d; color: #fecaca; border: 1px solid #991b1b; }
     .act-view { background: #1e3a5f; color: #bae6fd; border: 1px solid #334155; }
     .section-title { font-size: 1.05rem; font-weight: 800; color: #99f6e4; margin-bottom: 0.75rem; }
@@ -467,16 +469,24 @@
           return;
         }
         el.innerHTML = items.map(function (q) {
+          const answerCount = Number(q.answerCount || 0);
+          const canApprove = answerCount > 0;
           return (
-            '<article class="item" data-kind="question" data-id="' + esc(q.id) + '">' +
+            '<article class="item" data-kind="question" data-id="' + esc(q.id) + '" data-answer-count="' + esc(answerCount) + '">' +
             '<div class="item-title">' + categoryBadge(q.category) + esc(q.title) + '</div>' +
-            '<div class="item-meta">' + esc(q.askerName) + ' · ' + esc(fmt(q.createdAt)) + '</div>' +
+            '<div class="item-meta">' + esc(q.askerName) + ' · ' + esc(fmt(q.createdAt)) +
+            ' · 回答 ' + esc(answerCount) + '</div>' +
             '<div class="item-body">' + esc(q.body || '（無補充）') + '</div>' +
             imagesHtml(q.images) +
             filesHtml(q.files) +
             '<textarea class="review-note mt-2" rows="2" placeholder="檢核備註（選填）"></textarea>' +
             qualityCheckbox('question') +
-            '<div><button type="button" class="act-btn act-ok" data-act="approved">' + approveLabel('question', false, false) + '</button>' +
+            (canApprove
+              ? ''
+              : '<p class="need-answer-hint">尚無回答，需先有人回答後才能通過此問題（仍可按「不通過」）。</p>') +
+            '<div><button type="button" class="act-btn act-ok" data-act="approved"' +
+            (canApprove ? '' : ' disabled title="尚無回答，無法通過"') + '>' +
+            approveLabel('question', false, false) + '</button>' +
             '<button type="button" class="act-btn act-no" data-act="rejected">不通過</button></div>' +
             '</article>'
           );
@@ -949,6 +959,13 @@
       }
 
       async function review(kind, id, action, note, quality) {
+        if (kind === 'question' && action === 'approved') {
+          const item = document.querySelector('#questions [data-kind="question"][data-id="' + String(id).replace(/"/g, '') + '"]');
+          const answerCount = Number(item?.dataset?.answerCount || 0);
+          if (item && answerCount < 1) {
+            throw new Error('尚無回答，請先有人回答後才能通過此問題');
+          }
+        }
         const fn = kind === 'question' ? 'admin_qa_admin_review_question' : 'admin_qa_admin_review_answer';
         const args = kind === 'question'
           ? rpcArgs({ p_question_id: id, p_action: action, p_note: note || null, p_quality: !!quality })
