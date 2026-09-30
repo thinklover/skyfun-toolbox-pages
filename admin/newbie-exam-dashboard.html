@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>財補考試成績 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/newbie-exam-data.js?v=20260930-1"></script>
+  <style>
+    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
+    input, select { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.5rem 0.75rem; color: #f8fafc; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; text-align: left; border-bottom: 1px solid #334155; vertical-align: top; }
+    th { color: #94a3b8; font-weight: 700; white-space: nowrap; }
+    tr.row { cursor: pointer; }
+    tr.row:hover td { background: rgba(45, 212, 191, 0.07); }
+    tr.row.is-open td { background: rgba(45, 212, 191, 0.12); }
+    .pass { color: #6ee7b7; font-weight: 800; }
+    .fail { color: #fda4af; font-weight: 800; }
+    .muted { color: #64748b; }
+    .badge { font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 0.35rem; white-space: nowrap; }
+    .b-done { background: #064e3b; color: #6ee7b7; }
+    .b-run { background: #1e3a8a; color: #93c5fd; }
+    .b-void { background: #3f3f46; color: #d4d4d8; }
+    .b-warn { background: #78350f; color: #fcd34d; margin-left: 0.25rem; }
+    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 0.65rem; padding: 0.6rem 0.75rem; }
+    .stat b { display: block; font-size: 1.35rem; color: #f8fafc; }
+    .stat span { font-size: 0.75rem; color: #94a3b8; }
+    .detail { background: #0f172a; border-top: 2px solid #2dd4bf; }
+    .q { padding: 0.45rem 0; border-bottom: 1px dashed #334155; font-size: 0.82rem; }
+    .q.ok { border-left: 3px solid #10b981; padding-left: 0.5rem; }
+    .q.half { border-left: 3px solid #f59e0b; padding-left: 0.5rem; }
+    .q.bad { border-left: 3px solid #ef4444; padding-left: 0.5rem; }
+    .q .pts { float: right; font-weight: 800; color: #cbd5e1; }
+    .q .line { margin-left: 0.75rem; color: #cbd5e1; }
+    .q .line.key { color: #6ee7b7; }
+    .q .line span { color: #64748b; display: inline-block; min-width: 4.2rem; }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+  <header>
+    <h1 class="text-2xl font-black text-teal-300">財補考試成績後台</h1>
+    <p class="text-slate-400 text-sm mt-1">星鴻財補計畫試題（1140529 版）線上考試紀錄 · <a class="text-teal-300 underline" href="../index.html">回工具箱</a></p>
+  </header>
+
+  <section class="card p-4 space-y-3" id="login-panel">
+    <label class="block text-sm text-slate-400">後台密碼（Supabase admin_secret）</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-bold">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm text-rose-300 hidden"></p>
+  </section>
+
+  <section class="card p-4 hidden space-y-4" id="main-panel">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="stats"></div>
+    <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">搜尋姓名／帳號／處別</label>
+        <input type="search" id="q" placeholder="輸入關鍵字" class="min-w-[14rem]" />
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">狀態</label>
+        <select id="status">
+          <option value="submitted">已交卷</option>
+          <option value="">全部</option>
+          <option value="in_progress">作答中</option>
+          <option value="abandoned">未交卷（作廢）</option>
+        </select>
+      </div>
+      <label class="flex items-center gap-2 text-sm text-slate-300 pb-2">
+        <input type="checkbox" id="best-only" /> 每人只顯示最高分
+      </label>
+      <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
+      <button type="button" id="btn-csv" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">匯出 CSV</button>
+      <p class="text-sm text-slate-400 pb-1" id="count">—</p>
+    </div>
+    <p id="msg" class="text-sm text-slate-400"></p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr><th>考試時間</th><th>姓名</th><th>帳號</th><th>處別</th><th>卷別</th><th>地區</th><th>分數</th><th>是非</th><th>單選</th><th>複選</th><th>簡答</th><th>用時</th><th>狀態</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-pages-admin-secret';
+      const PASS = (window.NEWBIE_EXAM && window.NEWBIE_EXAM.passScore) || 80;
+      let client = null;
+      let secret = '';
+      let items = [];
+      let openId = null;
+
+      function sb() {
+        if (client) return client;
+        const c = window.SKYFUN_SUPABASE || {};
+        client = window.supabase.createClient(String(c.url || '').trim(), String(c.anonKey || '').trim());
+        return client;
+      }
+      async function rpc(name, args) {
+        const { data, error } = await sb().rpc(name, args);
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        return data;
+      }
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function fmt(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('zh-TW', { hour12: false }); } catch { return iso; }
+      }
+      function dur(sec) {
+        if (sec == null) return '—';
+        return Math.floor(sec / 60) + ' 分 ' + String(sec % 60).padStart(2, '0') + ' 秒';
+      }
+      function num(v) {
+        if (v == null || v === '') return '—';
+        const n = Number(v);
+        return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+      }
+      function sec(it, k) {
+        const s = it.sections && it.sections[k];
+        return s ? num(s.earned) : '—';
+      }
+      function statusBadge(it) {
+        const map = { submitted: ['b-done', '已交卷'], in_progress: ['b-run', '作答中'], abandoned: ['b-void', '未交卷'] };
+        const [cls, label] = map[it.status] || ['b-void', it.status];
+        let html = '<span class="badge ' + cls + '">' + label + '</span>';
+        if (it.autoSubmitted) html += '<span class="badge b-warn">自動交卷</span>';
+        if (it.overtime) html += '<span class="badge b-warn">逾時</span>';
+        return html;
+      }
+
+      function filtered() {
+        const st = document.getElementById('status').value;
+        let list = items.filter((it) => !st || it.status === st);
+        if (document.getElementById('best-only').checked) {
+          const best = {};
+          list.filter((it) => it.status === 'submitted').forEach((it) => {
+            const k = it.username;
+            if (!best[k] || Number(it.score) > Number(best[k].score)) best[k] = it;
+          });
+          list = Object.values(best).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+        }
+        return list;
+      }
+
+      function renderStats() {
+        const done = items.filter((it) => it.status === 'submitted');
+        const people = new Set(done.map((it) => it.username));
+        const passed = new Set(done.filter((it) => Number(it.score) >= PASS).map((it) => it.username));
+        const avg = done.length ? done.reduce((s, it) => s + Number(it.score || 0), 0) / done.length : 0;
+        document.getElementById('stats').innerHTML = [
+          ['已交卷次數', done.length],
+          ['應考人數', people.size],
+          ['通過人數（' + PASS + ' 分以上）', passed.size],
+          ['平均分數', done.length ? num(Math.round(avg * 10) / 10) : '—']
+        ].map(([k, v]) => '<div class="stat"><b>' + v + '</b><span>' + k + '</span></div>').join('');
+      }
+
+      function renderRows() {
+        const list = filtered();
+        document.getElementById('count').textContent = '共 ' + list.length + ' 筆';
+        document.getElementById('rows').innerHTML = list.map((it) => {
+          const scoreCls = it.status === 'submitted' ? (Number(it.score) >= PASS ? 'pass' : 'fail') : 'muted';
+          return '<tr class="row' + (openId === it.id ? ' is-open' : '') + '" data-id="' + it.id + '">' +
+            '<td>' + fmt(it.startedAt) + '</td><td>' + esc(it.userName) + '</td><td>' + esc(it.username) + '</td>' +
+            '<td>' + esc(it.team || '—') + '</td><td>' + esc(it.paper) + '</td><td>' + esc(it.region) + '</td>' +
+            '<td class="' + scoreCls + '">' + num(it.score) + '</td>' +
+            '<td>' + sec(it, 'tf') + '</td><td>' + sec(it, 'single') + '</td><td>' + sec(it, 'multi') + '</td><td>' + sec(it, 'short') + '</td>' +
+            '<td>' + dur(it.durationSec) + '</td><td>' + statusBadge(it) + '</td></tr>' +
+            (openId === it.id ? '<tr><td colspan="13" class="detail" id="detail-cell"><p class="muted">載入中…</p></td></tr>' : '');
+        }).join('') || '<tr><td colspan="13" class="muted">沒有資料</td></tr>';
+      }
+
+      function questionText(paperId, qid) {
+        const paper = window.NEWBIE_EXAM && window.NEWBIE_EXAM.papers[paperId];
+        if (!paper) return { text: qid };
+        for (const s of paper.sections) {
+          const q = s.questions.find((x) => x.id === qid);
+          if (q) return { q, s };
+        }
+        return { text: qid };
+      }
+      function optText(q, v) {
+        if (v == null || v === '' || (Array.isArray(v) && !v.length)) return '（未作答）';
+        if (!q || !q.options) return String(v);
+        const list = Array.isArray(v) ? v.slice().sort() : [v];
+        return list.map((id) => {
+          const o = q.options.find((x) => x.id === id);
+          return '(' + id + ')' + (o && o.text ? ' ' + o.text : '');
+        }).join('、');
+      }
+
+      async function renderDetail(id) {
+        const cell = document.getElementById('detail-cell');
+        try {
+          const res = await rpc('newbie_exam_admin_get', { p_secret: secret, p_id: id });
+          if (!res?.ok) throw new Error(res?.error || '讀取失敗');
+          const it = res.item;
+          if (!it.results) { cell.innerHTML = '<p class="muted">此考卷尚未交卷，沒有作答明細。</p>'; return; }
+          const paper = window.NEWBIE_EXAM.papers[it.paper];
+          let html = '<p class="text-sm mb-2">' + esc(it.userName) + '（' + esc(it.team || '未設定處別') + '）· ' + esc(it.paper) + ' 卷 · 地區 ' + esc(it.region) +
+            ' · 選項編號為試卷原始編號（考生畫面上的 A/B/C 是重新排序後的代號）</p>';
+          paper.sections.forEach((s) => {
+            html += '<p class="font-bold text-teal-200 mt-3">' + esc(s.title) + '</p>';
+            s.questions.forEach((q, i) => {
+              const r = it.results[q.id] || {};
+              const earned = Number(r.earned || 0), pts = Number(r.points || s.points);
+              const cls = earned >= pts ? 'ok' : earned > 0 ? 'half' : 'bad';
+              const given = q.type === 'short' ? (r.given || '（未作答）') : optText(q, r.given);
+              const correct = q.type === 'short' ? r.correct : optText(q, r.correct);
+              html += '<div class="q ' + cls + '"><span class="pts">' + num(earned) + ' / ' + num(pts) + '</span>' +
+                '<b>' + (i + 1) + '. ' + esc(q.text) + '</b>' +
+                '<div class="line"><span>作答</span>' + esc(given) + '</div>' +
+                (earned >= pts ? '' : '<div class="line key"><span>' + (q.type === 'short' ? '參考答案' : '正確答案') + '</span>' + esc(correct) + '</div>') +
+                '</div>';
+            });
+          });
+          cell.innerHTML = html;
+        } catch (e) {
+          cell.innerHTML = '<p class="text-rose-300">' + esc(e.message) + '</p>';
+        }
+      }
+
+      async function loadList() {
+        const msg = document.getElementById('msg');
+        msg.textContent = '讀取中…';
+        try {
+          const res = await rpc('newbie_exam_admin_list', { p_secret: secret, p_query: document.getElementById('q').value.trim(), p_limit: 1000 });
+          if (!res?.ok) throw new Error(res?.error || '讀取失敗');
+          items = res.items || [];
+          msg.textContent = '';
+          renderStats();
+          renderRows();
+          if (openId) renderDetail(openId);
+        } catch (e) {
+          msg.textContent = e.message;
+        }
+      }
+
+      function exportCsv() {
+        const head = ['考試時間', '姓名', '帳號', '處別', '卷別', '地區', '分數', '是非', '單選', '複選', '簡答', '用時(秒)', '狀態', '自動交卷', '逾時'];
+        const rows = filtered().map((it) => [fmt(it.startedAt), it.userName, it.username, it.team, it.paper, it.region, it.score ?? '',
+          sec(it, 'tf'), sec(it, 'single'), sec(it, 'multi'), sec(it, 'short'), it.durationSec ?? '', it.status, it.autoSubmitted ? 'Y' : '', it.overtime ? 'Y' : '']);
+        const csv = [head].concat(rows).map((r) => r.map((v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '財補考試成績_' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      document.getElementById('rows').addEventListener('click', (e) => {
+        const tr = e.target.closest('tr.row');
+        if (!tr) return;
+        const id = Number(tr.dataset.id);
+        openId = openId === id ? null : id;
+        renderRows();
+        if (openId) renderDetail(openId);
+      });
+      document.getElementById('status').addEventListener('change', renderRows);
+      document.getElementById('best-only').addEventListener('change', renderRows);
+      document.getElementById('btn-refresh').addEventListener('click', loadList);
+      document.getElementById('btn-csv').addEventListener('click', exportCsv);
+      let qTimer = null;
+      document.getElementById('q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(loadList, 400); });
+
+      async function login() {
+        secret = document.getElementById('admin-secret').value.trim();
+        const msg = document.getElementById('login-msg');
+        msg.classList.add('hidden');
+        try {
+          const res = await rpc('newbie_exam_admin_list', { p_secret: secret, p_query: '', p_limit: 1 });
+          if (!res?.ok) throw new Error(res?.error || '後台密碼錯誤');
+          sessionStorage.setItem(SECRET_KEY, secret);
+          document.getElementById('login-panel').classList.add('hidden');
+          document.getElementById('main-panel').classList.remove('hidden');
+          await loadList();
+        } catch (e) {
+          msg.textContent = e.message;
+          msg.classList.remove('hidden');
+        }
+      }
+      document.getElementById('btn-login').addEventListener('click', login);
+      document.getElementById('admin-secret').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+      const saved = sessionStorage.getItem(SECRET_KEY);
+      if (saved) { document.getElementById('admin-secret').value = saved; login(); }
+    })();
+  </script>
+</body>
+</html>

@@ -7,8 +7,12 @@ var QA_SYNC_CONFIG = {
   SUPABASE_URL: '', // 例：https://xpbownhiedurytlyqszu.supabase.co
   SUPABASE_ANON_KEY: '',
   ADMIN_SECRET: '',
-  SHEET_NAME: '行政填寫-每日績效登錄',
-  SHEET_GID: '820202601', // 網址 #gid= 後的數字；比工作表名稱更準
+  SHEET_NAME: '',
+  SHEET_GID: '2117004695', // 網址 #gid= 後的數字；比工作表名稱更準
+  // 業績月：上月 29 日～本月 28 日（例 2026-10 → 2026-09-29～2026-10-28）；區間外點數不寫入也不標記，留給對應月份的表
+  PERF_MONTH: '2026-10',
+  SYNC_FROM_DATE: '', // 選填，覆蓋 PERF_MONTH 起日（YYYY-MM-DD）
+  SYNC_TO_DATE: '', // 選填，覆蓋 PERF_MONTH 迄日（YYYY-MM-DD）
   QA_HEADERS: ['行政QA', '行政 QA'],
   NAME_HEADERS: ['員工姓名', '姓名', '人員', '名字', '同仁姓名'],
   DATE_HEADERS: ['紀錄日', '日期', '登錄日期', '績效日期'],
@@ -81,6 +85,8 @@ function syncAdminQaPointsMenu() {
     var lines = [];
     lines.push(result.message || (result.ok ? '同步完成' : '同步失敗'));
     lines.push('（紀錄日＝檢核通過日）');
+    if (result.period) lines.push('業績月區間：' + result.period.from + '～' + result.period.to);
+    if (result.outOfPeriod) lines.push('區間外暫不同步：' + result.outOfPeriod + ' 列（留給對應月份的表）');
     lines.push('更新既有列：' + (result.updated || 0));
     lines.push('新增該日列：' + (result.created || 0));
     lines.push('標記已同步：' + (result.marked || 0));
@@ -115,6 +121,8 @@ function diagnoseQaSync() {
     lines.push('ADMIN_SECRET：' + (cfg.ADMIN_SECRET ? '有（' + String(cfg.ADMIN_SECRET).length + ' 字）' : '缺'));
     lines.push('SHEET_NAME：' + (cfg.SHEET_NAME || '（空）'));
     lines.push('SHEET_GID：' + (cfg.SHEET_GID || '（空）'));
+    var period = syncPeriod_(cfg);
+    lines.push('業績月區間：' + (period ? period.from + '～' + period.to : '（未設定，全部同步）'));
 
     var sheet = resolveTargetSheet_(cfg);
     if (!sheet) {
@@ -140,12 +148,18 @@ function diagnoseQaSync() {
       lines.push('Supabase 連線失敗：' + (pull.error || JSON.stringify(pull)));
       lines.push('（常見原因：ADMIN_SECRET 與後台密碼不一致）');
     } else {
-      var rows = pull.rows || [];
+      var split = splitRowsByPeriod_(pull.rows || [], period);
       lines.push('');
-      lines.push('待同步列數：' + rows.length);
-      rows.slice(0, 8).forEach(function (r) {
+      lines.push('待同步列數（區間內）：' + split.inside.length);
+      split.inside.slice(0, 8).forEach(function (r) {
         lines.push('- ' + (r.workDate || '') + '／' + (r.matchName || '') + '／' + (r.totalPoints || 0) + ' 點');
       });
+      if (split.outside.length) {
+        lines.push('區間外（不會寫入此表）：' + split.outside.length + ' 列');
+        split.outside.slice(0, 5).forEach(function (r) {
+          lines.push('- ' + (r.workDate || '') + '／' + (r.matchName || '') + '／' + (r.totalPoints || 0) + ' 點');
+        });
+      }
     }
 
     var triggers = ScriptApp.getProjectTriggers().filter(function (t) {
@@ -167,16 +181,28 @@ function syncAdminQaPoints() {
   var pull = supabaseRpc_(cfg, 'admin_qa_sheets_sync_pull', { p_secret: cfg.ADMIN_SECRET });
   if (!pull.ok) throw new Error(pull.error || '讀取 Supabase 失敗');
 
-  var rows = pull.rows || [];
-  var eventIds = pull.eventIds || [];
+  var period = syncPeriod_(cfg);
+  var split = splitRowsByPeriod_(pull.rows || [], period);
+  var rows = split.inside;
   if (!rows.length) {
-    return { ok: true, updated: 0, unmatched: [], pulled: 0, marked: 0, message: '沒有待同步資料' };
+    return {
+      ok: true,
+      updated: 0,
+      created: 0,
+      unmatched: [],
+      skipped: [],
+      pulled: 0,
+      marked: 0,
+      period: period,
+      outOfPeriod: split.outside.length,
+      message: split.outside.length ? '業績月區間內沒有待同步資料' : '沒有待同步資料',
+    };
   }
 
   var sheet = resolveTargetSheet_(cfg);
   if (!sheet) {
     throw new Error('找不到目標工作表。現有分頁：' + listWorksheetNames_().join('、') +
-      '。請在 Script properties 設定 SHEET_GID=820202601 或正確的 SHEET_NAME');
+      '。請在 Script properties 設定正確的 SHEET_GID（網址 #gid= 後的數字）或 SHEET_NAME');
   }
 
   var layout = findDailyPerfLayout_(sheet, cfg);
@@ -261,6 +287,8 @@ function syncAdminQaPoints() {
     skipped: skipped,
     pulled: rows.length,
     marked: ackIds.length,
+    period: period,
+    outOfPeriod: split.outside.length,
     message: skipped.length
       ? (updated || created ? '部分寫入成功，其餘已跳過（無此姓名）' : '沒有可寫入的列（試算表無此姓名）')
       : created
@@ -277,11 +305,46 @@ function getQaSyncConfig_() {
     ADMIN_SECRET: props.getProperty('ADMIN_SECRET') || QA_SYNC_CONFIG.ADMIN_SECRET,
     SHEET_NAME: props.getProperty('SHEET_NAME') || QA_SYNC_CONFIG.SHEET_NAME,
     SHEET_GID: props.getProperty('SHEET_GID') || QA_SYNC_CONFIG.SHEET_GID,
+    PERF_MONTH: props.getProperty('PERF_MONTH') || QA_SYNC_CONFIG.PERF_MONTH,
+    SYNC_FROM_DATE: props.getProperty('SYNC_FROM_DATE') || QA_SYNC_CONFIG.SYNC_FROM_DATE,
+    SYNC_TO_DATE: props.getProperty('SYNC_TO_DATE') || QA_SYNC_CONFIG.SYNC_TO_DATE,
     QA_HEADERS: QA_SYNC_CONFIG.QA_HEADERS,
     NAME_HEADERS: QA_SYNC_CONFIG.NAME_HEADERS,
     DATE_HEADERS: QA_SYNC_CONFIG.DATE_HEADERS,
     MAX_SCAN_ROWS: QA_SYNC_CONFIG.MAX_SCAN_ROWS,
   };
+}
+
+function ymd_(d) {
+  return Utilities.formatDate(d, 'Asia/Taipei', 'yyyy-MM-dd');
+}
+
+/** 業績月：上月 29 日～本月 28 日；平年 3 月從 3/1 起算（2/29 不存在） */
+function syncPeriod_(cfg) {
+  var from = '';
+  var to = '';
+  var m = String(cfg.PERF_MONTH || '').trim().match(/^(\d{4})-(\d{1,2})$/);
+  if (m) {
+    var y = Number(m[1]);
+    var mon = Number(m[2]);
+    from = ymd_(new Date(y, mon - 2, 29, 12));
+    to = ymd_(new Date(y, mon - 1, 28, 12));
+  }
+  if (cfg.SYNC_FROM_DATE) from = String(cfg.SYNC_FROM_DATE).trim();
+  if (cfg.SYNC_TO_DATE) to = String(cfg.SYNC_TO_DATE).trim();
+  if (!from && !to) return null;
+  return { from: from || '0000-01-01', to: to || '9999-12-31' };
+}
+
+function splitRowsByPeriod_(rows, period) {
+  var inside = [];
+  var outside = [];
+  (rows || []).forEach(function (r) {
+    var d = String(r.workDate || '');
+    if (!period || (d >= period.from && d <= period.to)) inside.push(r);
+    else outside.push(r);
+  });
+  return { inside: inside, outside: outside };
 }
 
 function supabaseRpc_(cfg, fn, payload) {

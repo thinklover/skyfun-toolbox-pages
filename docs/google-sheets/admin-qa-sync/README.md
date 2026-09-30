@@ -2,9 +2,10 @@
 
 將 Supabase 後台檢核通過的行政 QA 點數，寫入試算表：
 
-- 試算表：[每日績效報表](https://docs.google.com/spreadsheets/d/1ujJV7WTgsBtgmPHkmsPg41J9Kjo8TgVNTI_jMvhXfB4/edit?gid=820202601)
-- 工作表：**行政填寫-每日績效登錄**（gid=`820202601`）
+- 試算表：每個業績月一份，例如 [10月每日點數表](https://docs.google.com/spreadsheets/d/1KMkh2qaFRe3PKCqmBdASf8oRcnaGsW7LJKQacc7_now/edit?gid=2117004695)（gid=`2117004695`）
+  - 9 月（舊）：[每日績效報表](https://docs.google.com/spreadsheets/d/1ujJV7WTgsBtgmPHkmsPg41J9Kjo8TgVNTI_jMvhXfB4/edit?gid=820202601)（gid=`820202601`）
 - 欄位：**紀錄日** + **員工姓名** → 寫入 **行政QA**
+- 業績月：**上月 29 日～本月 28 日**（10 月表＝9/29～10/28）
 
 ## 一次性設定（約 5 分鐘）
 
@@ -26,12 +27,15 @@
 | `SUPABASE_URL` | `https://xpbownhiedurytlyqszu.supabase.co` |
 | `SUPABASE_ANON_KEY` | Supabase anon key（與 `js/supabase-config.js` 相同） |
 | `ADMIN_SECRET` | 工具箱後台密碼（與 admin.html 相同） |
-| `SHEET_NAME` | `行政填寫-每日績效登錄` |
-| `SHEET_GID` | `820202601`（**建議一定要設**） |
+| `SHEET_GID` | 網址 `#gid=` 後的數字，10 月表為 `2117004695`（**一定要設**） |
+| `PERF_MONTH` | 業績月，例 `2026-10`（只同步 9/29～10/28 的點數） |
+| `SHEET_NAME` | 選填；有設 GID 可不填，舊值若與新表不符請刪除 |
 
 5. 儲存後執行一次 `syncAdminQaPointsMenu`（需授權；會跳出寫入／對不到結果）
 
-> **找不到工作表？** 試算表選單 → **行政 QA → 列出所有工作表名稱**，把正確名稱填到 `SHEET_NAME`，或直接設 `SHEET_GID=820202601`。
+> **找不到工作表？** 試算表選單 → **行政 QA → 列出所有工作表名稱**，確認後把正確的 gid 填到 `SHEET_GID`。
+
+**換新月份的表**：在新表的 Apps Script 改 `SHEET_GID` 與 `PERF_MONTH`（例 `2026-11`），並重新安裝 8:00 觸發器；舊表的觸發器可保留，它只會寫自己業績月的點數。
 6. 選單 **行政 QA → 安裝每天早上 8:00 自動同步**
 7. 若同步異常：選單 **行政 QA → 檢查同步設定**
 
@@ -57,6 +61,7 @@ window.SKYFUN_QA_SHEETS_SYNC_URL = 'https://script.google.com/macros/s/xxxx/exec
 - **行政QA** 寫入該人當日 **累計總點**
 - **自動同步**：每天早上 **08:00（台北）** 一次
 - 找不到對應列時不標記已同步，下次 08:00 會重試
+- 核准日不在 `PERF_MONTH` 區間內的點數不寫入、不標記，留給對應月份的表
 
 ## 安裝自動同步
 
