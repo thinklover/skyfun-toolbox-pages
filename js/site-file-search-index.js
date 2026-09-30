@@ -5,6 +5,8 @@
     'use strict';
 
     window.SITE_FILE_SEARCH_INDEX = [
+        { file: './docs/weekly-meeting/files/0929業務周會.pdf', title: '115/09/29 0929業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0929 獎金 結績 紙本合約 代管 1101 證照 公司登錄 代管費 配置調整 跨區 派案 虛擬帳戶 匯錯 沖銷 收款帳戶 配偶 賣屋 換約 押金移轉' },
+        { file: './docs/weekly-meeting/files/租賃住宅管理人員配置調整同意書.pdf', title: '租賃住宅管理人員配置調整同意書', category: '檔案 · PDF · 業務周會', keywords: '租賃管理人員 配置調整 同意書 證照 代管 公告 20260624 附件一 表單 周會' },
         { file: './docs/weekly-meeting/files/0914業務周會.pdf', title: '115/09/14 0914業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0914 獎金 結績 廣告 591 複審 解約 催收 SOP 本票 強制執行' },
         { file: './docs/weekly-meeting/files/0907業務周會.pdf', title: '115/09/07 0907業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0907 軍公教 優存 代管 信任租 獎金 結績 證照 印鑑 星鴻 星華 BLL 東吳' },
         { file: './docs/weekly-meeting/files/2025-08-31_管理部週會.pdf', title: '115/08/31 0831業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0831 高專 寄居蟹 轉銜 300億 租金補貼 解編 激勵' },
