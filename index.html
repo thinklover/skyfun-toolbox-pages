@@ -1552,6 +1552,9 @@
             color: #0f172a;
         }
         .nb-calc-input:focus { outline: none; border-color: #059669; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
+        .nb-calc-fields { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+        .nb-calc-fields > div { flex: 1 1 12rem; max-width: 16rem; }
+        .nb-calc-output { display: block; min-height: 2.6rem; line-height: 1.5; background: #f0fdf4; border-style: dashed; font-weight: 800; color: #065f46; }
         .nb-calc-warn {
             margin: 0.55rem 0 0.75rem;
             padding: 0.5rem 0.7rem;
@@ -1606,6 +1609,51 @@
         .nb-exam-history { margin-top: 1rem; }
         .nb-exam-history h4 { font-size: 0.9rem; font-weight: 900; color: #064e3b; margin: 0 0 0.4rem; }
         #page-newbie-subsidy .nb-exam-hist-table { min-width: 30rem; }
+        .nb-ck { font-size: 0.9rem; color: #1e293b; }
+        .nb-ck-rules { margin: 0 0 0.75rem; padding-left: 1.2rem; list-style: disc; font-size: 0.82rem; color: #334155; line-height: 1.65; }
+        .nb-ck-today { margin-bottom: 0.75rem; }
+        .nb-ck-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 0.55rem; }
+        .nb-ck-nav strong { font-size: 1.05rem; font-weight: 900; color: #064e3b; min-width: 6.5rem; text-align: center; }
+        .nb-ck-count { font-size: 0.8rem; color: #64748b; margin-left: auto; }
+        .nb-ck-btn { border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 0.55rem; padding: 0.35rem 0.8rem; font-weight: 800; cursor: pointer; }
+        .nb-ck-btn:hover:not(:disabled) { border-color: #10b981; color: #047857; }
+        .nb-ck-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .nb-ck-btn.is-danger { color: #b91c1c; border-color: #fecaca; }
+        .nb-ck-table-wrap { overflow-x: auto; }
+        #page-newbie-subsidy table.nb-ck-table { width: 100%; min-width: 32rem; table-layout: fixed; border-collapse: separate; border-spacing: 0.3rem; border-radius: 0; overflow: visible; background: transparent; box-shadow: none; }
+        .nb-ck-table th { font-size: 0.75rem; font-weight: 800; color: #475569; text-align: center; padding: 0.2rem 0; background: transparent; border: 0; }
+        .nb-ck-cell {
+            position: relative; height: 6.5rem; padding: 0.25rem; vertical-align: top; text-align: center;
+            border: 1.5px dashed #cbd5e1; border-radius: 0.6rem; background: #fff; cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .nb-ck-cell:hover, .nb-ck-cell:focus-visible { border-color: #10b981; background: #f0fdf4; outline: none; }
+        .nb-ck-cell.is-out { border: 0; background: transparent; cursor: default; }
+        .nb-ck-cell.is-future { background: #f8fafc; border-style: solid; border-color: #e2e8f0; cursor: not-allowed; }
+        .nb-ck-cell.is-future .nb-ck-date { color: #cbd5e1; }
+        .nb-ck-cell.is-done { border-style: solid; border-color: #6ee7b7; background: #ecfdf5; }
+        .nb-ck-cell.is-today { box-shadow: 0 0 0 2px #f59e0b inset; }
+        .nb-ck-cell.is-editing { border-color: #059669; box-shadow: 0 0 0 2px #059669 inset; }
+        .nb-ck-date { position: absolute; top: 0.2rem; left: 0.4rem; font-size: 0.78rem; font-weight: 900; color: #334155; z-index: 1; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+        .nb-ck-thumb { display: block; width: 100%; height: 100%; max-height: 6rem; object-fit: cover; border-radius: 0.4rem; }
+        .nb-ck-note { position: absolute; left: 0.25rem; right: 0.25rem; bottom: 0.25rem; padding: 0.1rem 0.25rem; border-radius: 0.3rem; background: rgba(6, 78, 59, 0.85); color: #fff; font-size: 0.68rem; font-weight: 700; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .nb-ck-cell.is-done:not(:has(.nb-ck-thumb)) .nb-ck-note { position: static; display: block; margin-top: 1.5rem; white-space: normal; }
+        .nb-ck-add { display: block; margin-top: 2.3rem; font-size: 0.75rem; font-weight: 800; color: #94a3b8; }
+        .nb-ck-cell:hover .nb-ck-add { color: #059669; }
+        .nb-ck-editor { margin-top: 0.75rem; padding: 0.85rem 1rem; border: 1.5px solid #6ee7b7; border-radius: 0.8rem; background: #f0fdf4; }
+        .nb-ck-editor-title { margin: 0 0 0.6rem; font-weight: 900; color: #064e3b; }
+        .nb-ck-editor .nb-calc-label { margin-top: 0.55rem; }
+        .nb-ck-current { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem; }
+        .nb-ck-current img, .nb-ck-preview img { display: block; max-width: 12rem; max-height: 12rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; background: #fff; }
+        .nb-ck-preview { margin-top: 0.45rem; }
+        .nb-ck-remove { font-size: 0.8rem; font-weight: 700; color: #b91c1c; display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; }
+        .nb-ck-file { display: block; width: 100%; font-size: 0.85rem; }
+        .nb-ck-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
+        .nb-ck-chip { border: 1px solid #a7f3d0; background: #fff; color: #047857; border-radius: 999px; padding: 0.15rem 0.65rem; font-size: 0.75rem; font-weight: 800; cursor: pointer; }
+        .nb-ck-chip:hover { background: #d1fae5; }
+        .nb-ck-msg { margin: 0.55rem 0 0; font-size: 0.82rem; color: #047857; }
+        .nb-ck-msg.is-error { color: #b91c1c; }
+        .nb-ck-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
         .nb-exam-admin-link { text-align: right; margin-top: 0.6rem; }
         .nb-exam-admin-link a { color: #64748b; text-decoration: underline; }
         .nb-exam-hist-table td.is-pass { color: #047857; }
@@ -8776,7 +8824,7 @@
                     <button type="button" class="nb-hub-tile nb-hub-tile--subsidy" onclick="showPage('newbie-subsidy')">
                         <span class="nb-hub-tile-icon">💰</span>
                         <span class="nb-hub-tile-title">財補專區</span>
-                        <span class="nb-hub-tile-desc">月份試算 · 線上考試 · 獎金辦法</span>
+                        <span class="nb-hub-tile-desc">月份試算 · 打卡上傳 · 線上考試 · 獎金辦法</span>
                         <span class="nb-hub-tile-go">查看辦法 →</span>
                     </button>
                 </div>
@@ -8815,11 +8863,24 @@
 
                 <section class="nb-panel nb-calc" aria-labelledby="nb-subsidy-calc-title">
                     <h3 id="nb-subsidy-calc-title" class="nb-rule-title">📅 財補月份試算</h3>
-                    <label for="nb-subsidy-hire" class="nb-calc-label">到職日</label>
-                    <input type="date" id="nb-subsidy-hire" class="nb-calc-input" autocomplete="off">
-                    <p class="nb-calc-warn">⚠️ 請輸入與<strong>系統登錄的到職日</strong>相同的日期，否則試算區間會與實際認定不符。</p>
+                    <div class="nb-calc-fields">
+                        <div>
+                            <label for="nb-subsidy-hire" class="nb-calc-label">結訓日</label>
+                            <input type="date" id="nb-subsidy-hire" class="nb-calc-input" autocomplete="off">
+                        </div>
+                        <div>
+                            <span class="nb-calc-label" id="nb-subsidy-start-label">財補開始日期</span>
+                            <output id="nb-subsidy-start" class="nb-calc-input nb-calc-output" aria-labelledby="nb-subsidy-start-label">—</output>
+                        </div>
+                    </div>
+                    <p class="nb-calc-warn">⚠️ 請輸入與<strong>系統登錄的結訓日</strong>相同的日期；財補開始日期自動帶入結訓日的下週一。</p>
                     <div id="nb-subsidy-result" class="nb-calc-result" aria-live="polite"></div>
-                    <p class="nb-calc-foot">區間依每月結績日切分：結績日當天起算下一個月。到職當天至第一個結績日前一天為第 1 個月。</p>
+                    <p class="nb-calc-foot">區間依每月結績日切分：結績日當天起算下一個月。財補開始日期至第一個結績日前一天為第 1 個月。</p>
+                </section>
+
+                <section class="nb-panel nb-ck" id="nb-ck-root" aria-labelledby="nb-ck-title">
+                    <h3 id="nb-ck-title" class="nb-rule-title">📸 每日打卡上傳</h3>
+                    <div id="nb-ck-body"></div>
                 </section>
 
                 <section class="nb-panel nb-exam" id="nb-exam-root" aria-labelledby="nb-exam-title">
@@ -8928,7 +8989,7 @@
             const SETTLE_DAYS = {
                 2026: [21, 24, 23, 20, 22, 22, 21, 21, 21, 20, 23, 21]
             };
-            const STORE_KEY = 'nbSubsidyHireDate';
+            const STORE_KEY = 'nbSubsidyTrainEndDate';
             const WEEK = '日一二三四五六';
 
             function settleOf(year, monthIdx) {
@@ -8957,9 +9018,14 @@
                 return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
             }
 
-            function buildPeriods(hire) {
+            function nextWeekMonday(d) {
+                const day = d.getDay();
+                return addDays(d, day === 0 ? 1 : 8 - day);
+            }
+
+            function buildPeriods(first) {
                 const periods = [];
-                let start = hire;
+                let start = first;
                 for (let i = 1; i <= 4; i++) {
                     const s = nextSettleAfter(start);
                     periods.push({ no: i, start: start, end: addDays(s.date, -1), estimated: s.estimated });
@@ -8971,16 +9037,23 @@
             function render() {
                 const input = document.getElementById('nb-subsidy-hire');
                 const out = document.getElementById('nb-subsidy-result');
+                const startOut = document.getElementById('nb-subsidy-start');
                 if (!input || !out) return;
-                const hire = parseYmd(input.value);
-                if (!hire) { out.innerHTML = '<p class="nb-calc-empty">輸入到職日後會自動算出第 1～4 個月的區間。</p>'; return; }
+                const trainEnd = parseYmd(input.value);
+                if (!trainEnd) {
+                    if (startOut) startOut.textContent = '—';
+                    out.innerHTML = '<p class="nb-calc-empty">輸入結訓日後會自動帶出財補開始日期，並算出第 1～4 個月的區間。</p>';
+                    return;
+                }
+                const first = nextWeekMonday(trainEnd);
+                if (startOut) startOut.textContent = fmt(first);
                 const now = new Date();
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                const periods = buildPeriods(hire);
+                const periods = buildPeriods(first);
                 const current = periods.find(p => today >= p.start && today <= p.end);
                 let status;
-                if (today < hire) {
-                    status = '尚未到職（距到職日還有 ' + (daysBetween(today, hire) - 1) + ' 天）';
+                if (today < first) {
+                    status = '財補尚未開始（距財補開始日期還有 ' + (daysBetween(today, first) - 1) + ' 天）';
                 } else if (current) {
                     status = '目前是 <strong>第 ' + current.no + ' 個月</strong>，剩 ' + daysBetween(today, current.end) + ' 天（至 ' + fmt(current.end) + '）';
                 } else {
@@ -9841,6 +9914,7 @@
         <script src="./js/toolbox-auth.js?v=20260905-2"></script>
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20260930-2"></script>
+        <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
 <script src="./js/lite-hide-api.js"></script>
 <script src="./js/site-file-search-index.js"></script>
         <script src="./js/tenant-eligibility-legal.js"></script>
@@ -11603,12 +11677,13 @@
             { external: 'https://pip.moi.gov.tw/Publicize/Info/B1021', title: '300億租金補貼試算', category: '房客專區', keywords: '300億 租補 租金補貼 內政部 試算 pip' },
             { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發' },
             { page: 'rent', title: '租金水準試算器', category: '業務專區', keywords: '租金水準試算器 租金水準 試算器 計算器 租金 坪數 行情 估租 單坪 屋齡 行政區 評定 待租 評定結果 擬定月租 收件上限 社宅' },
-            { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題' },
+            { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假' },
             { page: 'newbie-quest', title: '業績任務板', category: '新人專區', keywords: '業績 任務板 打卡 新人 考核 kpi 追蹤 任務 新人任務' },
             { file: './admin/accounts-dashboard.html', title: '帳號管理後台', category: '管理工具', keywords: '後台 admin 帳號 開通 停用 登入紀錄 管理員' },
             { file: './admin/newbie-dashboard.html', title: '新人業績後台', category: '管理工具', keywords: '後台 admin 業績 任務 管理員 儀表板 dashboard KPI 新人' },
             { file: './admin/admin-qa-dashboard.html', title: '行政 QA 檢核後台', category: '管理工具', keywords: '後台 admin 行政 問答 QA 檢核 點數 小組長' },
             { file: './admin/newbie-exam-dashboard.html', title: '財補考試成績後台', category: '管理工具', keywords: '後台 admin 財補 考試 成績 考卷 A卷 B卷 結訓考 新人' },
+            { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳' },
             { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 公證費 租賃公證 119條' },
             { page: 'business-forms', title: '各式表單', category: '業務專區', keywords: '表單 場勘 押金讓渡 領款收據 切結書 300億切結 115Y 自願撤案 帳戶變更 租金補貼 複審 檢核 還款 協議 欠租' },
             { page: 'termination', title: '催收解約專區', category: '首頁專區', keywords: '催收 解約 退租 終止 退還 欠租 存證信函' },

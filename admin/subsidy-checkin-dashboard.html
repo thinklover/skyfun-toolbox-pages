@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>財補打卡紀錄 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/subsidy-checkin-xlsx.js?v=20260930-1"></script>
+  <style>
+    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
+    input, select { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.5rem 0.75rem; color: #f8fafc; color-scheme: dark; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; text-align: left; border-bottom: 1px solid #334155; vertical-align: middle; }
+    th { color: #94a3b8; font-weight: 700; white-space: nowrap; }
+    tr.row:hover td { background: rgba(45, 212, 191, 0.07); }
+    tr.row.is-open td { background: rgba(45, 212, 191, 0.12); }
+    .muted { color: #64748b; }
+    .btn { font-size: 0.8rem; padding: 0.3rem 0.7rem; border-radius: 0.5rem; border: 1px solid #475569; white-space: nowrap; }
+    .btn:hover:not(:disabled) { border-color: #2dd4bf; color: #5eead4; }
+    .btn:disabled { opacity: 0.5; cursor: wait; }
+    .btn-main { background: #0d9488; border-color: #0d9488; color: #fff; font-weight: 800; }
+    .btn-main:hover:not(:disabled) { background: #0f766e; color: #fff; }
+    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 0.65rem; padding: 0.6rem 0.75rem; }
+    .stat b { display: block; font-size: 1.35rem; color: #f8fafc; }
+    .stat span { font-size: 0.75rem; color: #94a3b8; }
+    .bar { height: 0.4rem; border-radius: 999px; background: #334155; overflow: hidden; min-width: 5rem; }
+    .bar i { display: block; height: 100%; background: #2dd4bf; }
+    .detail { background: #0f172a; border-top: 2px solid #2dd4bf; }
+    .months { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); }
+    .month h4 { font-weight: 900; color: #5eead4; margin-bottom: 0.35rem; }
+    .cal { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 3px; }
+    .cal th { text-align: center; font-size: 0.7rem; padding: 0; border: 0; }
+    .cal td { height: 4.6rem; padding: 0; border: 1px solid #334155; border-radius: 0.4rem; position: relative; text-align: center; vertical-align: middle; font-size: 0.68rem; overflow: hidden; }
+    .cal td.out { border: 0; }
+    .cal td.miss { background: rgba(244, 63, 94, 0.08); border-color: rgba(244, 63, 94, 0.35); }
+    .cal td.future { opacity: 0.35; }
+    .cal td b { position: absolute; top: 2px; left: 4px; font-size: 0.7rem; color: #f8fafc; text-shadow: 0 0 3px #000; z-index: 1; }
+    .cal td img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cal td .note { position: absolute; left: 2px; right: 2px; bottom: 2px; background: rgba(13, 148, 136, 0.9); color: #fff; border-radius: 0.25rem; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal td.text-only .note { position: static; white-space: normal; background: none; color: #5eead4; font-weight: 800; }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+  <header>
+    <h1 class="text-2xl font-black text-teal-300">財補打卡紀錄後台</h1>
+    <p class="text-slate-400 text-sm mt-1">財補計畫每日打卡照片 · 可依《財補計畫照片上傳》格式匯出 Excel · <a class="text-teal-300 underline" href="../index.html">回工具箱</a></p>
+  </header>
+
+  <section class="card p-4 space-y-3" id="login-panel">
+    <label class="block text-sm text-slate-400">後台密碼（Supabase admin_secret）</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-bold">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm text-rose-300 hidden"></p>
+  </section>
+
+  <section class="card p-4 hidden space-y-4" id="main-panel">
+    <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">起始月份（匯出連續四個月）</label>
+        <input type="month" id="start-month" value="2026-10" min="2024-01" />
+      </div>
+      <p class="text-sm text-slate-300 pb-2" id="range-label">—</p>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">搜尋姓名／帳號／處別</label>
+        <input type="search" id="q" placeholder="輸入關鍵字" class="min-w-[12rem]" />
+      </div>
+      <button type="button" id="btn-refresh" class="btn">重新整理</button>
+      <button type="button" id="btn-all" class="btn btn-main">⬇ 全部人員匯出 Excel</button>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="stats"></div>
+    <p id="msg" class="text-sm text-slate-400"></p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr><th>姓名</th><th>帳號</th><th>處別</th><th>已上傳／應上傳（至今天）</th><th></th><th>最後上傳</th><th></th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-pages-admin-secret';
+      const X = window.SubsidyCheckinXlsx;
+      const WEEK = ['一', '二', '三', '四', '五'];
+      let secret = '';
+      let entries = [];
+      let openUser = null;
+      let busy = false;
+
+      const $ = (id) => document.getElementById(id);
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function fmt(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('zh-TW', { hour12: false }); } catch { return iso; }
+      }
+      function taipeiToday() { return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10); }
+
+      function start() {
+        const v = $('start-month').value || '2026-10';
+        return { y: Number(v.slice(0, 4)), m: Number(v.slice(5, 7)) };
+      }
+      function range() { const s = start(); return X.rangeOf(s.y, s.m); }
+      function months() { const s = start(); return [0, 1, 2, 3].map((i) => X.addMonths(s.y, s.m, i)); }
+
+      function workdays() {
+        const today = taipeiToday();
+        return months().flatMap((mm) => X.monthWeeks(mm.y, mm.m).flat()).filter((s) => s && s <= today);
+      }
+
+      async function call(body) {
+        const c = window.SKYFUN_SUPABASE || {};
+        const url = String(c.url || '').trim().replace(/\/$/, '');
+        const key = String(c.anonKey || '').trim();
+        const res = await fetch(url + '/functions/v1/subsidy-checkin', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + key, apikey: key, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        let data = null;
+        try { data = await res.json(); } catch { /* non-JSON */ }
+        if (!data?.ok) throw new Error(data?.error || data?.message || ('連線失敗（' + res.status + '）'));
+        return data;
+      }
+
+      function people() {
+        const map = new Map();
+        entries.forEach((e) => {
+          if (!map.has(e.userId)) map.set(e.userId, { userId: e.userId, userName: e.userName, username: e.username, team: e.team, entries: [], last: '' });
+          const p = map.get(e.userId);
+          p.entries.push(e);
+          if (!p.last || e.updatedAt > p.last) p.last = e.updatedAt;
+        });
+        const q = $('q').value.trim().toLowerCase();
+        return [...map.values()]
+          .filter((p) => !q || [p.userName, p.username, p.team].some((v) => String(v || '').toLowerCase().includes(q)))
+          .sort((a, b) => String(a.team).localeCompare(String(b.team), 'zh-Hant') || String(a.userName).localeCompare(String(b.userName), 'zh-Hant'));
+      }
+
+      function renderRange() {
+        const ms = months();
+        $('range-label').textContent = X.rocMonth(ms[0].y, ms[0].m) + ' ～ ' + X.rocMonth(ms[3].y, ms[3].m);
+      }
+
+      function renderStats(list) {
+        const due = workdays();
+        const today = taipeiToday();
+        const todayCount = entries.filter((e) => e.day === today).length;
+        const photos = entries.filter((e) => e.hasPhoto).length;
+        $('stats').innerHTML = [
+          ['上傳人數', list.length],
+          ['打卡紀錄筆數', entries.length],
+          ['含照片筆數', photos],
+          ['今天已上傳人數', due.includes(today) ? todayCount : '—']
+        ].map(([k, v]) => '<div class="stat"><b>' + v + '</b><span>' + k + '</span></div>').join('');
+      }
+
+      function calendarHtml(p) {
+        const byDay = {};
+        p.entries.forEach((e) => { byDay[e.day] = e; });
+        const today = taipeiToday();
+        return '<div class="months">' + months().map((mm) => {
+          const weeks = X.monthWeeks(mm.y, mm.m);
+          return '<div class="month"><h4>' + X.rocMonth(mm.y, mm.m) + '</h4><table class="cal"><thead><tr>' +
+            WEEK.map((w) => '<th>' + w + '</th>').join('') + '</tr></thead><tbody>' +
+            weeks.map((row) => '<tr>' + row.map((s) => {
+              if (!s) return '<td class="out"></td>';
+              const e = byDay[s];
+              const d = '<b>' + Number(s.slice(8)) + '</b>';
+              if (!e) return '<td class="' + (s > today ? 'future' : 'miss') + '">' + d + '</td>';
+              const img = e.thumbUrl ? '<a href="' + esc(e.photoUrl || e.thumbUrl) + '" target="_blank" rel="noopener"><img src="' + esc(e.thumbUrl) + '" alt="' + s + '" loading="lazy"></a>' : '';
+              const note = e.note ? '<span class="note">' + esc(e.note) + '</span>' : '';
+              return '<td class="' + (img ? '' : 'text-only') + '" title="' + esc(s + ' 上傳於 ' + fmt(e.updatedAt)) + '">' + d + img + note + '</td>';
+            }).join('') + '</tr>').join('') +
+            '</tbody></table></div>';
+        }).join('') + '</div>';
+      }
+
+      function renderRows() {
+        const list = people();
+        const due = workdays();
+        renderStats(list);
+        $('rows').innerHTML = list.map((p) => {
+          const done = p.entries.filter((e) => due.includes(e.day)).length;
+          const pct = due.length ? Math.round(done / due.length * 100) : 0;
+          const open = openUser === p.userId;
+          return '<tr class="row' + (open ? ' is-open' : '') + '">' +
+            '<td>' + esc(p.userName) + '</td><td>' + esc(p.username) + '</td><td>' + esc(p.team || '—') + '</td>' +
+            '<td>' + done + ' / ' + due.length + ' 天</td>' +
+            '<td><div class="bar"><i style="width:' + pct + '%"></i></div></td>' +
+            '<td>' + fmt(p.last) + '</td>' +
+            '<td class="text-right space-x-1"><button type="button" class="btn" data-view="' + esc(p.userId) + '">' + (open ? '收起' : '預覽') + '</button>' +
+            '<button type="button" class="btn btn-main" data-xlsx="' + esc(p.userId) + '">⬇ Excel</button></td></tr>' +
+            (open ? '<tr><td colspan="7" class="detail">' + calendarHtml(p) + '</td></tr>' : '');
+        }).join('') || '<tr><td colspan="7" class="muted">這四個月還沒有人上傳打卡紀錄</td></tr>';
+      }
+
+      async function loadList() {
+        renderRange();
+        $('msg').textContent = '讀取中…';
+        try {
+          const r = range();
+          const res = await call({ action: 'admin_list', secret, from: r.from, to: r.to });
+          entries = res.entries || [];
+          $('msg').textContent = '';
+          renderRows();
+        } catch (e) {
+          $('msg').textContent = e.message;
+        }
+      }
+
+      async function fetchImage(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('照片下載失敗（' + res.status + '）');
+        const blob = await res.blob();
+        const bmp = await createImageBitmap(blob);
+        const out = { buffer: await blob.arrayBuffer(), width: bmp.width, height: bmp.height, extension: /png/.test(blob.type) ? 'png' : 'jpeg' };
+        bmp.close && bmp.close();
+        return out;
+      }
+
+      async function exportXlsx(list, suffix) {
+        if (busy || !list.length) return;
+        busy = true;
+        document.querySelectorAll('[data-xlsx], #btn-all').forEach((b) => { b.disabled = true; });
+        const msg = $('msg');
+        try {
+          const jobs = [];
+          list.forEach((p) => p.entries.forEach((e) => { if (e.thumbUrl) jobs.push({ key: e.day + '|' + p.userId, url: e.thumbUrl }); }));
+          const images = {};
+          let done = 0, failed = 0;
+          const worker = async () => {
+            while (jobs.length) {
+              const j = jobs.shift();
+              try { images[j.key] = await fetchImage(j.url); } catch { failed++; }
+              done++;
+              msg.textContent = '下載照片中… ' + done + ' / ' + (done + jobs.length);
+            }
+          };
+          await Promise.all(Array.from({ length: 6 }, worker));
+          msg.textContent = '產生 Excel 中…';
+          const s = start();
+          const wb = X.buildWorkbook(window.ExcelJS, list, s.y, s.m, images);
+          const buf = await wb.xlsx.writeBuffer();
+          const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = X.fileName(s.y, s.m, suffix);
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+          msg.textContent = '已產生 ' + a.download + (failed ? '（' + failed + ' 張照片下載失敗，請重新整理後再匯出）' : '');
+        } catch (e) {
+          msg.textContent = 'Excel 匯出失敗：' + e.message;
+        } finally {
+          busy = false;
+          document.querySelectorAll('[data-xlsx], #btn-all').forEach((b) => { b.disabled = false; });
+        }
+      }
+
+      $('rows').addEventListener('click', (e) => {
+        const v = e.target.closest('[data-view]');
+        if (v) { openUser = openUser === v.dataset.view ? null : v.dataset.view; renderRows(); return; }
+        const x = e.target.closest('[data-xlsx]');
+        if (x) {
+          const p = people().find((pp) => pp.userId === x.dataset.xlsx);
+          if (p) exportXlsx([p], p.userName || p.username);
+        }
+      });
+      $('btn-all').addEventListener('click', () => {
+        const list = people();
+        if (!list.length) { $('msg').textContent = '沒有可匯出的資料'; return; }
+        exportXlsx(list, '全部' + list.length + '人');
+      });
+      $('btn-refresh').addEventListener('click', loadList);
+      $('start-month').addEventListener('change', () => { openUser = null; loadList(); });
+      $('q').addEventListener('input', renderRows);
+
+      async function login() {
+        secret = $('admin-secret').value.trim();
+        const msg = $('login-msg');
+        msg.classList.add('hidden');
+        try {
+          const t = taipeiToday();
+          await call({ action: 'admin_list', secret, from: t, to: t, urls: 'none' });
+          sessionStorage.setItem(SECRET_KEY, secret);
+          $('login-panel').classList.add('hidden');
+          $('main-panel').classList.remove('hidden');
+          await loadList();
+        } catch (e) {
+          msg.textContent = e.message;
+          msg.classList.remove('hidden');
+        }
+      }
+      $('btn-login').addEventListener('click', login);
+      $('admin-secret').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+      const saved = sessionStorage.getItem(SECRET_KEY);
+      if (saved) { $('admin-secret').value = saved; login(); }
+    })();
+  </script>
+</body>
+</html>
