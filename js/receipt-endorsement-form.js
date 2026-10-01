@@ -12,41 +12,23 @@
     'receipt-endorse-deposit'
   ];
 
-  async function apiBase() {
-    if (typeof window.loadNbApiBase === 'function') {
-      return window.loadNbApiBase();
-    }
-    return String(window.NB_TRACKER_API || '').trim().replace(/\/$/, '');
-  }
-
-  async function parseJsonResponse(r) {
-    const text = await r.text();
-    if (!text || !text.trim()) {
-      throw new Error('API 回傳空白（請確認 api-base.json 或 NB_TRACKER_API_URL 已指向雲端主機）');
-    }
-    try {
-      return JSON.parse(text);
-    } catch {
-      throw new Error('API 回傳非 JSON（網址可能指到 Netlify 靜態頁，請設定 api-base.json）');
-    }
-  }
-
   const RECEIPT_SCHEMA_VERSION = 2;
 
-  function apiRestartHint() {
-    return 'API 主機仍是舊版（仍要求案件編號）。請關閉「SkyfunAPI8765」視窗後，重新執行「啟動雲端API主機.bat」。';
-  }
-
-  function isLegacyApiMessage(msg) {
-    const s = String(msg || '');
-    return s.includes('案件編號') || s.includes('業務姓名') || s.includes('caseId');
-  }
-
-  function netlifySetupHint() {
-    if (typeof window.isNbStaticHosting === 'function' && window.isNbStaticHosting()) {
-      return 'Netlify 請在專案根目錄 api-base.json 填 "base": "https://隧道網址" 後重新部署，或在 Netlify 後台設 NB_TRACKER_API_URL。';
+  async function callFn(body) {
+    const c = window.SKYFUN_SUPABASE || {};
+    const url = String(c.url || '').trim().replace(/\/$/, '');
+    const key = String(c.anonKey || c.anon_key || '').trim();
+    if (!url || !key) throw new Error('尚未設定 Supabase 連線');
+    const r = await fetch(url + '/functions/v1/receipt-endorsement', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + key, apikey: key, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    try {
+      return await r.json();
+    } catch {
+      throw new Error('伺服器回應異常（' + r.status + '）');
     }
-    return '請執行「啟動雲端API主機.bat」或設定 js/nb-api-config.js。';
   }
 
   function $(id) {
@@ -130,26 +112,11 @@
   }
 
   async function refreshLineStatus() {
-    const base = await apiBase();
     const badge = $('receipt-endorse-line-badge');
-    if (!base) {
-      if (badge) {
-        badge.textContent = '需設定 API 網址';
-        badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900';
-      }
-      setStatus(netlifySetupHint(), true);
-      return;
-    }
     try {
-      const r = await fetch(base + '/api/receipt-endorsement/status');
-      const j = await parseJsonResponse(r);
-      if (j.schemaVersion !== RECEIPT_SCHEMA_VERSION) {
-        if (badge) {
-          badge.textContent = 'API 需重啟';
-          badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900';
-        }
-        setStatus(apiRestartHint(), true);
-        return;
+      const j = await callFn({ action: 'status' });
+      if (!j?.ok || j.schemaVersion !== RECEIPT_SCHEMA_VERSION) {
+        throw new Error(j?.message || '照會服務版本不符');
       }
       if (badge) {
         if (j.ready) {
@@ -163,49 +130,26 @@
           badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-900';
         }
       }
-      if (!j.ready) {
-        setStatus(
-          '請在 server/config.json 設定 lineChannelAccessToken，將官方帳號拉進照會群，詳見設定教學。',
-          true
-        );
-      } else {
-        setStatus('');
-      }
+      setStatus(j.ready ? '' : 'LINE 照會群尚未設定，請聯絡管理員。', !j.ready);
     } catch (e) {
-      if (badge) badge.textContent = 'API 連線失敗';
-      const hint =
-        (e?.message || '').includes('fetch') || (e?.message || '').includes('Failed')
-          ? '請確認公司電腦已執行「啟動雲端API主機.bat」且 SkyfunAPI8765、SkyfunTunnel 兩視窗都開著；隧道網址若已變請更新 api-base.json 後重 deploy Netlify。'
-          : '';
-      setStatus((e?.message || '無法連線') + '（' + base + '）' + (hint ? ' ' + hint : ''), true);
+      if (badge) {
+        badge.textContent = '連線失敗';
+        badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-900';
+      }
+      setStatus('無法連線照會服務：' + (e?.message || e), true);
     }
   }
 
-  async function postReceiptEndorsement(payload, options) {
-    const base = await apiBase();
-    if (!base) {
-      setStatus(netlifySetupHint(), true);
+  async function postReceiptEndorsement(payload) {
+    const token = window.skyfunAuth?.getToken?.() || '';
+    if (!token) {
+      setStatus('請先登入工具箱', true);
       return null;
     }
-    const headers = { 'Content-Type': 'application/json' };
-    if (window.skyfunAuth?.getToken?.()) {
-      headers.Authorization = 'Bearer ' + window.skyfunAuth.getToken();
-    }
-    const r = await fetch(base + '/api/receipt-endorsement', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
-    return parseJsonResponse(r);
+    return callFn({ action: 'submit', token, ...payload });
   }
 
   async function submitForm(repushOnly) {
-    const base = await apiBase();
-    if (!base) {
-      setStatus(netlifySetupHint(), true);
-      return;
-    }
-
     const payload = collectPayload();
     const missing = validateLocal(payload);
     if (missing.length) {
@@ -229,7 +173,7 @@
       if (!j) return;
       if (!j.ok) {
         const msg = j.message || j.error || '送出失敗';
-        setStatus(isLegacyApiMessage(msg) ? apiRestartHint() : msg, true);
+        setStatus(msg, true);
         setRepushVisible(!!(j.canRepush || j.saved || repushOnly || String(msg).includes('推播失敗')));
         return;
       }
@@ -239,12 +183,7 @@
         clearSubmitFields();
       }
     } catch (e) {
-      const msg = String(e?.message || e);
-      const hint =
-        msg.includes('fetch') || msg.includes('Failed')
-          ? ' → 公司主機請執行「啟動雲端API主機.bat」，並確認隧道視窗網址與 api-base.json 相同。'
-          : '';
-      setStatus('連線失敗：' + msg + hint, true);
+      setStatus('連線失敗：' + String(e?.message || e), true);
       if (repushOnly) setRepushVisible(true);
     } finally {
       if (btn) {

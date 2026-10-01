@@ -9,7 +9,6 @@
     'retell',
     'business-qa',
     'business-qa-chat',
-    'receipt-endorsement',
     'newbie-quest'
   ];
 
@@ -20,10 +19,7 @@
     '催收撥號',
     'Retell',
     '業務問答',
-    'AI 問答',
-    '領款收據',
-    '收據照會',
-    'LINE 照會'
+    'AI 問答'
   ];
 
   const HIDE_SELECTORS = ['#bqa-fab', '#bqa-root', '#business-qa-root', '[data-api-only="1"]'];

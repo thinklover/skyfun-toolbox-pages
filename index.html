@@ -1067,6 +1067,104 @@
         .af-chevron { margin-left: auto; font-size: 0.8rem; color: #94a3b8; transition: transform 0.2s; }
         .af-fold[open] .af-chevron { transform: rotate(180deg); }
         .af-summary:hover .af-chevron { color: #0f766e; }
+        .acf-lead { margin: 0 0 0.6rem; font-size: 0.78rem; color: #64748b; }
+        .acf-grid { display: grid; grid-template-columns: 1fr; gap: 0.6rem 0.9rem; }
+        @media (min-width: 720px) { .acf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .acf-field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+        .acf-field--wide { grid-column: 1 / -1; }
+        .acf-label { font-size: 0.8rem; font-weight: 800; color: #334155; }
+        .acf-label::after { content: ' *'; color: #dc2626; }
+        .acf-field input, .acf-field select, .acf-field textarea {
+            width: 100%; padding: 0.45rem 0.6rem; border: 1.5px solid #cbd5e1; border-radius: 0.55rem;
+            font-size: 0.86rem; color: #0f172a; background: #fff; font-family: inherit;
+        }
+        .acf-field textarea { resize: vertical; line-height: 1.55; }
+        .acf-field input:focus, .acf-field select:focus, .acf-field textarea:focus {
+            outline: none; border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18);
+        }
+        .acf-field.is-invalid input, .acf-field.is-invalid select, .acf-field.is-invalid textarea { border-color: #f87171; background: #fef2f2; }
+        .acf-hint { font-size: 0.72rem; color: #94a3b8; line-height: 1.45; }
+        .acf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; margin-top: 0.85rem; }
+        .acf-submit {
+            padding: 0.5rem 1.4rem; border-radius: 0.65rem; border: none;
+            background: #0f766e; color: #fff; font-weight: 800; font-size: 0.88rem; cursor: pointer;
+        }
+        .acf-submit:hover { background: #115e59; }
+        .acf-submit:disabled { opacity: 0.6; cursor: wait; }
+        .acf-alt { font-size: 0.76rem; color: #64748b; text-decoration: underline; }
+        .acf-msg { margin: 0.6rem 0 0; font-size: 0.84rem; font-weight: 700; min-height: 1.2em; }
+        .acf-msg.is-ok { color: #047857; }
+        .acf-msg.is-err { color: #dc2626; }
+        .acf-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.6rem; margin-bottom: 0.7rem; }
+        .acf-filters { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+        .acf-chip {
+            border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 999px;
+            padding: 0.25rem 0.7rem; font-size: 0.76rem; font-weight: 700; cursor: pointer;
+        }
+        .acf-chip.is-active { background: #0f766e; border-color: #0f766e; color: #fff; }
+        .acf-search {
+            flex: 1 1 12rem; min-width: 0; padding: 0.4rem 0.65rem; border: 1.5px solid #cbd5e1; border-radius: 0.55rem; font-size: 0.82rem;
+        }
+        .acf-search:focus { outline: none; border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18); }
+        .acf-new { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
+        .acf-form { border: 1px solid #99f6e4; background: #f0fdfa; border-radius: 0.75rem; padding: 0.75rem 0.85rem; margin-bottom: 0.8rem; }
+        .acf-cancel { padding: 0.5rem 1rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+        .acf-flash { margin: 0 0 0.5rem; font-size: 0.84rem; font-weight: 700; color: #047857; min-height: 0; }
+        .acf-flash:empty { display: none; }
+        .acf-empty { font-size: 0.8rem; color: #94a3b8; margin: 0.4rem 0; }
+        .acf-list { display: flex; flex-direction: column; gap: 0.45rem; }
+        .acf-item { border: 1px solid #e2e8f0; border-radius: 0.7rem; background: #fff; overflow: hidden; }
+        .acf-item.is-done { background: #f8fafc; }
+        .acf-item.is-open { border-color: #5eead4; box-shadow: 0 4px 14px rgba(15, 118, 110, 0.08); }
+        .acf-row {
+            display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 0.75rem; align-items: center;
+            width: 100%; padding: 0.55rem 0.75rem; text-align: left; background: none; border: none; cursor: pointer;
+        }
+        .acf-row:hover { background: #f0fdfa; }
+        .acf-row-addr { font-size: 0.86rem; font-weight: 800; color: #0f172a; word-break: break-word; }
+        .acf-item.is-done .acf-row-addr { color: #64748b; }
+        .acf-row-meta { grid-column: 1 / 2; font-size: 0.72rem; color: #64748b; }
+        .acf-row-side { grid-row: 1 / span 2; grid-column: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
+        .acf-row-files { font-size: 0.7rem; color: #64748b; white-space: nowrap; }
+        .acf-badge { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; }
+        .acf-badge--pending { background: #fef3c7; color: #92400e; }
+        .acf-badge--done { background: #d1fae5; color: #065f46; }
+        .acf-badge--rejected { background: #fee2e2; color: #991b1b; }
+        .acf-detail { border-top: 1px dashed #e2e8f0; padding: 0.7rem 0.75rem 0.8rem; }
+        .acf-kv { display: grid; grid-template-columns: 1fr; gap: 0.4rem 1rem; margin: 0; }
+        @media (min-width: 720px) { .acf-kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .acf-kv .wide { grid-column: 1 / -1; }
+        .acf-kv dt { font-size: 0.7rem; color: #94a3b8; font-weight: 700; }
+        .acf-kv dd { margin: 0.05rem 0 0; font-size: 0.84rem; color: #1e293b; white-space: pre-wrap; word-break: break-word; }
+        .acf-box { margin-top: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.6rem; padding: 0.6rem 0.7rem; background: #f8fafc; }
+        .acf-box-title { font-size: 0.8rem; font-weight: 800; color: #334155; margin: 0 0 0.4rem; }
+        .acf-files { list-style: none; margin: 0 0 0.5rem; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+        .acf-files li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; font-size: 0.8rem; }
+        .acf-files a { color: #047857; font-weight: 700; text-decoration: underline; word-break: break-all; }
+        .acf-files small { color: #94a3b8; font-size: 0.7rem; }
+        .acf-file-del { border: 1px solid #fecaca; background: #fff; color: #b91c1c; border-radius: 0.4rem; padding: 0.05rem 0.45rem; font-size: 0.7rem; cursor: pointer; }
+        .acf-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; font-size: 0.78rem; }
+        .acf-upload input[type="file"] { font-size: 0.78rem; max-width: 100%; }
+        .acf-done { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; font-weight: 800; color: #0f172a; cursor: pointer; }
+        .acf-done input { width: 1.15rem; height: 1.15rem; accent-color: #059669; cursor: pointer; }
+        .acf-done-by { font-size: 0.74rem; color: #64748b; margin: 0.25rem 0 0 1.65rem; }
+        .acf-detail-msg { font-size: 0.78rem; font-weight: 700; margin: 0.4rem 0 0; }
+        .acf-detail-msg.is-err { color: #dc2626; }
+        .acf-detail-msg.is-ok { color: #047857; }
+        .acf-line { margin-top: 0.8rem; }
+        .acf-line-toggle { border: none; background: none; padding: 0; font-size: 0.78rem; font-weight: 700; color: #0f766e; cursor: pointer; text-decoration: underline; }
+        .acf-line-body { margin-top: 0.45rem; border: 1px solid #bbf7d0; background: #f0fdf4; border-radius: 0.65rem; padding: 0.65rem 0.75rem; font-size: 0.8rem; color: #334155; }
+        .acf-line-body ol { margin: 0.2rem 0 0.5rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.25rem; }
+        .acf-line-body a { color: #047857; font-weight: 700; text-decoration: underline; }
+        .acf-line-code { display: inline-block; margin: 0.2rem 0; padding: 0.2rem 0.7rem; border-radius: 0.5rem; background: #fff; border: 1.5px dashed #10b981; font-size: 1.35rem; font-weight: 900; letter-spacing: 0.25em; color: #065f46; }
+        .acf-line-btns { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
+        .acf-line-btn { border: 1px solid #10b981; background: #fff; color: #047857; border-radius: 0.5rem; padding: 0.25rem 0.75rem; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
+        .acf-line-btn:disabled { opacity: 0.6; cursor: wait; }
+        .acf-line-btn--muted { border-color: #cbd5e1; color: #64748b; }
+        .acf-line-note { font-size: 0.72rem; color: #64748b; margin: 0.3rem 0 0; }
+        .acf-line-err { color: #dc2626; font-weight: 700; margin: 0.3rem 0 0; }
+        .acf-admin-link { margin: 0.7rem 0 0; font-size: 0.74rem; text-align: right; }
+        .acf-admin-link a { color: #64748b; text-decoration: underline; }
         .af-grid { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
         @media (min-width: 900px) { .af-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         .af-col {
@@ -4519,6 +4617,99 @@
                         </div>
                     </div>
                 </div>
+            </details>
+
+            <details class="admin-tools-card admin-tools-card--compact af-fold" id="cancel-obj-zone">
+                <summary class="admin-tools-title af-summary">🗑️ 星鴻註銷物件申請<span class="af-summary-hint">申請列表 · 簽呈上傳 · 完成勾選</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                <div class="acf-toolbar">
+                    <div class="acf-filters" id="acf-filters" role="tablist" aria-label="篩選狀態"></div>
+                    <input type="search" id="acf-q" class="acf-search" placeholder="搜尋地址／申請人／業務／處所" aria-label="搜尋註銷申請">
+                    <button type="button" class="acf-submit acf-new" id="acf-new">＋ 新增註銷申請</button>
+                </div>
+                <form id="acf-form" class="acf-form" novalidate hidden>
+                    <p class="acf-lead">所有欄位皆必填。送出後會出現在下方列表，大家都看得到。</p>
+                    <div class="acf-grid">
+                        <label class="acf-field">
+                            <span class="acf-label">申請處所</span>
+                            <select name="dept" id="acf-dept" required>
+                                <option value="">請選擇</option>
+                                <option>北一處</option><option>北二處</option><option>北三處</option><option>北四處</option><option>北五處</option>
+                                <option>桃一處</option><option>宜一處</option><option>基一處</option><option>彰一處</option><option>投一處</option>
+                                <option>竹一處</option><option>中一處</option><option>中二處</option><option>中三處</option><option>中四處</option>
+                                <option>中五處</option><option>中六處</option><option>嘉一處</option><option>南一處</option><option>南二處</option>
+                                <option>高一處</option><option>高二處</option><option>租賃管理部</option>
+                            </select>
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">申請人</span>
+                            <input type="text" name="applicant" id="acf-applicant" required maxlength="50">
+                            <span class="acf-hint">申請註銷物件的夥伴，要讓管理部找到人</span>
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">星鴻業務姓名</span>
+                            <input type="text" name="agentName" required maxlength="50" placeholder="例如：公司件(星小鴻)">
+                            <span class="acf-hint">代管此物件的業務；公司件請括號離職業務姓名，例如：<strong>公司件(星小鴻)</strong></span>
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">物件所在區域</span>
+                            <select name="region" required>
+                                <option value="">請選擇</option>
+                                <option>新北市</option><option>臺北市</option><option>桃園市</option><option>宜蘭縣</option><option>基隆市</option>
+                                <option>臺中市</option><option>新竹市</option><option>新竹縣</option><option>彰化縣</option><option>南投縣</option>
+                                <option>嘉義市</option><option>嘉義縣</option><option>臺南市</option><option>高雄市</option>
+                            </select>
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">物件型態</span>
+                            <select name="objectType" required>
+                                <option value="">請選擇</option>
+                                <option>代管物件</option><option>包租物件</option>
+                            </select>
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">合約狀況</span>
+                            <input type="text" name="contractStatus" required maxlength="200" placeholder="到期不續約／合約已解約_解約日期…">
+                            <span class="acf-hint">到期不續約／合約已解約_解約日期…等等，依照實際狀況寫</span>
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">租約開始日期</span>
+                            <input type="date" name="leaseStart" required>
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">租約到期日</span>
+                            <input type="date" name="leaseEnd" required>
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="acf-label">註銷物件地址</span>
+                            <input type="text" name="address" required maxlength="200">
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="acf-label">業務備註</span>
+                            <textarea name="note" rows="4" required maxlength="2000"></textarea>
+                            <span class="acf-hint">請詳細說明原因，前因後果如何導致物件需要註銷，中間是否有關懷還是無法挽留</span>
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">承接業者</span>
+                            <input type="text" name="takerCompany" required maxlength="100">
+                        </label>
+                        <label class="acf-field">
+                            <span class="acf-label">承接業者業務姓名</span>
+                            <input type="text" name="takerAgent" required maxlength="50">
+                        </label>
+                    </div>
+                    <div class="acf-actions">
+                        <button type="submit" class="acf-submit" id="acf-submit">送出申請</button>
+                        <button type="button" class="acf-cancel" id="acf-cancel">取消</button>
+                    </div>
+                    <p class="acf-msg" id="acf-msg" role="status" aria-live="polite"></p>
+                </form>
+                <p class="acf-flash" id="acf-flash" role="status" aria-live="polite"></p>
+                <div class="acf-list" id="acf-list"></div>
+                <div class="acf-line">
+                    <button type="button" class="acf-line-toggle" id="acf-line-toggle" aria-expanded="false" aria-controls="acf-line-body">🔔 主管綁定 LINE（接收註銷通知）</button>
+                    <div class="acf-line-body" id="acf-line-body" hidden></div>
+                </div>
+                <p class="acf-admin-link"><a href="./admin/object-cancel-dashboard.html" target="_blank" rel="noopener">管理員：註銷申請後台 ↗</a></p>
             </details>
 
             <section class="aqa-zone" id="aqa-zone" aria-label="行政問答">
@@ -10041,7 +10232,9 @@
         <script src="./js/newbie-exam.js?v=20260930-2"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
         <script src="./js/subsidy-petition.js?v=20261001-3"></script>
-<script src="./js/lite-hide-api.js"></script>
+        <script src="./js/admin-cancel-form.js?v=20261001-4"></script>
+        <script src="./js/receipt-endorsement-form.js?v=20261001-1"></script>
+<script src="./js/lite-hide-api.js?v=20261001-1"></script>
 <script src="./js/site-file-search-index.js"></script>
         <script src="./js/tenant-eligibility-legal.js"></script>
         <script src="./js/tenant-eligibility-regions.js"></script>
@@ -11809,6 +12002,7 @@
             { file: './admin/newbie-dashboard.html', title: '新人業績後台', category: '管理工具', keywords: '後台 admin 業績 任務 管理員 儀表板 dashboard KPI 新人' },
             { file: './admin/admin-qa-dashboard.html', title: '行政 QA 檢核後台', category: '管理工具', keywords: '後台 admin 行政 問答 QA 檢核 點數 小組長' },
             { file: './admin/newbie-exam-dashboard.html', title: '財補考試成績後台', category: '管理工具', keywords: '後台 admin 財補 考試 成績 考卷 A卷 B卷 結訓考 新人' },
+            { file: './admin/object-cancel-dashboard.html', title: '註銷物件申請後台', category: '管理工具', keywords: '後台 admin 註銷 註銷物件 註銷物件申請 物件註銷 行政 管理部 承接業者' },
             { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳 簽呈 展延' },
             { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 公證費 租賃公證 119條' },
             { page: 'business-forms', title: '各式表單', category: '業務專區', keywords: '表單 場勘 押金讓渡 領款收據 切結書 300億切結 115Y 自願撤案 帳戶變更 租金補貼 複審 檢核 還款 協議 欠租' },
@@ -11841,7 +12035,7 @@
             { page: 'practice-templates', title: '訊息範本產生器', category: '催收解約專區', keywords: 'line 範本 催繳 存證信函 提醒繳款 租金 國泰 帳戶 虛擬帳號 區域 身分證 電訪未接 逾期 桃園 新北 公司電話 宜蘭 基隆 雙北' },
             { page: 'practice-contacts', title: '租金補貼辦理單位', category: '房客專區', keywords: '窗口 通訊錄 300億 租金補貼 辦理單位 縣市 電話 傳真 臨櫃 pip' },
             { page: 'announcement', title: '簽呈公告專區', category: '首頁專區', keywords: '簽呈 公告 通知 公司' },
-            { page: 'administration', title: '行政專區', category: '首頁專區', keywords: '行政 請款 天數 庶務 管理部 包租解約 轉租解約 租金試算 租金水準 問答 QA 各式表單 表單 中心系統申請 離職 離職通報 系統資料修正 獎金補發 獎金收回 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
+            { page: 'administration', title: '行政專區', category: '首頁專區', keywords: '行政 請款 天數 庶務 管理部 包租解約 轉租解約 租金試算 租金水準 問答 QA 各式表單 表單 中心系統申請 離職 離職通報 系統資料修正 獎金補發 獎金收回 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件 註銷 註銷物件 註銷物件申請 物件註銷 承接業者 不續約' },
             { page: 'admin-qa', title: '行政問答 QA', category: '行政專區', keywords: '行政 問答 QA 提問 回答 點數 關鍵字 搜尋 小組長 檢核' },
             { external: 'https://docs.google.com/forms/d/e/1FAIpQLSdZES7NkG92YpgofUmN-8yCBBskyiqWxvkGto-BIFHBvJg5hQ/viewform?usp=publish-editor', title: '意見回饋', category: '全站', keywords: '意見 回饋 表單 feedback 建議' },
             { external: 'https://skyfunsystem.com/Home/Login', title: '星鴻系統', category: '外部連結', keywords: '星鴻 系統 登入 skyfun' },

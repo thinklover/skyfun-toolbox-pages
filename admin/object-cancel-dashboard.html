@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>註銷物件申請後台 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <style>
+    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
+    input, select, textarea { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.5rem 0.75rem; color: #f8fafc; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; text-align: left; border-bottom: 1px solid #334155; vertical-align: top; }
+    th { color: #94a3b8; font-weight: 700; white-space: nowrap; }
+    td.nw { white-space: nowrap; }
+    tr.row { cursor: pointer; }
+    tr.row:hover td { background: rgba(45, 212, 191, 0.07); }
+    tr.row.is-open td { background: rgba(45, 212, 191, 0.12); }
+    .muted { color: #64748b; }
+    .badge { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 700; }
+    .b-pending { background: #78350f; color: #fcd34d; }
+    .b-done { background: #064e3b; color: #6ee7b7; }
+    .b-rejected { background: #7f1d1d; color: #fca5a5; }
+    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 0.65rem; padding: 0.6rem 0.75rem; cursor: pointer; }
+    .stat.is-active { border-color: #2dd4bf; }
+    .stat b { display: block; font-size: 1.35rem; color: #f8fafc; }
+    .stat span { font-size: 0.75rem; color: #94a3b8; }
+    .detail { background: #0f172a; border-top: 2px solid #2dd4bf; }
+    .kv { display: grid; grid-template-columns: 1fr; gap: 0.5rem 1.25rem; }
+    @media (min-width: 768px) { .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .kv .wide { grid-column: 1 / -1; }
+    .kv dt { font-size: 0.72rem; color: #94a3b8; }
+    .kv dd { font-size: 0.88rem; color: #f1f5f9; white-space: pre-wrap; word-break: break-word; margin: 0.1rem 0 0; }
+    .act { font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 0.5rem; font-weight: 700; }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+  <header>
+    <h1 class="text-2xl font-black text-teal-300">註銷物件申請後台</h1>
+    <p class="text-slate-400 text-sm mt-1">行政專區「星鴻註銷物件申請」送出的資料 · <a class="text-teal-300 underline" href="../index.html">回工具箱</a></p>
+  </header>
+
+  <section class="card p-4 space-y-3" id="login-panel">
+    <label class="block text-sm text-slate-400">後台密碼（Supabase admin_secret）</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-bold">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm text-rose-300 hidden"></p>
+  </section>
+
+  <section class="card p-4 hidden space-y-4" id="main-panel">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="stats"></div>
+    <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">搜尋地址／申請人／業務／處所／承接業者</label>
+        <input type="search" id="q" placeholder="輸入關鍵字" class="min-w-[16rem]" />
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">狀態</label>
+        <select id="status">
+          <option value="">全部</option>
+          <option value="pending">待處理</option>
+          <option value="done">已註銷</option>
+          <option value="rejected">退回</option>
+        </select>
+      </div>
+      <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
+      <button type="button" id="btn-csv" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">匯出 CSV</button>
+      <p class="text-sm text-slate-400 pb-1" id="count">—</p>
+    </div>
+    <p id="msg" class="text-sm text-slate-400"></p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr><th>送出時間</th><th>申請處所</th><th>申請人</th><th>星鴻業務</th><th>區域</th><th>型態</th><th>註銷物件地址</th><th>租約期間</th><th>簽呈</th><th>狀態</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card p-4 hidden space-y-3" id="line-panel">
+    <div class="flex flex-wrap items-center gap-3">
+      <h2 class="text-lg font-black text-teal-300">LINE 通知對象</h2>
+      <button type="button" id="btn-line-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
+    </div>
+    <p class="text-sm text-slate-400">勾選「收註銷通知」的人，在有人送出註銷申請時會收到 LINE。名單只會出現已在工具箱「行政專區 → 星鴻註銷物件申請 → 主管綁定 LINE」完成綁定的帳號。</p>
+    <p id="line-msg" class="text-sm text-slate-400"></p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr><th>工具箱帳號</th><th>處別</th><th>LINE 名稱</th><th>綁定時間</th><th>收註銷通知</th><th></th></tr>
+        </thead>
+        <tbody id="line-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-pages-admin-secret';
+      const STATUS = { pending: ['b-pending', '未完成'], done: ['b-done', '已完成'], rejected: ['b-rejected', '退回'] };
+      const files = {};
+      let client = null;
+      let secret = '';
+      let items = [];
+      let counts = {};
+      let openId = null;
+
+      const $ = (id) => document.getElementById(id);
+
+      function sb() {
+        if (client) return client;
+        const c = window.SKYFUN_SUPABASE || {};
+        client = window.supabase.createClient(String(c.url || '').trim(), String(c.anonKey || '').trim());
+        return client;
+      }
+      async function rpc(name, args) {
+        const { data, error } = await sb().rpc(name, args);
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        if (!data?.ok) throw new Error(data?.error || '讀取失敗');
+        return data;
+      }
+      async function fn(body) {
+        const c = window.SKYFUN_SUPABASE || {};
+        const url = String(c.url || '').trim().replace(/\/$/, '');
+        const key = String(c.anonKey || '').trim();
+        const res = await fetch(url + '/functions/v1/object-cancel', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + key, apikey: key, 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({ secret }, body))
+        });
+        let data = null;
+        try { data = await res.json(); } catch { /* non-JSON */ }
+        if (!data?.ok) throw new Error(data?.error || data?.message || ('連線失敗（' + res.status + '）'));
+        return data;
+      }
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function fmt(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('zh-TW', { hour12: false }); } catch { return iso; }
+      }
+      function roc(ymd) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd || '');
+        return m ? (Number(m[1]) - 1911) + '/' + m[2] + '/' + m[3] : (ymd || '—');
+      }
+      function badge(st) {
+        const [cls, label] = STATUS[st] || STATUS.pending;
+        return '<span class="badge ' + cls + '">' + label + '</span>';
+      }
+
+      function renderStats() {
+        const cur = $('status').value;
+        $('stats').innerHTML = [
+          ['', '全部申請', counts.all],
+          ['pending', '未完成', counts.pending],
+          ['done', '已完成', counts.done],
+          ['rejected', '退回', counts.rejected]
+        ].map(([k, label, v]) => '<div class="stat' + (cur === k ? ' is-active' : '') + '" data-status="' + k + '"><b>' + (v ?? 0) + '</b><span>' + label + '</span></div>').join('');
+      }
+
+      function filesHtml(id) {
+        const list = files[id];
+        if (!list) return '<p class="muted text-sm">載入中…</p>';
+        if (!list.length) return '<p class="muted text-sm">尚未上傳簽呈</p>';
+        return '<ul class="space-y-1 text-sm">' + list.map((f) =>
+          '<li>' + (f.url ? '<a class="text-teal-300 underline" href="' + esc(f.url) + '" target="_blank" rel="noopener">' + (f.mime === 'application/pdf' ? '📕 ' : '🖼️ ') + esc(f.fileName) + '</a>' : esc(f.fileName)) +
+          ' <span class="muted">' + esc(f.userName || '—') + '・' + fmt(f.createdAt) + '</span>' +
+          ' <button type="button" class="text-rose-300 text-xs underline ml-1" data-del-file="' + f.id + '">刪除</button></li>').join('') + '</ul>';
+      }
+
+      async function loadFiles(id) {
+        try {
+          const res = await fn({ action: 'files', requestId: id });
+          files[id] = res.files || [];
+        } catch (e) {
+          files[id] = [];
+          const dmsg = document.getElementById('detail-msg');
+          if (dmsg) dmsg.textContent = e.message;
+        }
+        if (openId === id) renderRows();
+      }
+
+      function detailHtml(it) {
+        const kv = (k, v, wide) => '<div' + (wide ? ' class="wide"' : '') + '><dt>' + k + '</dt><dd>' + esc(v || '—') + '</dd></div>';
+        return '<dl class="kv">' +
+          kv('申請處所', it.dept) + kv('申請人', it.applicant) +
+          kv('星鴻業務姓名', it.agentName) + kv('物件所在區域', it.region) +
+          kv('物件型態', it.objectType) + kv('合約狀況', it.contractStatus) +
+          kv('租約開始日期', roc(it.leaseStart)) + kv('租約到期日', roc(it.leaseEnd)) +
+          kv('註銷物件地址', it.address, true) +
+          kv('業務備註', it.note, true) +
+          kv('承接業者', it.takerCompany) + kv('承接業者業務姓名', it.takerAgent) +
+          kv('送出帳號', it.userName + '（' + it.username + (it.team ? '・' + it.team : '') + '）') +
+          kv('完成勾選', it.status === 'done' ? (it.doneByName || '—') + '・' + fmt(it.handledAt) : '') +
+          kv('LINE 通知', it.lineNotifiedAt ? '已通知・' + fmt(it.lineNotifiedAt) : (it.lineError ? '未通知：' + it.lineError : '未通知')) +
+          '</dl>' +
+          '<div class="mt-4"><p class="text-xs text-slate-400 mb-1">簽呈</p>' + filesHtml(it.id) + '</div>' +
+          '<div class="mt-4 space-y-2">' +
+          '<label class="block text-xs text-slate-400">管理部回覆（申請人看得到）</label>' +
+          '<textarea id="admin-note" rows="2" maxlength="1000" class="w-full">' + esc(it.adminNote || '') + '</textarea>' +
+          '<div class="flex flex-wrap gap-2">' +
+          '<button type="button" class="act bg-emerald-600 text-white" data-act="done">標記已完成</button>' +
+          '<button type="button" class="act bg-rose-700 text-white" data-act="rejected">退回</button>' +
+          '<button type="button" class="act border border-slate-500" data-act="pending">改回未完成</button>' +
+          '<button type="button" class="act border border-teal-600 text-teal-300" data-act="notify">' + (it.lineNotifiedAt ? '重發 LINE 通知' : '發送 LINE 通知') + '</button>' +
+          '<button type="button" class="act border border-rose-800 text-rose-300 ml-auto" data-act="delete">刪除</button>' +
+          '</div><p id="detail-msg" class="text-sm text-slate-400"></p></div>';
+      }
+
+      function renderRows() {
+        $('count').textContent = '共 ' + items.length + ' 筆';
+        $('rows').innerHTML = items.map((it) =>
+          '<tr class="row' + (openId === it.id ? ' is-open' : '') + '" data-id="' + it.id + '">' +
+          '<td class="nw">' + fmt(it.createdAt) + '</td><td class="nw">' + esc(it.dept) + '</td><td class="nw">' + esc(it.applicant) + '</td>' +
+          '<td>' + esc(it.agentName) + '</td><td class="nw">' + esc(it.region) + '</td><td class="nw">' + esc(it.objectType) + '</td>' +
+          '<td>' + esc(it.address) + '</td><td class="nw">' + roc(it.leaseStart) + ' ～ ' + roc(it.leaseEnd) + '</td>' +
+          '<td class="nw">' + (it.fileCount || 0) + '</td><td>' + badge(it.status) + '</td></tr>' +
+          (openId === it.id ? '<tr><td colspan="10" class="detail" data-detail="' + it.id + '">' + detailHtml(it) + '</td></tr>' : '')
+        ).join('') || '<tr><td colspan="10" class="muted">沒有資料</td></tr>';
+      }
+
+      async function loadList() {
+        const msg = $('msg');
+        msg.textContent = '讀取中…';
+        try {
+          const res = await rpc('object_cancel_admin_list', { p_secret: secret, p_query: $('q').value.trim(), p_status: $('status').value, p_limit: 2000 });
+          items = res.items || [];
+          counts = res.counts || {};
+          if (openId && !items.some((it) => it.id === openId)) openId = null;
+          msg.textContent = '';
+          renderStats();
+          renderRows();
+          if (openId) loadFiles(openId);
+        } catch (e) {
+          msg.textContent = e.message;
+        }
+      }
+
+      async function act(kind) {
+        const it = items.find((x) => x.id === openId);
+        if (!it) return;
+        const dmsg = $('detail-msg');
+        try {
+          if (kind === 'notify') {
+            if (!confirm('確定用 LINE 通知所有勾選的主管？')) return;
+            const res = await fn({ action: 'admin_notify', id: it.id });
+            await loadList();
+            const m = $('detail-msg');
+            if (m) m.textContent = res.sent ? '已通知 ' + res.sent + ' 位主管' : 'LINE 未通知：' + (res.error || '未知原因');
+            return;
+          }
+          if (kind === 'delete') {
+            if (!confirm('確定刪除這筆申請？已上傳的簽呈也會一起刪除，無法復原。')) return;
+            await fn({ action: 'admin_delete', id: it.id });
+            openId = null;
+          } else {
+            await rpc('object_cancel_admin_update', { p_secret: secret, p_id: it.id, p_status: kind, p_admin_note: $('admin-note').value });
+          }
+          await loadList();
+        } catch (e) {
+          if (dmsg) dmsg.textContent = e.message;
+        }
+      }
+
+      async function loadLine() {
+        const msg = $('line-msg');
+        msg.textContent = '讀取中…';
+        try {
+          const res = await rpc('line_admin_bindings', { p_secret: secret });
+          const list = res.items || [];
+          const on = list.filter((b) => b.notifyObjectCancel).length;
+          msg.textContent = '已綁定 ' + list.length + ' 人，其中 ' + on + ' 人會收到註銷通知。';
+          $('line-rows').innerHTML = list.map((b) =>
+            '<tr><td>' + esc(b.name || b.username) + ' <span class="muted">' + esc(b.username) + '</span></td>' +
+            '<td class="nw">' + esc(b.team || '—') + '</td><td>' + esc(b.lineName || '—') + '</td><td class="nw">' + fmt(b.boundAt) + '</td>' +
+            '<td><label class="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" data-line-notify="' + b.userId + '"' + (b.notifyObjectCancel ? ' checked' : '') + ' class="w-4 h-4 accent-teal-500"> 收通知</label></td>' +
+            '<td class="nw"><button type="button" class="text-rose-300 text-xs underline" data-line-unbind="' + b.userId + '">解除綁定</button></td></tr>'
+          ).join('') || '<tr><td colspan="6" class="muted">還沒有人綁定 LINE</td></tr>';
+        } catch (e) {
+          msg.textContent = e.message;
+        }
+      }
+
+      $('line-rows').addEventListener('change', async (e) => {
+        const box = e.target.closest('[data-line-notify]');
+        if (!box) return;
+        box.disabled = true;
+        try {
+          await rpc('line_admin_set_notify', { p_secret: secret, p_user_id: box.dataset.lineNotify, p_on: box.checked });
+          await loadLine();
+        } catch (err) {
+          box.checked = !box.checked;
+          box.disabled = false;
+          $('line-msg').textContent = err.message;
+        }
+      });
+      $('line-rows').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-line-unbind]');
+        if (!btn || !confirm('確定解除這個人的 LINE 綁定？')) return;
+        try {
+          await rpc('line_admin_unbind', { p_secret: secret, p_user_id: btn.dataset.lineUnbind });
+          await loadLine();
+        } catch (err) {
+          $('line-msg').textContent = err.message;
+        }
+      });
+      $('btn-line-refresh').addEventListener('click', loadLine);
+
+      function exportCsv() {
+        const head = ['送出時間', '狀態', '申請處所', '申請人', '星鴻業務姓名', '物件所在區域', '物件型態', '合約狀況', '租約開始日期', '租約到期日',
+          '註銷物件地址', '業務備註', '承接業者', '承接業者業務姓名', '簽呈數', '管理部回覆', '完成勾選人', '處理時間', '送出帳號', '帳號處別'];
+        const rows = items.map((it) => [fmt(it.createdAt), (STATUS[it.status] || STATUS.pending)[1], it.dept, it.applicant, it.agentName, it.region,
+          it.objectType, it.contractStatus, roc(it.leaseStart), roc(it.leaseEnd), it.address, it.note, it.takerCompany, it.takerAgent,
+          it.fileCount || 0, it.adminNote, it.status === 'done' ? it.doneByName : '', it.handledAt ? fmt(it.handledAt) : '', it.username, it.team]);
+        const csv = [head].concat(rows).map((r) => r.map((v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '註銷物件申請_' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      $('rows').addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-act]');
+        if (btn) { act(btn.dataset.act); return; }
+        const del = e.target.closest('button[data-del-file]');
+        if (del) {
+          if (!confirm('確定刪除這個簽呈檔案？')) return;
+          try {
+            await fn({ action: 'delete_file', id: Number(del.dataset.delFile) });
+            await loadList();
+          } catch (err) {
+            const dmsg = document.getElementById('detail-msg');
+            if (dmsg) dmsg.textContent = err.message;
+          }
+          return;
+        }
+        if (e.target.closest('[data-detail]')) return;
+        const tr = e.target.closest('tr.row');
+        if (!tr) return;
+        const id = Number(tr.dataset.id);
+        openId = openId === id ? null : id;
+        renderRows();
+        if (openId) loadFiles(openId);
+      });
+      $('stats').addEventListener('click', (e) => {
+        const card = e.target.closest('.stat');
+        if (!card) return;
+        $('status').value = card.dataset.status;
+        loadList();
+      });
+      $('status').addEventListener('change', loadList);
+      $('btn-refresh').addEventListener('click', loadList);
+      $('btn-csv').addEventListener('click', exportCsv);
+      let qTimer = null;
+      $('q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(loadList, 400); });
+
+      async function login() {
+        secret = $('admin-secret').value.trim();
+        const msg = $('login-msg');
+        msg.classList.add('hidden');
+        try {
+          await rpc('object_cancel_admin_list', { p_secret: secret, p_query: '', p_status: '', p_limit: 1 });
+          sessionStorage.setItem(SECRET_KEY, secret);
+          $('login-panel').classList.add('hidden');
+          $('main-panel').classList.remove('hidden');
+          $('line-panel').classList.remove('hidden');
+          await Promise.all([loadList(), loadLine()]);
+        } catch (e) {
+          msg.textContent = e.message;
+          msg.classList.remove('hidden');
+        }
+      }
+      $('btn-login').addEventListener('click', login);
+      $('admin-secret').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+      const saved = sessionStorage.getItem(SECRET_KEY);
+      if (saved) { $('admin-secret').value = saved; login(); }
+    })();
+  </script>
+</body>
+</html>
