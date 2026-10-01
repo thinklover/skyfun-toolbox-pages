@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="../js/supabase-config.js"></script>
   <script src="../js/subsidy-checkin-xlsx.js?v=20260930-1"></script>
+  <script src="../js/subsidy-settle.js?v=20261001-1"></script>
   <style>
     body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
     .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
@@ -72,7 +73,7 @@
       <button type="button" id="btn-refresh" class="btn">重新整理</button>
       <button type="button" id="btn-all" class="btn btn-main">⬇ 全部人員匯出 Excel</button>
     </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="stats"></div>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-2" id="stats"></div>
     <p id="msg" class="text-sm text-slate-400"></p>
     <div class="overflow-x-auto">
       <table>
@@ -84,6 +85,22 @@
     </div>
   </section>
 
+  <section class="card p-4 hidden space-y-3" id="petition-panel">
+    <div class="flex flex-wrap items-baseline gap-3">
+      <h2 class="text-lg font-black text-teal-300">📄 展延財補簽呈</h2>
+      <p class="text-sm text-slate-400">依上傳時間列出所選四個月內的簽呈；「所屬結績日」為上傳當天對應的結績日（結績日當天上傳算下一期）。</p>
+      <p class="text-sm text-slate-300 ml-auto" id="petition-count">—</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr><th>上傳時間</th><th>姓名</th><th>帳號</th><th>處別</th><th>說明</th><th>檔案</th><th>所屬結績日</th></tr>
+        </thead>
+        <tbody id="petition-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
   <script>
     (function () {
       const SECRET_KEY = 'skyfun-pages-admin-secret';
@@ -91,6 +108,7 @@
       const WEEK = ['一', '二', '三', '四', '五'];
       let secret = '';
       let entries = [];
+      let petitions = [];
       let openUser = null;
       let busy = false;
 
@@ -159,8 +177,27 @@
           ['上傳人數', list.length],
           ['打卡紀錄筆數', entries.length],
           ['含照片筆數', photos],
-          ['今天已上傳人數', due.includes(today) ? todayCount : '—']
+          ['今天已上傳人數', due.includes(today) ? todayCount : '—'],
+          ['展延簽呈件數', petitions.length]
         ].map(([k, v]) => '<div class="stat"><b>' + v + '</b><span>' + k + '</span></div>').join('');
+      }
+
+      function settleLabel(iso) {
+        const S = window.SubsidySettle;
+        const s = S && S.settleFor(new Date(iso));
+        return s ? S.fmt(s.date) + (s.estimated ? '（預估）' : '') : '—';
+      }
+
+      function renderPetitions() {
+        const q = $('q').value.trim().toLowerCase();
+        const list = petitions.filter((p) => !q || [p.userName, p.username, p.team, p.note, p.fileName].some((v) => String(v || '').toLowerCase().includes(q)));
+        $('petition-count').textContent = '共 ' + list.length + ' 件';
+        $('petition-rows').innerHTML = list.map((p) => '<tr>' +
+          '<td>' + fmt(p.createdAt) + '</td><td>' + esc(p.userName) + '</td><td>' + esc(p.username) + '</td><td>' + esc(p.team || '—') + '</td>' +
+          '<td>' + esc(p.note || '—') + '</td>' +
+          '<td>' + (p.url ? '<a class="text-teal-300 underline break-all" href="' + esc(p.url) + '" target="_blank" rel="noopener">' + (p.mime === 'application/pdf' ? '📕 ' : '🖼️ ') + esc(p.fileName) + '</a>' : esc(p.fileName)) + '</td>' +
+          '<td>' + esc(settleLabel(p.createdAt)) + '</td></tr>'
+        ).join('') || '<tr><td colspan="7" class="muted">這四個月沒有上傳的簽呈</td></tr>';
       }
 
       function calendarHtml(p) {
@@ -208,10 +245,15 @@
         $('msg').textContent = '讀取中…';
         try {
           const r = range();
-          const res = await call({ action: 'admin_list', secret, from: r.from, to: r.to });
+          const [res, pres] = await Promise.all([
+            call({ action: 'admin_list', secret, from: r.from, to: r.to }),
+            call({ action: 'petition_admin_list', secret, from: r.from, to: r.to })
+          ]);
           entries = res.entries || [];
+          petitions = pres.petitions || [];
           $('msg').textContent = '';
           renderRows();
+          renderPetitions();
         } catch (e) {
           $('msg').textContent = e.message;
         }
@@ -281,7 +323,7 @@
       });
       $('btn-refresh').addEventListener('click', loadList);
       $('start-month').addEventListener('change', () => { openUser = null; loadList(); });
-      $('q').addEventListener('input', renderRows);
+      $('q').addEventListener('input', () => { renderRows(); renderPetitions(); });
 
       async function login() {
         secret = $('admin-secret').value.trim();
@@ -293,6 +335,7 @@
           sessionStorage.setItem(SECRET_KEY, secret);
           $('login-panel').classList.add('hidden');
           $('main-panel').classList.remove('hidden');
+          $('petition-panel').classList.remove('hidden');
           await loadList();
         } catch (e) {
           msg.textContent = e.message;

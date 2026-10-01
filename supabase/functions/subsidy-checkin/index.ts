@@ -264,6 +264,140 @@ async function handleAdminList(body: Record<string, string>) {
   return json({ ok: true, entries: withLinks });
 }
 
+const PETITION_MAX_BYTES = 10 * 1024 * 1024;
+
+type PetitionRow = {
+  id: number;
+  user_id: string;
+  username: string;
+  user_name: string;
+  team: string;
+  note: string;
+  file_path: string;
+  file_name: string;
+  mime: string;
+  size_bytes: number;
+  created_at: string;
+};
+
+async function petitionsWithUrls(rows: PetitionRow[]) {
+  const urls: Record<string, string> = {};
+  const paths = rows.map((r) => r.file_path);
+  for (let i = 0; i < paths.length; i += 200) {
+    const { data } = await sb.storage.from(BUCKET).createSignedUrls(paths.slice(i, i + 200), URL_TTL);
+    (data || []).forEach((d) => {
+      if (d.path && d.signedUrl) urls[d.path] = d.signedUrl;
+    });
+  }
+  return rows.map((r) => ({
+    id: r.id,
+    userId: r.user_id,
+    username: r.username,
+    userName: r.user_name,
+    team: r.team,
+    note: r.note,
+    fileName: r.file_name,
+    mime: r.mime,
+    size: r.size_bytes,
+    url: urls[r.file_path] || null,
+    createdAt: r.created_at,
+  }));
+}
+
+function taipeiStart(day: string) {
+  return new Date(day + "T00:00:00+08:00").toISOString();
+}
+
+async function handlePetitionSave(form: FormData) {
+  const uid = await userId(String(form.get("token") || ""));
+  if (!uid) return fail("請先登入");
+  const file = asFile(form.get("file"));
+  if (!file) return fail("請選擇簽呈檔案");
+  if (file.size > PETITION_MAX_BYTES) return fail("檔案太大（上限 10MB）");
+  if (!/^(image\/(jpeg|png|webp)|application\/pdf)$/.test(file.type)) return fail("只接受 JPG／PNG／WEBP 圖片或 PDF");
+  const note = String(form.get("note") || "").trim().slice(0, 300);
+  const fileName = String(form.get("fileName") || file.name || "簽呈").replace(/[\\/:*?"<>|\r\n]/g, "").trim().slice(0, 120) || "簽呈";
+
+  const { data: acc, error: accErr } = await sb
+    .from("toolbox_accounts")
+    .select("username, name, team")
+    .eq("id", uid)
+    .maybeSingle();
+  if (accErr) return fail(accErr.message);
+
+  const ext = file.type === "application/pdf" ? "pdf" : extOf(file.type);
+  const path = `petitions/${uid}/${crypto.randomUUID()}.${ext}`;
+  await uploadFile(path, file);
+  const { data, error } = await sb
+    .from("subsidy_petitions")
+    .insert({
+      user_id: uid,
+      username: acc?.username || "",
+      user_name: acc?.name || acc?.username || "",
+      team: acc?.team || "",
+      note,
+      file_path: path,
+      file_name: fileName,
+      mime: file.type,
+      size_bytes: file.size,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    await removeFiles([path]);
+    return fail(error.message);
+  }
+  const [petition] = await petitionsWithUrls([data as PetitionRow]);
+  return json({ ok: true, petition });
+}
+
+async function handlePetitionMine(body: Record<string, string>) {
+  const uid = await userId(String(body.token || ""));
+  if (!uid) return fail("請先登入");
+  const { data, error } = await sb
+    .from("subsidy_petitions")
+    .select("*")
+    .eq("user_id", uid)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) return fail(error.message);
+  return json({ ok: true, petitions: await petitionsWithUrls((data || []) as PetitionRow[]) });
+}
+
+async function handlePetitionDelete(body: Record<string, string>) {
+  const uid = await userId(String(body.token || ""));
+  if (!uid) return fail("請先登入");
+  const id = Number(body.id);
+  if (!Number.isInteger(id) || id <= 0) return fail("資料錯誤");
+  const { data, error } = await sb
+    .from("subsidy_petitions")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", uid)
+    .maybeSingle();
+  if (error) return fail(error.message);
+  if (!data) return json({ ok: true, deleted: false, id });
+  await sb.from("subsidy_petitions").delete().eq("id", id);
+  await removeFiles([(data as PetitionRow).file_path]);
+  return json({ ok: true, deleted: true, id });
+}
+
+async function handlePetitionAdminList(body: Record<string, string>) {
+  if (!(await isAdmin(String(body.secret || "")))) return fail("後台密碼錯誤");
+  const from = String(body.from || ""), to = String(body.to || "");
+  if (!validDay(from) || !validDay(to) || to < from) return fail("日期範圍錯誤");
+  const end = new Date(new Date(to + "T00:00:00Z").getTime() + 86400000).toISOString().slice(0, 10);
+  const { data, error } = await sb
+    .from("subsidy_petitions")
+    .select("*")
+    .gte("created_at", taipeiStart(from))
+    .lt("created_at", taipeiStart(end))
+    .order("created_at", { ascending: false })
+    .limit(5000);
+  if (error) return fail(error.message);
+  return json({ ok: true, petitions: await petitionsWithUrls((data || []) as PetitionRow[]) });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return new Response("method not allowed", { status: 405, headers: CORS });
@@ -271,8 +405,10 @@ Deno.serve(async (req) => {
     const type = req.headers.get("content-type") || "";
     if (type.includes("multipart/form-data")) {
       const form = await req.formData();
-      if (String(form.get("action") || "") !== "save") return fail("未知的動作");
-      return await handleSave(form);
+      const action = String(form.get("action") || "");
+      if (action === "save") return await handleSave(form);
+      if (action === "petition_save") return await handlePetitionSave(form);
+      return fail("未知的動作");
     }
     const body = (await req.json().catch(() => ({}))) as Record<string, string>;
     switch (body.action) {
@@ -282,6 +418,12 @@ Deno.serve(async (req) => {
         return await handleDelete(body);
       case "admin_list":
         return await handleAdminList(body);
+      case "petition_mine":
+        return await handlePetitionMine(body);
+      case "petition_delete":
+        return await handlePetitionDelete(body);
+      case "petition_admin_list":
+        return await handlePetitionAdminList(body);
       default:
         return fail("未知的動作");
     }

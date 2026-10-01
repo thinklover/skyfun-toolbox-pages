@@ -1654,6 +1654,20 @@
         .nb-ck-msg { margin: 0.55rem 0 0; font-size: 0.82rem; color: #047857; }
         .nb-ck-msg.is-error { color: #b91c1c; }
         .nb-ck-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
+        .nb-pt { font-size: 0.9rem; color: #1e293b; }
+        .nb-pt-intro { margin: 0 0 0.6rem; line-height: 1.6; color: #334155; }
+        .nb-pt-deadline {
+            display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.6rem;
+            margin: 0 0 0.85rem; padding: 0.6rem 0.8rem; border-radius: 0.6rem;
+            background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; font-size: 0.86rem;
+        }
+        .nb-pt-deadline > strong { font-size: 0.95rem; }
+        .nb-pt-deadline span { color: #7f1d1d; }
+        .nb-pt-gap { margin-top: 0.6rem; }
+        .nb-pt-note { max-width: 32rem; }
+        #page-newbie-subsidy .nb-pt-table { min-width: 34rem; }
+        .nb-pt-table a { color: #047857; font-weight: 700; text-decoration: underline; word-break: break-all; }
+        .nb-pt-table td:first-child, .nb-pt-table td:nth-child(4), .nb-pt-table td:last-child { white-space: nowrap; }
         .nb-exam-admin-link { text-align: right; margin-top: 0.6rem; }
         .nb-exam-admin-link a { color: #64748b; text-decoration: underline; }
         .nb-exam-hist-table td.is-pass { color: #047857; }
@@ -8824,7 +8838,7 @@
                     <button type="button" class="nb-hub-tile nb-hub-tile--subsidy" onclick="showPage('newbie-subsidy')">
                         <span class="nb-hub-tile-icon">💰</span>
                         <span class="nb-hub-tile-title">財補專區</span>
-                        <span class="nb-hub-tile-desc">月份試算 · 打卡上傳 · 線上考試 · 獎金辦法</span>
+                        <span class="nb-hub-tile-desc">月份試算 · 打卡上傳 · 展延簽呈 · 線上考試 · 獎金辦法</span>
                         <span class="nb-hub-tile-go">查看辦法 →</span>
                     </button>
                 </div>
@@ -8881,6 +8895,11 @@
                 <section class="nb-panel nb-ck" id="nb-ck-root" aria-labelledby="nb-ck-title">
                     <h3 id="nb-ck-title" class="nb-rule-title">📸 每日打卡上傳</h3>
                     <div id="nb-ck-body"></div>
+                </section>
+
+                <section class="nb-panel nb-pt" id="nb-pt-root" aria-labelledby="nb-pt-title">
+                    <h3 id="nb-pt-title" class="nb-rule-title">📄 展延財補簽呈上傳</h3>
+                    <div id="nb-pt-body"></div>
                 </section>
 
                 <section class="nb-panel nb-exam" id="nb-exam-root" aria-labelledby="nb-exam-title">
@@ -8983,35 +9002,11 @@
                 </div>
             </div>
         </div>
+        <script src="./js/subsidy-settle.js?v=20261001-1"></script>
         <script>
         (function () {
-            // 每年各月結績日（日）；未公告年份以最近一年同月份暫代並標示預估
-            const SETTLE_DAYS = {
-                2026: [21, 24, 23, 20, 22, 22, 21, 21, 21, 20, 23, 21]
-            };
+            const { nextSettleAfter, addDays, fmt } = window.SubsidySettle;
             const STORE_KEY = 'nbSubsidyTrainEndDate';
-            const WEEK = '日一二三四五六';
-
-            function settleOf(year, monthIdx) {
-                if (SETTLE_DAYS[year]) return { date: new Date(year, monthIdx, SETTLE_DAYS[year][monthIdx]), estimated: false };
-                const years = Object.keys(SETTLE_DAYS).map(Number).sort((a, b) => a - b);
-                const ref = years.reduce((best, y) => Math.abs(y - year) < Math.abs(best - year) ? y : best, years[0]);
-                return { date: new Date(year, monthIdx, SETTLE_DAYS[ref][monthIdx]), estimated: true };
-            }
-            function nextSettleAfter(d) {
-                let y = d.getFullYear(), m = d.getMonth();
-                for (let i = 0; i < 3; i++) {
-                    const s = settleOf(y, m);
-                    if (s.date > d) return s;
-                    m++; if (m > 11) { m = 0; y++; }
-                }
-                return null;
-            }
-            function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
-            function fmt(d) {
-                return (d.getFullYear() - 1911) + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' +
-                    String(d.getDate()).padStart(2, '0') + '（' + WEEK[d.getDay()] + '）';
-            }
             function daysBetween(a, b) { return Math.round((b - a) / 86400000) + 1; }
             function parseYmd(v) {
                 const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || '');
@@ -9915,6 +9910,7 @@
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20260930-2"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
+        <script src="./js/subsidy-petition.js?v=20261001-1"></script>
 <script src="./js/lite-hide-api.js"></script>
 <script src="./js/site-file-search-index.js"></script>
         <script src="./js/tenant-eligibility-legal.js"></script>
@@ -11677,13 +11673,13 @@
             { external: 'https://pip.moi.gov.tw/Publicize/Info/B1021', title: '300億租金補貼試算', category: '房客專區', keywords: '300億 租補 租金補貼 內政部 試算 pip' },
             { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發' },
             { page: 'rent', title: '租金水準試算器', category: '業務專區', keywords: '租金水準試算器 租金水準 試算器 計算器 租金 坪數 行情 估租 單坪 屋齡 行政區 評定 待租 評定結果 擬定月租 收件上限 社宅' },
-            { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假' },
+            { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案' },
             { page: 'newbie-quest', title: '業績任務板', category: '新人專區', keywords: '業績 任務板 打卡 新人 考核 kpi 追蹤 任務 新人任務' },
             { file: './admin/accounts-dashboard.html', title: '帳號管理後台', category: '管理工具', keywords: '後台 admin 帳號 開通 停用 登入紀錄 管理員' },
             { file: './admin/newbie-dashboard.html', title: '新人業績後台', category: '管理工具', keywords: '後台 admin 業績 任務 管理員 儀表板 dashboard KPI 新人' },
             { file: './admin/admin-qa-dashboard.html', title: '行政 QA 檢核後台', category: '管理工具', keywords: '後台 admin 行政 問答 QA 檢核 點數 小組長' },
             { file: './admin/newbie-exam-dashboard.html', title: '財補考試成績後台', category: '管理工具', keywords: '後台 admin 財補 考試 成績 考卷 A卷 B卷 結訓考 新人' },
-            { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳' },
+            { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳 簽呈 展延' },
             { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 公證費 租賃公證 119條' },
             { page: 'business-forms', title: '各式表單', category: '業務專區', keywords: '表單 場勘 押金讓渡 領款收據 切結書 300億切結 115Y 自願撤案 帳戶變更 租金補貼 複審 檢核 還款 協議 欠租' },
             { page: 'termination', title: '催收解約專區', category: '首頁專區', keywords: '催收 解約 退租 終止 退還 欠租 存證信函' },
