@@ -6,11 +6,12 @@
   <title>註銷物件申請後台 — 星鴻工具箱</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="../js/supabase-config.js"></script>
   <style>
     body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
     .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-    input, select, textarea { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.5rem 0.75rem; color: #f8fafc; }
+    input, select, textarea { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.45rem 0.7rem; color: #f8fafc; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th, td { padding: 0.55rem 0.5rem; text-align: left; border-bottom: 1px solid #334155; vertical-align: top; }
     th { color: #94a3b8; font-weight: 700; white-space: nowrap; }
@@ -23,10 +24,12 @@
     .b-pending { background: #78350f; color: #fcd34d; }
     .b-done { background: #064e3b; color: #6ee7b7; }
     .b-rejected { background: #7f1d1d; color: #fca5a5; }
-    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 0.65rem; padding: 0.6rem 0.75rem; cursor: pointer; }
-    .stat.is-active { border-color: #2dd4bf; }
-    .stat b { display: block; font-size: 1.35rem; color: #f8fafc; }
+    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 0.65rem; padding: 0.6rem 0.75rem; }
+    .stat[data-status] { cursor: pointer; }
+    .stat.is-active { border-color: #2dd4bf; box-shadow: 0 0 0 1px #2dd4bf inset; }
+    .stat b { display: block; font-size: 1.5rem; color: #f8fafc; line-height: 1.2; }
     .stat span { font-size: 0.75rem; color: #94a3b8; }
+    .stat small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 0.1rem; }
     .detail { background: #0f172a; border-top: 2px solid #2dd4bf; }
     .kv { display: grid; grid-template-columns: 1fr; gap: 0.5rem 1.25rem; }
     @media (min-width: 768px) { .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -34,6 +37,17 @@
     .kv dt { font-size: 0.72rem; color: #94a3b8; }
     .kv dd { font-size: 0.88rem; color: #f1f5f9; white-space: pre-wrap; word-break: break-word; margin: 0.1rem 0 0; }
     .act { font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 0.5rem; font-weight: 700; }
+    .flt label { display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.2rem; }
+    .flt select, .flt input { width: 100%; font-size: 0.85rem; }
+    .chip { font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 999px; border: 1px solid #475569; color: #cbd5e1; background: #0f172a; font-weight: 700; }
+    .chip.is-active { background: #0f766e; border-color: #14b8a6; color: #fff; }
+    .chart-card { background: #0f172a; border: 1px solid #334155; border-radius: 0.85rem; padding: 0.85rem 0.95rem; min-width: 0; }
+    .chart-card h3 { font-size: 0.92rem; font-weight: 800; color: #f1f5f9; }
+    .chart-card .hint { font-size: 0.7rem; color: #64748b; margin: 0.1rem 0 0.5rem; }
+    .ch { position: relative; }
+    .ch-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 0.85rem; }
+    .insight { background: linear-gradient(90deg, rgba(20, 184, 166, 0.14), rgba(56, 189, 248, 0.08)); border: 1px solid #115e59; border-radius: 0.85rem; padding: 0.75rem 0.95rem; font-size: 0.92rem; line-height: 1.7; color: #e2e8f0; }
+    .insight strong { color: #5eead4; }
   </style>
 </head>
 <body class="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
@@ -51,27 +65,90 @@
     <p id="login-msg" class="text-sm text-rose-300 hidden"></p>
   </section>
 
-  <section class="card p-4 hidden space-y-4" id="main-panel">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="stats"></div>
-    <div class="flex flex-wrap items-end gap-3">
-      <div>
-        <label class="block text-xs text-slate-400 mb-1">搜尋地址／申請人／業務／處所／承接業者</label>
-        <input type="search" id="q" placeholder="輸入關鍵字" class="min-w-[16rem]" />
+  <section class="card p-4 hidden space-y-4" id="filter-panel">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-sm font-bold text-slate-300 mr-1">期間</span>
+      <div class="flex flex-wrap gap-1.5" id="range-chips">
+        <button type="button" class="chip" data-range="all">全部</button>
+        <button type="button" class="chip" data-range="month">本月</button>
+        <button type="button" class="chip" data-range="lastMonth">上個月</button>
+        <button type="button" class="chip" data-range="3m">近 3 個月</button>
+        <button type="button" class="chip" data-range="6m">近 6 個月</button>
+        <button type="button" class="chip" data-range="year">今年</button>
       </div>
-      <div>
-        <label class="block text-xs text-slate-400 mb-1">狀態</label>
-        <select id="status">
+      <div class="flex items-center gap-1.5 text-sm">
+        <input type="date" id="f-from" aria-label="起日" />
+        <span class="muted">～</span>
+        <input type="date" id="f-to" aria-label="迄日" />
+      </div>
+    </div>
+    <div class="flt grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div><label for="f-status">狀態</label>
+        <select id="f-status">
           <option value="">全部</option>
-          <option value="pending">待處理</option>
-          <option value="done">已註銷</option>
+          <option value="pending">未完成</option>
+          <option value="done">已完成</option>
           <option value="rejected">退回</option>
         </select>
       </div>
+      <div><label for="f-dept">申請處所</label><select id="f-dept"></select></div>
+      <div><label for="f-region">物件所在區域</label><select id="f-region"></select></div>
+      <div><label for="f-type">物件型態</label><select id="f-type"></select></div>
+      <div><label for="f-reason">註銷原因</label><select id="f-reason"></select></div>
+      <div><label for="f-taker">承接業者</label><select id="f-taker"></select></div>
+    </div>
+    <div class="flex flex-wrap items-end gap-2">
+      <div class="flex-1 min-w-[14rem] flt">
+        <label for="q">關鍵字（地址／申請人／業務／承接業者）</label>
+        <input type="search" id="q" placeholder="輸入關鍵字" />
+      </div>
+      <button type="button" id="btn-clear" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">清除條件</button>
       <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
-      <button type="button" id="btn-csv" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">匯出 CSV</button>
-      <p class="text-sm text-slate-400 pb-1" id="count">—</p>
+      <button type="button" id="btn-csv" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">匯出 CSV（篩選結果）</button>
     </div>
     <p id="msg" class="text-sm text-slate-400"></p>
+  </section>
+
+  <section class="card p-4 hidden space-y-4" id="overview-panel">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-lg font-black text-teal-300">圖表總覽</h2>
+      <p class="text-xs text-slate-500">圖表依上方篩選條件即時更新；點圖表上的長條或區塊可直接加入篩選</p>
+    </div>
+    <div class="insight" id="insight"></div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2" id="stats"></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="chart-card md:col-span-2">
+        <h3>每月申請件數</h3><p class="hint">依送出月份，顏色代表目前處理狀態；點長條可篩選該月</p>
+        <div class="ch" id="ch-trend" style="height:260px"><canvas></canvas><p class="ch-empty hidden">沒有資料</p></div>
+      </div>
+      <div class="chart-card">
+        <h3>各申請處所件數</h3><p class="hint">點長條可篩選該處所</p>
+        <div class="ch" id="ch-dept" style="height:260px"><canvas></canvas><p class="ch-empty hidden">沒有資料</p></div>
+      </div>
+      <div class="chart-card">
+        <h3>承接業者排行（前 10 名）</h3><p class="hint">物件轉去哪些業者；點長條可篩選該業者</p>
+        <div class="ch" id="ch-taker" style="height:260px"><canvas></canvas><p class="ch-empty hidden">沒有資料</p></div>
+      </div>
+      <div class="chart-card">
+        <h3>註銷原因</h3><p class="hint">依「合約狀況」判斷：含「不續約／到期」為到期不續約，含「解約」為提前解約</p>
+        <div class="ch" id="ch-reason" style="height:240px"><canvas></canvas><p class="ch-empty hidden">沒有資料</p></div>
+      </div>
+      <div class="chart-card">
+        <h3>物件型態</h3><p class="hint">代管／包租比例</p>
+        <div class="ch" id="ch-type" style="height:240px"><canvas></canvas><p class="ch-empty hidden">沒有資料</p></div>
+      </div>
+      <div class="chart-card md:col-span-2">
+        <h3>物件所在區域</h3><p class="hint">點長條可篩選該區域</p>
+        <div class="ch" id="ch-region" style="height:240px"><canvas></canvas><p class="ch-empty hidden">沒有資料</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card p-4 hidden space-y-3" id="main-panel">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-lg font-black text-teal-300">申請明細</h2>
+      <p class="text-sm text-slate-400" id="count">—</p>
+    </div>
     <div class="overflow-x-auto">
       <table>
         <thead>
@@ -103,12 +180,17 @@
     (function () {
       const SECRET_KEY = 'skyfun-pages-admin-secret';
       const STATUS = { pending: ['b-pending', '未完成'], done: ['b-done', '已完成'], rejected: ['b-rejected', '退回'] };
+      const STATUS_COLOR = { pending: '#f59e0b', done: '#10b981', rejected: '#f43f5e' };
+      const PALETTE = ['#2dd4bf', '#38bdf8', '#a78bfa', '#f472b6', '#facc15', '#fb923c', '#4ade80', '#94a3b8'];
+      const SELECTS = { dept: 'f-dept', region: 'f-region', type: 'f-type', reason: 'f-reason', taker: 'f-taker' };
       const files = {};
+      const charts = {};
       let client = null;
       let secret = '';
+      let allItems = [];
       let items = [];
-      let counts = {};
       let openId = null;
+      let range = 'all';
 
       const $ = (id) => document.getElementById(id);
 
@@ -153,16 +235,287 @@
         const [cls, label] = STATUS[st] || STATUS.pending;
         return '<span class="badge ' + cls + '">' + label + '</span>';
       }
+      const pad = (n) => String(n).padStart(2, '0');
+      const ymdOf = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      const monthKey = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1);
+      const rocMonth = (key) => (Number(key.slice(0, 4)) - 1911) + '/' + key.slice(5, 7);
 
-      function renderStats() {
-        const cur = $('status').value;
-        $('stats').innerHTML = [
-          ['', '全部申請', counts.all],
-          ['pending', '未完成', counts.pending],
-          ['done', '已完成', counts.done],
-          ['rejected', '退回', counts.rejected]
-        ].map(([k, label, v]) => '<div class="stat' + (cur === k ? ' is-active' : '') + '" data-status="' + k + '"><b>' + (v ?? 0) + '</b><span>' + label + '</span></div>').join('');
+      function reasonOf(it) {
+        const s = String(it.contractStatus || '');
+        if (/不續約|到期/.test(s)) return '到期不續約';
+        if (/解約|終止/.test(s)) return '提前解約';
+        return '其他';
       }
+      const FIELD = {
+        dept: (it) => it.dept || '（未填）',
+        region: (it) => it.region || '（未填）',
+        type: (it) => it.objectType || '（未填）',
+        reason: reasonOf,
+        taker: (it) => String(it.takerCompany || '').trim() || '（未填）'
+      };
+
+      function countBy(list, get) {
+        const map = new Map();
+        list.forEach((it) => { const k = get(it); map.set(k, (map.get(k) || 0) + 1); });
+        return [...map.entries()].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]), 'zh-Hant'));
+      }
+
+      /* ---------- 篩選 ---------- */
+
+      function setRange(kind) {
+        range = kind;
+        const now = new Date();
+        const y = now.getFullYear(), m = now.getMonth();
+        let from = '', to = '';
+        if (kind === 'month') { from = ymdOf(new Date(y, m, 1)); to = ymdOf(new Date(y, m + 1, 0)); }
+        else if (kind === 'lastMonth') { from = ymdOf(new Date(y, m - 1, 1)); to = ymdOf(new Date(y, m, 0)); }
+        else if (kind === '3m') { from = ymdOf(new Date(y, m - 2, 1)); to = ymdOf(now); }
+        else if (kind === '6m') { from = ymdOf(new Date(y, m - 5, 1)); to = ymdOf(now); }
+        else if (kind === 'year') { from = ymdOf(new Date(y, 0, 1)); to = ymdOf(new Date(y, 11, 31)); }
+        $('f-from').value = from;
+        $('f-to').value = to;
+      }
+
+      function syncChips() {
+        document.querySelectorAll('#range-chips .chip').forEach((c) => c.classList.toggle('is-active', c.dataset.range === range));
+      }
+
+      function filters() {
+        return {
+          from: $('f-from').value,
+          to: $('f-to').value,
+          status: $('f-status').value,
+          q: $('q').value.trim().toLowerCase(),
+          dept: $('f-dept').value,
+          region: $('f-region').value,
+          type: $('f-type').value,
+          reason: $('f-reason').value,
+          taker: $('f-taker').value
+        };
+      }
+
+      function matches(it, f, skipStatus) {
+        const day = ymdOf(new Date(it.createdAt));
+        if (f.from && day < f.from) return false;
+        if (f.to && day > f.to) return false;
+        if (!skipStatus && f.status && it.status !== f.status) return false;
+        for (const k of Object.keys(SELECTS)) {
+          if (f[k] && FIELD[k](it) !== f[k]) return false;
+        }
+        if (f.q) {
+          const hay = [it.address, it.applicant, it.agentName, it.dept, it.userName, it.takerCompany, it.takerAgent, it.contractStatus, it.note].join(' ').toLowerCase();
+          if (!hay.includes(f.q)) return false;
+        }
+        return true;
+      }
+
+      function fillSelects() {
+        Object.entries(SELECTS).forEach(([k, id]) => {
+          const sel = $(id);
+          const cur = sel.value;
+          const opts = countBy(allItems, FIELD[k]);
+          if (cur && !opts.some(([v]) => v === cur)) opts.push([cur, 0]);
+          sel.innerHTML = '<option value="">全部</option>' + opts.map(([v, n]) => '<option value="' + esc(v) + '">' + esc(v) + '（' + n + '）</option>').join('');
+          sel.value = cur;
+        });
+      }
+
+      function apply() {
+        const f = filters();
+        const base = allItems.filter((it) => matches(it, f, true));
+        items = base.filter((it) => !f.status || it.status === f.status);
+        if (openId && !items.some((it) => it.id === openId)) openId = null;
+        syncChips();
+        renderStats(base, f.status);
+        renderInsight(items, f);
+        renderCharts(items, f);
+        renderRows();
+        if (openId) loadFiles(openId);
+      }
+
+      /* ---------- 總覽 ---------- */
+
+      function renderStats(base, cur) {
+        const n = (st) => base.filter((it) => it.status === st).length;
+        const done = base.filter((it) => it.status === 'done' && it.handledAt);
+        const avgDays = done.length
+          ? (done.reduce((s, it) => s + (new Date(it.handledAt) - new Date(it.createdAt)), 0) / done.length / 86400000).toFixed(1)
+          : '—';
+        const closed = n('done') + n('rejected');
+        const rate = base.length ? Math.round((n('done') / base.length) * 100) + '%' : '—';
+        const card = (status, label, value, sub) => '<div class="stat' + (status !== null && cur === status ? ' is-active' : '') + '"' +
+          (status !== null ? ' data-status="' + status + '"' : '') + '><b>' + value + '</b><span>' + label + '</span>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
+        $('stats').innerHTML =
+          card('', '申請件數', base.length, '符合篩選條件') +
+          card('pending', '未完成', n('pending'), '待處理') +
+          card('done', '已完成', n('done'), '') +
+          card('rejected', '退回', n('rejected'), '') +
+          card(null, '完成率', rate, '已結案 ' + closed + ' 件') +
+          card(null, '平均處理天數', avgDays, '送出到勾選完成');
+      }
+
+      function periodText(f) {
+        if (!f.from && !f.to) return '全部期間';
+        return (f.from ? roc(f.from) : '最早') + '～' + (f.to ? roc(f.to) : '今天');
+      }
+
+      function renderInsight(list, f) {
+        const box = $('insight');
+        const conds = Object.keys(SELECTS).filter((k) => f[k]).map((k) => f[k]);
+        if (f.status) conds.unshift(STATUS[f.status][1]);
+        if (f.q) conds.push('關鍵字「' + f.q + '」');
+        const head = '<strong>' + periodText(f) + '</strong>' + (conds.length ? '（' + esc(conds.join('、')) + '）' : '');
+        if (!list.length) { box.innerHTML = head + '：沒有符合條件的註銷申請。'; return; }
+        const n = (st) => list.filter((it) => it.status === st).length;
+        const top = (k) => countBy(list, FIELD[k])[0];
+        const parts = [];
+        if (!f.dept) { const [v, c] = top('dept'); parts.push('最多的處所是「<strong>' + esc(v) + '</strong>」（' + c + ' 件）'); }
+        if (!f.taker) { const [v, c] = top('taker'); parts.push('最常轉去的業者是「<strong>' + esc(v) + '</strong>」（' + c + ' 件）'); }
+        if (!f.reason) { const [v, c] = top('reason'); parts.push('原因以「<strong>' + esc(v) + '</strong>」為主（' + c + ' 件，' + Math.round(c / list.length * 100) + '%）'); }
+        box.innerHTML = head + '共 <strong>' + list.length + '</strong> 件註銷申請，已完成 <strong>' + n('done') + '</strong> 件、未完成 <strong>' + n('pending') + '</strong> 件' +
+          (n('rejected') ? '、退回 <strong>' + n('rejected') + '</strong> 件' : '') + '。' +
+          (parts.length ? parts.join('，') + '。' : '');
+      }
+
+      const valueLabels = {
+        id: 'valueLabels',
+        afterDatasetsDraw(chart) {
+          if (chart.config.type !== 'bar') return;
+          const { ctx } = chart;
+          const horizontal = chart.options.indexAxis === 'y';
+          const sets = chart.data.datasets;
+          const last = chart.getDatasetMeta(sets.length - 1);
+          ctx.save();
+          ctx.font = '700 11px system-ui, sans-serif';
+          ctx.fillStyle = '#e2e8f0';
+          ctx.textAlign = horizontal ? 'left' : 'center';
+          ctx.textBaseline = horizontal ? 'middle' : 'bottom';
+          chart.data.labels.forEach((_, i) => {
+            const total = sets.reduce((s, d) => s + (Number(d.data[i]) || 0), 0);
+            const el = last.data[i];
+            if (!total || !el) return;
+            if (horizontal) ctx.fillText(total, el.x + 5, el.y);
+            else ctx.fillText(total, el.x, el.y - 3);
+          });
+          ctx.restore();
+        }
+      };
+
+      function drawChart(key, config, empty, height) {
+        const box = $('ch-' + key);
+        if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+        if (height) box.style.height = height + 'px';
+        box.querySelector('.ch-empty').classList.toggle('hidden', !empty);
+        const canvas = box.querySelector('canvas');
+        canvas.classList.toggle('hidden', empty);
+        if (empty || !window.Chart) return;
+        charts[key] = new Chart(canvas, config);
+      }
+
+      function pickFilter(k, value) {
+        $(SELECTS[k]).value = value;
+        apply();
+      }
+
+      function hbar(key, rows, color, filterKey) {
+        const height = Math.max(200, rows.length * 30 + 40);
+        drawChart(key, {
+          type: 'bar',
+          data: { labels: rows.map((r) => r[0]), datasets: [{ data: rows.map((r) => r[1]), backgroundColor: color, borderRadius: 4, maxBarThickness: 22 }] },
+          options: {
+            indexAxis: 'y', maintainAspectRatio: false,
+            layout: { padding: { right: 28 } },
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } },
+            onClick: (_, els) => { if (els.length) pickFilter(filterKey, rows[els[0].index][0]); },
+            onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          },
+          plugins: [valueLabels]
+        }, !rows.length, height);
+      }
+
+      function doughnut(key, rows, filterKey) {
+        const total = rows.reduce((s, r) => s + r[1], 0);
+        drawChart(key, {
+          type: 'doughnut',
+          data: {
+            labels: rows.map((r) => r[0] + '　' + r[1] + ' 件（' + Math.round(r[1] / total * 100) + '%）'),
+            datasets: [{ data: rows.map((r) => r[1]), backgroundColor: rows.map((_, i) => PALETTE[i % PALETTE.length]), borderColor: '#0f172a', borderWidth: 2 }]
+          },
+          options: {
+            maintainAspectRatio: false, cutout: '58%',
+            plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 12, font: { size: 12 } } } },
+            onClick: (_, els) => { if (els.length) pickFilter(filterKey, rows[els[0].index][0]); },
+            onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          }
+        }, !rows.length);
+      }
+
+      function trendMonths(list, f) {
+        let start, end;
+        if (f.from) start = new Date(f.from + 'T00:00:00');
+        if (f.to) end = new Date(f.to + 'T00:00:00');
+        const times = list.map((it) => new Date(it.createdAt).getTime());
+        if (!start) start = new Date(Math.min(...times));
+        if (!end) end = new Date(Math.max(Math.max(...times), Date.now()));
+        const months = [];
+        const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+        while (cur <= end) { months.push(monthKey(cur)); cur.setMonth(cur.getMonth() + 1); }
+        return months.slice(-24);
+      }
+
+      function renderCharts(list, f) {
+        if (window.Chart) {
+          Chart.defaults.color = '#cbd5e1';
+          Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
+          Chart.defaults.font.family = 'system-ui, "Microsoft JhengHei", sans-serif';
+        }
+        const months = list.length ? trendMonths(list, f) : [];
+        const byStatus = (st) => months.map((mk) => list.filter((it) => it.status === st && monthKey(new Date(it.createdAt)) === mk).length);
+        drawChart('trend', {
+          type: 'bar',
+          data: {
+            labels: months.map(rocMonth),
+            datasets: ['done', 'pending', 'rejected'].map((st) => ({ label: STATUS[st][1], data: byStatus(st), backgroundColor: STATUS_COLOR[st], borderRadius: 3, maxBarThickness: 46 }))
+          },
+          options: {
+            maintainAspectRatio: false,
+            layout: { padding: { top: 18 } },
+            plugins: { legend: { position: 'top', align: 'end', labels: { boxWidth: 12 } } },
+            scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } },
+            onClick: (_, els) => {
+              if (!els.length) return;
+              const [y, m] = months[els[0].index].split('-').map(Number);
+              range = 'custom';
+              $('f-from').value = ymdOf(new Date(y, m - 1, 1));
+              $('f-to').value = ymdOf(new Date(y, m, 0));
+              apply();
+            },
+            onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          },
+          plugins: [valueLabels]
+        }, !list.length);
+        hbar('dept', countBy(list, FIELD.dept), '#2dd4bf', 'dept');
+        hbar('taker', countBy(list, FIELD.taker).slice(0, 10), '#38bdf8', 'taker');
+        doughnut('reason', countBy(list, FIELD.reason), 'reason');
+        doughnut('type', countBy(list, FIELD.type), 'type');
+        const regions = countBy(list, FIELD.region);
+        drawChart('region', {
+          type: 'bar',
+          data: { labels: regions.map((r) => r[0]), datasets: [{ data: regions.map((r) => r[1]), backgroundColor: '#a78bfa', borderRadius: 4, maxBarThickness: 46 }] },
+          options: {
+            maintainAspectRatio: false,
+            layout: { padding: { top: 18 } },
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 } } },
+            onClick: (_, els) => { if (els.length) pickFilter('region', regions[els[0].index][0]); },
+            onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+          },
+          plugins: [valueLabels]
+        }, !regions.length);
+      }
+
+      /* ---------- 明細 ---------- */
 
       function filesHtml(id) {
         const list = files[id];
@@ -214,7 +567,7 @@
       }
 
       function renderRows() {
-        $('count').textContent = '共 ' + items.length + ' 筆';
+        $('count').textContent = '篩選結果 ' + items.length + ' 筆／全部 ' + allItems.length + ' 筆';
         $('rows').innerHTML = items.map((it) =>
           '<tr class="row' + (openId === it.id ? ' is-open' : '') + '" data-id="' + it.id + '">' +
           '<td class="nw">' + fmt(it.createdAt) + '</td><td class="nw">' + esc(it.dept) + '</td><td class="nw">' + esc(it.applicant) + '</td>' +
@@ -222,21 +575,18 @@
           '<td>' + esc(it.address) + '</td><td class="nw">' + roc(it.leaseStart) + ' ～ ' + roc(it.leaseEnd) + '</td>' +
           '<td class="nw">' + (it.fileCount || 0) + '</td><td>' + badge(it.status) + '</td></tr>' +
           (openId === it.id ? '<tr><td colspan="10" class="detail" data-detail="' + it.id + '">' + detailHtml(it) + '</td></tr>' : '')
-        ).join('') || '<tr><td colspan="10" class="muted">沒有資料</td></tr>';
+        ).join('') || '<tr><td colspan="10" class="muted">沒有符合條件的資料</td></tr>';
       }
 
       async function loadList() {
         const msg = $('msg');
         msg.textContent = '讀取中…';
         try {
-          const res = await rpc('object_cancel_admin_list', { p_secret: secret, p_query: $('q').value.trim(), p_status: $('status').value, p_limit: 2000 });
-          items = res.items || [];
-          counts = res.counts || {};
-          if (openId && !items.some((it) => it.id === openId)) openId = null;
+          const res = await rpc('object_cancel_admin_list', { p_secret: secret, p_query: '', p_status: '', p_limit: 2000 });
+          allItems = res.items || [];
           msg.textContent = '';
-          renderStats();
-          renderRows();
-          if (openId) loadFiles(openId);
+          fillSelects();
+          apply();
         } catch (e) {
           msg.textContent = e.message;
         }
@@ -267,6 +617,8 @@
           if (dmsg) dmsg.textContent = e.message;
         }
       }
+
+      /* ---------- LINE 通知對象 ---------- */
 
       async function loadLine() {
         const msg = $('line-msg');
@@ -313,10 +665,10 @@
       $('btn-line-refresh').addEventListener('click', loadLine);
 
       function exportCsv() {
-        const head = ['送出時間', '狀態', '申請處所', '申請人', '星鴻業務姓名', '物件所在區域', '物件型態', '合約狀況', '租約開始日期', '租約到期日',
+        const head = ['送出時間', '狀態', '申請處所', '申請人', '星鴻業務姓名', '物件所在區域', '物件型態', '合約狀況', '註銷原因', '租約開始日期', '租約到期日',
           '註銷物件地址', '業務備註', '承接業者', '承接業者業務姓名', '簽呈數', '管理部回覆', '完成勾選人', '處理時間', '送出帳號', '帳號處別'];
         const rows = items.map((it) => [fmt(it.createdAt), (STATUS[it.status] || STATUS.pending)[1], it.dept, it.applicant, it.agentName, it.region,
-          it.objectType, it.contractStatus, roc(it.leaseStart), roc(it.leaseEnd), it.address, it.note, it.takerCompany, it.takerAgent,
+          it.objectType, it.contractStatus, reasonOf(it), roc(it.leaseStart), roc(it.leaseEnd), it.address, it.note, it.takerCompany, it.takerAgent,
           it.fileCount || 0, it.adminNote, it.status === 'done' ? it.doneByName : '', it.handledAt ? fmt(it.handledAt) : '', it.username, it.team]);
         const csv = [head].concat(rows).map((r) => r.map((v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
         const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
@@ -351,16 +703,30 @@
         if (openId) loadFiles(openId);
       });
       $('stats').addEventListener('click', (e) => {
-        const card = e.target.closest('.stat');
+        const card = e.target.closest('.stat[data-status]');
         if (!card) return;
-        $('status').value = card.dataset.status;
-        loadList();
+        $('f-status').value = card.dataset.status;
+        apply();
       });
-      $('status').addEventListener('change', loadList);
+      $('range-chips').addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-range]');
+        if (!chip) return;
+        setRange(chip.dataset.range);
+        apply();
+      });
+      ['f-from', 'f-to'].forEach((id) => $(id).addEventListener('change', () => { range = 'custom'; apply(); }));
+      ['f-status'].concat(Object.values(SELECTS)).forEach((id) => $(id).addEventListener('change', apply));
+      let qTimer = null;
+      $('q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(apply, 250); });
+      $('btn-clear').addEventListener('click', () => {
+        setRange('all');
+        $('f-status').value = '';
+        $('q').value = '';
+        Object.values(SELECTS).forEach((id) => { $(id).value = ''; });
+        apply();
+      });
       $('btn-refresh').addEventListener('click', loadList);
       $('btn-csv').addEventListener('click', exportCsv);
-      let qTimer = null;
-      $('q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(loadList, 400); });
 
       async function login() {
         secret = $('admin-secret').value.trim();
@@ -370,8 +736,7 @@
           await rpc('object_cancel_admin_list', { p_secret: secret, p_query: '', p_status: '', p_limit: 1 });
           sessionStorage.setItem(SECRET_KEY, secret);
           $('login-panel').classList.add('hidden');
-          $('main-panel').classList.remove('hidden');
-          $('line-panel').classList.remove('hidden');
+          ['filter-panel', 'overview-panel', 'main-panel', 'line-panel'].forEach((id) => $(id).classList.remove('hidden'));
           await Promise.all([loadList(), loadLine()]);
         } catch (e) {
           msg.textContent = e.message;
@@ -381,6 +746,7 @@
       $('btn-login').addEventListener('click', login);
       $('admin-secret').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
 
+      setRange('all');
       const saved = sessionStorage.getItem(SECRET_KEY);
       if (saved) { $('admin-secret').value = saved; login(); }
     })();

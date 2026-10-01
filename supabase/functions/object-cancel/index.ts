@@ -167,32 +167,40 @@ async function handleDeleteFile(body: Record<string, string>) {
   return json({ ok: true, deleted: true, id });
 }
 
-const SITE_URL = "https://toolbox.skyfunsystem.com/";
-
 function roc(ymd: string) {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd || "");
   return m ? `${Number(m[1]) - 1911}/${m[2]}/${m[3]}` : ymd || "";
+}
+
+// 臺中市 → 台中；縣保留全名，避免新竹縣／新竹市、嘉義縣／嘉義市混淆
+function regionShort(region: string) {
+  const s = String(region || "").replace(/臺/g, "台");
+  return s.endsWith("市") ? s.slice(0, -1) : s;
+}
+
+function taipeiMonth(iso: string) {
+  const d = iso ? new Date(iso) : new Date();
+  return String(new Date(d.getTime() + 8 * 3600_000).getUTCMonth() + 1).padStart(2, "0");
 }
 
 // deno-lint-ignore no-explicit-any
 type RequestRow = Record<string, any>;
 
 function cancelMessage(r: RequestRow) {
+  const line = "---------";
   return [
-    "【星鴻註銷物件申請】",
-    `申請處所：${r.dept}`,
-    `申請人：${r.applicant}`,
+    `${regionShort(r.region)}的物件解編`,
+    `${taipeiMonth(r.created_at)}月星鴻物件解編轉業者【${r.taker_company}】說明`,
+    line,
     `星鴻業務：${r.agent_name}`,
-    `區域：${r.region}`,
-    `物件型態：${r.object_type}`,
-    `合約狀況：${r.contract_status}`,
-    `租約：${roc(r.lease_start || "")}～${roc(r.lease_end || "")}`,
-    `地址：${r.address}`,
-    `承接業者：${r.taker_company}（${r.taker_agent}）`,
-    ...(r.note ? [`備註：${r.note}`] : []),
-    "",
-    "請至工具箱「行政專區 → 星鴻註銷物件申請」查看、上傳簽呈與勾選完成。",
-    SITE_URL,
+    `租約狀態：${r.object_type}_${r.contract_status}`,
+    `租期：${roc(r.lease_start || "")}~${roc(r.lease_end || "")}`,
+    `註銷物件地址：${r.address}`,
+    line,
+    "業務備註：",
+    String(r.note || "").trim(),
+    line,
+    `${r.taker_company}業務：${r.taker_agent}`,
   ].join("\n");
 }
 
