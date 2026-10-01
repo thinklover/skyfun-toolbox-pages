@@ -109,12 +109,12 @@
             return;
         }
         el.innerHTML =
-            '<p class="nb-pt-intro">個案可透過簽呈申請<strong>展延財補方案</strong>。請將簽呈拍照或掃描後上傳，可一次選多個檔案（圖片或 PDF）。</p>' +
+            '<p class="nb-pt-intro">個案可透過簽呈<strong>接續財補方案</strong>。請將簽呈拍照或掃描後上傳，可一次選多個檔案（圖片或 PDF）。</p>' +
             deadlineHtml() +
             '<label class="nb-calc-label" for="nb-pt-file">簽呈檔案</label>' +
             '<input type="file" id="nb-pt-file" class="nb-ck-file" accept="image/*,application/pdf" multiple>' +
             '<label class="nb-calc-label nb-pt-gap" for="nb-pt-note">說明（選填）</label>' +
-            '<input type="text" id="nb-pt-note" class="nb-calc-input nb-pt-note" maxlength="300" placeholder="例如：因證照考試延後，申請展延財補一個月">' +
+            '<input type="text" id="nb-pt-note" class="nb-calc-input nb-pt-note" maxlength="300" placeholder="例如：簡述接續財補的原因">' +
             (message ? '<p class="nb-ck-msg' + (isError ? ' is-error' : '') + '">' + esc(message) + '</p>' : '') +
             '<div class="nb-ck-actions"><button type="button" class="nb-exam-start" id="nb-pt-upload"' + (busy ? ' disabled' : '') + '>上傳簽呈</button></div>' +
             '<div class="nb-exam-history"><h4>我上傳的簽呈</h4>' + listHtml() + '</div>' +

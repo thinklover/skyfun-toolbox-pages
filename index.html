@@ -1057,6 +1057,47 @@
             transition: background 0.15s, border-color 0.15s;
         }
         .admin-tool-btn:hover { background: #d1fae5; border-color: #34d399; }
+        .af-summary {
+            display: flex; align-items: center; gap: 0.5rem;
+            cursor: pointer; list-style: none; user-select: none;
+        }
+        .af-summary::-webkit-details-marker { display: none; }
+        .af-fold:not([open]) .af-summary { margin-bottom: 0; }
+        .af-summary-hint { font-size: 0.72rem; font-weight: 600; color: #94a3b8; }
+        .af-chevron { margin-left: auto; font-size: 0.8rem; color: #94a3b8; transition: transform 0.2s; }
+        .af-fold[open] .af-chevron { transform: rotate(180deg); }
+        .af-summary:hover .af-chevron { color: #0f766e; }
+        .af-grid { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
+        @media (min-width: 900px) { .af-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        .af-col {
+            border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.55rem 0.65rem 0.6rem;
+            background: #f8fafc; display: flex; flex-direction: column; gap: 0.45rem;
+        }
+        .af-col-title {
+            font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em;
+            padding: 0.15rem 0.6rem; border-radius: 999px; align-self: flex-start;
+        }
+        .af-col--admin .af-col-title { background: #ccfbf1; color: #0f766e; }
+        .af-col--system .af-col-title { background: #e0e7ff; color: #4338ca; }
+        .af-col--biz .af-col-title { background: #ffedd5; color: #c2410c; }
+        .af-item {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 0.6rem;
+            padding: 0.45rem 0.55rem;
+        }
+        .af-item-name {
+            display: flex; gap: 0.35rem; align-items: flex-start;
+            font-size: 0.8rem; font-weight: 700; color: #334155; line-height: 1.4;
+        }
+        .af-links { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+        .af-link {
+            border: 1px solid #6ee7b7; background: #ecfdf5; color: #047857;
+            border-radius: 999px; padding: 0.2rem 0.6rem;
+            font-size: 0.74rem; font-weight: 700; text-decoration: none; white-space: nowrap;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .af-link:hover { background: #d1fae5; border-color: #34d399; }
+        .af-link--sheet { border-color: #cbd5e1; background: #f1f5f9; color: #475569; }
+        .af-link--sheet:hover { background: #e2e8f0; border-color: #94a3b8; }
         @media (max-width: 899px) {
             .aqa-workspace.aqa-workspace--detail-open .aqa-sidebar { display: none; }
             .aqa-workspace.aqa-workspace--detail-open .aqa-main-panel { min-height: min(70vh, 640px); }
@@ -1539,6 +1580,20 @@
         .nb-rule { color: #1e293b; font-size: 0.9rem; line-height: 1.7; }
         .nb-rule-title { font-size: 1.02rem; font-weight: 900; color: #064e3b; margin: 0 0 0.55rem; }
         .nb-rule-hint { font-size: 0.78rem; color: #64748b; text-align: center; margin: 0; }
+        .nb-rule-table-wrap + .nb-rule-lead { margin-top: 1rem; }
+        .nb-signup-desc { margin: 0 0 0.65rem; font-size: 0.86rem; color: #475569; }
+        .nb-signup-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .nb-signup-btn {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.5rem 1rem; border-radius: 0.65rem;
+            font-size: 0.88rem; font-weight: 800; text-decoration: none;
+            transition: background 0.15s, border-color 0.15s, transform 0.15s;
+        }
+        .nb-signup-btn:hover { transform: translateY(-1px); }
+        .nb-signup-btn--dl { background: #fff; border: 1.5px solid #6ee7b7; color: #047857; }
+        .nb-signup-btn--dl:hover { background: #ecfdf5; border-color: #10b981; }
+        .nb-signup-btn--up { background: #059669; border: 1.5px solid #059669; color: #fff; }
+        .nb-signup-btn--up:hover { background: #047857; border-color: #047857; }
         .nb-calc { font-size: 0.9rem; color: #1e293b; }
         .nb-calc-label { display: block; font-weight: 800; font-size: 0.85rem; color: #334155; margin-bottom: 0.3rem; }
         .nb-calc-input {
@@ -4386,6 +4441,85 @@
                     <button type="button" onclick="showPage('rent')" class="admin-tool-btn">租金水準試算</button>
                 </div>
             </section>
+
+            <details class="admin-tools-card admin-tools-card--compact af-fold" id="admin-forms-zone">
+                <summary class="admin-tools-title af-summary">📋 各式表單<span class="af-summary-hint">行政 · 系統 · 業務</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                <div class="af-grid">
+                    <div class="af-col af-col--admin">
+                        <div class="af-col-title">行政</div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">📁</span>中心系統申請表單</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://drive.google.com/drive/folders/1DRl85s3kK3q7L86xpD-hGtG381hRIpXj?usp=sharing" target="_blank" rel="noopener noreferrer">雲端資料夾 ↗</a>
+                            </div>
+                        </div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">🚪</span>離職通報</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://forms.gle/8L5K4gw4w3Yv7A7g9" target="_blank" rel="noopener noreferrer">通報表單 ↗</a>
+                                <a class="af-link af-link--sheet" href="https://docs.google.com/spreadsheets/d/1w7YvJ4qImEKfwqXnf4XKxohfWL0bPSI7eo4OEtxGxsM/edit?usp=sharing" target="_blank" rel="noopener noreferrer">表單處理進度 ↗</a>
+                            </div>
+                        </div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">🛠️</span>行政管理部－系統資料修正／獎金補發收回回報</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://forms.gle/zo4WxNzCuvTx37pm8" target="_blank" rel="noopener noreferrer">表單 ↗</a>
+                                <a class="af-link af-link--sheet" href="https://docs.google.com/spreadsheets/d/1KFHYiAzc4tStJSY08mtCgSKWK860R2dRQ4UsPo1TosM/edit?usp=sharing" target="_blank" rel="noopener noreferrer">處理進度表單 ↗</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="af-col af-col--system">
+                        <div class="af-col-title">系統</div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">🐞</span>專案1－系統 BUG 問題</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://forms.gle/EA13qmjAsXshzYh49" target="_blank" rel="noopener noreferrer">表單 ↗</a>
+                            </div>
+                        </div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">📝</span>專案2－審件要點優化</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://docs.google.com/forms/d/e/1FAIpQLSeNDdksZFlySxXophr8Lj95nzRyN97iXrNZu9IjuazRHi1E3w/viewform" target="_blank" rel="noopener noreferrer">表單 ↗</a>
+                            </div>
+                        </div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">🏷️</span>專案3－實價登錄與系統代入問題</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://forms.gle/zT126Vt2pcMk1F4DA" target="_blank" rel="noopener noreferrer">表單 ↗</a>
+                            </div>
+                        </div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">📊</span>後台報表</div>
+                            <div class="af-links">
+                                <a class="af-link af-link--sheet" href="https://docs.google.com/spreadsheets/d/1VU1X_WN3g4mVleGqmoE1tRTaT333cLraBGQiG3yLBMs/edit?usp=sharing" target="_blank" rel="noopener noreferrer">後台報表 ↗</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="af-col af-col--biz">
+                        <div class="af-col-title">業務</div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">🔧</span>到期合約一個月內申請修繕方法</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://forms.gle/cTwQeci1UA5sF3sU7" target="_blank" rel="noopener noreferrer">業務線上表單申請 ↗</a>
+                            </div>
+                        </div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">🧾</span>星鴻／星華領款收據處長照會登記表</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://forms.gle/V34gXUqmG9KzYSBA8" target="_blank" rel="noopener noreferrer">登記表 ↗</a>
+                                <a class="af-link af-link--sheet" href="https://docs.google.com/spreadsheets/d/1COcpC8UMpiyKOV6Ccgae6xZDSWoqQluJM6ADdwnvfN0/edit?usp=sharing" target="_blank" rel="noopener noreferrer">登記表後台 ↗</a>
+                            </div>
+                        </div>
+                        <div class="af-item">
+                            <div class="af-item-name"><span aria-hidden="true">🗺️</span>跨區派案請填表單回報避免漏件</div>
+                            <div class="af-links">
+                                <a class="af-link" href="https://forms.gle/ZFwBJa2ps6TK2RCv5" target="_blank" rel="noopener noreferrer">回報表單 ↗</a>
+                                <a class="af-link af-link--sheet" href="https://docs.google.com/spreadsheets/d/12l-Il_Sw268H4IKW4CSsHtrz9hiKbejZsUHCNNTzeW0/edit?usp=sharing" target="_blank" rel="noopener noreferrer">後台報表 ↗</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
 
             <section class="aqa-zone" id="aqa-zone" aria-label="行政問答">
                 <div class="aqa-zone-head aqa-zone-head--compact">
@@ -8838,7 +8972,7 @@
                     <button type="button" class="nb-hub-tile nb-hub-tile--subsidy" onclick="showPage('newbie-subsidy')">
                         <span class="nb-hub-tile-icon">💰</span>
                         <span class="nb-hub-tile-title">財補專區</span>
-                        <span class="nb-hub-tile-desc">月份試算 · 打卡上傳 · 展延簽呈 · 線上考試 · 獎金辦法</span>
+                        <span class="nb-hub-tile-desc">報名表 · 月份試算 · 打卡上傳 · 簽呈 · 線上考試 · 獎金辦法</span>
                         <span class="nb-hub-tile-go">查看辦法 →</span>
                     </button>
                 </div>
@@ -8875,6 +9009,15 @@
                     <p>星財補獎金辦法（115/09/22 修訂版）</p>
                 </header>
 
+                <section class="nb-panel nb-signup" aria-labelledby="nb-signup-title">
+                    <h3 id="nb-signup-title" class="nb-rule-title">🖊️ 財補報名表</h3>
+                    <p class="nb-signup-desc">先下載報名表填寫，完成後點「上傳報名表」進入雲端資料夾上傳。</p>
+                    <div class="nb-signup-actions">
+                        <a href="./114.3.3%E6%98%9F%E8%B2%A1%E8%A3%9C%E8%A8%88%E7%95%AB%E5%A0%B1%E5%90%8D%E8%A1%A8V5.pdf" download="114.3.3星財補計畫報名表V5.pdf" class="nb-signup-btn nb-signup-btn--dl">⬇️ 下載報名表</a>
+                        <a href="https://drive.google.com/drive/folders/1olIqfYDsJbVAXWh0jcJM5QaRXneagpaK?usp=drive_link" target="_blank" rel="noopener noreferrer" class="nb-signup-btn nb-signup-btn--up">⬆️ 上傳報名表 ↗</a>
+                    </div>
+                </section>
+
                 <section class="nb-panel nb-calc" aria-labelledby="nb-subsidy-calc-title">
                     <h3 id="nb-subsidy-calc-title" class="nb-rule-title">📅 財補月份試算</h3>
                     <div class="nb-calc-fields">
@@ -8898,7 +9041,7 @@
                 </section>
 
                 <section class="nb-panel nb-pt" id="nb-pt-root" aria-labelledby="nb-pt-title">
-                    <h3 id="nb-pt-title" class="nb-rule-title">📄 展延財補簽呈上傳</h3>
+                    <h3 id="nb-pt-title" class="nb-rule-title">📄 財補簽呈上傳</h3>
                     <div id="nb-pt-body"></div>
                 </section>
 
@@ -8948,36 +9091,23 @@
                             </thead>
                             <tbody>
                                 <tr><td>第 1 個月</td><td>0 件</td><td>0 萬元</td><td>當月件數 3 件視同晉升第 2 個月財補</td></tr>
-                                <tr><td>第 2 個月</td><td>3 件</td><td>1.5 萬元</td><td rowspan="3">第 2～4 月補助考證照，須取得證照並於系統完成登錄才可領取補貼：不動產照乙次 5 仟元，租賃管理證照乙次 5 仟元。<br><span class="nb-rule-em">（已持有雙證照且完成登錄者加 5 仟元）</span></td></tr>
+                                <tr><td>第 2 個月</td><td>3 件</td><td>1.5 萬元</td><td rowspan="6">—</td></tr>
                                 <tr><td>第 3 個月</td><td>3 件</td><td>1.5 萬元</td></tr>
                                 <tr><td>第 4 個月</td><td>4 件</td><td>1.5 萬元</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <ul class="nb-rule-notes">
-                        <li><strong>註 1：</strong>如當月未達成業績目標，經提報處主管及區協理取得同意後，次月須補足上個月業績差額件數，才得領取次月補助。（獎金不另再補發）</li>
-                        <li><strong>註 2：</strong>財補統計只看純新媒合件數，不含一般宅、電服件及爬蟲件。<span class="nb-rule-rev">（114.3.3 增訂）</span></li>
-                    </ul>
-                </details>
-
-                <details class="nb-panel nb-rule">
-                    <summary class="nb-rule-title"><span>三、<span class="nb-rule-em">延續財補方案（限延續一次）</span></span></summary>
-                    <div class="nb-rule-table-wrap">
-                        <table class="nb-rule-table">
-                            <thead>
-                                <tr><th>業績月</th><th>當月件數</th><th>財補獎金</th><th>必備條件（含基本規則）</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td>第 5 個月</td><td>3 件</td><td>1.5 萬元</td><td rowspan="3">1. 新人首次財補期間至少應達 3 件，始得向區主管申請延續財補方案一次。<br>2. 新人前次財補期間如未取得證照，第二次財補期間取得證照不再予以補貼。</td></tr>
+                                <tr><td>第 5 個月</td><td>3 件</td><td>1.5 萬元</td></tr>
                                 <tr><td>第 6 個月</td><td>3 件</td><td>1.5 萬元</td></tr>
                                 <tr><td>第 7 個月</td><td>4 件</td><td>1.5 萬元</td></tr>
                             </tbody>
                         </table>
                     </div>
+                    <ul class="nb-rule-notes">
+                        <li><strong>註 1：</strong>如當月未達成業績目標，經提報總經理及取得總經理同意後，次月須補足上個月業績差額件數，才得領取次月補助。（獎金不另再補發）</li>
+                        <li><strong>註 2：</strong>財補統計只看純新媒合件數，不含一般宅、電服件及爬蟲件。<span class="nb-rule-rev">（114.3.3 增訂）</span></li>
+                    </ul>
                 </details>
 
                 <details class="nb-panel nb-rule">
-                    <summary class="nb-rule-title">四、其他補充說明</summary>
+                    <summary class="nb-rule-title">三、其他補充說明</summary>
                     <ol class="nb-rule-list">
                         <li>此辦法於<strong class="nb-rule-em">公告日</strong>起開始實施。</li>
                         <li>報考時間依公司規範最近日期報名時間為主，超過視同放棄。</li>
@@ -9910,7 +10040,7 @@
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20260930-2"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
-        <script src="./js/subsidy-petition.js?v=20261001-1"></script>
+        <script src="./js/subsidy-petition.js?v=20261001-3"></script>
 <script src="./js/lite-hide-api.js"></script>
 <script src="./js/site-file-search-index.js"></script>
         <script src="./js/tenant-eligibility-legal.js"></script>
@@ -11673,7 +11803,7 @@
             { external: 'https://pip.moi.gov.tw/Publicize/Info/B1021', title: '300億租金補貼試算', category: '房客專區', keywords: '300億 租補 租金補貼 內政部 試算 pip' },
             { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發' },
             { page: 'rent', title: '租金水準試算器', category: '業務專區', keywords: '租金水準試算器 租金水準 試算器 計算器 租金 坪數 行情 估租 單坪 屋齡 行政區 評定 待租 評定結果 擬定月租 收件上限 社宅' },
-            { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案' },
+            { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案 報名表 財補報名表 報名 下載報名表 上傳報名表' },
             { page: 'newbie-quest', title: '業績任務板', category: '新人專區', keywords: '業績 任務板 打卡 新人 考核 kpi 追蹤 任務 新人任務' },
             { file: './admin/accounts-dashboard.html', title: '帳號管理後台', category: '管理工具', keywords: '後台 admin 帳號 開通 停用 登入紀錄 管理員' },
             { file: './admin/newbie-dashboard.html', title: '新人業績後台', category: '管理工具', keywords: '後台 admin 業績 任務 管理員 儀表板 dashboard KPI 新人' },
@@ -11711,7 +11841,7 @@
             { page: 'practice-templates', title: '訊息範本產生器', category: '催收解約專區', keywords: 'line 範本 催繳 存證信函 提醒繳款 租金 國泰 帳戶 虛擬帳號 區域 身分證 電訪未接 逾期 桃園 新北 公司電話 宜蘭 基隆 雙北' },
             { page: 'practice-contacts', title: '租金補貼辦理單位', category: '房客專區', keywords: '窗口 通訊錄 300億 租金補貼 辦理單位 縣市 電話 傳真 臨櫃 pip' },
             { page: 'announcement', title: '簽呈公告專區', category: '首頁專區', keywords: '簽呈 公告 通知 公司' },
-            { page: 'administration', title: '行政專區', category: '首頁專區', keywords: '行政 請款 天數 庶務 管理部 包租解約 轉租解約 租金試算 租金水準 問答 QA' },
+            { page: 'administration', title: '行政專區', category: '首頁專區', keywords: '行政 請款 天數 庶務 管理部 包租解約 轉租解約 租金試算 租金水準 問答 QA 各式表單 表單 中心系統申請 離職 離職通報 系統資料修正 獎金補發 獎金收回 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
             { page: 'admin-qa', title: '行政問答 QA', category: '行政專區', keywords: '行政 問答 QA 提問 回答 點數 關鍵字 搜尋 小組長 檢核' },
             { external: 'https://docs.google.com/forms/d/e/1FAIpQLSdZES7NkG92YpgofUmN-8yCBBskyiqWxvkGto-BIFHBvJg5hQ/viewform?usp=publish-editor', title: '意見回饋', category: '全站', keywords: '意見 回饋 表單 feedback 建議' },
             { external: 'https://skyfunsystem.com/Home/Login', title: '星鴻系統', category: '外部連結', keywords: '星鴻 系統 登入 skyfun' },
