@@ -1167,6 +1167,7 @@
         .acf-admin-link a { color: #64748b; text-decoration: underline; }
         .af-grid { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
         @media (min-width: 900px) { .af-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (min-width: 768px) { .af-grid.af-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .af-col {
             border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.55rem 0.65rem 0.6rem;
             background: #f8fafc; display: flex; flex-direction: column; gap: 0.45rem;
@@ -4333,6 +4334,15 @@
 
                     <div class="space-y-3 text-sm text-slate-800">
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="font-extrabold">115/10/01｜公告：星財補獎金辦法（1151001版）</div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <a href="./1151001%20公告%20星財補獎金辦法.jpg" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
+                                    📄 開啟
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <div class="font-extrabold">115/09/22｜公告：星財補獎金辦法（1150922版）</div>
                             <div class="mt-3 flex flex-wrap gap-2">
                                 <a href="./1150922%20公告%20星財補獎金辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
@@ -6480,7 +6490,7 @@
             </button>
             <div class="bg-gradient-to-br from-purple-50 via-white to-slate-50 rounded-[2rem] p-6 border border-purple-200 shadow-lg">
                 <h2 class="text-3xl font-bold text-slate-900 mb-2 text-center">💼 業務專區</h2>
-                <p class="text-slate-600 mb-4 text-center max-w-2xl mx-auto leading-relaxed">租金水準、公證費試算、各式表單與周會簡報下載；解約退還金額試算請至首頁「催收解約專區」。</p>
+                <p class="text-slate-600 mb-4 text-center max-w-2xl mx-auto leading-relaxed">租金水準、公證費試算、各式表單、周會簡報下載與線上表單後台；解約退還金額試算請至首頁「催收解約專區」。</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button onclick="showPage('rent')" class="btn btn-block btn-center btn-solid-purple text-xl">
                         📈 前往租金水準試算器
@@ -6494,6 +6504,61 @@
                     <a href="./docs/weekly-meeting/" class="btn btn-block btn-center btn-solid-purple text-xl no-underline">
                         📂 業務周會檔案
                     </a>
+                </div>
+                <div class="mt-6 rounded-2xl border border-purple-200/70 bg-white/80 p-4">
+                    <h3 class="mb-3 text-lg font-bold text-slate-800">🔗 線上表單與後台</h3>
+                    <div class="af-grid af-grid--2">
+                        <div class="af-col af-col--system">
+                            <div class="af-col-title">系統</div>
+                            <div class="af-item">
+                                <div class="af-item-name"><span aria-hidden="true">🐞</span>專案1－系統 BUG 問題</div>
+                                <div class="af-links">
+                                    <a class="af-link" href="https://forms.gle/EA13qmjAsXshzYh49" target="_blank" rel="noopener noreferrer">表單 ↗</a>
+                                </div>
+                            </div>
+                            <div class="af-item">
+                                <div class="af-item-name"><span aria-hidden="true">📝</span>專案2－審件要點優化</div>
+                                <div class="af-links">
+                                    <a class="af-link" href="https://docs.google.com/forms/d/e/1FAIpQLSeNDdksZFlySxXophr8Lj95nzRyN97iXrNZu9IjuazRHi1E3w/viewform" target="_blank" rel="noopener noreferrer">表單 ↗</a>
+                                </div>
+                            </div>
+                            <div class="af-item">
+                                <div class="af-item-name"><span aria-hidden="true">🏷️</span>專案3－實價登錄與系統代入問題</div>
+                                <div class="af-links">
+                                    <a class="af-link" href="https://forms.gle/zT126Vt2pcMk1F4DA" target="_blank" rel="noopener noreferrer">表單 ↗</a>
+                                </div>
+                            </div>
+                            <div class="af-item">
+                                <div class="af-item-name"><span aria-hidden="true">📊</span>後台報表</div>
+                                <div class="af-links">
+                                    <a class="af-link af-link--sheet" href="https://docs.google.com/spreadsheets/d/1VU1X_WN3g4mVleGqmoE1tRTaT333cLraBGQiG3yLBMs/edit?usp=sharing" target="_blank" rel="noopener noreferrer">後台報表 ↗</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="af-col af-col--biz">
+                            <div class="af-col-title">業務</div>
+                            <div class="af-item">
+                                <div class="af-item-name"><span aria-hidden="true">🔧</span>到期合約一個月內申請修繕方法</div>
+                                <div class="af-links">
+                                    <a class="af-link" href="https://forms.gle/cTwQeci1UA5sF3sU7" target="_blank" rel="noopener noreferrer">業務線上表單申請 ↗</a>
+                                </div>
+                            </div>
+                            <div class="af-item">
+                                <div class="af-item-name"><span aria-hidden="true">🧾</span>星鴻／星華領款收據處長照會登記表</div>
+                                <div class="af-links">
+                                    <a class="af-link" href="https://forms.gle/V34gXUqmG9KzYSBA8" target="_blank" rel="noopener noreferrer">登記表 ↗</a>
+                                    <a class="af-link af-link--sheet" href="https://docs.google.com/spreadsheets/d/1COcpC8UMpiyKOV6Ccgae6xZDSWoqQluJM6ADdwnvfN0/edit?usp=sharing" target="_blank" rel="noopener noreferrer">登記表後台 ↗</a>
+                                </div>
+                            </div>
+                            <div class="af-item">
+                                <div class="af-item-name"><span aria-hidden="true">🗺️</span>跨區派案請填表單回報避免漏件</div>
+                                <div class="af-links">
+                                    <a class="af-link" href="https://forms.gle/ZFwBJa2ps6TK2RCv5" target="_blank" rel="noopener noreferrer">回報表單 ↗</a>
+                                    <a class="af-link af-link--sheet" href="https://docs.google.com/spreadsheets/d/12l-Il_Sw268H4IKW4CSsHtrz9hiKbejZsUHCNNTzeW0/edit?usp=sharing" target="_blank" rel="noopener noreferrer">後台報表 ↗</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -9197,7 +9262,7 @@
             <div class="nb-page-shell">
                 <header class="nb-page-header">
                     <h2>💰 財補專區</h2>
-                    <p>星財補獎金辦法（115/09/22 修訂版）</p>
+                    <p>星財補獎金辦法（115/10/01 修訂版）</p>
                 </header>
 
                 <section class="nb-panel nb-signup" aria-labelledby="nb-signup-title">
@@ -9284,15 +9349,15 @@
                                 <tr><td>第 1 個月</td><td>0 件</td><td>0 萬元</td><td>當月件數 3 件視同晉升第 2 個月財補</td></tr>
                                 <tr><td>第 2 個月</td><td>3 件</td><td>1.5 萬元</td><td rowspan="6">—</td></tr>
                                 <tr><td>第 3 個月</td><td>3 件</td><td>1.5 萬元</td></tr>
-                                <tr><td>第 4 個月</td><td>4 件</td><td>1.5 萬元</td></tr>
+                                <tr><td>第 4 個月</td><td>3 件</td><td>1.5 萬元</td></tr>
                                 <tr><td>第 5 個月</td><td>3 件</td><td>1.5 萬元</td></tr>
-                                <tr><td>第 6 個月</td><td>3 件</td><td>1.5 萬元</td></tr>
+                                <tr><td>第 6 個月</td><td>4 件</td><td>1.5 萬元</td></tr>
                                 <tr><td>第 7 個月</td><td>4 件</td><td>1.5 萬元</td></tr>
                             </tbody>
                         </table>
                     </div>
                     <ul class="nb-rule-notes">
-                        <li><strong>註 1：</strong>如當月未達成業績目標，經提報總經理及取得總經理同意後，次月須補足上個月業績差額件數，才得領取次月補助。（獎金不另再補發）</li>
+                        <li><strong>註 1：</strong>如當月未達成業績目標，經總經理同意後，次月須補足上個月業績差額件數，才得領取次月補助。（獎金不另再補發）<span class="nb-rule-rev">（115.10.01 修訂）</span></li>
                         <li><strong>註 2：</strong>財補統計只看純新媒合件數，不含一般宅、電服件及爬蟲件。<span class="nb-rule-rev">（114.3.3 增訂）</span></li>
                     </ul>
                 </details>
@@ -9304,8 +9369,8 @@
                         <li>報考時間依公司規範最近日期報名時間為主，超過視同放棄。</li>
                         <li>公司同仁配偶、直系親屬不得參加財補計畫。</li>
                         <li>經查證有違規、掛件、假件等違反誠信事項即取消資格，直屬主管連帶懲處並追回財補獎金。</li>
-                        <li>參與財補計畫並實得獎金之同仁，離職後一年內不得至同業從事相關業務工作，須簽訂競業條款一年。如經同仁舉報有將案件移轉至同業者，查證屬實將追溯背信法律權外，同時要求返還過去所有財補獎金。</li>
-                        <li>獎金發放期間同仁須簽定承攬契約，撤銷登錄者則視同放棄財補。<span class="nb-rule-rev">（115.1.13 修訂）</span></li>
+                        <li>參與財補計畫並實得獎金之同仁，離職後一年內不得至同業從事相關業務工作，須簽訂競業條款一年。如經同仁舉報有將案件移轉至同業者，查證屬實將追溯刑事法律權外，同時要求返還過去所有財補獎金。</li>
+                        <li>獎金發放期間同仁須簽訂承攬契約，撤銷登錄者則視同放棄財補。<span class="nb-rule-rev">（115.1.13 修訂）</span></li>
                         <li>業績認定依據管理部認定之作業標準，須在業績月完成認列。</li>
                         <li>考取證照同仁證照必須登記在本公司，不得掛證或掛件於其他公司。</li>
                         <li>本辦法係經由董事會通過後開始實行，公司保有本辦法修改權與解釋權，並得隨時終止活動。</li>
@@ -9313,11 +9378,11 @@
                 </details>
 
                 <div class="nb-doc-card">
-                    <div class="nb-doc-card-title">原始公告檔（PDF）</div>
-                    <div class="nb-doc-card-meta">星財補獎金辦法 · 修訂日期 115/09/22</div>
+                    <div class="nb-doc-card-title">原始公告檔</div>
+                    <div class="nb-doc-card-meta">星財補獎金辦法 · 修訂日期 115/10/01</div>
                     <div class="mt-3 flex flex-wrap gap-2">
-                        <a href="./1150922%20公告%20星財補獎金辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">📄 開啟</a>
-                        <a href="./1150922%20公告%20星財補獎金辦法.pdf" download class="btn btn-sm tone-slate-soft">⬇️ 下載</a>
+                        <a href="./1151001%20公告%20星財補獎金辦法.jpg" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">📄 開啟</a>
+                        <a href="./1151001%20公告%20星財補獎金辦法.jpg" download class="btn btn-sm tone-slate-soft">⬇️ 下載</a>
                     </div>
                     <p class="text-xs text-slate-500 mt-2">內容以公告原檔為準；舊版請見 <button type="button" class="nb-inline-link" onclick="showPage('announcement')">簽呈公告專區</button>。</p>
                 </div>
@@ -9328,6 +9393,7 @@
         (function () {
             const { nextSettleAfter, addDays, fmt } = window.SubsidySettle;
             const STORE_KEY = 'nbSubsidyTrainEndDate';
+            const MONTHS = 7;
             function daysBetween(a, b) { return Math.round((b - a) / 86400000) + 1; }
             function parseYmd(v) {
                 const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || '');
@@ -9342,7 +9408,7 @@
             function buildPeriods(first) {
                 const periods = [];
                 let start = first;
-                for (let i = 1; i <= 4; i++) {
+                for (let i = 1; i <= MONTHS; i++) {
                     const s = nextSettleAfter(start);
                     periods.push({ no: i, start: start, end: addDays(s.date, -1), estimated: s.estimated });
                     start = s.date;
@@ -9358,7 +9424,7 @@
                 const trainEnd = parseYmd(input.value);
                 if (!trainEnd) {
                     if (startOut) startOut.textContent = '—';
-                    out.innerHTML = '<p class="nb-calc-empty">輸入結訓日後會自動帶出財補開始日期，並算出第 1～4 個月的區間。</p>';
+                    out.innerHTML = '<p class="nb-calc-empty">輸入結訓日後會自動帶出財補開始日期，並算出第 1～' + MONTHS + ' 個月的區間。</p>';
                     return;
                 }
                 const first = nextWeekMonday(trainEnd);
@@ -9373,7 +9439,7 @@
                 } else if (current) {
                     status = '目前是 <strong>第 ' + current.no + ' 個月</strong>，剩 ' + daysBetween(today, current.end) + ' 天（至 ' + fmt(current.end) + '）';
                 } else {
-                    status = '第 4 個月已於 ' + fmt(periods[3].end) + ' 結束';
+                    status = '第 ' + MONTHS + ' 個月已於 ' + fmt(periods[MONTHS - 1].end) + ' 結束';
                 }
                 const rows = periods.map(p =>
                     '<tr' + (current && current.no === p.no ? ' class="is-current"' : '') + '>' +
@@ -10235,7 +10301,7 @@
         <script src="./js/admin-cancel-form.js?v=20261001-4"></script>
         <script src="./js/receipt-endorsement-form.js?v=20261001-1"></script>
 <script src="./js/lite-hide-api.js?v=20261001-1"></script>
-<script src="./js/site-file-search-index.js"></script>
+<script src="./js/site-file-search-index.js?v=20261004-1"></script>
         <script src="./js/tenant-eligibility-legal.js"></script>
         <script src="./js/tenant-eligibility-regions.js"></script>
         <script src="./js/tenant-eligibility-calc.js"></script>
@@ -11994,9 +12060,9 @@
             { page: 'tenant-kinship', title: '親屬等親表', category: '房客專區', keywords: '親等 親屬 二等親 三等親 血親 姻親' },
             { page: 'business-income-standards', title: '低收/中低收收入標準', category: '房客專區', keywords: '低收入 中低收入 租補 補助 115年 標準' },
             { external: 'https://pip.moi.gov.tw/Publicize/Info/B1021', title: '300億租金補貼試算', category: '房客專區', keywords: '300億 租補 租金補貼 內政部 試算 pip' },
-            { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發' },
+            { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
             { page: 'rent', title: '租金水準試算器', category: '業務專區', keywords: '租金水準試算器 租金水準 試算器 計算器 租金 坪數 行情 估租 單坪 屋齡 行政區 評定 待租 評定結果 擬定月租 收件上限 社宅' },
-            { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案 報名表 財補報名表 報名 下載報名表 上傳報名表' },
+            { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1151001 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案 報名表 財補報名表 報名 下載報名表 上傳報名表' },
             { page: 'newbie-quest', title: '業績任務板', category: '新人專區', keywords: '業績 任務板 打卡 新人 考核 kpi 追蹤 任務 新人任務' },
             { file: './admin/accounts-dashboard.html', title: '帳號管理後台', category: '管理工具', keywords: '後台 admin 帳號 開通 停用 登入紀錄 管理員' },
             { file: './admin/newbie-dashboard.html', title: '新人業績後台', category: '管理工具', keywords: '後台 admin 業績 任務 管理員 儀表板 dashboard KPI 新人' },
