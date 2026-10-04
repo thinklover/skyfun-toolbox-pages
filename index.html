@@ -6861,6 +6861,35 @@
                     <a href="./docs/forms/termination-agreement.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">📄 空白解約單範本</a>
                 </div>
 
+                <section id="equip-dep" class="mt-8 rounded-2xl border-2 border-amber-200 bg-gradient-to-b from-amber-50/80 to-white p-4 md:p-5 shadow-sm space-y-4" aria-labelledby="equip-dep-title">
+                    <div class="text-center space-y-1">
+                        <h3 id="equip-dep-title" class="text-lg md:text-xl font-black text-amber-950">🧰 解約點交 · 設備損壞賠償試算</h3>
+                        <p class="text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">點交時房客如有損壞設備：選設備會自動帶入耐用年限，再輸入<strong>設備原價</strong>與<strong>已使用時間</strong>，即可算出折舊後的合理參考金額。可新增多項設備合計。</p>
+                    </div>
+                    <details class="rounded-xl border border-amber-200 bg-white/90 p-3 text-sm text-slate-700">
+                        <summary class="cursor-pointer font-bold text-amber-900 select-none">計算方式</summary>
+                        <ol class="mt-2 list-decimal pl-5 space-y-1 leading-relaxed">
+                            <li>殘值 ＝ 設備原價 ÷（耐用年限 ＋ 1）</li>
+                            <li>每年折舊額 ＝（設備原價 － 殘值）÷ 耐用年限</li>
+                            <li>折舊後金額 ＝ 設備原價 － 累計折舊額（每年折舊額 × 已使用年數；已使用月數按比例計）</li>
+                        </ol>
+                        <p class="mt-2 text-xs text-slate-500 leading-relaxed">已使用時間達耐用年限後不再折舊，以殘值計。耐用年限依行政院主計總處<a href="https://ws.dgbas.gov.tw/001/Upload/461/relfile/11535/227152/5%E4%BB%80%E9%A0%85%E8%A8%AD%E5%82%99%E5%88%86%E9%A1%9E%E6%98%8E%E7%B4%B0%E8%A1%A8.pdf" target="_blank" rel="noopener noreferrer" class="text-sky-700 underline">「什項設備分類明細表」</a>之最低使用年限；清單沒有的設備可選「其他設備」自行輸入。</p>
+                    </details>
+                    <div id="eqd-rows" class="space-y-3"></div>
+                    <button type="button" id="eqd-add" class="btn btn-block btn-center tone-slate-mid font-bold">＋ 新增設備</button>
+                    <div class="rounded-xl border-2 border-rose-200 bg-rose-50/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div class="text-slate-800">
+                            <div class="text-xs text-slate-500">共 <span id="eqd-count">0</span> 項 · 參考賠償合計</div>
+                            <div class="text-2xl font-black text-rose-700"><span id="eqd-total">0</span> 元</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" id="eqd-copy" class="btn btn-sm tone-emerald font-bold" disabled>📋 複製試算結果</button>
+                            <button type="button" id="eqd-reset" class="btn btn-sm tone-slate-soft">清除</button>
+                        </div>
+                    </div>
+                    <p class="text-xs font-semibold text-amber-800 leading-relaxed">⚠️ 試算結果僅供參考，實際賠償金額仍以雙方協議、契約約定及維修／購置單據為準。</p>
+                </section>
+
                 <div class="mt-8 pt-6 border-t border-indigo-200/70">
                     <details class="toolbox-details bg-white p-5 rounded-xl border border-indigo-200 open:border-indigo-400 open:bg-indigo-50/50 cursor-pointer group transition-all duration-200">
                         <summary class="summary-btn summary-rose font-extrabold text-lg">
@@ -10291,6 +10320,7 @@
         <script src="./js/termination-case.js?v=20260920-bao-mode1"></script>
         <script src="./js/termination-bao-case.js?v=20260921-end-tenant1"></script>
         <script src="./js/termination-hub.js?v=20260921-end-tenant1"></script>
+        <script src="./js/equip-depreciation.js?v=20261004-1"></script>
         <script src="./js/skyfun-job-titles.js"></script>
         <script src="./js/skyfun-departments.js"></script>
         <script src="./js/toolbox-auth.js?v=20260905-2"></script>
@@ -12072,7 +12102,7 @@
             { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳 簽呈 展延' },
             { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 公證費 租賃公證 119條' },
             { page: 'business-forms', title: '各式表單', category: '業務專區', keywords: '表單 場勘 押金讓渡 領款收據 切結書 300億切結 115Y 自願撤案 帳戶變更 租金補貼 複審 檢核 還款 協議 欠租' },
-            { page: 'termination', title: '催收解約專區', category: '首頁專區', keywords: '催收 解約 退租 終止 退還 欠租 存證信函' },
+            { page: 'termination', title: '催收解約專區', category: '首頁專區', keywords: '催收 解約 退租 終止 退還 欠租 存證信函 點交 解約點交 設備 損壞 賠償 折舊 殘值 耐用年限 家電 家具' },
             { page: 'business-deposit-refund', title: '轉租解約退還金額試算', category: '催收解約專區', keywords: '轉租 代租代管 押金 退還 解約試算 房客應退 欠租 溢繳' },
             { page: 'business-bao-deposit-refund', title: '包租解約退還金額試算', category: '催收解約專區', keywords: '包租 押金 退還 解約試算 房東應退 欠租 溢繳 二代健保' },
             { page: 'newbie-business', title: '業務新人專線', category: '新人專區', keywords: '業務 新人 開發房東 場勘 收資料 路線圖 快篩' },
