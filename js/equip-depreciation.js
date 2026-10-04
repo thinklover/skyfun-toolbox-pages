@@ -51,6 +51,8 @@
         ] }
     ];
     const CUSTOM_ID = 'custom';
+    const TABLE_URL = 'https://ws.dgbas.gov.tw/001/Upload/461/relfile/11535/227152/5%E4%BB%80%E9%A0%85%E8%A8%AD%E5%82%99%E5%88%86%E9%A1%9E%E6%98%8E%E7%B4%B0%E8%A1%A8.pdf';
+    const EMPTY_HINT = '請選設備並輸入原價與已使用時間。耐用年限查詢：<a href="' + TABLE_URL + '" target="_blank" rel="noopener noreferrer" class="text-sky-700 underline">什項設備分類明細表 ↗</a>';
     const BY_ID = {};
     EQUIP_GROUPS.forEach(g => g.items.forEach(it => { BY_ID[it.id] = it; }));
 
@@ -100,7 +102,7 @@
                     '<label class="block space-y-1"><span class="text-xs font-semibold text-slate-600">已使用（月）</span>' +
                         '<input type="number" inputmode="numeric" min="0" max="11" step="1" class="eqd-months w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm" placeholder="0"></label>' +
                 '</div>' +
-                '<div class="eqd-out text-sm text-slate-500">請選設備並輸入原價與已使用時間。</div>' +
+                '<div class="eqd-out text-sm text-slate-500">' + EMPTY_HINT + '</div>' +
             '</div>';
     }
 
@@ -130,7 +132,7 @@
             const r = readRow(row);
             if (!r.ready) {
                 out.className = 'eqd-out text-sm text-slate-500';
-                out.textContent = '請選設備並輸入原價與已使用時間。';
+                out.innerHTML = EMPTY_HINT;
                 return;
             }
             const c = calc(r.price, r.life, r.used);
