@@ -3112,6 +3112,9 @@
         body.toolbox-auth-pending #motivation-modal {
             display: none !important;
         }
+        html.toolbox-auth-cached #toolbox-auth-gate {
+            display: none !important;
+        }
         #toolbox-auth-gate {
             position: fixed;
             inset: 0;
@@ -3946,6 +3949,16 @@
 <script src="./js/supabase-config.js"></script>
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
+    <script>
+        try {
+            var tbAuth = JSON.parse(localStorage.getItem('skyfun-toolbox-auth-supabase-v1') || 'null');
+            var tbUser = tbAuth && (tbAuth.supabaseUser || tbAuth.user);
+            if (tbAuth && (tbAuth.supabaseToken || tbAuth.token) && tbUser && tbUser.id) {
+                document.documentElement.classList.add('toolbox-auth-cached');
+                document.body.classList.remove('toolbox-auth-pending');
+            }
+        } catch (e) {}
+    </script>
     <!-- 全站登入（帳號＋密碼） -->
     <div id="toolbox-auth-gate" role="dialog" aria-modal="true" aria-labelledby="toolbox-auth-title">
         <div class="toolbox-auth-card toolbox-auth-card--lite">
@@ -9277,6 +9290,13 @@
                     </div>
                 </div>
 
+                <div class="nb-hub-tools">
+                    <p class="nb-hub-tools-label">教學 SOP</p>
+                    <div class="nb-hub-tools-grid">
+                        <button type="button" class="nb-hub-tool" onclick="showPage('newbie-transcript')">📑 調閱一類謄本</button>
+                    </div>
+                </div>
+
                 <details class="nb-policy-details">
                     <summary>📌 政策提醒（點開）</summary>
                     <ul>
@@ -9287,6 +9307,100 @@
                 </details>
 
                 <p class="nb-hub-foot">建議：任務板打卡 → 進專線跟路線圖 → 有疑問問主管</p>
+            </div>
+        </div>
+
+        <!-- 新人專區：調閱一類謄本 SOP -->
+        <div id="page-newbie-transcript" class="hidden max-w-4xl mx-auto space-y-4">
+            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+            <div class="nb-page-shell">
+                <header class="nb-page-header">
+                    <p class="nb-page-eyebrow">新人專區 · 教學 SOP</p>
+                    <h2>📑 調閱一類謄本 SOP</h2>
+                    <p>用「全國地政電子謄本系統」線上調閱建物登記第一類謄本，照下面 10 個步驟做。</p>
+                </header>
+
+                <section class="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-2 text-sm text-slate-700">
+                    <p class="font-bold text-amber-800">開始前先準備</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>系統網址：<a href="https://ep.land.nat.gov.tw/Home/SNEpaperKind" target="_blank" rel="noopener noreferrer" class="text-sky-700 underline font-semibold break-all">全國地政電子謄本系統 ↗</a></li>
+                        <li>登入要用<strong>兩組帳號密碼</strong>（上網帳號＋憑證資料），<strong class="text-red-700">請向主管索取</strong>，不要外流。</li>
+                        <li>物件的<strong>地段、建號</strong>（可先用地籍圖查詢）與<strong>房東身分證字號</strong>。</li>
+                        <li>調閱要付費（範例每筆 20 元），按下「確定付費」才會計費。</li>
+                    </ul>
+                </section>
+
+                <ol class="space-y-4">
+                    <li class="nb-panel space-y-3">
+                        <h3 class="nb-rule-title"><span class="inline-flex items-center justify-center min-w-[2.6rem] h-7 px-2 mr-2 rounded-full bg-indigo-600 text-white text-xs font-black">1–3</span>登入系統</h3>
+                        <ol class="list-decimal pl-5 space-y-1 text-sm text-slate-700">
+                            <li>進入全國地政電子謄本系統，點左側「<strong>HiNet 帳號登入</strong>」。</li>
+                            <li>輸入用戶識別碼與密碼，<strong>記得勾選</strong>「使用自然人憑證、工商憑證、組織及團體憑證」，輸入圖形驗證碼後按「<strong>認證</strong>」。</li>
+                            <li>會再跳出「憑證資料認證」視窗，輸入<strong>另一組</strong>帳號密碼，按「確定送出」再登入一次。</li>
+                        </ol>
+                        <a href="./docs/newbie-transcript-sop/step-1.jpg" target="_blank" rel="noopener noreferrer"><img src="./docs/newbie-transcript-sop/step-1.jpg" alt="步驟 1–3：HiNet 帳號登入與憑證資料認證" loading="lazy" class="w-full rounded-xl border border-slate-200"></a>
+                    </li>
+
+                    <li class="nb-panel space-y-3">
+                        <h3 class="nb-rule-title"><span class="inline-flex items-center justify-center min-w-[2.6rem] h-7 px-2 mr-2 rounded-full bg-indigo-600 text-white text-xs font-black">3–4</span>進入送件區、選角色與縣市</h3>
+                        <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                            <li>點左側「<strong>謄本申請作業（送件區）</strong>」。</li>
+                            <li>申請角色選【<strong>登記名義人代理人</strong>】，再選物件所在<strong>縣市</strong>。</li>
+                        </ul>
+                        <a href="./docs/newbie-transcript-sop/step-2.jpg" target="_blank" rel="noopener noreferrer"><img src="./docs/newbie-transcript-sop/step-2.jpg" alt="步驟 3–4：謄本申請作業、選擇申請角色與縣市" loading="lazy" class="w-full rounded-xl border border-slate-200"></a>
+                    </li>
+
+                    <li class="nb-panel space-y-3">
+                        <h3 class="nb-rule-title"><span class="inline-flex items-center justify-center min-w-[2.6rem] h-7 px-2 mr-2 rounded-full bg-indigo-600 text-white text-xs font-black">5</span>選鄉鎮市區</h3>
+                        <p class="text-sm text-slate-700">在地圖上點物件所在的<strong>鄉鎮市區</strong>（也可用左上下拉選單）。</p>
+                        <a href="./docs/newbie-transcript-sop/step-3.jpg" target="_blank" rel="noopener noreferrer"><img src="./docs/newbie-transcript-sop/step-3.jpg" alt="步驟 5：選擇鄉鎮地區" loading="lazy" class="w-full rounded-xl border border-slate-200"></a>
+                    </li>
+
+                    <li class="nb-panel space-y-3">
+                        <h3 class="nb-rule-title"><span class="inline-flex items-center justify-center min-w-[2.6rem] h-7 px-2 mr-2 rounded-full bg-indigo-600 text-white text-xs font-black">6</span>填申請資料</h3>
+                        <ol class="list-decimal pl-5 space-y-1 text-sm text-slate-700">
+                            <li>申請用途選【<strong>自行參考</strong>】。</li>
+                            <li>依地籍圖查詢結果選擇<strong>地段</strong>。</li>
+                            <li>依地籍圖查詢結果輸入<strong>建號</strong>。</li>
+                            <li>輸入該物件房屋所有權人（房東）的<strong>身分證字號</strong>。</li>
+                        </ol>
+                        <p class="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700"><strong>有共有人時</strong>，身分證字號之間用<strong>半形逗號</strong>隔開，例如 <code class="font-mono">A123456789,B123456789</code>，共有人資訊才會完整呈現。</p>
+                        <a href="./docs/newbie-transcript-sop/step-4.jpg" target="_blank" rel="noopener noreferrer"><img src="./docs/newbie-transcript-sop/step-4.jpg" alt="步驟 6：申請用途、地段、建號、所有權人" loading="lazy" class="w-full rounded-xl border border-slate-200"></a>
+                    </li>
+
+                    <li class="nb-panel space-y-3">
+                        <h3 class="nb-rule-title"><span class="inline-flex items-center justify-center min-w-[2.6rem] h-7 px-2 mr-2 rounded-full bg-indigo-600 text-white text-xs font-black">7–8</span>勾選登記謄本並送出</h3>
+                        <p class="text-sm text-slate-700 font-semibold">登記謄本欄位這樣勾：</p>
+                        <ul class="pl-1 space-y-1 text-sm text-slate-700">
+                            <li>☑️ 登記謄本</li>
+                            <li>☑️ 無需列印主建物附表</li>
+                            <li>☑️ 無需列印前次移轉現值</li>
+                            <li>🔘 選「<strong>標示部及所有權部</strong>」</li>
+                        </ul>
+                        <p class="text-sm text-slate-700">完成步驟 6、7 後，點上方「<strong>新增資料</strong>」→ 再按「<strong>送出</strong>」→ 輸入驗證碼，就完成送件。</p>
+                        <a href="./docs/newbie-transcript-sop/step-5.jpg" target="_blank" rel="noopener noreferrer"><img src="./docs/newbie-transcript-sop/step-5.jpg" alt="步驟 7–8：登記謄本勾選欄位、新增資料與送出" loading="lazy" class="w-full rounded-xl border border-slate-200"></a>
+                    </li>
+
+                    <li class="nb-panel space-y-3">
+                        <h3 class="nb-rule-title"><span class="inline-flex items-center justify-center min-w-[2.6rem] h-7 px-2 mr-2 rounded-full bg-indigo-600 text-white text-xs font-black">9</span>到領件區查進度</h3>
+                        <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                            <li>送件成功會回到首頁，點左側「<strong>謄本進度查詢（領件區）</strong>」。</li>
+                            <li>狀態欄出現「預覽列印」就代表調取成功，點「<strong>預覽列印</strong>」。</li>
+                        </ul>
+                        <a href="./docs/newbie-transcript-sop/step-6.jpg" target="_blank" rel="noopener noreferrer"><img src="./docs/newbie-transcript-sop/step-6.jpg" alt="步驟 9：謄本進度查詢與預覽列印" loading="lazy" class="w-full rounded-xl border border-slate-200"></a>
+                    </li>
+
+                    <li class="nb-panel space-y-3">
+                        <h3 class="nb-rule-title"><span class="inline-flex items-center justify-center min-w-[2.6rem] h-7 px-2 mr-2 rounded-full bg-indigo-600 text-white text-xs font-black">10</span>付費並下載</h3>
+                        <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                            <li>確認是要下載的案件後，點「<strong>確定付費</strong>」（按下即計費；不是這筆就按「取消下載」）。</li>
+                            <li>謄本開啟後，點右上角<strong>下載圖示</strong>，存到<strong>該業務的資料夾</strong>即可。</li>
+                        </ul>
+                        <a href="./docs/newbie-transcript-sop/step-7.jpg" target="_blank" rel="noopener noreferrer"><img src="./docs/newbie-transcript-sop/step-7.jpg" alt="步驟 10：確定付費並下載謄本" loading="lazy" class="w-full rounded-xl border border-slate-200"></a>
+                    </li>
+                </ol>
+
+                <p class="nb-hub-foot">圖片可點開看大圖。系統畫面若有更新，以地政電子謄本系統實際畫面為準。</p>
             </div>
         </div>
 
@@ -10328,7 +10442,7 @@
         <script src="./js/equip-depreciation.js?v=20261005-1"></script>
         <script src="./js/skyfun-job-titles.js"></script>
         <script src="./js/skyfun-departments.js"></script>
-        <script src="./js/toolbox-auth.js?v=20260905-2"></script>
+        <script src="./js/toolbox-auth.js?v=20261005-2"></script>
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20260930-2"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
@@ -12114,6 +12228,7 @@
             { page: 'newbie-business', title: '業務新人專線', category: '新人專區', keywords: '業務 新人 開發房東 場勘 收資料 路線圖 快篩' },
             { page: 'newbie-rentmgr', title: '租管師新人專線', category: '新人專區', keywords: '租管師 新人 續約 催收 維運 路線圖' },
             { page: 'newbie-roadmap', title: '新人路線圖', category: '新人專區', keywords: '新人 路線圖 業務 場勘 租管 步驟' },
+            { page: 'newbie-transcript', title: '調閱一類謄本 SOP', category: '新人專區', keywords: '調閱 一類 第一類 謄本 建物謄本 登記謄本 電子謄本 地政 HiNet 送件 領件 預覽列印 確定付費 建號 地段 共有人 SOP 教學 新人' },
             { page: 'newbie-glossary', title: '社宅白話詞典', category: '新人專區', keywords: '詞典 名詞 包租 代租 第三至五期 修繕獎勵 轉軌戶 換居戶 市場租金 公證 信任租 租補 白話 業務問答' },
             { page: 'newbie-screening', title: '進件資格速查', category: '新人專區', keywords: '資格 速查 快篩 能不能做 新青安 營業用' },
             { page: 'newbie', title: '新人專區', category: '首頁專區', keywords: '新人 菜鳥 話術 場勘 拒絕 邀約 路線圖 詞典 快篩' },
@@ -12179,6 +12294,7 @@
             'newbie-screening': 'page-newbie-screening',
             'newbie-quest': 'page-newbie-quest',
             'newbie-subsidy': 'page-newbie-subsidy',
+            'newbie-transcript': 'page-newbie-transcript',
             newbie: 'page-newbie',
             calculator: 'page-calculator',
             rent: 'page-rent',
@@ -12215,7 +12331,7 @@
             'page-landlord', 'page-landlord-house-tax', 'page-tenant', 'page-newbie-playbook',
             'page-tenant-criteria', 'page-tenant-eligibility', 'page-tenant-kinship',
             'page-newbie-business', 'page-newbie-rentmgr',
-            'page-newbie-roadmap', 'page-newbie-glossary', 'page-newbie-screening', 'page-newbie-quest', 'page-newbie-subsidy',
+            'page-newbie-roadmap', 'page-newbie-glossary', 'page-newbie-screening', 'page-newbie-quest', 'page-newbie-subsidy', 'page-newbie-transcript',
             'page-business', 'page-business-land-value-tax',
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-deposit-refund',
             'page-business-bao-deposit-refund', 'page-business-forms', 'page-termination',

@@ -392,6 +392,7 @@
   }
 
   function lockApp() {
+    document.documentElement.classList.remove('toolbox-auth-cached');
     document.body.classList.add('toolbox-auth-pending');
     $('toolbox-auth-gate')?.classList.remove('hidden');
     ready = false;
@@ -478,9 +479,9 @@
   function patchShowPage() {
     if (!window.showPage || window.showPage._skyfunAuthPatched) return;
     const orig = window.showPage;
-    window.showPage = function (pageName) {
+    window.showPage = function (pageName, opts) {
       logPage(pageName);
-      return orig(pageName);
+      return orig(pageName, opts);
     };
     window.showPage._skyfunAuthPatched = true;
   }
@@ -562,7 +563,42 @@
     });
   }
 
+  async function restoreOptimistic(stored) {
+    const token = stored.supabaseToken || stored.token;
+    applySupabaseSession(token, stored.supabaseUser || stored.user);
+    await finishAuthEntry();
+    let data;
+    try {
+      ensureClient();
+      data = await rpc('toolbox_me', { p_token: token });
+    } catch {
+      return;
+    }
+    if (data?.ok && data.user) {
+      applySupabaseSession(token, data.user);
+      updateUserBar();
+      if (needsTeam()) showTeamGate();
+      else if (!ready) {
+        hideTeamGate();
+        unlockApp();
+      }
+      return;
+    }
+    clearStored();
+    session = null;
+    hideTeamGate();
+    lockApp();
+    setMode('login');
+    setGateMessage(data?.error || '登入已失效，請重新登入', true);
+  }
+
   async function restoreSession() {
+    const cached = loadStored();
+    const cachedUser = cached?.supabaseUser || cached?.user;
+    if ((cached?.supabaseToken || cached?.token) && cachedUser?.id) {
+      await restoreOptimistic(cached);
+      return;
+    }
     setGateLoading(true);
     setGateMessage('正在連線…', false);
     try {
