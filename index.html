@@ -1165,6 +1165,129 @@
         .acf-line-err { color: #dc2626; font-weight: 700; margin: 0.3rem 0 0; }
         .acf-admin-link { margin: 0.7rem 0 0; font-size: 0.74rem; text-align: right; }
         .acf-admin-link a { color: #64748b; text-decoration: underline; }
+        .pt-entry {
+            display: flex; align-items: center; gap: 0.85rem; width: 100%; text-align: left; cursor: pointer;
+            padding: 0.85rem 1rem; border-radius: 1rem; border: 1.5px solid #5eead4;
+            background: linear-gradient(135deg, #f0fdfa, #ecfeff); box-shadow: 0 4px 14px rgba(15, 118, 110, 0.08);
+        }
+        .pt-entry:hover { border-color: #14b8a6; box-shadow: 0 6px 18px rgba(15, 118, 110, 0.14); }
+        .pt-entry-icon { font-size: 1.7rem; line-height: 1; }
+        .pt-entry-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; flex: 1; }
+        .pt-entry-text strong { font-size: 1rem; font-weight: 900; color: #0f766e; }
+        .pt-entry-text small { font-size: 0.74rem; color: #64748b; line-height: 1.45; }
+        .pt-entry-badge { flex-shrink: 0; padding: 0.15rem 0.6rem; border-radius: 999px; background: #dc2626; color: #fff; font-size: 0.74rem; font-weight: 800; white-space: nowrap; }
+        .pt-entry-badge[hidden] { display: none; }
+        .pt-entry-arrow { color: #0f766e; font-weight: 900; }
+        .pt-flow { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; margin: 0 0 0.6rem; padding: 0; }
+        .pt-flow li {
+            display: flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.7rem 0.25rem 0.3rem; border-radius: 999px;
+            background: #f0fdfa; border: 1px solid #99f6e4; font-size: 0.78rem; font-weight: 800; color: #115e59;
+        }
+        .pt-flow li:not(:last-child)::after { content: '→'; margin-left: 0.35rem; color: #5eead4; }
+        .pt-flow b { display: inline-flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem; border-radius: 999px; background: #0f766e; color: #fff; font-size: 0.7rem; }
+        .pt-lead { margin: 0 0 0.75rem; font-size: 0.8rem; color: #475569; line-height: 1.65; }
+        .pt-lead strong { color: #0f766e; }
+        .pt-line { margin-bottom: 0.75rem; border-radius: 0.65rem; padding: 0.55rem 0.75rem; font-size: 0.8rem; color: #334155; }
+        .pt-line:empty { display: none; }
+        .pt-line p { margin: 0; }
+        .pt-line.is-bound { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .pt-line.is-unbound { background: #fffbeb; border: 1.5px solid #fcd34d; }
+        .pt-line .pt-line-head { font-weight: 800; color: #92400e; }
+        .pt-line ol { margin: 0.35rem 0 0.4rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.2rem; }
+        .pt-line a { color: #047857; font-weight: 700; text-decoration: underline; }
+        .pt-line-note { font-size: 0.76rem; color: #94a3b8; }
+        .pt-line-unbind { border: none; background: none; padding: 0; margin-left: 0.3rem; font-size: 0.72rem; color: #94a3b8; text-decoration: underline; cursor: pointer; }
+        .pt-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-bottom: 0.7rem; }
+        .pt-tab {
+            border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 999px;
+            padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 800; cursor: pointer;
+        }
+        .pt-tab:hover { border-color: #14b8a6; color: #0f766e; }
+        .pt-tab.is-active { background: #0f766e; border-color: #0f766e; color: #fff; }
+        .pt-tab-n { display: inline-block; min-width: 1.2rem; padding: 0 0.3rem; border-radius: 999px; background: rgba(15, 23, 42, 0.08); font-size: 0.72rem; text-align: center; }
+        .pt-tab.is-active .pt-tab-n { background: rgba(255, 255, 255, 0.25); }
+        .pt-tab.has-todo .pt-tab-n { background: #dc2626; color: #fff; }
+        .pt-refresh { margin-left: auto; border: none; background: none; color: #64748b; font-size: 0.76rem; font-weight: 700; cursor: pointer; text-decoration: underline; }
+        .pt-label { font-size: 0.8rem; font-weight: 800; color: #334155; }
+        .pt-pick select { cursor: pointer; }
+        .pt-pick.is-invalid select { border-color: #f87171; background: #fef2f2; }
+        .pt-pick-warn { margin: 0; font-size: 0.72rem; font-weight: 700; color: #b45309; }
+        .pt-pick-warn:empty { display: none; }
+        .pt-gm { padding: 0.45rem 0.6rem; border: 1.5px dashed #cbd5e1; border-radius: 0.55rem; background: #fff; font-size: 0.82rem; color: #475569; }
+        .pt-secondary { padding: 0.5rem 1rem; border-radius: 0.65rem; border: 1.5px solid #0f766e; background: #fff; color: #0f766e; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
+        .pt-secondary:hover { background: #f0fdfa; }
+        .pt-secondary:disabled { opacity: 0.6; cursor: wait; }
+        .pt-sign-pad { border: 1.5px solid #94a3b8; border-radius: 0.65rem; background: #fff; overflow: hidden; }
+        .pt-sign-pad canvas { display: block; width: 100%; height: 10rem; background: #fff; touch-action: none; cursor: crosshair; }
+        .pt-sign-tools { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.35rem; }
+        .pt-sign-clear { border: 0; background: transparent; color: #0f766e; text-decoration: underline; font-weight: 700; cursor: pointer; }
+        .pt-signatures { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.55rem; }
+        .pt-signature { border: 1px solid #cbd5e1; border-radius: 0.65rem; background: #fff; padding: 0.5rem; text-align: center; }
+        .pt-signature img { width: 100%; height: 4.5rem; object-fit: contain; }
+        .pt-signature b, .pt-signature small { display: block; }
+        .pt-template { border: 1px solid #cbd5e1; border-radius: 0.7rem; background: #fff; padding: 1rem; color: #0f172a; }
+        .pt-template-head { display: flex; justify-content: space-between; gap: 1rem; font-weight: 800; }
+        .pt-template h4 { margin: 0.8rem 0 0.25rem; font-weight: 900; }
+        .pt-template p { white-space: pre-wrap; line-height: 1.65; }
+        .pt-form-actions { justify-content: flex-end; }
+        .pt-draft-bar { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; margin-top: 0.5rem; min-height: 1.6rem; }
+        .pt-badge--wait { background: #e0f2fe; color: #075985; }
+        .pt-badge--done { background: #d1fae5; color: #065f46; }
+        .pt-badge--rejected { background: #fee2e2; color: #991b1b; }
+        .pt-turn { padding: 0.05rem 0.5rem; border-radius: 999px; background: #dc2626; color: #fff; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
+        .pt-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; list-style: none; margin: 0; padding: 0 0.75rem 0.6rem; }
+        .pt-steps li { position: relative; padding: 0.3rem 0.4rem; border-radius: 0.45rem; background: #f1f5f9; border: 1px solid #e2e8f0; min-width: 0; }
+        .pt-steps b { display: block; font-size: 0.66rem; color: #94a3b8; font-weight: 800; }
+        .pt-steps span { display: block; font-size: 0.76rem; font-weight: 700; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pt-steps li.is-done { background: #ecfdf5; border-color: #a7f3d0; }
+        .pt-steps li.is-done b::after { content: ' ✓'; color: #059669; }
+        .pt-steps li.is-done span { color: #065f46; }
+        .pt-steps li.is-current { background: #e0f2fe; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25); }
+        .pt-steps li.is-current b { color: #0369a1; }
+        .pt-steps li.is-current b::after { content: ' ⏳'; }
+        .pt-steps li.is-current span { color: #0c4a6e; }
+        .pt-steps li.is-rejected { background: #fef2f2; border-color: #fca5a5; }
+        .pt-steps li.is-rejected b { color: #b91c1c; }
+        .pt-steps li.is-rejected b::after { content: ' ✕'; }
+        .pt-rejected { border: 1.5px solid #fca5a5; background: #fef2f2; border-radius: 0.6rem; padding: 0.55rem 0.7rem; margin-bottom: 0.6rem; }
+        .pt-rejected b { font-size: 0.84rem; color: #991b1b; }
+        .pt-rejected p { margin: 0.25rem 0 0; font-size: 0.84rem; color: #7f1d1d; white-space: pre-wrap; word-break: break-word; }
+        .pt-donebox { border: 1.5px solid #6ee7b7; background: #ecfdf5; border-radius: 0.6rem; padding: 0.5rem 0.7rem; margin-bottom: 0.6rem; font-size: 0.84rem; font-weight: 800; color: #065f46; }
+        .pt-fgroup { padding: 0.45rem 0.55rem; border-radius: 0.5rem; }
+        .pt-fgroup + .pt-fgroup { margin-top: 0.35rem; }
+        .pt-fgroup.is-latest { background: #fff; border: 1.5px solid #5eead4; }
+        .pt-fgroup .acf-files { margin: 0.25rem 0 0; }
+        .pt-fgroup-title { margin: 0; font-size: 0.78rem; font-weight: 800; color: #475569; }
+        .pt-fgroup-tip { margin: 0.2rem 0 0; font-size: 0.76rem; font-weight: 700; color: #0f766e; }
+        .pt-latest { display: inline-block; margin-right: 0.4rem; padding: 0 0.45rem; border-radius: 999px; background: #0f766e; color: #fff; font-size: 0.68rem; }
+        .pt-act { margin-top: 0.75rem; border: 1.5px solid #5eead4; background: #f0fdfa; border-radius: 0.7rem; padding: 0.7rem 0.8rem; display: flex; flex-direction: column; gap: 0.45rem; }
+        .pt-act--redo { border-color: #fcd34d; background: #fffbeb; }
+        .pt-act-title { margin: 0; font-size: 0.9rem; font-weight: 900; color: #0f172a; }
+        .pt-act-steps { margin: 0; padding-left: 1.2rem; font-size: 0.78rem; color: #475569; display: flex; flex-direction: column; gap: 0.1rem; }
+        .pt-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; font-size: 0.8rem; font-weight: 800; color: #334155; }
+        .pt-upload input[type="file"] { font-size: 0.8rem; font-weight: 400; max-width: 100%; }
+        .pt-note { width: 100%; padding: 0.45rem 0.6rem; border: 1.5px solid #cbd5e1; border-radius: 0.55rem; font-size: 0.84rem; font-family: inherit; resize: vertical; background: #fff; }
+        .pt-note:focus { outline: none; border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18); }
+        .pt-act-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+        .pt-act-btns--end { justify-content: flex-end; margin-top: 0.6rem; }
+        .pt-reject { margin-top: 0.2rem; border-top: 1px dashed #99f6e4; padding-top: 0.45rem; }
+        .pt-reject summary { cursor: pointer; font-size: 0.78rem; font-weight: 800; color: #b91c1c; }
+        .pt-reject[open] summary { margin-bottom: 0.4rem; }
+        .pt-reject-btn { margin-top: 0.4rem; padding: 0.4rem 1rem; border-radius: 0.6rem; border: 1px solid #dc2626; background: #fff; color: #b91c1c; font-weight: 800; font-size: 0.82rem; cursor: pointer; }
+        .pt-reject-btn:hover { background: #fef2f2; }
+        .pt-withdraw { border: 1px solid #cbd5e1; background: #fff; color: #64748b; border-radius: 0.55rem; padding: 0.35rem 0.8rem; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
+        .pt-withdraw:hover { border-color: #fca5a5; color: #b91c1c; }
+        .pt-events { margin-top: 0.7rem; font-size: 0.78rem; }
+        .pt-events summary { cursor: pointer; font-weight: 800; color: #475569; }
+        .pt-events ul { list-style: none; margin: 0.4rem 0 0; padding: 0 0 0 0.6rem; border-left: 2px solid #e2e8f0; display: flex; flex-direction: column; gap: 0.35rem; }
+        .pt-events li { display: flex; flex-wrap: wrap; gap: 0.1rem 0.6rem; }
+        .pt-events time { color: #94a3b8; font-size: 0.72rem; }
+        .pt-events b { color: #0f172a; }
+        .pt-events li p { flex-basis: 100%; margin: 0; color: #64748b; white-space: pre-wrap; word-break: break-word; }
+        .pt-line-err { margin: 0.5rem 0 0; font-size: 0.74rem; color: #b45309; }
+        @media (max-width: 560px) {
+            .pt-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
         .af-grid { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
         @media (min-width: 900px) { .af-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (min-width: 768px) { .af-grid.af-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -4616,6 +4739,16 @@
                             </div>
                         </div>
                     </div>
+            <button type="button" class="pt-entry" onclick="showPage('petition')">
+                <span class="pt-entry-icon" aria-hidden="true">✍️</span>
+                <span class="pt-entry-text">
+                    <strong>簽呈簽核</strong>
+                    <small>承辦人、主管、審核三方電子簽名 → 總經理室列印 → 總經理紙本決行</small>
+                </span>
+                <span class="pt-entry-badge" id="pt-entry-badge" hidden></span>
+                <span class="pt-entry-arrow" aria-hidden="true">→</span>
+            </button>
+
                     <div class="af-col af-col--biz">
                         <div class="af-col-title">業務</div>
                         <div class="af-item">
@@ -4915,6 +5048,136 @@
                                     <div class="space-y-1 font-mono">
                                         <div>3.2%</div>
                                         <div>3.8%</div>
+        <div id="page-petition" class="hidden max-w-4xl mx-auto space-y-4">
+            <button onclick="showPage('administration')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回行政專區
+            </button>
+            <section class="admin-tools-card admin-tools-card--compact pt-zone">
+                <h3 class="admin-tools-title">✍️ 簽呈簽核</h3>
+                <ol class="pt-flow" aria-label="簽核流程">
+                    <li><b>1</b>承辦人電子簽</li>
+                    <li><b>2</b>主管電子簽</li>
+                    <li><b>3</b>經理／協理電子簽</li>
+                    <li><b>4</b>總經理室會辦</li>
+                    <li><b>5</b>總經理紙本決行</li>
+                </ol>
+                <p class="pt-lead">承辦人填好套版內容並電子簽名，部門主管、經理／協理依序在手機或電腦上電子簽名。三方簽完即可列印套好版的正式簽呈，送總經理紙本決行後再上傳。若承辦人就是部門主管，一次簽名會同時記錄兩個角色。填寫內容會自動存成草稿。</p>
+                <div class="pt-line" id="pt-line"></div>
+                <div class="pt-tabs" id="pt-tabs" role="tablist" aria-label="簽呈分類"></div>
+                <p class="acf-flash" id="pt-flash" role="status" aria-live="polite"></p>
+                <form id="pt-form" class="acf-form pt-form" novalidate hidden>
+                    <div class="acf-grid">
+                        <div class="acf-field acf-field--wide">
+                            <span class="acf-label">承辦人（第一線人員／主管）</span>
+                            <div class="pt-gm" id="pt-applicant">依登入帳號自動帶入</div>
+                        </div>
+                        <div class="acf-field acf-field--wide">
+                            <span class="acf-label">簽呈分類</span>
+                            <select name="category" aria-label="選擇簽呈分類">
+                                <option value="">請選擇分類</option>
+                                <option value="人事相關">人事相關</option>
+                                <option value="獎金辦法">獎金辦法</option>
+                                <option value="賠償案件">賠償案件</option>
+                                <option value="薪資出勤">薪資出勤</option>
+                                <option value="其他">其他</option>
+                            </select>
+                            <div id="pt-other-title" class="hidden mt-2">
+                                <input type="text" name="otherCategory" maxlength="90" placeholder="請輸入其他分類" aria-label="其他簽呈分類">
+                            </div>
+                        </div>
+                        <label class="acf-field acf-field--wide">
+                            <span class="acf-label">完整主旨內容</span>
+                            <textarea name="title" rows="2" maxlength="500" placeholder="例如：新北市五股區○○路案件因業績表未登載，公證費無法請領"></textarea>
+                            <span class="acf-hint">不用輸入「主旨：」及「擬請核示」，套版時會自動加上。</span>
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="acf-label">一、案件摘要</span>
+                            <textarea name="summary" rows="5" maxlength="5000" placeholder="案件名稱、地址、承辦人、關係人、租賃期間、費用與影響等"></textarea>
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="pt-label">二、時間歷程與證據狀態（選填）</span>
+                            <textarea name="timeline" rows="5" maxlength="5000" placeholder="每行可依「日期｜事件｜查核狀態／應附資料」填寫"></textarea>
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="acf-label">三、案件說明</span>
+                            <textarea name="description" rows="6" maxlength="8000" placeholder="說明發生原因、處理經過、責任及影響；多案可分段編號"></textarea>
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="acf-label">四、擬辦</span>
+                            <textarea name="proposal" rows="5" maxlength="5000" placeholder="每行填寫一項擬辦事項，套版時會保留編號與換行"></textarea>
+                        </label>
+                        <label class="acf-field">
+                            <span class="pt-label">主旨結語</span>
+                            <select name="closing"><option value="擬請核示">擬請核示</option><option value="敬請核示">敬請核示</option></select>
+                        </label>
+                        <label class="acf-field">
+                            <span class="pt-label">會辦單位及執行事項（選填）</span>
+                            <input type="text" name="coOffice" maxlength="500" placeholder="例如：財務部（憑證核驗及付款確認）">
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="pt-label">核後處理文字</span>
+                            <input type="text" name="afterApproval" maxlength="500" value="奉 核後，影印陳送各會辦單位存照。">
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="pt-label">附件名稱／圖說（選填）</span>
+                            <textarea name="attachments" rows="3" maxlength="2000" placeholder="例如：附件一｜出租人公證費收據影本、存摺"></textarea>
+                        </label>
+                        <label class="acf-field acf-field--wide flex-row items-center gap-2">
+                            <input type="checkbox" name="showRespect" class="w-auto">
+                            <span class="pt-label">在決行區前顯示「敬陳」</span>
+                        </label>
+                        <div class="acf-field pt-pick" data-role="manager">
+                            <span class="acf-label">部門主管</span>
+                            <input type="search" placeholder="輸入姓名或處別篩選" aria-label="篩選部門主管">
+                            <select aria-label="選擇部門主管"></select>
+                            <p class="pt-pick-warn"></p>
+                        </div>
+                        <div class="acf-field pt-pick" data-role="director">
+                            <span class="acf-label">審核（經理／協理）</span>
+                            <input type="search" placeholder="輸入姓名或處別篩選" aria-label="篩選審核人員">
+                            <select aria-label="選擇審核人員"></select>
+                            <p class="pt-pick-warn"></p>
+                        </div>
+                        <div class="acf-field pt-pick" data-role="office">
+                            <span class="acf-label">會辦單位（總經理室）</span>
+                            <input type="search" placeholder="輸入姓名或處別篩選" aria-label="篩選總經理室會辦人員">
+                            <select aria-label="選擇總經理室會辦人員"></select>
+                            <p class="pt-pick-warn"></p>
+                        </div>
+                        <div class="acf-field acf-field--wide">
+                            <span class="pt-label">決行：總經理</span>
+                            <div class="pt-gm">👔 三方電子簽名完成後，由總經理室列印送總經理紙本決行，再代為上傳。</div>
+                        </div>
+                        <label class="acf-field acf-field--wide">
+                            <span class="pt-label">補充說明（選填）</span>
+                            <textarea name="note" rows="3" maxlength="1000" placeholder="想讓審核及會辦人員先知道的事"></textarea>
+                        </label>
+                        <div class="acf-field acf-field--wide">
+                            <span class="acf-label">承辦人電子簽名</span>
+                            <div class="pt-sign-pad"><canvas width="700" height="220" data-signature="applicant" aria-label="承辦人電子簽名板"></canvas></div>
+                            <div class="pt-sign-tools"><span class="acf-hint">請用滑鼠、手機觸控或觸控筆簽名。</span><button type="button" class="pt-sign-clear" data-clear-sign="applicant">清除重簽</button></div>
+                        </div>
+                        <label class="acf-field acf-field--wide">
+                            <span class="pt-label">附件檔案（選填）</span>
+                            <input type="file" name="file" accept="image/*,application/pdf" multiple>
+                            <span class="acf-hint">收據、存摺、對話截圖等佐證資料。可選多個圖片或 PDF（單檔 10MB 內、最多 10 個），手機可直接拍照。</span>
+                        </label>
+                    </div>
+                    <div class="acf-actions pt-form-actions">
+                        <button type="button" class="pt-secondary" id="pt-preview">👀 預覽套版</button>
+                        <button type="submit" class="acf-submit" id="pt-submit">電子簽名並送出</button>
+                    </div>
+                    <div class="pt-draft-bar">
+                        <span id="pt-draft-status" class="acf-hint"></span>
+                        <button type="button" class="pt-sign-clear" id="pt-draft-clear">清空重填</button>
+                    </div>
+                    <p class="acf-msg" id="pt-msg" role="status" aria-live="polite"></p>
+                </form>
+                <div class="acf-list" id="pt-list"></div>
+                <p class="acf-admin-link"><a href="./admin/petition-dashboard.html" target="_blank" rel="noopener">管理員：簽呈後台 ↗</a></p>
+            </section>
+        </div>
+
                                         <div>4.2%</div>
                                         <div>4.8%</div>
                                     </div>
@@ -10510,6 +10773,7 @@
                 if (el instanceof HTMLInputElement && el.type === 'number' && !el.disabled) {
                     e.preventDefault();
                 }
+    <script src="./js/petition.js?v=20261007-10"></script>
             }, { passive: false, capture: true });
         }
 
@@ -12314,6 +12578,7 @@
 
         function setPageHidden(id, hidden) {
             const el = document.getElementById(id);
+            { page: 'petition', title: '簽呈簽核', category: '行政專區', keywords: '簽呈 簽核 送簽 簽名 上傳簽呈 承辦單位 第一線人員 主管 審核 經理 協理 會辦單位 總經理室 決行 總經理 退回 重送 LINE 通知' },
             if (!el) return;
             el.classList.toggle('hidden', hidden);
             if (!hidden) {
@@ -12336,7 +12601,7 @@
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-deposit-refund',
             'page-business-bao-deposit-refund', 'page-business-forms', 'page-termination',
             'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus',
-            'page-announcement', 'page-administration', 'page-admin-qa', 'page-newbie', 'page-calculator', 'page-rent',
+            'page-announcement', 'page-administration', 'page-admin-qa', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
             'page-practice-timeline', 'page-collection-case', 'page-mediation-flow', 'page-equip-dep', 'page-practice-templates', 'page-practice-contacts', 'page-lal-generator', 'page-care-visit-notice'
         ];
 
@@ -12351,6 +12616,7 @@
         let lastActivePageId = null;
         let lastActivePageName = 'home';
         const pageNavStack = [];
+            petition: 'page-petition',
 
         function syncAppChromePrevBtn() {
             const prevBtn = document.getElementById('app-chrome-prev');
@@ -12522,6 +12788,8 @@
             return hit?.title || '工具箱';
         }
 
+            if (pageName === 'administration' && typeof window.petitionBadge === 'function') window.petitionBadge();
+            if (pageName === 'petition' && typeof window.petitionInit === 'function') window.petitionInit();
         function setSearchPanelOpen(open) {
             const wrap = document.getElementById('home-search-wrap');
             const toggle = document.getElementById('app-chrome-search-toggle');

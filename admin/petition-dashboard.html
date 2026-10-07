@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>簽呈簽核後台 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../js/supabase-config.js"></script>
+  <style>
+    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
+    input, select, textarea { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.45rem 0.7rem; color: #f8fafc; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; text-align: left; border-bottom: 1px solid #334155; vertical-align: top; }
+    th { color: #94a3b8; font-weight: 700; white-space: nowrap; }
+    td.nw { white-space: nowrap; }
+    tr.row { cursor: pointer; }
+    tr.row:hover td { background: rgba(45, 212, 191, 0.07); }
+    tr.row.is-open td { background: rgba(45, 212, 191, 0.12); }
+    .muted { color: #64748b; }
+    .badge { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 700; }
+    .b-wait { background: #0c4a6e; color: #7dd3fc; }
+    .b-done { background: #064e3b; color: #6ee7b7; }
+    .b-rejected { background: #7f1d1d; color: #fca5a5; }
+    .chip { font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 999px; border: 1px solid #475569; color: #cbd5e1; background: #0f172a; font-weight: 700; }
+    .chip.is-active { background: #0f766e; border-color: #14b8a6; color: #fff; }
+    .detail { background: #0f172a; border-top: 2px solid #2dd4bf; }
+    .kv { display: grid; grid-template-columns: 1fr; gap: 0.5rem 1.25rem; }
+    @media (min-width: 768px) { .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .kv .wide { grid-column: 1 / -1; }
+    .kv dt { font-size: 0.72rem; color: #94a3b8; }
+    .kv dd { font-size: 0.88rem; color: #f1f5f9; white-space: pre-wrap; word-break: break-word; margin: 0.1rem 0 0; }
+    .act { font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 0.5rem; font-weight: 700; }
+    .warn { color: #fbbf24; }
+    .approver-head, .approver-row { display: grid; grid-template-columns: minmax(12rem, 1fr) 6rem 6rem 8rem; align-items: center; gap: 0.5rem; }
+    .approver-head { position: sticky; top: 0; z-index: 1; padding: 0.45rem 0.65rem; background: #334155; color: #cbd5e1; font-size: 0.75rem; font-weight: 800; }
+    .approver-row { padding: 0.5rem 0.65rem; border-bottom: 1px solid #334155; }
+    .approver-row:hover { background: rgba(45, 212, 191, 0.06); }
+    .approver-check { display: flex; justify-content: center; }
+    .approver-check input { width: 1.15rem; height: 1.15rem; accent-color: #14b8a6; }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+  <header>
+    <h1 class="text-2xl font-black text-teal-300">簽呈簽核後台</h1>
+    <p class="text-slate-400 text-sm mt-1">承辦人電子簽 → 部門主管電子簽 → 經理／協理電子簽 → 總經理室會辦 → 總經理紙本決行 · <a class="text-teal-300 underline" href="../index.html?page=petition">回工具箱</a></p>
+  </header>
+
+  <section class="card p-4 space-y-3" id="login-panel">
+    <label class="block text-sm text-slate-400">後台密碼（Supabase admin_secret）</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-bold">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm text-rose-300 hidden"></p>
+  </section>
+
+  <section class="card p-4 hidden space-y-1" id="info-panel">
+    <p class="text-sm text-slate-300">承辦人、部門主管、審核人每次重新電子簽名；總經理室列印三方簽核頁送總經理紙本決行，再代為上傳最後版本。</p>
+    <p class="text-xs text-slate-500" id="line-stat"></p>
+  </section>
+
+  <section class="card p-4 hidden space-y-3" id="approver-panel">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="text-lg font-black text-teal-300">可選的主管、審核與總經理室會辦人員</h2>
+        <p class="text-sm text-slate-400">勾選後，承辦人送簽時只會看到這些人；同一帳號可具備多種資格，但同一份簽呈的主管、審核與會辦需由不同人處理。</p>
+      </div>
+      <button type="button" id="btn-approver-save" class="act bg-teal-600 text-white">儲存勾選名單</button>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <input type="search" id="approver-q" placeholder="搜尋姓名／帳號／處別" class="flex-1 min-w-[12rem]" />
+      <span class="text-xs text-slate-400" id="approver-count"></span>
+    </div>
+    <div class="border border-slate-700 rounded-lg overflow-auto max-h-96">
+      <div class="approver-head"><span>帳號</span><span class="text-center">部門主管</span><span class="text-center">審核</span><span class="text-center">總經理室會辦</span></div>
+      <div id="approver-list"></div>
+    </div>
+    <p class="text-sm text-slate-400" id="approver-msg"></p>
+  </section>
+
+  <section class="card p-4 hidden space-y-3" id="main-panel">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-lg font-black text-teal-300">簽呈列表</h2>
+      <p class="text-sm text-slate-400" id="count">—</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap gap-1.5" id="stage-chips">
+        <button type="button" class="chip" data-stage="">全部</button>
+        <button type="button" class="chip" data-stage="pending">簽核中</button>
+        <button type="button" class="chip" data-stage="manager">待主管</button>
+        <button type="button" class="chip" data-stage="director">待審核</button>
+        <button type="button" class="chip" data-stage="office">待會辦</button>
+        <button type="button" class="chip" data-stage="gm">待決行</button>
+        <button type="button" class="chip" data-stage="done">已完成</button>
+        <button type="button" class="chip" data-stage="rejected">已退回</button>
+      </div>
+      <input type="search" id="q" placeholder="搜尋主旨／承辦人／部門／處理人" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
+    </div>
+    <p id="msg" class="text-sm text-slate-400"></p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr><th>送出時間</th><th>主旨</th><th>承辦人</th><th>目前狀態</th><th>部門主管</th><th>審核</th><th>會辦（總經理室）</th><th>LINE</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-pages-admin-secret';
+      const DEV_APPROVER_KEY = 'skyfun-petition-approver-settings-dev';
+      const IS_LOCAL = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+      const STATUS = {
+        manager: ['b-wait', '待部門主管電子簽名'], director: ['b-wait', '待經理／協理電子簽名'],
+        office: ['b-wait', '待總經理室會辦'], gm: ['b-wait', '待總經理決行'],
+        done: ['b-done', '已完成'], rejected: ['b-rejected', '已退回']
+      };
+      const STAGE_NAME = { applicant: '承辦人', manager: '部門主管', director: '審核', office: '會辦單位', gm: '總經理決行' };
+      const STAGE_ORDER = ['applicant', 'manager', 'director', 'office', 'gm'];
+      const ACTION = { submit: '送出簽呈', approve: '簽核完成', reject: '退回', resubmit: '修改後重新送出', withdraw: '撤回' };
+      const details = {};
+      let secret = '';
+      let items = [];
+      let accounts = [];
+      let stage = '';
+      let openId = null;
+
+      const $ = (id) => document.getElementById(id);
+
+      async function fn(body) {
+        const c = window.SKYFUN_SUPABASE || {};
+        const url = String(c.url || '').trim().replace(/\/$/, '');
+        const key = String(c.anonKey || '').trim();
+        const res = await fetch(url + '/functions/v1/petition', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + key, apikey: key, 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({ secret }, body))
+        });
+        let data = null;
+        try { data = await res.json(); } catch { /* non-JSON */ }
+        if (!data?.ok) throw new Error(data?.error || data?.message || ('連線失敗（' + res.status + '）'));
+        return data;
+      }
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function fmt(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('zh-TW', { hour12: false }); } catch { return iso; }
+      }
+      function badge(st) {
+        const [cls, label] = STATUS[st] || ['b-wait', st];
+        return '<span class="badge ' + cls + '">' + label + '</span>';
+      }
+
+      function rejectedBy(d) {
+        return d.rejectedStage === 'gm'
+          ? '總經理決行（由總經理室 ' + d.rejectedByName + ' 登錄）'
+          : (STAGE_NAME[d.rejectedStage] || '') + ' ' + d.rejectedByName;
+      }
+
+      async function loadSettings() {
+        const res = await fn({ action: 'admin_settings' });
+        accounts = res.accounts || [];
+        if (IS_LOCAL && !accounts.length) {
+          const c = window.SKYFUN_SUPABASE || {};
+          const url = String(c.url || '').trim().replace(/\/$/, '');
+          const key = String(c.anonKey || '').trim();
+          const rpcRes = await fetch(url + '/rest/v1/rpc/toolbox_admin_list', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + key, apikey: key, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_secret: secret, p_status: 'active' })
+          });
+          const data = await rpcRes.json().catch(() => null);
+          if (!rpcRes.ok || !data?.ok) throw new Error(data?.error || '本機帳號名單讀取失敗');
+          let saved = {};
+          try { saved = JSON.parse(localStorage.getItem(DEV_APPROVER_KEY) || '{}') || {}; } catch { /* ignore */ }
+          const managers = new Set(saved.managers || []);
+          const directors = new Set(saved.directors || []);
+          const offices = new Set(saved.offices || []);
+          accounts = (data.users || []).map((a) => ({
+            id: a.id,
+            username: a.username || '',
+            name: a.name || a.username || '',
+            team: a.team || '',
+            lineBound: null,
+            manager: managers.has(a.id),
+            director: directors.has(a.id),
+            office: offices.has(a.id)
+          }));
+        }
+        $('line-stat').textContent = 'LINE 綁定：' + (res.lineBound || 0) + ' / ' + (res.activeAccounts || 0) +
+          ' 個帳號（審核、總經理室會辦人員要綁定才收得到通知；綁定入口在工具箱「行政專區 → 簽呈簽核」頁面上方）' +
+          (IS_LOCAL && !res.accounts ? '；目前為本機測試名單，勾選結果只存在這台電腦。' : '');
+        renderApprovers();
+      }
+
+      function renderApprovers() {
+        const q = $('approver-q').value.trim().toLowerCase();
+        const list = accounts.filter((a) => !q || (a.name + ' ' + a.username + ' ' + a.team).toLowerCase().includes(q));
+        const managers = accounts.filter((a) => a.manager).length;
+        const directors = accounts.filter((a) => a.director).length;
+        const offices = accounts.filter((a) => a.office).length;
+        $('approver-count').textContent = '主管 ' + managers + ' 人・審核 ' + directors + ' 人・總經理室會辦 ' + offices + ' 人';
+        $('approver-list').innerHTML = list.map((a) =>
+          '<div class="approver-row" data-id="' + esc(a.id) + '">' +
+          '<div><strong>' + esc(a.name) + '</strong>' +
+          '<div class="text-xs text-slate-500">' + esc(a.username) + (a.team ? '・' + esc(a.team) : '') +
+          (a.lineBound === null ? '・本機測試' : a.lineBound ? '・<span class="text-emerald-300">已綁 LINE</span>' : '・<span class="warn">未綁 LINE</span>') + '</div></div>' +
+          '<label class="approver-check" title="設為部門主管"><input type="checkbox" data-role="manager"' + (a.manager ? ' checked' : '') + '></label>' +
+          '<label class="approver-check" title="設為審核人員"><input type="checkbox" data-role="director"' + (a.director ? ' checked' : '') + '></label>' +
+          '<label class="approver-check" title="設為總經理室會辦人員"><input type="checkbox" data-role="office"' + (a.office ? ' checked' : '') + '></label>' +
+          '</div>').join('') || '<p class="p-4 text-sm muted">找不到符合的帳號</p>';
+      }
+
+      async function saveApprovers() {
+        const managers = accounts.filter((a) => a.manager).map((a) => a.id);
+        const directors = accounts.filter((a) => a.director).map((a) => a.id);
+        const offices = accounts.filter((a) => a.office).map((a) => a.id);
+        const msg = $('approver-msg');
+        if (!managers.length || !directors.length || !offices.length) {
+          msg.textContent = '部門主管、審核人員和總經理室會辦人員都至少要勾選一人。';
+          msg.className = 'text-sm text-rose-300';
+          return;
+        }
+        const btn = $('btn-approver-save');
+        btn.disabled = true;
+        msg.textContent = '儲存中…';
+        msg.className = 'text-sm text-slate-400';
+        try {
+          if (IS_LOCAL && accounts.some((a) => a.lineBound === null)) {
+            localStorage.setItem(DEV_APPROVER_KEY, JSON.stringify({ managers, directors, offices }));
+          } else {
+            await fn({ action: 'admin_save_approvers', managers, directors, offices });
+          }
+          msg.textContent = IS_LOCAL && accounts.some((a) => a.lineBound === null)
+            ? '已儲存在本機。現在可回工具箱測試送簽名單。'
+            : '已儲存。業務送簽時會立即使用這份名單。';
+          msg.className = 'text-sm text-emerald-300';
+          await loadSettings();
+        } catch (e) {
+          msg.textContent = e.message;
+          msg.className = 'text-sm text-rose-300';
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      /* ---------- 列表 ---------- */
+
+      function filesHtml(d) {
+        if (!d.files.length) return '<p class="muted text-sm">沒有檔案</p>';
+        const groups = [];
+        d.files.forEach((f) => {
+          let g = groups.find((x) => x.round === f.round && x.stage === f.stage);
+          if (!g) groups.push(g = { round: f.round, stage: f.stage, userName: f.userName, files: [] });
+          g.files.push(f);
+        });
+        groups.sort((a, b) => b.round - a.round || STAGE_ORDER.indexOf(b.stage) - STAGE_ORDER.indexOf(a.stage));
+        return groups.map((g) =>
+          '<div class="mb-2"><p class="text-xs text-slate-400">第 ' + g.round + ' 次送出・' +
+          (g.stage === 'gm' ? '總經理決行後（總經理室 ' + esc(g.userName) + ' 上傳）' : (STAGE_NAME[g.stage] || g.stage) + ' ' + esc(g.userName)) + '</p>' +
+          '<ul class="space-y-1 text-sm">' + g.files.map((f) =>
+            '<li>' + (f.url ? '<a class="text-teal-300 underline" href="' + esc(f.url) + '" target="_blank" rel="noopener">' + (f.mime === 'application/pdf' ? '📕 ' : '🖼️ ') + esc(f.fileName) + '</a>' : esc(f.fileName)) +
+            ' <span class="muted">' + fmt(f.createdAt) + '</span></li>').join('') + '</ul></div>').join('');
+      }
+
+      function signaturesHtml(d) {
+        const signs = (d.signatures || []).filter((s) => s.round === d.round);
+        if (!signs.length) return '<p class="muted text-sm">尚無電子簽名</p>';
+        return '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">' + signs.map((s) =>
+          '<div class="border border-slate-700 rounded-lg p-2 text-center"><strong class="text-xs text-teal-200">' + esc(s.roleLabel) + '</strong>' +
+          (s.url ? '<img src="' + esc(s.url) + '" class="w-full h-16 object-contain bg-white rounded my-1" alt="電子簽名">' : '') +
+          '<div class="text-xs">' + esc(s.userName) + '</div><div class="muted text-xs">' + fmt(s.createdAt) + '</div></div>').join('') + '</div>';
+      }
+
+      function eventsHtml(d) {
+        if (!d.events.length) return '<p class="muted text-sm">沒有紀錄</p>';
+        return '<ul class="space-y-1 text-sm">' + d.events.map((e) =>
+          '<li><span class="muted">' + fmt(e.createdAt) + '</span> <strong>' + esc(e.actorName) + '</strong>' +
+          (e.stage === 'gm'
+            ? (e.action === 'reject' ? '（總經理室）登錄總經理退回' : '（總經理室）上傳總經理決行後版本')
+            : (e.stage !== 'applicant' ? '（' + esc(STAGE_NAME[e.stage] || e.stage) + '）' : '') + ' ' + esc(ACTION[e.action] || e.action)) +
+          (e.note ? '<div class="muted pl-4 whitespace-pre-wrap">' + esc(e.note) + '</div>' : '') + '</li>').join('') + '</ul>';
+      }
+
+      function detailHtml(it) {
+        const d = details[it.id];
+        if (!d) return '<p class="muted text-sm">載入中…</p>';
+        const kv = (k, v, wide) => '<div' + (wide ? ' class="wide"' : '') + '><dt>' + k + '</dt><dd>' + esc(v || '—') + '</dd></div>';
+        return '<dl class="kv">' +
+          kv('主旨', d.title, true) +
+          kv('補充說明', d.note, true) +
+          kv('承辦人（部門）', d.userName + (d.team ? '（' + d.team + '）' : '')) +
+          kv('送出次數', '第 ' + d.round + ' 次') +
+          (d.stage === 'rejected' ? kv('退回', rejectedBy(d) + '：' + d.rejectReason, true) : '') +
+          (d.doneAt ? kv('完成時間', fmt(d.doneAt)) : '') +
+          kv('LINE 通知', (d.lineNotifiedAt ? '最後通知 ' + fmt(d.lineNotifiedAt) : '尚未成功通知') + (d.lineError ? '；' + d.lineError : ''), true) +
+          '</dl>' +
+          '<div class="grid md:grid-cols-2 gap-4 mt-4">' +
+          '<div><p class="text-xs text-slate-400 mb-1">簽呈檔案（新的在上）</p>' + filesHtml(d) + '</div>' +
+          '<div><p class="text-xs text-slate-400 mb-1">本次電子簽名</p>' + signaturesHtml(d) +
+          '<p class="text-xs text-slate-400 mb-1 mt-3">簽核歷程</p>' + eventsHtml(d) + '</div>' +
+          '</div>' +
+          '<div class="flex flex-wrap gap-2 mt-4">' +
+          '<button type="button" class="act border border-teal-600 text-teal-300" data-act="notify">重發目前關卡的 LINE 通知</button>' +
+          '<button type="button" class="act border border-rose-800 text-rose-300 ml-auto" data-act="delete">刪除這份簽呈</button>' +
+          '</div><p id="detail-msg" class="text-sm text-slate-400 mt-2"></p>';
+      }
+
+      function renderRows() {
+        document.querySelectorAll('#stage-chips .chip').forEach((c) => c.classList.toggle('is-active', c.dataset.stage === stage));
+        $('count').textContent = '共 ' + items.length + ' 筆';
+        $('rows').innerHTML = items.map((it) =>
+          '<tr class="row' + (openId === it.id ? ' is-open' : '') + '" data-id="' + it.id + '">' +
+          '<td class="nw">' + fmt(it.createdAt) + '</td><td>' + esc(it.title) + (it.round > 1 ? ' <span class="muted">（第 ' + it.round + ' 次）</span>' : '') + '</td>' +
+          '<td class="nw">' + esc(it.userName) + (it.team ? '<div class="muted text-xs">' + esc(it.team) + '</div>' : '') + '</td>' +
+          '<td>' + badge(it.stage) + '</td>' +
+          '<td class="nw">' + esc(it.managerName) + '</td><td class="nw">' + esc(it.directorName) + '</td><td class="nw">' + esc(it.officeName) + '</td>' +
+          '<td>' + (it.lineError ? '<span class="warn text-xs">' + esc(it.lineError) + '</span>' : (it.lineNotifiedAt ? '<span class="text-emerald-300 text-xs">已通知</span>' : '<span class="muted text-xs">—</span>')) + '</td></tr>' +
+          (openId === it.id ? '<tr><td colspan="8" class="detail" data-detail="' + it.id + '">' + detailHtml(it) + '</td></tr>' : '')
+        ).join('') || '<tr><td colspan="8" class="muted">沒有符合條件的簽呈</td></tr>';
+      }
+
+      async function loadList() {
+        const msg = $('msg');
+        msg.textContent = '讀取中…';
+        try {
+          const res = await fn({ action: 'admin_list', stage, query: $('q').value.trim() });
+          items = res.items || [];
+          msg.textContent = '';
+          if (openId && !items.some((it) => it.id === openId)) openId = null;
+          renderRows();
+          if (openId) loadDetail(openId);
+        } catch (e) {
+          msg.textContent = e.message;
+        }
+      }
+
+      async function loadDetail(id) {
+        try {
+          const res = await fn({ action: 'admin_detail', id });
+          details[id] = res.petition;
+        } catch (e) {
+          const m = $('detail-msg');
+          if (m) m.textContent = e.message;
+          return;
+        }
+        if (openId === id) renderRows();
+      }
+
+      async function act(kind) {
+        const it = items.find((x) => x.id === openId);
+        if (!it) return;
+        const dmsg = () => $('detail-msg');
+        try {
+          if (kind === 'notify') {
+            if (!confirm('確定重發 LINE 通知？（依目前狀態通知該關處理人／承辦人）')) return;
+            const res = await fn({ action: 'admin_notify', id: it.id });
+            delete details[it.id];
+            await loadList();
+            const m = dmsg();
+            if (m) m.textContent = res.sent ? '已通知 ' + res.sent + ' 人' + (res.error ? '（' + res.error + '）' : '') : 'LINE 未通知：' + (res.error || '未知原因');
+            return;
+          }
+          if (kind === 'delete') {
+            if (!confirm('確定刪除「' + it.title + '」？所有簽呈檔案和歷程都會刪除，無法復原。')) return;
+            await fn({ action: 'admin_delete', id: it.id });
+            openId = null;
+            await loadList();
+          }
+        } catch (e) {
+          const m = dmsg();
+          if (m) m.textContent = e.message;
+        }
+      }
+
+      $('rows').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-act]');
+        if (btn) { act(btn.dataset.act); return; }
+        if (e.target.closest('[data-detail]')) return;
+        const tr = e.target.closest('tr.row');
+        if (!tr) return;
+        const id = Number(tr.dataset.id);
+        openId = openId === id ? null : id;
+        renderRows();
+        if (openId) loadDetail(openId);
+      });
+      $('stage-chips').addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-stage]');
+        if (!chip) return;
+        stage = chip.dataset.stage;
+        loadList();
+      });
+      let qTimer = null;
+      $('q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(loadList, 350); });
+      $('btn-refresh').addEventListener('click', () => { Object.keys(details).forEach((k) => delete details[k]); loadList(); loadSettings().catch(() => {}); });
+      $('approver-q').addEventListener('input', renderApprovers);
+      $('approver-list').addEventListener('change', (e) => {
+        const input = e.target.closest('input[data-role]');
+        if (!input) return;
+        const account = accounts.find((a) => a.id === input.closest('[data-id]').dataset.id);
+        if (account) account[input.dataset.role] = input.checked;
+        renderApprovers();
+      });
+      $('btn-approver-save').addEventListener('click', saveApprovers);
+      async function login() {
+        secret = $('admin-secret').value.trim();
+        const msg = $('login-msg');
+        msg.classList.add('hidden');
+        try {
+          await loadSettings();
+          sessionStorage.setItem(SECRET_KEY, secret);
+          $('login-panel').classList.add('hidden');
+          ['info-panel', 'approver-panel', 'main-panel'].forEach((id) => $(id).classList.remove('hidden'));
+          await loadList();
+        } catch (e) {
+          msg.textContent = e.message;
+          msg.classList.remove('hidden');
+        }
+      }
+      $('btn-login').addEventListener('click', login);
+      $('admin-secret').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+      const saved = sessionStorage.getItem(SECRET_KEY);
+      if (saved) { $('admin-secret').value = saved; login(); }
+    })();
+  </script>
+</body>
+</html>
