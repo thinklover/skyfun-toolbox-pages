@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>行政點數表後台 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
+  <script src="../js/admin-points-core.js?v=20261009-4"></script>
+  <style>
+    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
+    input, select, textarea { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.45rem 0.65rem; color: #f8fafc; }
+    textarea { width: 100%; min-height: 5rem; }
+    .tab-btn { border: 1px solid #475569; background: #0f172a; color: #94a3b8; border-radius: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .tab-btn.is-active { background: #4338ca; border-color: #6366f1; color: #fff; }
+    .btn { border: 0; border-radius: 0.5rem; padding: 0.45rem 0.9rem; font-size: 0.82rem; font-weight: 800; cursor: pointer; }
+    .btn-main { background: #4338ca; color: #fff; }
+    .btn-ghost { background: transparent; border: 1px solid #475569; color: #cbd5e1; }
+    .btn-del { background: #7f1d1d; color: #fecaca; padding: 0.25rem 0.6rem; font-size: 0.74rem; }
+    .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.74rem; }
+    .btn:disabled { opacity: 0.6; cursor: wait; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { border-bottom: 1px solid #334155; padding: 0.45rem 0.4rem; text-align: left; white-space: nowrap; }
+    th { color: #94a3b8; font-size: 0.72rem; }
+    td select { padding: 0.2rem 0.4rem; font-size: 0.78rem; }
+    .muted { color: #64748b; font-size: 0.78rem; }
+    .field label { display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.2rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: end; }
+    .ok { color: #6ee7b7; }
+    .err { color: #fca5a5; }
+    .is-off td { color: #64748b; }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+  <header>
+    <h1 class="text-2xl font-black text-indigo-300">行政點數表後台</h1>
+    <p class="text-slate-400 text-sm mt-1">組長維護人力明細、登錄手填點數 · <a class="text-indigo-300 underline" href="../index.html">回工具箱</a></p>
+  </header>
+
+  <section class="card p-4 space-y-3" id="login-panel">
+    <label class="block text-sm text-slate-400">後台密碼（同行政 QA 檢核後台）</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm err hidden"></p>
+  </section>
+
+  <section class="card p-4 hidden space-y-4" id="main-panel">
+    <div class="row">
+      <div class="field">
+        <label>業績月</label>
+        <select id="month"></select>
+      </div>
+      <button type="button" class="btn btn-ghost" id="btn-reload">重新整理</button>
+      <p class="muted" id="who"></p>
+    </div>
+    <p id="msg" class="text-sm"></p>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="tab-btn is-active" data-tab="manual">手填點數</button>
+      <button type="button" class="tab-btn" data-tab="staff">人力明細</button>
+    </div>
+
+    <div id="tab-manual" class="space-y-4">
+      <div class="row">
+        <div class="field"><label>日期</label><input type="date" id="m-date" /></div>
+        <div class="field"><label>人員（在職）</label><select id="m-name"></select></div>
+        <div class="field"><label>項目</label><select id="m-item"></select></div>
+        <div class="field" id="m-qty-wrap"><label>件數</label><input type="number" id="m-qty" min="1" max="50" value="1" style="width:5rem" /></div>
+        <div class="field hidden" id="m-points-wrap"><label>核定點數</label><select id="m-points"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+        <div class="field flex-1 min-w-[10rem]"><label>備註（選填，例如案件地址）</label><input type="text" id="m-note" maxlength="200" class="w-full" /></div>
+        <button type="button" class="btn btn-main" id="btn-add-manual">新增</button>
+      </div>
+      <p class="muted">行政QA 依核定點數登錄 1～4 點；代管解約、案件意見修正、清冊意見修正每件 1 點；包租解約每件 3 點。</p>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>日期</th><th>人員</th><th>項目</th><th>件數</th><th>點數</th><th>備註</th><th>登錄者</th><th></th></tr></thead>
+        <tbody id="manual-list"></tbody>
+      </table></div>
+    </div>
+
+    <div id="tab-staff" class="space-y-4 hidden">
+      <div class="row">
+        <div class="field"><label>姓名（需與星鴻審核人姓名一致）</label><input type="text" id="s-name" maxlength="30" /></div>
+        <div class="field"><label>身分</label><select id="s-kind"><option>正職</option><option>工讀生</option></select></div>
+        <div class="field"><label>狀態</label><select id="s-status"><option>在職</option><option>離職</option></select></div>
+        <button type="button" class="btn btn-main" id="btn-add-staff">新增</button>
+      </div>
+      <div class="card p-3 space-y-2" style="background:#0f172a">
+        <div class="row">
+          <button type="button" class="btn btn-ghost" id="btn-auditors">從星鴻帶入本業績月審核人</button>
+          <span class="muted">需先在同一個瀏覽器登入工具箱；列出還不在名單內的審核人與件數，勾選行政同仁後一次加入。</span>
+        </div>
+        <div id="auditor-pick"></div>
+      </div>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>姓名</th><th>身分</th><th>狀態</th><th>備註</th><th></th></tr></thead>
+        <tbody id="staff-list"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const Core = window.AdminPointsCore;
+      const SECRET_KEY = 'skyfun-admin-qa-secret';
+      const AUTH_STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
+      const RPA_BASE = 'https://skyfun-arrears-rpa.dahwork123.workers.dev';
+      let secret = '';
+      let client = null;
+      let data = { staff: [], manual: [] };
+      const $ = (id) => document.getElementById(id);
+
+      function toolboxSession() {
+        try {
+          return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+        } catch {
+          return null;
+        }
+      }
+      function toolboxToken() {
+        return toolboxSession()?.supabaseToken || '';
+      }
+      function sb() {
+        if (client) return client;
+        const c = window.SKYFUN_SUPABASE || {};
+        client = window.supabase.createClient(String(c.url || '').trim(), String(c.anonKey || '').trim());
+        return client;
+      }
+      async function rpc(name, args) {
+        const { data: d, error } = await sb().rpc(name, Object.assign({ p_secret: secret }, args || {}));
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        if (d && d.ok === false) throw new Error(d.error || '操作失敗');
+        return d;
+      }
+      function esc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      }
+      function say(text, ok) {
+        $('msg').textContent = text || '';
+        $('msg').className = 'text-sm ' + (ok ? 'ok' : 'err');
+      }
+
+      function months() {
+        let { year, month } = Core.perfMonthOf(new Date());
+        const out = [];
+        for (let i = 0; i < 4; i++) {
+          out.push(Core.perfMonthRange(year, month));
+          month -= 1;
+          if (month < 1) { month = 12; year -= 1; }
+        }
+        return out;
+      }
+      function range() {
+        return months().find((m) => `${m.year}-${m.month}` === $('month').value) || months()[0];
+      }
+
+      async function load() {
+        const r = range();
+        data = await rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end });
+        renderStaff();
+        renderManual();
+      }
+
+      function renderStaff() {
+        const rows = data.staff || [];
+        $('staff-list').innerHTML = rows.length
+          ? rows.map((s) => `<tr data-id="${s.id}" data-name="${esc(s.name)}" class="${s.status === '在職' ? '' : 'is-off'}">
+              <td>${esc(s.name)}</td>
+              <td><select data-f="kind"><option${s.kind === '正職' ? ' selected' : ''}>正職</option><option${s.kind === '工讀生' ? ' selected' : ''}>工讀生</option></select></td>
+              <td><select data-f="status"><option${s.status === '在職' ? ' selected' : ''}>在職</option><option${s.status === '離職' ? ' selected' : ''}>離職</option></select></td>
+              <td><input type="text" data-f="note" value="${esc(s.note)}" maxlength="200" style="width:10rem" /></td>
+              <td><button type="button" class="btn btn-ghost btn-sm" data-act="save">儲存</button> <button type="button" class="btn btn-del" data-act="del">刪除</button></td>
+            </tr>`).join('')
+          : '<tr><td colspan="5" class="muted">尚無人員，請新增或從星鴻帶入</td></tr>';
+        const active = rows.filter((s) => s.status === '在職');
+        $('m-name').innerHTML = '<option value="">請選擇</option>' + active.map((s) => `<option>${esc(s.name)}</option>`).join('');
+      }
+
+      function renderManual() {
+        const rows = (data.manual || []).slice().reverse();
+        $('manual-list').innerHTML = rows.length
+          ? rows.map((m) => `<tr>
+              <td>${esc(m.date)}</td><td>${esc(m.name)}</td><td>${esc(m.item)}</td>
+              <td>${m.qty}</td><td>${m.points}</td><td>${esc(m.note)}</td><td class="muted">${esc(m.createdBy)}</td>
+              <td><button type="button" class="btn btn-del" data-del-manual="${m.id}">刪除</button></td>
+            </tr>`).join('')
+          : '<tr><td colspan="8" class="muted">本業績月尚無手填點數</td></tr>';
+      }
+
+      async function saveStaff(id, name, kind, status, note) {
+        await rpc('admin_points_admin_save_staff', { p_id: id || null, p_name: name, p_status: status, p_kind: kind, p_note: note || '' });
+      }
+
+      $('btn-login').addEventListener('click', async () => {
+        secret = $('admin-secret').value.trim();
+        $('login-msg').classList.add('hidden');
+        try {
+          await load();
+          sessionStorage.setItem(SECRET_KEY, secret);
+          $('login-panel').classList.add('hidden');
+          $('main-panel').classList.remove('hidden');
+          const u = toolboxSession()?.user;
+          $('who').textContent = u ? `登錄者：${u.name || u.username}` : '未偵測到工具箱登入，登錄者會留空；「從星鴻帶入」也需要先登入工具箱';
+        } catch (e) {
+          $('login-msg').textContent = e.message || '連線失敗';
+          $('login-msg').classList.remove('hidden');
+        }
+      });
+
+      $('month').addEventListener('change', () => load().catch((e) => say(e.message)));
+      $('btn-reload').addEventListener('click', () => load().then(() => say('已更新', true)).catch((e) => say(e.message)));
+
+      document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach((x) => x.classList.toggle('is-active', x === b));
+        $('tab-manual').classList.toggle('hidden', b.dataset.tab !== 'manual');
+        $('tab-staff').classList.toggle('hidden', b.dataset.tab !== 'staff');
+      }));
+
+      $('btn-add-manual').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          const res = await rpc('admin_points_admin_add_manual', {
+            p_token: toolboxToken(),
+            p_date: $('m-date').value,
+            p_name: $('m-name').value,
+            p_item: $('m-item').value,
+            p_qty: Number($('m-qty').value) || 1,
+            p_note: $('m-note').value,
+            p_points: Number($('m-points').value) || 1
+          });
+          $('m-note').value = '';
+          $('m-qty').value = '1';
+          await load();
+          say(`已新增 ${res.points} 點`, true);
+        } catch (err) {
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      $('manual-list').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-del-manual]');
+        if (!btn || !confirm('確定刪除這筆手填點數？')) return;
+        try {
+          await rpc('admin_points_admin_delete_manual', { p_id: Number(btn.dataset.delManual) });
+          await load();
+          say('已刪除', true);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      $('btn-add-staff').addEventListener('click', async () => {
+        const name = $('s-name').value.trim();
+        if (!name) return say('請填姓名');
+        try {
+          await saveStaff(null, name, $('s-kind').value, $('s-status').value, '');
+          $('s-name').value = '';
+          await load();
+          say(`已新增 ${name}`, true);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      $('staff-list').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (!btn) return;
+        const tr = btn.closest('tr');
+        try {
+          if (btn.dataset.act === 'del') {
+            if (!confirm(`刪除 ${tr.dataset.name}？（離職建議改狀態，不要刪除）`)) return;
+            await rpc('admin_points_admin_delete_staff', { p_id: tr.dataset.id });
+          } else {
+            const f = (k) => tr.querySelector(`[data-f="${k}"]`).value;
+            await saveStaff(tr.dataset.id, tr.dataset.name, f('kind'), f('status'), f('note'));
+          }
+          await load();
+          say('已更新', true);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      $('btn-auditors').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const token = toolboxToken();
+        if (!token) return say('請先在同一個瀏覽器登入工具箱');
+        btn.disabled = true;
+        $('auditor-pick').innerHTML = '<p class="muted">讀取星鴻審核時間紀錄中…</p>';
+        try {
+          const r = range();
+          const res = await fetch(`${RPA_BASE}/admin-points/audit-log?start=${r.start}&end=${r.end}`, {
+            headers: { 'X-Skyfun-Session': token }
+          });
+          const payload = await res.json().catch(() => null);
+          if (!res.ok || !payload?.ok) throw new Error(payload?.error || `讀取失敗（HTTP ${res.status}）`);
+          const known = new Set((data.staff || []).map((s) => s.name));
+          const counts = new Map();
+          for (const row of Core.rowsFromPayload(payload)) {
+            if (!row.auditor || known.has(row.auditor)) continue;
+            counts.set(row.auditor, (counts.get(row.auditor) || 0) + 1);
+          }
+          const list = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+          $('auditor-pick').innerHTML = list.length
+            ? `<div class="flex flex-wrap gap-x-4 gap-y-1">${list.map(([n, c]) => `<label class="text-sm"><input type="checkbox" value="${esc(n)}" style="width:auto" /> ${esc(n)} <span class="muted">${c}</span></label>`).join('')}</div>
+               <div class="row mt-2"><select id="pick-kind"><option>正職</option><option>工讀生</option></select><button type="button" class="btn btn-main" id="btn-pick-add">加入勾選人員（在職）</button></div>`
+            : '<p class="muted">本業績月的審核人都已在名單內</p>';
+        } catch (err) {
+          $('auditor-pick').innerHTML = '';
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      $('auditor-pick').addEventListener('click', async (e) => {
+        if (e.target.id !== 'btn-pick-add') return;
+        const names = [...$('auditor-pick').querySelectorAll('input[type=checkbox]:checked')].map((x) => x.value);
+        if (!names.length) return say('請先勾選人員');
+        e.target.disabled = true;
+        try {
+          for (const n of names) await saveStaff(null, n, $('pick-kind').value, '在職', '');
+          $('auditor-pick').innerHTML = '';
+          await load();
+          say(`已加入 ${names.length} 人`, true);
+        } catch (err) {
+          say(err.message);
+        } finally {
+          e.target.disabled = false;
+        }
+      });
+
+      $('month').innerHTML = months().map((m) => `<option value="${m.year}-${m.month}">${m.year - 1911} 年 ${m.month} 月（${m.start.slice(5)}～${m.end.slice(5)}）</option>`).join('');
+      $('m-item').innerHTML = Core.MANUAL_ITEMS.map((i) => `<option value="${i.key}">${i.key}（${i.maxPoints ? `${i.points}～${i.maxPoints} 點` : `${i.points} 點／件`}）</option>`).join('');
+      const syncItemFields = () => {
+        const qa = $('m-item').value === '行政QA';
+        $('m-qty-wrap').classList.toggle('hidden', qa);
+        $('m-points-wrap').classList.toggle('hidden', !qa);
+      };
+      $('m-item').addEventListener('change', syncItemFields);
+      syncItemFields();
+      $('m-date').value = Core.isoDate(new Date());
+      const saved = sessionStorage.getItem(SECRET_KEY);
+      if (saved) $('admin-secret').value = saved;
+    })();
+  </script>
+</body>
+</html>
