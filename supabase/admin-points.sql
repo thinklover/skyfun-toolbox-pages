@@ -28,10 +28,31 @@ alter table public.admin_points_manual add constraint admin_points_manual_item_c
 
 create index if not exists admin_points_manual_date_idx on public.admin_points_manual (work_date);
 
+alter table public.admin_points_staff add column if not exists region text not null default '';
+alter table public.admin_points_staff add column if not exists office text not null default '';
+alter table public.admin_points_staff add column if not exists hire_date date;
+alter table public.admin_points_staff add column if not exists project text not null default '';
+
+-- 組長審件抽查：每筆登錄抽查件數與正確件數，良率＝正確／抽查
+create table if not exists public.admin_points_check (
+  id bigserial primary key,
+  work_date date not null,
+  staff_name text not null,
+  checked int not null check (checked between 1 and 200),
+  correct int not null check (correct >= 0 and correct <= checked),
+  note text not null default '',
+  created_by text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists admin_points_check_date_idx on public.admin_points_check (work_date);
+
 alter table public.admin_points_staff enable row level security;
 alter table public.admin_points_manual enable row level security;
+alter table public.admin_points_check enable row level security;
 revoke all on public.admin_points_staff from anon, authenticated;
 revoke all on public.admin_points_manual from anon, authenticated;
+revoke all on public.admin_points_check from anon, authenticated;
 
 create or replace function public.admin_points_item_points(p_item text)
 returns int
@@ -59,9 +80,18 @@ as $$
     'ok', true,
     'staff', coalesce((
       select json_agg(json_build_object(
-        'id', s.id, 'name', s.name, 'status', s.status, 'kind', s.kind, 'note', s.note
+        'id', s.id, 'name', s.name, 'status', s.status, 'kind', s.kind, 'note', s.note,
+        'region', s.region, 'office', s.office, 'hireDate', s.hire_date, 'project', s.project
       ) order by s.status, s.kind, s.name)
       from public.admin_points_staff s
+    ), '[]'::json),
+    'checks', coalesce((
+      select json_agg(json_build_object(
+        'id', c.id, 'date', c.work_date, 'name', c.staff_name, 'checked', c.checked,
+        'correct', c.correct, 'note', c.note, 'createdBy', c.created_by
+      ) order by c.work_date, c.id)
+      from public.admin_points_check c
+      where c.work_date between p_start and p_end
     ), '[]'::json),
     'manual', coalesce((
       select json_agg(json_build_object(
@@ -110,13 +140,19 @@ begin
 end;
 $$;
 
+drop function if exists public.admin_points_admin_save_staff(text, uuid, text, text, text, text);
+
 create or replace function public.admin_points_admin_save_staff(
   p_secret text,
   p_id uuid,
   p_name text,
   p_status text,
   p_kind text,
-  p_note text default ''
+  p_note text default '',
+  p_region text default '',
+  p_office text default '',
+  p_hire_date date default null,
+  p_project text default ''
 )
 returns json
 language plpgsql
@@ -125,6 +161,9 @@ set search_path = public
 as $$
 declare
   v_name text := left(trim(coalesce(p_name, '')), 30);
+  v_region text := left(trim(coalesce(p_region, '')), 30);
+  v_office text := left(trim(coalesce(p_office, '')), 60);
+  v_project text := left(trim(coalesce(p_project, '')), 100);
   v_id uuid;
 begin
   if not public.toolbox_check_admin(p_secret) then
@@ -137,15 +176,19 @@ begin
     return json_build_object('ok', false, 'error', '狀態或身分無效');
   end if;
   if p_id is null then
-    insert into public.admin_points_staff (name, status, kind, note)
-    values (v_name, p_status, p_kind, left(trim(coalesce(p_note, '')), 200))
+    insert into public.admin_points_staff (name, status, kind, note, region, office, hire_date, project)
+    values (v_name, p_status, p_kind, left(trim(coalesce(p_note, '')), 200), v_region, v_office, p_hire_date, v_project)
     on conflict (name) do update
-      set status = excluded.status, kind = excluded.kind, note = excluded.note, updated_at = now()
+      set status = excluded.status, kind = excluded.kind, note = excluded.note,
+          region = excluded.region, office = excluded.office, hire_date = excluded.hire_date,
+          project = excluded.project, updated_at = now()
     returning id into v_id;
   else
     update public.admin_points_staff
       set name = v_name, status = p_status, kind = p_kind,
-          note = left(trim(coalesce(p_note, '')), 200), updated_at = now()
+          note = left(trim(coalesce(p_note, '')), 200),
+          region = v_region, office = v_office, hire_date = p_hire_date, project = v_project,
+          updated_at = now()
       where id = p_id
       returning id into v_id;
     if v_id is null then
@@ -241,9 +284,67 @@ begin
 end;
 $$;
 
+create or replace function public.admin_points_admin_add_check(
+  p_secret text,
+  p_token text,
+  p_date date,
+  p_name text,
+  p_checked int,
+  p_correct int,
+  p_note text default ''
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_name text := trim(coalesce(p_name, ''));
+  v_id bigint;
+begin
+  if not public.toolbox_check_admin(p_secret) then
+    return json_build_object('ok', false, 'error', '後台密碼錯誤');
+  end if;
+  if p_date is null then
+    return json_build_object('ok', false, 'error', '請選日期');
+  end if;
+  if coalesce(p_checked, 0) not between 1 and 200 then
+    return json_build_object('ok', false, 'error', '抽查件數需為 1～200');
+  end if;
+  if coalesce(p_correct, -1) < 0 or p_correct > p_checked then
+    return json_build_object('ok', false, 'error', '正確件數需介於 0 和抽查件數之間');
+  end if;
+  if not exists (select 1 from public.admin_points_staff where name = v_name) then
+    return json_build_object('ok', false, 'error', '人力明細查無此人');
+  end if;
+  insert into public.admin_points_check (work_date, staff_name, checked, correct, note, created_by)
+  values (p_date, v_name, p_checked, p_correct, left(trim(coalesce(p_note, '')), 200),
+          public.admin_qa_reviewer_label(p_token))
+  returning id into v_id;
+  return json_build_object('ok', true, 'id', v_id);
+end;
+$$;
+
+create or replace function public.admin_points_admin_delete_check(p_secret text, p_id bigint)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.toolbox_check_admin(p_secret) then
+    return json_build_object('ok', false, 'error', '後台密碼錯誤');
+  end if;
+  delete from public.admin_points_check where id = p_id;
+  return json_build_object('ok', true);
+end;
+$$;
+
 grant execute on function public.admin_points_view(text, date, date) to anon, authenticated;
 grant execute on function public.admin_points_admin_list(text, date, date) to anon, authenticated;
-grant execute on function public.admin_points_admin_save_staff(text, uuid, text, text, text, text) to anon, authenticated;
+grant execute on function public.admin_points_admin_save_staff(text, uuid, text, text, text, text, text, text, date, text) to anon, authenticated;
+grant execute on function public.admin_points_admin_add_check(text, text, date, text, int, int, text) to anon, authenticated;
+grant execute on function public.admin_points_admin_delete_check(text, bigint) to anon, authenticated;
 grant execute on function public.admin_points_admin_delete_staff(text, uuid) to anon, authenticated;
 grant execute on function public.admin_points_admin_add_manual(text, text, date, text, text, int, text, int) to anon, authenticated;
 grant execute on function public.admin_points_admin_delete_manual(text, bigint) to anon, authenticated;

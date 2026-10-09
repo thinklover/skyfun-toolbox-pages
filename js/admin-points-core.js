@@ -264,8 +264,76 @@
     };
   }
 
+  function stageLabel(stage) {
+    if (stage === 2) return '第二階段';
+    if (stage === 1) return '第一階段';
+    return '未達第一階段';
+  }
+
+  /** 2026-08-11 → 115年08月 */
+  function rocYearMonth(iso) {
+    const m = String(iso || '').match(/^(\d{4})-(\d{2})/);
+    return m ? `${Number(m[1]) - 1911}年${m[2]}月` : '';
+  }
+
+  /**
+   * 行政人員每月進度：只列人力明細在職者；正職依月累計排名（同分同名次），工讀生另表。
+   * @param result compute() 結果
+   * @param opts { staff, checks:[{name,checked,correct}] }
+   */
+  function monthlyReport(result, opts) {
+    const byName = new Map(result.people.map((p) => [p.name, p]));
+    const checks = new Map();
+    for (const c of opts.checks || []) {
+      const t = checks.get(c.name) || { checked: 0, correct: 0 };
+      t.checked += Number(c.checked) || 0;
+      t.correct += Number(c.correct) || 0;
+      checks.set(c.name, t);
+    }
+    const rows = (opts.staff || [])
+      .filter((s) => s.status === '在職')
+      .map((s) => {
+        const points = byName.get(s.name)?.month.total || 0;
+        const ck = checks.get(s.name) || { checked: 0, correct: 0 };
+        const stage = stageOf(points);
+        return {
+          name: s.name,
+          kind: s.kind,
+          region: s.region || '',
+          office: s.office || '',
+          hire: rocYearMonth(s.hireDate),
+          project: s.project || '',
+          points,
+          stage,
+          stageLabel: stageLabel(stage),
+          checked: ck.checked,
+          correct: ck.correct,
+          rate: ck.checked ? ck.correct / ck.checked : null
+        };
+      });
+    const byPoints = (a, b) => b.points - a.points || a.name.localeCompare(b.name, 'zh-Hant');
+    const full = rows.filter((r) => r.kind !== '工讀生').sort(byPoints);
+    full.forEach((r, i) => {
+      r.rank = i > 0 && full[i - 1].points === r.points ? full[i - 1].rank : i + 1;
+    });
+    const part = rows.filter((r) => r.kind === '工讀生').sort(byPoints);
+    return {
+      full,
+      part,
+      counts: {
+        full: full.length,
+        stage2: full.filter((r) => r.stage === 2).length,
+        stage1: full.filter((r) => r.stage === 1).length,
+        none: full.filter((r) => r.stage === 0).length
+      }
+    };
+  }
+
   return {
     AUTO_ITEMS,
+    stageLabel,
+    rocYearMonth,
+    monthlyReport,
     MANUAL_ITEMS,
     STAGE_1,
     STAGE_2,

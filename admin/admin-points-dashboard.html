@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261009-4"></script>
+  <script src="../js/admin-points-core.js?v=20261009-5"></script>
   <style>
     body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
     .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
@@ -31,9 +31,29 @@
     .ok { color: #6ee7b7; }
     .err { color: #fca5a5; }
     .is-off td { color: #64748b; }
+    .rpt-sheet { background: #fff; color: #0f172a; border-radius: 0.75rem; padding: 1rem; overflow-x: auto; }
+    .rpt-sheet table { font-size: 0.8rem; border-collapse: collapse; width: 100%; }
+    .rpt-sheet th, .rpt-sheet td { border: 1px solid #94a3b8; padding: 0.35rem 0.45rem; text-align: center; color: #0f172a; white-space: nowrap; }
+    .rpt-sheet th { background: #d9ead3; font-weight: 900; font-size: 0.78rem; }
+    .rpt-sheet td.rpt-gap, .rpt-sheet th.rpt-gap { border: 0; background: transparent; width: 0.8rem; padding: 0; }
+    .rpt-title { background: #0b1f44; color: #fff; font-size: 1.15rem; font-weight: 900; padding: 0.6rem 0.8rem; }
+    .rpt-info { background: #fbf3e4; font-weight: 800; padding: 0.4rem 0.8rem; font-size: 0.82rem; }
+    .rpt-note { background: #eef5f8; padding: 0.35rem 0.8rem; font-size: 0.78rem; color: #334155; }
+    .rpt-sum { background: #eef5f8; padding: 0.35rem 0.8rem 0.6rem; font-size: 0.85rem; font-weight: 900; margin-bottom: 0.6rem; }
+    .rpt-pts { background: #f4cccc; font-weight: 900; }
+    .rpt-proj-lvr { background: #fce5cd; }
+    .rpt-proj-list { background: #ddebf7; }
+    .rpt-sub { margin: 1rem 0 0.4rem; font-weight: 900; font-size: 0.95rem; color: #0b1f44; }
+    @media print {
+      body { background: #fff; padding: 0; max-width: none; }
+      body > *:not(#main-panel), #main-panel > *:not(#tab-report), #tab-report > *:not(#report-sheet) { display: none !important; }
+      #main-panel { background: none; border: 0; padding: 0; }
+      .rpt-sheet { padding: 0; border-radius: 0; }
+      @page { size: A4 landscape; margin: 8mm; }
+    }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+<body class="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
   <header>
     <h1 class="text-2xl font-black text-indigo-300">行政點數表後台</h1>
     <p class="text-slate-400 text-sm mt-1">組長維護人力明細、登錄手填點數 · <a class="text-indigo-300 underline" href="../index.html">回工具箱</a></p>
@@ -60,7 +80,9 @@
     <p id="msg" class="text-sm"></p>
     <div class="flex flex-wrap gap-2">
       <button type="button" class="tab-btn is-active" data-tab="manual">手填點數</button>
+      <button type="button" class="tab-btn" data-tab="check">審件抽查</button>
       <button type="button" class="tab-btn" data-tab="staff">人力明細</button>
+      <button type="button" class="tab-btn" data-tab="report">每月進度報表</button>
     </div>
 
     <div id="tab-manual" class="space-y-4">
@@ -80,11 +102,41 @@
       </table></div>
     </div>
 
+    <div id="tab-check" class="space-y-4 hidden">
+      <div class="row">
+        <div class="field"><label>日期</label><input type="date" id="c-date" /></div>
+        <div class="field"><label>人員（在職）</label><select id="c-name"></select></div>
+        <div class="field"><label>審件抽查（件）</label><input type="number" id="c-checked" min="1" max="200" value="1" style="width:5rem" /></div>
+        <div class="field"><label>審件正確（件）</label><input type="number" id="c-correct" min="0" max="200" value="1" style="width:5rem" /></div>
+        <div class="field flex-1 min-w-[10rem]"><label>備註（選填）</label><input type="text" id="c-note" maxlength="200" class="w-full" /></div>
+        <button type="button" class="btn btn-main" id="btn-add-check">新增</button>
+      </div>
+      <p class="muted">抽查良率＝審件正確／審件抽查，業績月內加總計算；沒有抽查紀錄的人在報表顯示「未抽查」。抽查不影響點數。</p>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>日期</th><th>人員</th><th>抽查</th><th>正確</th><th>良率</th><th>備註</th><th>登錄者</th><th></th></tr></thead>
+        <tbody id="check-list"></tbody>
+      </table></div>
+    </div>
+
+    <div id="tab-report" class="space-y-4 hidden">
+      <div class="row">
+        <button type="button" class="btn btn-main" id="btn-report">產出報表</button>
+        <button type="button" class="btn btn-ghost" id="btn-report-xlsx" disabled>下載 Excel</button>
+        <button type="button" class="btn btn-ghost" id="btn-report-print" disabled>列印／存 PDF</button>
+        <span class="muted">依上方業績月，讀星鴻審核紀錄、補助審核與本後台資料即時計算；需先在同一個瀏覽器登入工具箱。</span>
+      </div>
+      <div id="report-sheet"></div>
+    </div>
+
     <div id="tab-staff" class="space-y-4 hidden">
       <div class="row">
         <div class="field"><label>姓名（需與星鴻審核人姓名一致）</label><input type="text" id="s-name" maxlength="30" /></div>
         <div class="field"><label>身分</label><select id="s-kind"><option>正職</option><option>工讀生</option></select></div>
         <div class="field"><label>狀態</label><select id="s-status"><option>在職</option><option>離職</option></select></div>
+        <div class="field"><label>地區／部別</label><input type="text" id="s-region" maxlength="30" style="width:6rem" /></div>
+        <div class="field"><label>營業處</label><input type="text" id="s-office" maxlength="60" style="width:8rem" /></div>
+        <div class="field"><label>到職日</label><input type="date" id="s-hire" /></div>
+        <div class="field"><label>專案任務</label><input type="text" id="s-project" maxlength="100" style="width:10rem" /></div>
         <button type="button" class="btn btn-main" id="btn-add-staff">新增</button>
       </div>
       <div class="card p-3 space-y-2" style="background:#0f172a">
@@ -95,7 +147,7 @@
         <div id="auditor-pick"></div>
       </div>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>姓名</th><th>身分</th><th>狀態</th><th>備註</th><th></th></tr></thead>
+        <thead><tr><th>姓名</th><th>身分</th><th>狀態</th><th>地區／部別</th><th>營業處</th><th>到職日</th><th>專案任務</th><th>備註</th><th></th></tr></thead>
         <tbody id="staff-list"></tbody>
       </table></div>
     </div>
@@ -109,7 +161,8 @@
       const RPA_BASE = 'https://skyfun-arrears-rpa.dahwork123.workers.dev';
       let secret = '';
       let client = null;
-      let data = { staff: [], manual: [] };
+      let data = { staff: [], manual: [], checks: [] };
+      let report = null;
       const $ = (id) => document.getElementById(id);
 
       function toolboxSession() {
@@ -161,21 +214,44 @@
         data = await rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end });
         renderStaff();
         renderManual();
+        renderChecks();
       }
 
       function renderStaff() {
         const rows = data.staff || [];
+        const text = (f, v, w, max) => `<input type="text" data-f="${f}" value="${esc(v)}" maxlength="${max}" style="width:${w}" />`;
         $('staff-list').innerHTML = rows.length
           ? rows.map((s) => `<tr data-id="${s.id}" data-name="${esc(s.name)}" class="${s.status === '在職' ? '' : 'is-off'}">
               <td>${esc(s.name)}</td>
               <td><select data-f="kind"><option${s.kind === '正職' ? ' selected' : ''}>正職</option><option${s.kind === '工讀生' ? ' selected' : ''}>工讀生</option></select></td>
               <td><select data-f="status"><option${s.status === '在職' ? ' selected' : ''}>在職</option><option${s.status === '離職' ? ' selected' : ''}>離職</option></select></td>
-              <td><input type="text" data-f="note" value="${esc(s.note)}" maxlength="200" style="width:10rem" /></td>
+              <td>${text('region', s.region, '5rem', 30)}</td>
+              <td>${text('office', s.office, '7rem', 60)}</td>
+              <td><input type="date" data-f="hireDate" value="${esc(s.hireDate || '')}" /></td>
+              <td>${text('project', s.project, '9rem', 100)}</td>
+              <td>${text('note', s.note, '7rem', 200)}</td>
               <td><button type="button" class="btn btn-ghost btn-sm" data-act="save">儲存</button> <button type="button" class="btn btn-del" data-act="del">刪除</button></td>
             </tr>`).join('')
-          : '<tr><td colspan="5" class="muted">尚無人員，請新增或從星鴻帶入</td></tr>';
+          : '<tr><td colspan="9" class="muted">尚無人員，請新增或從星鴻帶入</td></tr>';
         const active = rows.filter((s) => s.status === '在職');
-        $('m-name').innerHTML = '<option value="">請選擇</option>' + active.map((s) => `<option>${esc(s.name)}</option>`).join('');
+        const opts = '<option value="">請選擇</option>' + active.map((s) => `<option>${esc(s.name)}</option>`).join('');
+        $('m-name').innerHTML = opts;
+        $('c-name').innerHTML = opts;
+      }
+
+      function pct(n) {
+        return `${(n * 100).toFixed(1)}%`;
+      }
+
+      function renderChecks() {
+        const rows = (data.checks || []).slice().reverse();
+        $('check-list').innerHTML = rows.length
+          ? rows.map((c) => `<tr>
+              <td>${esc(c.date)}</td><td>${esc(c.name)}</td><td>${c.checked}</td><td>${c.correct}</td>
+              <td>${pct(c.correct / c.checked)}</td><td>${esc(c.note)}</td><td class="muted">${esc(c.createdBy)}</td>
+              <td><button type="button" class="btn btn-del" data-del-check="${c.id}">刪除</button></td>
+            </tr>`).join('')
+          : '<tr><td colspan="8" class="muted">本業績月尚無抽查紀錄</td></tr>';
       }
 
       function renderManual() {
@@ -189,8 +265,19 @@
           : '<tr><td colspan="8" class="muted">本業績月尚無手填點數</td></tr>';
       }
 
-      async function saveStaff(id, name, kind, status, note) {
-        await rpc('admin_points_admin_save_staff', { p_id: id || null, p_name: name, p_status: status, p_kind: kind, p_note: note || '' });
+      async function saveStaff(id, name, kind, status, extra) {
+        const x = extra || {};
+        await rpc('admin_points_admin_save_staff', {
+          p_id: id || null,
+          p_name: name,
+          p_status: status,
+          p_kind: kind,
+          p_note: x.note || '',
+          p_region: x.region || '',
+          p_office: x.office || '',
+          p_hire_date: x.hireDate || null,
+          p_project: x.project || ''
+        });
       }
 
       $('btn-login').addEventListener('click', async () => {
@@ -214,9 +301,232 @@
 
       document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach((x) => x.classList.toggle('is-active', x === b));
-        $('tab-manual').classList.toggle('hidden', b.dataset.tab !== 'manual');
-        $('tab-staff').classList.toggle('hidden', b.dataset.tab !== 'staff');
+        for (const t of ['manual', 'check', 'staff', 'report']) $(`tab-${t}`).classList.toggle('hidden', b.dataset.tab !== t);
       }));
+
+      $('btn-add-check').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          await rpc('admin_points_admin_add_check', {
+            p_token: toolboxToken(),
+            p_date: $('c-date').value,
+            p_name: $('c-name').value,
+            p_checked: Number($('c-checked').value) || 0,
+            p_correct: Number($('c-correct').value),
+            p_note: $('c-note').value
+          });
+          $('c-note').value = '';
+          await load();
+          say('已新增抽查紀錄', true);
+        } catch (err) {
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      $('check-list').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-del-check]');
+        if (!btn || !confirm('確定刪除這筆抽查紀錄？')) return;
+        try {
+          await rpc('admin_points_admin_delete_check', { p_id: Number(btn.dataset.delCheck) });
+          await load();
+          say('已刪除', true);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      async function fetchWorker(path, label, r) {
+        const res = await fetch(`${RPA_BASE}${path}?start=${r.start}&end=${r.end}`, {
+          headers: { 'X-Skyfun-Session': toolboxToken() }
+        });
+        const payload = await res.json().catch(() => null);
+        if (!res.ok || !payload?.ok) throw new Error(payload?.error || `${label}讀取失敗（HTTP ${res.status}）`);
+        return payload;
+      }
+
+      function slashDate(iso) {
+        return String(iso).replace(/-/g, '/');
+      }
+
+      function rateText(r) {
+        return r.rate == null ? '未抽查' : pct(r.rate);
+      }
+
+      function projectClass(p) {
+        if (!p) return '';
+        return p.includes('清冊') ? 'rpt-proj-list' : 'rpt-proj-lvr';
+      }
+
+      function reportHead(r) {
+        const today = Core.isoDate(new Date());
+        const asOf = r.end < today ? r.end : today;
+        return {
+          title: `${r.year - 1911}年${r.month}月｜行政人員每月進度`,
+          info: `業績月：${r.year - 1911}年${r.month}月　｜　期間：${slashDate(r.start)}–${slashDate(r.end)}　｜　資料截至：${slashDate(asOf)}　｜　第一階段${Core.STAGE_1}點／第二階段${Core.STAGE_2}點`,
+          note: '月累計點數由高到低排序；同點數採相同名次。抽查品質並列呈現、不加權；未抽查顯示「未抽查」。',
+          sum: (c) => `正職行政 ${c.full} 人｜第二階段 ${c.stage2} 人｜第一階段 ${c.stage1} 人｜未達第一階段 ${c.none} 人`
+        };
+      }
+
+      const FULL_HEAD = ['排名', '姓名', '地區／部別', '營業處', '報到年月', '專案任務', '月累計點數', '月度級距', '抽查件數', '組長抽查良率'];
+      const PART_HEAD = ['姓名', '地區／部別', '營業處', '月累計點數', '抽查件數', '抽查良率'];
+
+      function fullCells(x) {
+        return [x.rank, x.name, x.region, x.office, x.hire, x.project, x.points, x.stageLabel, x.checked, rateText(x)];
+      }
+
+      function renderReport() {
+        const { range: r, rep } = report;
+        const h = reportHead(r);
+        const half = Math.ceil(rep.full.length / 2);
+        const left = rep.full.slice(0, half);
+        const right = rep.full.slice(half);
+        const cellsHtml = (x) => {
+          if (!x) return FULL_HEAD.map(() => '<td></td>').join('');
+          const c = fullCells(x).map((v) => esc(v));
+          return c.map((v, i) => {
+            if (i === 5) return `<td class="${projectClass(x.project)}">${v}</td>`;
+            if (i === 6) return `<td class="rpt-pts">${v}</td>`;
+            return `<td>${v}</td>`;
+          }).join('');
+        };
+        const rows = left.map((x, i) => `<tr>${cellsHtml(x)}<td class="rpt-gap"></td>${cellsHtml(right[i])}</tr>`).join('');
+        const headRow = FULL_HEAD.map((t) => `<th>${t}</th>`).join('');
+        const partRows = rep.part.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(x.region)}</td><td>${esc(x.office)}</td><td class="rpt-pts">${x.points}</td><td>${x.checked}</td><td>${rateText(x)}</td></tr>`).join('');
+        $('report-sheet').innerHTML = `<div class="rpt-sheet">
+          <div class="rpt-title">${esc(h.title)}</div>
+          <div class="rpt-info">${esc(h.info)}</div>
+          <div class="rpt-note">${esc(h.note)}</div>
+          <div class="rpt-sum">${esc(h.sum(rep.counts))}</div>
+          <table><thead><tr>${headRow}<th class="rpt-gap"></th>${headRow}</tr></thead><tbody>${rows || '<tr><td colspan="21">人力明細沒有在職正職人員</td></tr>'}</tbody></table>
+          ${rep.part.length ? `<div class="rpt-sub">工讀生｜另表呈現（不列入正職排序）</div>
+          <table style="width:auto"><thead><tr>${PART_HEAD.map((t) => `<th>${t}</th>`).join('')}</tr></thead><tbody>${partRows}</tbody></table>` : ''}
+        </div>`;
+      }
+
+      $('btn-report').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        if (!toolboxToken()) return say('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
+        btn.disabled = true;
+        $('report-sheet').innerHTML = '<p class="muted">讀取星鴻審核紀錄與補助審核中…約 5～10 秒</p>';
+        try {
+          const r = range();
+          const [audit, expenses] = await Promise.all([
+            fetchWorker('/admin-points/audit-log', '審核時間紀錄', r),
+            fetchWorker('/admin-points/expenses', '補助審核', r),
+            load()
+          ]);
+          const result = Core.compute(Core.rowsFromPayload(audit), {
+            start: r.start,
+            end: r.end,
+            staff: data.staff || [],
+            manual: data.manual || [],
+            expenses: Core.rowsFromPayload(expenses)
+          });
+          report = { range: r, rep: Core.monthlyReport(result, { staff: data.staff || [], checks: data.checks || [] }) };
+          renderReport();
+          $('btn-report-xlsx').disabled = false;
+          $('btn-report-print').disabled = false;
+          say('報表已產出', true);
+        } catch (err) {
+          $('report-sheet').innerHTML = '';
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      $('btn-report-print').addEventListener('click', () => window.print());
+
+      function loadXlsx() {
+        if (window.XLSX?.utils) return Promise.resolve(window.XLSX);
+        return new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+          s.onload = () => resolve(window.XLSX);
+          s.onerror = () => reject(new Error('Excel 元件載入失敗，請檢查網路'));
+          document.head.appendChild(s);
+        });
+      }
+
+      $('btn-report-xlsx').addEventListener('click', async () => {
+        if (!report) return;
+        try {
+          const XLSX = await loadXlsx();
+          const { range: r, rep } = report;
+          const h = reportHead(r);
+          const border = { style: 'thin', color: { rgb: '94A3B8' } };
+          const box = { top: border, bottom: border, left: border, right: border };
+          const font = (o) => Object.assign({ name: 'Microsoft JhengHei', sz: 11 }, o);
+          const center = { horizontal: 'center', vertical: 'center', wrapText: true };
+          const st = {
+            title: { font: font({ bold: true, sz: 16, color: { rgb: 'FFFFFF' } }), fill: { fgColor: { rgb: '0B1F44' } }, alignment: { vertical: 'center' } },
+            info: { font: font({ bold: true }), fill: { fgColor: { rgb: 'FBF3E4' } } },
+            note: { font: font({ sz: 10 }), fill: { fgColor: { rgb: 'EEF5F8' } } },
+            sum: { font: font({ bold: true, sz: 12 }), fill: { fgColor: { rgb: 'EEF5F8' } } },
+            head: { font: font({ bold: true }), fill: { fgColor: { rgb: 'D9EAD3' } }, alignment: center, border: box },
+            cell: { font: font({ bold: true }), alignment: center, border: box },
+            pts: { font: font({ bold: true, sz: 12 }), fill: { fgColor: { rgb: 'F4CCCC' } }, alignment: center, border: box },
+            lvr: { font: font({ bold: true }), fill: { fgColor: { rgb: 'FCE5CD' } }, alignment: center, border: box },
+            list: { font: font({ bold: true }), fill: { fgColor: { rgb: 'DDEBF7' } }, alignment: center, border: box },
+            sub: { font: font({ bold: true, sz: 12, color: { rgb: '0B1F44' } }) }
+          };
+          const W = 21;
+          const aoa = [];
+          const merges = [];
+          const line = (text, style) => {
+            const row = Array.from({ length: W }, () => ({ v: '', t: 's', s: style }));
+            row[0] = { v: text, t: 's', s: style };
+            merges.push({ s: { r: aoa.length, c: 0 }, e: { r: aoa.length, c: W - 1 } });
+            aoa.push(row);
+          };
+          const cellOf = (x, i, v) => {
+            if (v === '' || v == null) return { v: '', t: 's', s: st.cell };
+            if (i === 6) return { v, t: 'n', s: st.pts };
+            if (i === 5) return { v, t: 's', s: st[projectClass(v) === 'rpt-proj-list' ? 'list' : 'lvr'] };
+            if (i === 9 && x.rate != null) return { v: x.rate, t: 'n', z: '0.0%', s: st.cell };
+            return { v, t: typeof v === 'number' ? 'n' : 's', s: st.cell };
+          };
+          const fullRow = (x) => (x ? fullCells(x).map((v, i) => cellOf(x, i, v)) : FULL_HEAD.map(() => ({ v: '', t: 's', s: st.cell })));
+          line(h.title, st.title);
+          line(h.info, st.info);
+          line(h.note, st.note);
+          line(h.sum(rep.counts), st.sum);
+          aoa.push([]);
+          const headCells = FULL_HEAD.map((t) => ({ v: t, t: 's', s: st.head }));
+          aoa.push([...headCells, { v: '', t: 's' }, ...headCells]);
+          const half = Math.ceil(rep.full.length / 2);
+          for (let i = 0; i < half; i++) aoa.push([...fullRow(rep.full[i]), { v: '', t: 's' }, ...fullRow(rep.full[half + i])]);
+          if (rep.part.length) {
+            aoa.push([]);
+            line('工讀生｜另表呈現（不列入正職排序）', st.sub);
+            aoa.push(PART_HEAD.map((t) => ({ v: t, t: 's', s: st.head })));
+            for (const x of rep.part) {
+              aoa.push([
+                { v: x.name, t: 's', s: st.cell },
+                { v: x.region, t: 's', s: st.cell },
+                { v: x.office, t: 's', s: st.cell },
+                { v: x.points, t: 'n', s: st.pts },
+                { v: x.checked, t: 'n', s: st.cell },
+                x.rate == null ? { v: '未抽查', t: 's', s: st.cell } : { v: x.rate, t: 'n', z: '0.0%', s: st.cell }
+              ]);
+            }
+          }
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
+          ws['!merges'] = merges;
+          const colW = [6, 9, 11, 13, 11, 18, 9, 13, 9, 12];
+          ws['!cols'] = [...colW, 2, ...colW].map((wch) => ({ wch }));
+          ws['!rows'] = [{ hpt: 30 }];
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, `${r.month}月行政每月進度`);
+          XLSX.writeFile(wb, `${r.year - 1911}年${r.month}月行政人員每月進度.xlsx`);
+        } catch (err) {
+          say(err.message);
+        }
+      });
 
       $('btn-add-manual').addEventListener('click', async (e) => {
         const btn = e.currentTarget;
@@ -258,8 +568,13 @@
         const name = $('s-name').value.trim();
         if (!name) return say('請填姓名');
         try {
-          await saveStaff(null, name, $('s-kind').value, $('s-status').value, '');
-          $('s-name').value = '';
+          await saveStaff(null, name, $('s-kind').value, $('s-status').value, {
+            region: $('s-region').value,
+            office: $('s-office').value,
+            hireDate: $('s-hire').value,
+            project: $('s-project').value
+          });
+          for (const id of ['s-name', 's-region', 's-office', 's-hire', 's-project']) $(id).value = '';
           await load();
           say(`已新增 ${name}`, true);
         } catch (err) {
@@ -277,7 +592,13 @@
             await rpc('admin_points_admin_delete_staff', { p_id: tr.dataset.id });
           } else {
             const f = (k) => tr.querySelector(`[data-f="${k}"]`).value;
-            await saveStaff(tr.dataset.id, tr.dataset.name, f('kind'), f('status'), f('note'));
+            await saveStaff(tr.dataset.id, tr.dataset.name, f('kind'), f('status'), {
+              note: f('note'),
+              region: f('region'),
+              office: f('office'),
+              hireDate: f('hireDate'),
+              project: f('project')
+            });
           }
           await load();
           say('已更新', true);
@@ -324,7 +645,7 @@
         if (!names.length) return say('請先勾選人員');
         e.target.disabled = true;
         try {
-          for (const n of names) await saveStaff(null, n, $('pick-kind').value, '在職', '');
+          for (const n of names) await saveStaff(null, n, $('pick-kind').value, '在職');
           $('auditor-pick').innerHTML = '';
           await load();
           say(`已加入 ${names.length} 人`, true);
@@ -345,6 +666,7 @@
       $('m-item').addEventListener('change', syncItemFields);
       syncItemFields();
       $('m-date').value = Core.isoDate(new Date());
+      $('c-date').value = Core.isoDate(new Date());
       const saved = sessionStorage.getItem(SECRET_KEY);
       if (saved) $('admin-secret').value = saved;
     })();
