@@ -119,8 +119,24 @@
         if (show) {
             setMsg('');
             prefill();
+            updateNoteCount(form);
             form.querySelector('select, input')?.focus();
         }
+    }
+
+    /** 業務備註最少字數：空白、換行不算字 */
+    const NOTE_MIN = 50;
+    const noteLength = (v) => Array.from(String(v || '').replace(/\s+/g, '')).length;
+
+    function updateNoteCount(form) {
+        const el = $('acf-note-count');
+        const note = form?.elements?.note;
+        if (!el || !note) return;
+        const n = noteLength(note.value);
+        el.textContent = n >= NOTE_MIN
+            ? '已寫 ' + n + ' 字 ✓'
+            : '已寫 ' + n + ' 字，還差 ' + (NOTE_MIN - n) + ' 字才能送出';
+        el.classList.toggle('is-ok', n >= NOTE_MIN);
     }
 
     function validate(form) {
@@ -134,6 +150,14 @@
         if (first) {
             setMsg('還有欄位沒填，請補齊紅框欄位', 'err');
             first.focus();
+            return false;
+        }
+        const note = form.elements.note;
+        const noteLen = noteLength(note.value);
+        if (noteLen < NOTE_MIN) {
+            note.closest('.acf-field')?.classList.add('is-invalid');
+            setMsg('業務備註至少要 ' + NOTE_MIN + ' 字（目前 ' + noteLen + ' 字），請把前因後果、是否有關懷挽留寫清楚', 'err');
+            note.focus();
             return false;
         }
         const start = form.elements.leaseStart;
@@ -453,6 +477,7 @@
 
         const clear = (e) => e.target.closest('.acf-field')?.classList.remove('is-invalid');
         form.addEventListener('input', clear);
+        form.addEventListener('input', (e) => { if (e.target.name === 'note') updateNoteCount(form); });
         form.addEventListener('change', clear);
         form.addEventListener('submit', (e) => { e.preventDefault(); submit(form); });
         $('acf-new')?.addEventListener('click', () => showForm(true));

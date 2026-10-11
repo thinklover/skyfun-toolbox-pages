@@ -355,6 +355,161 @@
     }
   }
 
+  /* ---------- 行政管理部：進入工具箱時要求加官方帳號並綁定 LINE ---------- */
+
+  const LINE_ADD_URL = 'https://line.me/R/ti/p/@522ubeym';
+  const LINE_GATE_TEAMS = new Set(['行政管理部']);
+  const lineGate = { checked: false, code: '', expiresAt: '', error: '', busy: false };
+
+  function lineGateSkipKey() {
+    return `skyfun-line-gate-skip-${session?.user?.id || ''}`;
+  }
+
+  function lineGateEsc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+
+  function lineGateTime(iso) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  async function maybeLineGate() {
+    if (lineGate.checked || !session?.supabaseToken) return;
+    const team = String(session.supabaseUser?.team || session.user?.team || '').trim();
+    if (!LINE_GATE_TEAMS.has(team)) return;
+    lineGate.checked = true;
+    try {
+      if (sessionStorage.getItem(lineGateSkipKey())) return;
+    } catch {
+      /* ignore */
+    }
+    let info;
+    try {
+      info = await rpc('line_my_binding', { p_token: session.supabaseToken });
+    } catch {
+      return;
+    }
+    if (!info?.ok || info.bound) return;
+    renderLineGate();
+  }
+
+  function ensureLineGate() {
+    let gate = $('toolbox-line-gate');
+    if (gate) return gate;
+    gate = document.createElement('div');
+    gate.id = 'toolbox-line-gate';
+    gate.setAttribute('role', 'dialog');
+    gate.setAttribute('aria-modal', 'true');
+    document.body.appendChild(gate);
+    gate.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-lg]');
+      if (btn) void lineGateAction(btn.dataset.lg);
+    });
+    if (!document.getElementById('toolbox-line-gate-style')) {
+      const st = document.createElement('style');
+      st.id = 'toolbox-line-gate-style';
+      st.textContent = [
+        '#toolbox-line-gate{position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(2,6,23,.72);backdrop-filter:blur(4px)}',
+        '#toolbox-line-gate.hidden{display:none!important}',
+        '#toolbox-line-gate .lg-card{width:100%;max-width:25rem;max-height:calc(100vh - 2rem);overflow:auto;border-radius:1.25rem;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);box-shadow:0 28px 70px rgba(2,6,23,.5);padding:1.5rem 1.35rem 1.2rem;color:#0f172a}',
+        '#toolbox-line-gate .lg-head{display:flex;align-items:center;gap:.75rem;margin-bottom:.8rem}',
+        '#toolbox-line-gate .lg-mark{flex:0 0 auto;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:900;font-size:.95rem;color:#fff;background:linear-gradient(145deg,#06c755,#04a344);box-shadow:0 8px 18px rgba(6,199,85,.35)}',
+        '#toolbox-line-gate h2{margin:0;font-size:1.15rem;font-weight:900}',
+        '#toolbox-line-gate .lg-sub{margin:.15rem 0 0;font-size:.8rem;color:#64748b}',
+        '#toolbox-line-gate .lg-why{margin:0 0 .9rem;padding:.7rem .8rem;border-radius:.8rem;background:#f0fdf4;border:1px solid #bbf7d0;font-size:.85rem;line-height:1.55;color:#14532d}',
+        '#toolbox-line-gate ol{margin:0;padding:0;list-style:none;display:grid;gap:.55rem}',
+        '#toolbox-line-gate li{display:flex;gap:.6rem;align-items:flex-start;font-size:.9rem;line-height:1.5}',
+        '#toolbox-line-gate li > b{flex:0 0 auto;width:1.55rem;height:1.55rem;border-radius:999px;display:grid;place-items:center;font-size:.8rem;color:#fff;background:#0f766e}',
+        '#toolbox-line-gate li.is-done > b{background:#06c755}',
+        '#toolbox-line-gate .lg-add{display:inline-block;margin-top:.3rem;padding:.4rem .85rem;border-radius:.7rem;background:#06c755;color:#fff;font-weight:800;text-decoration:none}',
+        '#toolbox-line-gate .lg-id{font-size:.78rem;color:#64748b}',
+        '#toolbox-line-gate .lg-code{display:inline-block;margin-top:.3rem;padding:.3rem .8rem;border-radius:.7rem;background:#0f172a;color:#fff;font:900 1.5rem/1.2 ui-monospace,Consolas,monospace;letter-spacing:.25em}',
+        '#toolbox-line-gate .lg-note{font-size:.78rem;color:#64748b}',
+        '#toolbox-line-gate .lg-btns{display:flex;gap:.5rem;margin-top:1rem}',
+        '#toolbox-line-gate .lg-btn{flex:1;border:0;border-radius:.9rem;padding:.7rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#0f766e,#0d9488);cursor:pointer}',
+        '#toolbox-line-gate .lg-btn:disabled{opacity:.6;cursor:wait}',
+        '#toolbox-line-gate .lg-btn.is-ghost{color:#0f766e;background:#ecfdf5;border:1px solid #99f6e4}',
+        '#toolbox-line-gate .lg-err{margin:.7rem 0 0;font-size:.82rem;color:#b91c1c}',
+        '#toolbox-line-gate .lg-ok{text-align:center;padding:.6rem 0}',
+        '#toolbox-line-gate .lg-ok div{font-size:2.4rem}',
+        '#toolbox-line-gate .lg-skip{display:block;margin:.8rem auto 0;border:0;background:transparent;color:#94a3b8;font-size:.78rem;text-decoration:underline;cursor:pointer}'
+      ].join('');
+      document.head.appendChild(st);
+    }
+    return gate;
+  }
+
+  function renderLineGate(done) {
+    const gate = ensureLineGate();
+    gate.classList.remove('hidden');
+    if (done) {
+      gate.innerHTML = `<div class="lg-card"><div class="lg-ok"><div>✅</div><h2>LINE 綁定完成</h2>
+        <p class="lg-sub">${lineGateEsc(done)}，之後的通知會傳到這個 LINE。</p></div>
+        <div class="lg-btns"><button type="button" class="lg-btn" data-lg="close">開始使用工具箱</button></div></div>`;
+      return;
+    }
+    const busy = lineGate.busy ? ' disabled' : '';
+    const codeStep = lineGate.code
+      ? `<span>在小幫手的聊天室傳送這 6 位數驗證碼：</span><br><span class="lg-code">${lineGateEsc(lineGate.code)}</span><br><span class="lg-note">10 分鐘內有效（到 ${lineGateEsc(lineGateTime(lineGate.expiresAt))}），傳出後按「我傳好了」。</span>`
+      : '<span>按下方「取得驗證碼」，再到小幫手的聊天室傳送那 6 位數驗證碼。</span>';
+    gate.innerHTML = `<div class="lg-card">
+      <div class="lg-head"><div class="lg-mark">LINE</div><div><h2>請綁定 LINE 官方帳號</h2><p class="lg-sub">行政管理部同仁都要完成，約 1 分鐘</p></div></div>
+      <p class="lg-why">之後抽查結果、考試、績效與公告等通知會用 LINE 傳給你，請先加入官方帳號並完成綁定。</p>
+      <ol>
+        <li><b>1</b><div>加入官方帳號「星鴻萬能小幫手」好友<br><a class="lg-add" href="${LINE_ADD_URL}" target="_blank" rel="noopener">＋ 加好友</a> <span class="lg-id">（電腦版可在 LINE 搜尋 ID：@522ubeym）</span></div></li>
+        <li class="${lineGate.code ? 'is-done' : ''}"><b>2</b><div>${codeStep}</div></li>
+      </ol>
+      <div class="lg-btns">
+        <button type="button" class="lg-btn${lineGate.code ? ' is-ghost' : ''}" data-lg="code"${busy}>${lineGate.code ? '重新取得驗證碼' : '取得驗證碼'}</button>
+        ${lineGate.code ? `<button type="button" class="lg-btn" data-lg="check"${busy}>${lineGate.busy ? '確認中…' : '我傳好了'}</button>` : ''}
+      </div>
+      ${lineGate.error ? `<p class="lg-err">${lineGateEsc(lineGate.error)}</p>` : ''}
+      <button type="button" class="lg-skip" data-lg="skip">稍後再綁（下次進入工具箱會再提醒）</button>
+    </div>`;
+  }
+
+  async function lineGateAction(kind) {
+    if (kind === 'close') {
+      $('toolbox-line-gate')?.classList.add('hidden');
+      return;
+    }
+    if (kind === 'skip') {
+      try {
+        sessionStorage.setItem(lineGateSkipKey(), '1');
+      } catch {
+        /* ignore */
+      }
+      $('toolbox-line-gate')?.classList.add('hidden');
+      return;
+    }
+    if (lineGate.busy) return;
+    lineGate.busy = true;
+    lineGate.error = '';
+    renderLineGate();
+    try {
+      if (kind === 'code') {
+        const res = await rpc('line_bind_code', { p_token: session?.supabaseToken || '' });
+        if (!res?.ok) throw new Error(res?.error || '取得驗證碼失敗');
+        lineGate.code = res.code;
+        lineGate.expiresAt = res.expiresAt;
+      } else if (kind === 'check') {
+        const info = await rpc('line_my_binding', { p_token: session?.supabaseToken || '' });
+        if (info?.bound) {
+          lineGate.busy = false;
+          renderLineGate(`已綁定 ${info.lineName || 'LINE'}`);
+          return;
+        }
+        lineGate.error = '還沒收到綁定，請確認已加好友，並在小幫手聊天室傳送上面的驗證碼後再按一次。';
+      }
+    } catch (e) {
+      lineGate.error = e.message || '連線失敗，請再試一次';
+    }
+    lineGate.busy = false;
+    renderLineGate();
+  }
+
   async function finishAuthEntry() {
     if (needsTeam()) {
       showTeamGate();
@@ -389,6 +544,7 @@
     document.dispatchEvent(new CustomEvent('skyfun-auth-ready', { detail: { user: session.user } }));
     patchShowPage();
     logPage('home');
+    void maybeLineGate();
   }
 
   function lockApp() {
@@ -457,6 +613,8 @@
     session = null;
     ready = false;
     hideTeamGate();
+    Object.assign(lineGate, { checked: false, code: '', expiresAt: '', error: '' });
+    $('toolbox-line-gate')?.classList.add('hidden');
     lockApp();
     setMode('login');
     setGateMessage('已登出', false);

@@ -401,6 +401,18 @@
     );
   }
 
+  /** 行政專區「行政問答」卡片上的前三名 */
+  function renderCardTop(top) {
+    const el = $('aqa-card-top');
+    if (!el) return;
+    const medals = ['🥇', '🥈', '🥉'];
+    el.innerHTML = (top || []).length
+      ? top.slice(0, 3).map(function (row, i) {
+        return '<span class="adz-top-item"><i>' + medals[i] + '</i><span>' + esc(row.userName) + '</span><b>' + esc(row.totalPoints) + '<small>點</small></b></span>';
+      }).join('')
+      : '<span class="adz-top-empty">本月還沒有人上榜</span>';
+  }
+
   async function loadLeaderboard() {
     const el = $('aqa-rank');
     if (!el) return;
@@ -410,10 +422,25 @@
       const data = await rpc('admin_qa_leaderboard', { p_token: token() });
       if (!data?.ok) throw new Error(data?.error || '讀取失敗');
       el.innerHTML = rankBoardHtml(data.top || [], '', data.periodFrom, data.periodTo);
+      renderCardTop(data.top || []);
     } catch (err) {
       el.innerHTML = rankBoardHtml([], err.message || String(err));
     }
   }
+
+  /** 卡片點一下展開／收合問答區；open 有給值時直接指定 */
+  window.adminQaToggle = function (open) {
+    const panel = $('aqa-fold');
+    const card = $('aqa-entry');
+    if (!panel) return;
+    const show = typeof open === 'boolean' ? open : panel.hidden;
+    panel.hidden = !show;
+    if (card) {
+      card.setAttribute('aria-expanded', String(show));
+      card.classList.toggle('is-open', show);
+    }
+    if (show) requestAnimationFrame(function () { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  };
 
   function renderList(items) {
     const list = $('aqa-list');

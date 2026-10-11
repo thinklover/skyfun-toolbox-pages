@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>行政成長羅盤</title>
+  <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-6">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase-config.js?v=20260922-qa-sync1"></script>
+  <script src="./js/admin-points-core.js?v=20261011-41"></script>
+</head>
+<body class="gc-page">
+  <header class="gc-top">
+    <div class="gc-brand">
+      <span class="gc-logo">🧭</span>
+      <div>
+        <h1>行政成長羅盤</h1>
+        <p>看清楚自己在哪裡、下一步往哪走</p>
+      </div>
+    </div>
+    <div class="gc-tools hidden" id="gc-tools">
+      <label>人員 <select id="gc-person"></select></label>
+      <label>業績月 <select id="gc-month"></select></label>
+      <button type="button" class="gc-btn" id="gc-reload">重新整理</button>
+    </div>
+    <a class="gc-btn" href="./index.html">← 回工具箱</a>
+  </header>
+
+  <main class="gc-main">
+    <p class="gc-msg hidden" id="gc-msg"></p>
+    <section id="gc-login" class="gc-card gc-login hidden">
+      <h2>請先登入工具箱</h2>
+      <p>成長羅盤會讀星鴻審核紀錄與人力明細，需要先在同一個瀏覽器登入工具箱。</p>
+      <a class="gc-btn gc-btn--main" href="./index.html">前往工具箱登入</a>
+    </section>
+    <div id="gc-root"></div>
+  </main>
+
+  <script src="./js/growth-compass.js?v=20261011-15"></script>
+</body>
+</html>

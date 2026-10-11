@@ -3,35 +3,92 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>行政點數表後台 — 星鴻工具箱</title>
+  <title>行政績效中心後台 — 星鴻工具箱</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261009-5"></script>
+  <script src="../js/admin-points-core.js?v=20261011-41"></script>
+  <script src="../js/admin-points-report.js?v=20261011-1"></script>
+  <script src="../js/guide-exam-data.js?v=20261010-1"></script>
   <style>
-    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-    input, select, textarea { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.45rem 0.65rem; color: #f8fafc; }
+    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #f1f5f9; color: #0f172a; min-height: 100vh; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+    input, select, textarea { background: #fff; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.45rem 0.65rem; color: #0f172a; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid #c7d2fe; border-color: #6366f1; }
     textarea { width: 100%; min-height: 5rem; }
-    .tab-btn { border: 1px solid #475569; background: #0f172a; color: #94a3b8; border-radius: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
-    .tab-btn.is-active { background: #4338ca; border-color: #6366f1; color: #fff; }
     .btn { border: 0; border-radius: 0.5rem; padding: 0.45rem 0.9rem; font-size: 0.82rem; font-weight: 800; cursor: pointer; }
-    .btn-main { background: #4338ca; color: #fff; }
-    .btn-ghost { background: transparent; border: 1px solid #475569; color: #cbd5e1; }
-    .btn-del { background: #7f1d1d; color: #fecaca; padding: 0.25rem 0.6rem; font-size: 0.74rem; }
+    .btn-main { background: #4f46e5; color: #fff; }
+    .btn-main:hover { background: #4338ca; }
+    .btn-ghost { background: #fff; border: 1px solid #cbd5e1; color: #334155; }
+    .btn-ghost:hover { border-color: #6366f1; color: #4338ca; }
+    .btn-del { background: #fee2e2; color: #b91c1c; padding: 0.25rem 0.6rem; font-size: 0.74rem; }
+    .btn-del:hover { background: #fecaca; }
     .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.74rem; }
     .btn:disabled { opacity: 0.6; cursor: wait; }
     table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    th, td { border-bottom: 1px solid #334155; padding: 0.45rem 0.4rem; text-align: left; white-space: nowrap; }
-    th { color: #94a3b8; font-size: 0.72rem; }
+    th, td { border-bottom: 1px solid #e2e8f0; padding: 0.45rem 0.4rem; text-align: left; white-space: nowrap; vertical-align: middle; }
+    th { color: #64748b; font-size: 0.72rem; background: #f8fafc; }
     td select { padding: 0.2rem 0.4rem; font-size: 0.78rem; }
     .muted { color: #64748b; font-size: 0.78rem; }
-    .field label { display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.2rem; }
+    .field label { display: block; font-size: 0.72rem; color: #64748b; margin-bottom: 0.2rem; font-weight: 700; }
     .row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: end; }
-    .ok { color: #6ee7b7; }
-    .err { color: #fca5a5; }
-    .is-off td { color: #64748b; }
-    .rpt-sheet { background: #fff; color: #0f172a; border-radius: 0.75rem; padding: 1rem; overflow-x: auto; }
+    .ok { color: #047857; }
+    .err { color: #b91c1c; }
+    .is-off td { color: #94a3b8; }
+    .train-cell { min-width: 8.5rem; font-size: 0.74rem; line-height: 1.5; }
+    .train-cell.is-on { background: #f0fdf4; }
+    .train-cell b { font-size: 0.82rem; }
+    .train-cell .pend { color: #94a3b8; }
+
+    .hidden { display: none !important; }
+
+    /* 版面：上方工具列＋左側選單＋右側內容 */
+    .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; }
+    .topbar h1 { font-size: 1.35rem; font-weight: 900; color: #312e81; }
+    .topbar .back { font-size: 0.78rem; color: #64748b; }
+    .topbar .back:hover { color: #4338ca; }
+    .topbar-tools { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+    .month-pick { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: #475569; font-weight: 800; }
+    .layout { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 1rem; align-items: start; }
+    .side { position: sticky; top: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.5rem; }
+    .side h6 { margin: 0.7rem 0.55rem 0.25rem; font-size: 0.68rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.04em; }
+    .side h6:first-child { margin-top: 0.2rem; }
+    .tab-btn { display: block; width: 100%; text-align: left; border: 0; background: transparent; color: #334155; border-radius: 0.55rem; padding: 0.45rem 0.6rem; font-size: 0.86rem; font-weight: 700; cursor: pointer; }
+    .tab-btn:hover { background: #eef2ff; color: #3730a3; }
+    .tab-btn.is-active { background: #4f46e5; color: #fff; }
+    .content { min-width: 0; }
+    .page-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; }
+    .page-head h2 { font-size: 1.15rem; font-weight: 900; color: #1e1b4b; }
+    .page-head p { font-size: 0.8rem; color: #64748b; }
+    .help { font-size: 0.78rem; color: #475569; }
+    .help > summary { display: inline-block; cursor: pointer; color: #4f46e5; font-weight: 800; list-style: none; }
+    .help > summary::-webkit-details-marker { display: none; }
+    .help > summary::before { content: 'ⓘ '; }
+    .help[open] > summary { margin-bottom: 0.35rem; }
+    .help p { line-height: 1.7; border-left: 3px solid #c7d2fe; padding-left: 0.6rem; margin-top: 0.2rem; }
+    .form-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.8rem; padding: 0.7rem 0.8rem; }
+    .form-card > b { display: block; font-size: 0.8rem; color: #3730a3; margin-bottom: 0.45rem; }
+    .fold { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.8rem; }
+    .fold > summary { cursor: pointer; padding: 0.55rem 0.8rem; font-size: 0.84rem; font-weight: 800; color: #3730a3; list-style: none; }
+    .fold > summary::-webkit-details-marker { display: none; }
+    .fold > summary::before { content: '▸ '; color: #6366f1; }
+    .fold[open] > summary::before { content: '▾ '; }
+    .fold > summary:hover { color: #1e1b4b; }
+    .fold > .fold-body { padding: 0 0.8rem 0.8rem; }
+    .list-title { font-size: 0.9rem; font-weight: 900; color: #1e1b4b; }
+    .list-title .muted { font-weight: 600; margin-left: 0.4rem; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 0.6rem; }
+    .toolbar .push { margin-left: auto; display: flex; gap: 0.4rem; }
+    .pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 800; }
+    .pill-ok { background: #d1fae5; color: #065f46; }
+    .pill-warn { background: #fef3c7; color: #92400e; }
+    .pill a { text-decoration: underline; }
+    .toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 50; max-width: 26rem; padding: 0.6rem 0.9rem; border-radius: 0.7rem; font-size: 0.85rem; font-weight: 800; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18); cursor: pointer; }
+    .toast.is-ok { background: #065f46; color: #fff; }
+    .toast.is-err { background: #b91c1c; color: #fff; }
+
+    /* 每月進度報表 */
+    .rpt-sheet { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1rem; overflow-x: auto; }
     .rpt-sheet table { font-size: 0.8rem; border-collapse: collapse; width: 100%; }
     .rpt-sheet th, .rpt-sheet td { border: 1px solid #94a3b8; padding: 0.35rem 0.45rem; text-align: center; color: #0f172a; white-space: nowrap; }
     .rpt-sheet th { background: #d9ead3; font-weight: 900; font-size: 0.78rem; }
@@ -44,23 +101,156 @@
     .rpt-proj-lvr { background: #fce5cd; }
     .rpt-proj-list { background: #ddebf7; }
     .rpt-sub { margin: 1rem 0 0.4rem; font-weight: 900; font-size: 0.95rem; color: #0b1f44; }
+
+    /* 地區承接率 */
+    .tk-area { margin-bottom: 1.2rem; }
+    .tk-area-title { background: #0b1f44; color: #fff; font-weight: 900; text-align: center; padding: 0.4rem; font-size: 0.92rem; }
+    .rpt-sheet .tk-table th, .rpt-sheet .tk-table td { padding: 0.25rem 0.35rem; font-size: 0.74rem; }
+    .rpt-sheet .tk-table th.tk-region { background: #d9ead3; font-size: 0.82rem; }
+    .rpt-sheet .tk-table th.tk-week { background: #fff; font-weight: 800; line-height: 1.3; }
+    .rpt-sheet .tk-table th.tk-week small { display: block; font-weight: 600; color: #475569; }
+    .rpt-sheet .tk-table th.tk-label { background: #d9ead3; min-width: 4.8rem; }
+    .rpt-sheet .tk-table td.tk-cell { line-height: 1.25; min-width: 5.6rem; }
+    .tk-cell b { display: block; font-size: 0.8rem; }
+    .tk-cell small { color: #334155; font-size: 0.66rem; }
+    .rpt-sheet .tk-table td.tk-g { background: #d9f2d9; }
+    .rpt-sheet .tk-table td.tk-y { background: #fff2cc; }
+    .rpt-sheet .tk-table td.tk-r { background: #f8d7da; }
+    .rpt-sheet .tk-table tr.tk-total th, .rpt-sheet .tk-table tr.tk-total td { border-top: 2px solid #0b1f44; }
+    .rpt-sheet .tk-table tr.tk-total td.tk-none { background: #fbf3e4; }
+    .rpt-sheet .tk-table td.tk-month { border-left: 2px solid #0b1f44; }
+    .tk-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; font-size: 0.75rem; color: #475569; }
+    .tk-legend i { display: inline-block; width: 0.8rem; height: 0.8rem; border: 1px solid #94a3b8; vertical-align: -0.1rem; margin-right: 0.25rem; }
+    .tk-who { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.6rem; }
+    .tk-who > div { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.6rem; padding: 0.5rem 0.65rem; font-size: 0.8rem; }
+    .tk-who b { color: #1e1b4b; }
+    .rpt-sheet .kpi-table th, .rpt-sheet .kpi-table td { padding: 0.3rem 0.25rem; }
+    .rpt-sheet .kpi-table th { white-space: normal; word-break: keep-all; }
+    .rpt-sheet .kpi-table td.kpi-goal { font-weight: 800; color: #475569; font-size: 0.78rem; }
+    .rpt-sheet .kpi-table td.tk-cell { min-width: 0; white-space: normal; }
+    .rpt-sheet .kpi-table td.tk-cell b { font-size: 0.95rem; }
+    .rpt-sheet .kpi-table td.tk-cell small { font-size: 0.68rem; word-break: keep-all; }
+    .rpt-sheet .kpi-table td.tk-none { background: #f8fafc; color: #94a3b8; }
+    .rpt-sheet .kpi-table th.tk-label { min-width: 0; white-space: normal; word-break: keep-all; }
+    .kpi-src td, .kpi-src th { text-align: center; }
+    .kpi-src td.l, .kpi-src th.l { text-align: left; }
+    .kpi-src tr.sum td { font-weight: 900; background: #eef5f8; }
+
+    /* 統計卡、考試 */
+    .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.65rem; padding: 0.6rem 0.75rem; }
+    .stat b { display: block; font-size: 1.35rem; color: #1e1b4b; }
+    .stat span { font-size: 0.75rem; color: #64748b; }
+    .seg { padding: 0.3rem 0.8rem; border-radius: 999px; border: 1px solid #cbd5e1; background: #fff; font-size: 0.8rem; font-weight: 800; color: #334155; }
+    .seg.is-on { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    tr.click { cursor: pointer; }
+    tr.click:hover td { background: #eef2ff; }
+    tr.click.is-open td { background: #e0e7ff; }
+    .pass { color: #047857; font-weight: 800; }
+    .fail { color: #be123c; font-weight: 800; }
+    .badge { font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 800; }
+    .b-done { background: #d1fae5; color: #065f46; }
+    .b-fail { background: #fee2e2; color: #b91c1c; }
+    .b-run { background: #dbeafe; color: #1d4ed8; }
+    .b-void { background: #f1f5f9; color: #475569; }
+    .b-warn { background: #fef3c7; color: #92400e; margin-left: 0.25rem; }
+    .bar { height: 0.45rem; border-radius: 999px; background: #e2e8f0; overflow: hidden; min-width: 6rem; }
+    .bar > span { display: block; height: 100%; background: #6366f1; }
+    .detail { background: #f8fafc; border-top: 2px solid #6366f1; white-space: normal; }
+    .q { padding: 0.45rem 0; border-bottom: 1px dashed #cbd5e1; font-size: 0.82rem; }
+    .q.ok { border-left: 3px solid #10b981; padding-left: 0.5rem; }
+    .q.bad { border-left: 3px solid #ef4444; padding-left: 0.5rem; }
+    .q .res { float: right; font-weight: 800; }
+    .q .line { margin-left: 0.75rem; color: #334155; }
+    .q .line.key { color: #047857; }
+    .q .line span { color: #94a3b8; display: inline-block; min-width: 4.2rem; }
+
+    /* 改善計畫 */
+    .wrap-cell { white-space: pre-wrap; word-break: break-word; min-width: 12rem; max-width: 22rem; line-height: 1.5; }
+    .g-D { color: #b91c1c; font-weight: 900; }
+    .g-C { color: #b45309; font-weight: 900; }
+    .g-B { color: #1d4ed8; font-weight: 900; }
+    .g-A { color: #047857; font-weight: 900; }
+
+    /* 主管報告 */
+    .br-sheet { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1rem 1.1rem; overflow-x: auto; }
+    .br-title { background: #0b1f44; color: #fff; font-size: 1.25rem; font-weight: 900; padding: 0.65rem 0.9rem; border-radius: 0.4rem 0.4rem 0 0; }
+    .br-info { background: #fbf3e4; font-weight: 800; padding: 0.45rem 0.9rem; font-size: 0.8rem; }
+    .br-h { margin: 1.1rem 0 0.5rem; padding-left: 0.55rem; border-left: 4px solid #4f46e5; font-size: 1rem; font-weight: 900; color: #1e1b4b; }
+    .br-h small { margin-left: 0.5rem; font-size: 0.72rem; font-weight: 600; color: #64748b; }
+    .br-bullets { margin: 0; padding-left: 1.3rem; list-style: disc; font-size: 0.88rem; line-height: 1.75; }
+    .br-muted { color: #94a3b8; font-size: 0.8rem; }
+    .br-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.5rem; }
+    .br-kpi { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.55rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 0.6rem; background: #f8fafc; }
+    .br-kpi > span { font-size: 0.72rem; font-weight: 800; color: #64748b; }
+    .br-kpi > b { font-size: 1.25rem; font-weight: 900; }
+    .br-kpi > small { font-size: 0.68rem; color: #94a3b8; }
+    .br-tag { align-self: flex-start; margin-top: 0.15rem; padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 0.7rem; font-style: normal; font-weight: 900; color: #64748b; background: #e2e8f0; }
+    .br-tag.is-good { color: #15803d; background: #dcfce7; }
+    .br-tag.is-bad { color: #b91c1c; background: #fee2e2; }
+    .br-nodes { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.5rem 1rem; }
+    .br-node { padding: 0.5rem 0.65rem; border-radius: 0.6rem; background: #f8fafc; break-inside: avoid; }
+    .br-nhead { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .br-nhead b { font-size: 0.92rem; }
+    .br-nhead em { font-size: 0.78rem; font-style: normal; font-weight: 900; color: #64748b; white-space: nowrap; }
+    .br-nhead em.is-good { color: #15803d; }
+    .br-nhead em.is-bad { color: #b91c1c; }
+    .br-nline { display: grid; grid-template-columns: 2.6rem 1fr 7rem; gap: 0.4rem; align-items: center; margin-top: 0.18rem; font-size: 0.72rem; color: #64748b; font-weight: 800; }
+    .br-ntrack { height: 0.8rem; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+    .br-ntrack i { display: block; height: 100%; border-radius: 999px; background: #6366f1; }
+    .br-ntrack i.is-prev { background: #cbd5e1; }
+    .br-ntrack i.is-good { background: #22c55e; }
+    .br-ntrack i.is-bad { background: #ef4444; }
+    .br-nval b { color: #0f172a; font-size: 0.78rem; }
+    .br-nval small { margin-left: 0.25rem; color: #94a3b8; font-weight: 600; }
+    .br-grades { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.5rem; }
+    .br-grade { padding: 0.5rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 0.6rem; }
+    .br-grade b { font-size: 1.2rem; margin-right: 0.4rem; }
+    .br-grade span { font-weight: 800; color: #0f172a; }
+    .br-grade small { display: block; margin-top: 0.15rem; font-size: 0.72rem; color: #475569; font-weight: 600; white-space: normal; }
+    .br-table { font-size: 0.78rem; border-collapse: collapse; width: 100%; }
+    .br-table th, .br-table td { border: 1px solid #cbd5e1; padding: 0.3rem 0.4rem; text-align: center; white-space: nowrap; }
+    .br-table th { background: #d9ead3; color: #0f172a; font-weight: 900; font-size: 0.74rem; }
+    .br-table td small { margin-left: 0.2rem; font-size: 0.66rem; color: #64748b; }
+    .br-table td.br-l { text-align: left; }
+    .br-table td.br-wrap { white-space: normal; min-width: 16rem; }
+    .br-table td.is-good { color: #15803d; font-weight: 900; }
+    .br-table td.is-bad { color: #b91c1c; font-weight: 900; }
+    .br-table tr.br-total td { background: #eef5f8; font-weight: 800; border-top: 2px solid #0b1f44; }
+    /* 主管報告 end */
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; display: flex; gap: 0.25rem; overflow-x: auto; }
+      .side h6 { display: none; }
+      .tab-btn { width: auto; white-space: nowrap; }
+    }
     @media print {
       body { background: #fff; padding: 0; max-width: none; }
-      body > *:not(#main-panel), #main-panel > *:not(#tab-report), #tab-report > *:not(#report-sheet) { display: none !important; }
-      #main-panel { background: none; border: 0; padding: 0; }
-      .rpt-sheet { padding: 0; border-radius: 0; }
+      body > *:not(#main-panel), #main-panel > *:not(.layout), .layout > .side { display: none !important; }
+      .content > *:not(.print-on), .print-on > *:not(.print-sheet) { display: none !important; }
+      #main-panel, .layout, .content { display: block; background: none; border: 0; padding: 0; box-shadow: none; }
+      .rpt-sheet { padding: 0; border: 0; border-radius: 0; overflow: visible; }
+      .tk-area { break-inside: avoid; }
+      .br-sheet { padding: 0; border: 0; border-radius: 0; overflow: visible; }
+      .br-sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .br-h, .br-kpis, .br-nodes { break-inside: avoid; break-after: avoid; }
       @page { size: A4 landscape; margin: 8mm; }
     }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
-  <header>
-    <h1 class="text-2xl font-black text-indigo-300">行政點數表後台</h1>
-    <p class="text-slate-400 text-sm mt-1">組長維護人力明細、登錄手填點數 · <a class="text-indigo-300 underline" href="../index.html">回工具箱</a></p>
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+  <header class="topbar">
+    <h1>行政績效中心後台</h1>
+    <a class="back" href="../index.html">← 回工具箱</a>
+    <div class="topbar-tools hidden" id="top-tools">
+      <label class="month-pick" id="month-wrap">業績月 <select id="month"></select></label>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-reload">重新整理</button>
+      <span id="who"></span>
+    </div>
   </header>
 
-  <section class="card p-4 space-y-3" id="login-panel">
-    <label class="block text-sm text-slate-400">後台密碼（同行政 QA 檢核後台）</label>
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">後台密碼（同行政 QA 檢核後台）</label>
     <div class="flex flex-wrap gap-2">
       <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
       <button type="button" id="btn-login" class="btn btn-main">連線</button>
@@ -68,101 +258,378 @@
     <p id="login-msg" class="text-sm err hidden"></p>
   </section>
 
-  <section class="card p-4 hidden space-y-4" id="main-panel">
-    <div class="row">
-      <div class="field">
-        <label>業績月</label>
-        <select id="month"></select>
+  <div id="msg" class="toast hidden" title="點一下關閉"></div>
+
+  <section class="hidden" id="main-panel">
+   <div class="layout">
+    <nav class="side" id="nav">
+      <h6>報表</h6>
+      <button type="button" class="tab-btn" data-tab="boss">🧾 主管月報／週報</button>
+      <button type="button" class="tab-btn" data-tab="report">📊 每月進度報表</button>
+      <button type="button" class="tab-btn" data-tab="takeup">🏢 地區承接率</button>
+      <button type="button" class="tab-btn" data-tab="kpi">📈 KPI 報表</button>
+      <h6>組長登錄</h6>
+      <button type="button" class="tab-btn" data-tab="manual">✍️ 人工計點</button>
+      <button type="button" class="tab-btn" data-tab="check">🔍 審件抽查</button>
+      <button type="button" class="tab-btn" data-tab="incident">⚠️ 客訴／懲處</button>
+      <h6>訓練與考試</h6>
+      <button type="button" class="tab-btn" data-tab="training">🎓 教育訓練</button>
+      <button type="button" class="tab-btn" data-tab="exam">📝 執行要點考試</button>
+      <h6>追蹤</h6>
+      <button type="button" class="tab-btn" data-tab="plan">📌 改善計畫</button>
+      <h6>設定</h6>
+      <button type="button" class="tab-btn" data-tab="staff">👥 人力明細</button>
+      <button type="button" class="tab-btn" data-tab="org">🏢 組織圖</button>
+    </nav>
+
+    <main class="content card p-4">
+    <div id="tab-boss" class="space-y-4 hidden">
+      <div class="page-head"><h2>主管月報／週報</h2><p>一鍵產生給老闆看的報告；可列印成 PDF、下載 Excel，或複製文字摘要貼到 LINE</p></div>
+      <details class="help"><summary>報告內容與算法</summary>
+        <p>月報＝上方選的業績月 vs 上個業績月；週報＝選的那一週（週一到週日）vs 前一週。對象是人力明細上在職的正職行政（不含工讀生）。內容有：重點摘要（自動寫好的文字）、關鍵指標與上期比較、各節點平均審一件要多久、綜合評等分布（月報）、各組比較、人員明細、需關注人員、審件抽查未通過明細、客訴／懲處明細。點數、評等與工具箱「行政績效中心」同一套算法；耗時不含實價登錄。每人的速度變化是拿同一人上期同節點的平均來比，不會因為本期多做了比較費時的節點就被算成變慢。</p>
+      </details>
+      <div class="row">
+        <div class="field"><label>報告類型</label><select id="b-type"><option value="month">月報（本業績月 vs 上個業績月）</option><option value="week">週報（選定週 vs 前一週）</option></select></div>
+        <div class="field hidden" id="b-week-wrap"><label>週別</label><select id="b-week"></select></div>
+        <button type="button" class="btn btn-main" id="btn-boss">一鍵產生報告</button>
+        <button type="button" class="btn btn-ghost" id="btn-boss-print" disabled>列印／存 PDF</button>
+        <button type="button" class="btn btn-ghost" id="btn-boss-xlsx" disabled>下載 Excel</button>
+        <button type="button" class="btn btn-ghost" id="btn-boss-copy" disabled>複製文字摘要（貼 LINE）</button>
+        <span class="muted" id="boss-stamp"></span>
       </div>
-      <button type="button" class="btn btn-ghost" id="btn-reload">重新整理</button>
-      <p class="muted" id="who"></p>
-    </div>
-    <p id="msg" class="text-sm"></p>
-    <div class="flex flex-wrap gap-2">
-      <button type="button" class="tab-btn is-active" data-tab="manual">手填點數</button>
-      <button type="button" class="tab-btn" data-tab="check">審件抽查</button>
-      <button type="button" class="tab-btn" data-tab="staff">人力明細</button>
-      <button type="button" class="tab-btn" data-tab="report">每月進度報表</button>
+      <div id="boss-sheet" class="print-sheet"><p class="muted">選好業績月與報告類型，按「一鍵產生報告」。第一次要讀本月與上月的星鴻資料，約 10～20 秒。</p></div>
     </div>
 
-    <div id="tab-manual" class="space-y-4">
+    <div id="tab-report" class="space-y-4 hidden">
+      <div class="page-head"><h2>每月進度報表</h2><p>依上方業績月自動產出，可下載 Excel 或列印</p></div>
+      <details class="help"><summary>資料來源與算法</summary>
+        <p>資料來源：星鴻審核紀錄、補助審核、媒合管理解約，加上本後台的人工計點、行政填寫的公會意見與審件抽查；與工具箱「行政績效中心」同一套算法。換業績月會自動重算，按「重新產出」會重新讀取最新資料。</p>
+      </details>
       <div class="row">
-        <div class="field"><label>日期</label><input type="date" id="m-date" /></div>
-        <div class="field"><label>人員（在職）</label><select id="m-name"></select></div>
-        <div class="field"><label>項目</label><select id="m-item"></select></div>
-        <div class="field" id="m-qty-wrap"><label>件數</label><input type="number" id="m-qty" min="1" max="50" value="1" style="width:5rem" /></div>
-        <div class="field hidden" id="m-points-wrap"><label>核定點數</label><select id="m-points"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
-        <div class="field flex-1 min-w-[10rem]"><label>備註（選填，例如案件地址）</label><input type="text" id="m-note" maxlength="200" class="w-full" /></div>
-        <button type="button" class="btn btn-main" id="btn-add-manual">新增</button>
+        <button type="button" class="btn btn-main" id="btn-report">重新產出</button>
+        <button type="button" class="btn btn-ghost" id="btn-report-xlsx" disabled>下載 Excel</button>
+        <button type="button" class="btn btn-ghost" id="btn-report-print" disabled>列印／存 PDF</button>
+        <span class="muted" id="report-stamp"></span>
       </div>
-      <p class="muted">行政QA 依核定點數登錄 1～4 點；代管解約、案件意見修正、清冊意見修正每件 1 點；包租解約每件 3 點。</p>
+      <div id="report-sheet" class="print-sheet"></div>
+    </div>
+
+    <div id="tab-takeup" class="space-y-4 hidden">
+      <div class="page-head"><h2>地區承接率</h2><p>各地區案件有多少是行政審的、多少不是</p></div>
+      <details class="help"><summary>怎麼算？</summary>
+        <p>案件依物件／合約地址的縣市分到地區，房審依星鴻房客管理的縣市。「行」＝人力明細上的行政（含工讀生、已離職）審核，「非」＝不在人力明細的人審核（業務、主管等），承接率＝行／總。案件判定與去重和點數表相同（同一案件退件重送只算一次）；修繕依補助審核的租屋地址；解約不列入。週別從業績月第一天起算，每週到星期五為止。</p>
+      </details>
+      <div class="toolbar">
+        <div class="flex gap-2 pb-1">
+          <button type="button" class="seg is-on" data-tk-view="week">依週</button>
+          <button type="button" class="seg" data-tk-view="month">本月合計</button>
+        </div>
+        <span class="muted pb-2" id="takeup-stamp"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-takeup">重新產出</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-takeup-xlsx" disabled>下載 Excel</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-takeup-print" disabled>列印／存 PDF</button>
+        </div>
+      </div>
+      <div class="tk-legend">
+        <span><i style="background:#d9f2d9"></i>95% 以上</span>
+        <span><i style="background:#fff"></i>80～94%</span>
+        <span><i style="background:#fff2cc"></i>60～79%</span>
+        <span><i style="background:#f8d7da"></i>未滿 60%</span>
+        <span>格內：承接率／行｜非｜總</span>
+      </div>
+      <div id="takeup-sheet" class="print-sheet"></div>
+      <details class="fold" id="takeup-who-fold">
+        <summary>各地區「非行政」審核人</summary>
+        <div class="fold-body" id="takeup-who"></div>
+      </details>
+    </div>
+
+    <div id="tab-kpi" class="space-y-4 hidden">
+      <div class="page-head"><h2>KPI 報表</h2><p>清冊／審件作業良率、第一階段以上達成率、行政承接率，分地區與全區</p></div>
+      <details class="help"><summary>資料來源與算法</summary>
+        <p><b>清冊／審件作業良率</b>（目標 90%）：正確率＝（總件數－錯誤件數）÷ 總件數。清冊總件數＝星鴻「表單製作」表單04＋表單07（期別二、表單狀態已歸檔）的筆數，每個縣市抓 4 期、4-1 期、5 期；台北的 4 期、4-1 期抓星華，嘉義的 4 期、4-1 期抓星華嘉義，新竹含竹市竹縣、嘉義 5 期含嘉市嘉縣。審件總件數＝「媒合管理」起租日在當月、狀態已生效的案件，依登記縣市分區。錯誤件數＝行政填寫的清冊意見／案件意見中，公會期數等於這個月的筆數，依填寫的縣市分區（案件意見沒填縣市時依媒合編號判斷）。全區含其他縣市與分不到地區的件數。星鴻資料快取 6 小時，按「重新抓取」會重讀最新資料。</p>
+        <p class="mt-2"><b>第一階段以上達成率</b>（目標 80%）：同月份業績月（前月 29 日～當月 28 日）在職正職行政中，月累計點數達 250 點以上的人數 ÷ 正職行政人數，依人力明細的地區分（大台北的行政算在台北），點數和「點數月累計」相同。週報為業績月第一天累計到該週最後一天。</p>
+        <p class="mt-2"><b>行政承接率</b>（目標 80%）：和「地區承接率」相同算法（行政審核件數 ÷ 總件數，房審依房客縣市），改依案件縣市分到這 12 區；全區含其他縣市。週報為該週的件數。</p>
+        <p class="mt-2">週別從業績月第一天起算，每週到星期五為止（和地區承接率相同）。清冊／審件作業良率依公會期數按月計算，只在月報顯示。</p>
+      </details>
+      <div class="toolbar">
+        <div class="flex gap-2 pb-1">
+          <button type="button" class="seg is-on" data-kpi-view="month">月報</button>
+          <button type="button" class="seg" data-kpi-view="week">週報</button>
+        </div>
+        <div class="field"><label>月份</label><select id="kpi-month"></select></div>
+        <span class="muted pb-2" id="kpi-stamp"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-kpi">重新抓取</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-kpi-xlsx" disabled>下載 Excel</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-kpi-print" disabled>列印／存 PDF</button>
+        </div>
+      </div>
+      <div class="tk-legend">
+        <span><i style="background:#d9f2d9"></i>達到目標</span>
+        <span><i style="background:#fff2cc"></i>差 10% 以內</span>
+        <span><i style="background:#f8d7da"></i>差超過 10%</span>
+        <span>格內：實績／計算件數</span>
+      </div>
+      <div id="kpi-sheet" class="print-sheet"></div>
+      <details class="fold">
+        <summary>錯誤件數明細（行政填寫的意見）</summary>
+        <div class="fold-body" id="kpi-errors"></div>
+      </details>
+      <details class="fold">
+        <summary>總件數來源（各公司、各期別）</summary>
+        <div class="fold-body" id="kpi-sources"></div>
+      </details>
+    </div>
+
+    <div id="tab-manual" class="space-y-4 hidden">
+      <div class="page-head"><h2>人工計點</h2><p>系統抓不到的點數由組長補登</p></div>
+      <details class="help"><summary>哪些要人工計點？</summary>
+        <p>行政QA（1～4 點）、案件意見修正、清冊意見修正（每件 1 點）。行政也可以在工具箱「行政績效中心」按「填寫案件意見／填寫清冊意見」自己填，每筆 1 點，列在本頁最下面；填錯可以在這裡刪除。解約已改由媒合管理「已解約生效」自動計點（包租、轉租每件 3 點，代管每件 1 點），不用再登錄。先選組長，行政清單只列該組在職人員；給予點數會依項目自動帶入建議值，可以直接改。</p>
+      </details>
+      <div class="form-card"><b>新增一筆</b><div class="row">
+        <div class="field"><label>日期</label><input type="date" id="m-date" /></div>
+        <div class="field"><label>組長</label><select id="m-leader"></select></div>
+        <div class="field"><label>行政</label><select id="m-name"></select></div>
+        <div class="field"><label>項目</label><select id="m-item"></select></div>
+        <div class="field"><label>件數</label><input type="number" id="m-qty" min="1" max="50" value="1" style="width:4.5rem" /></div>
+        <div class="field"><label>點數</label><input type="number" id="m-points" min="1" max="150" value="1" style="width:4.5rem" /></div>
+        <div class="field flex-1 min-w-[10rem]"><label>備註（選填）</label><input type="text" id="m-note" maxlength="200" class="w-full" placeholder="例如案件地址" /></div>
+        <button type="button" class="btn btn-main" id="btn-add-manual">新增</button>
+      </div></div>
+      <h3 class="list-title">本業績月紀錄<span class="muted" id="manual-count"></span></h3>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>日期</th><th>人員</th><th>項目</th><th>件數</th><th>點數</th><th>備註</th><th>登錄者</th><th></th></tr></thead>
+        <thead><tr><th>日期</th><th>組長</th><th>行政</th><th>項目</th><th>件數</th><th>點數</th><th>備註</th><th>登錄者</th><th></th></tr></thead>
         <tbody id="manual-list"></tbody>
+      </table></div>
+      <h3 class="list-title">行政填寫的案件意見<span class="muted" id="op-case-count"></span></h3>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>公會意見內容</th><th></th></tr></thead>
+        <tbody id="op-case-list"></tbody>
+      </table></div>
+      <h3 class="list-title">行政填寫的清冊意見<span class="muted" id="op-roster-count"></span></h3>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>清冊期數</th><th>意見時間</th><th>公會意見內容</th><th>行政檢討對策</th><th></th></tr></thead>
+        <tbody id="op-roster-list"></tbody>
       </table></div>
     </div>
 
     <div id="tab-check" class="space-y-4 hidden">
-      <div class="row">
+      <div class="page-head"><h2>審件抽查</h2><p>良率＝正確／抽查，計入「審件品質」分數</p></div>
+      <details class="help"><summary>怎麼算？</summary>
+        <p>業績月內加總抽查件數與正確件數算良率；報表沒有抽查紀錄的人顯示「未抽查」。抽查不影響點數。</p>
+      </details>
+      <div class="form-card space-y-2"><b>小組長抽查：抽查日與 LINE 提醒</b>
+        <div class="row" id="spot-days"></div>
+        <p class="muted">每天 09:30 自動檢查每位組長（人力明細「區域主管」欄）：本週到今天應抽幾次、實際抽了幾天、已抽的案件是否都判定了；沒做完就用「星鴻萬能小幫手」LINE 提醒該組長，一天一則。組長要先在工具箱綁定 LINE 才收得到。</p>
+        <div id="spot-remind"></div>
+      </div>
+      <div class="form-card"><b>新增一筆</b><div class="row">
         <div class="field"><label>日期</label><input type="date" id="c-date" /></div>
-        <div class="field"><label>人員（在職）</label><select id="c-name"></select></div>
-        <div class="field"><label>審件抽查（件）</label><input type="number" id="c-checked" min="1" max="200" value="1" style="width:5rem" /></div>
-        <div class="field"><label>審件正確（件）</label><input type="number" id="c-correct" min="0" max="200" value="1" style="width:5rem" /></div>
+        <div class="field"><label>人員</label><select id="c-name"></select></div>
+        <div class="field"><label>抽查（件）</label><input type="number" id="c-checked" min="1" max="200" value="1" style="width:4.5rem" /></div>
+        <div class="field"><label>正確（件）</label><input type="number" id="c-correct" min="0" max="200" value="1" style="width:4.5rem" /></div>
         <div class="field flex-1 min-w-[10rem]"><label>備註（選填）</label><input type="text" id="c-note" maxlength="200" class="w-full" /></div>
         <button type="button" class="btn btn-main" id="btn-add-check">新增</button>
-      </div>
-      <p class="muted">抽查良率＝審件正確／審件抽查，業績月內加總計算；沒有抽查紀錄的人在報表顯示「未抽查」。抽查不影響點數。</p>
+      </div></div>
+      <h3 class="list-title">本業績月紀錄<span class="muted" id="check-count"></span></h3>
       <div class="overflow-x-auto"><table>
         <thead><tr><th>日期</th><th>人員</th><th>抽查</th><th>正確</th><th>良率</th><th>備註</th><th>登錄者</th><th></th></tr></thead>
         <tbody id="check-list"></tbody>
       </table></div>
     </div>
 
-    <div id="tab-report" class="space-y-4 hidden">
-      <div class="row">
-        <button type="button" class="btn btn-main" id="btn-report">產出報表</button>
-        <button type="button" class="btn btn-ghost" id="btn-report-xlsx" disabled>下載 Excel</button>
-        <button type="button" class="btn btn-ghost" id="btn-report-print" disabled>列印／存 PDF</button>
-        <span class="muted">依上方業績月，讀星鴻審核紀錄、補助審核與本後台資料即時計算；需先在同一個瀏覽器登入工具箱。</span>
+    <div id="tab-incident" class="space-y-4 hidden">
+      <div class="page-head"><h2>客訴／懲處</h2><p>計入「客訴紀律」分數</p></div>
+      <details class="help"><summary>怎麼扣分？</summary>
+        <p>每件客訴扣「客訴紀律」15 分、小過扣 40、大過扣 80。客訴件數在組長週報依週加總；本月懲處取業績月內最重者（大過＞小過）。</p>
+      </details>
+      <div class="form-card"><b>新增一筆</b><div class="row">
+        <div class="field"><label>日期</label><input type="date" id="i-date" /></div>
+        <div class="field"><label>人員</label><select id="i-name"></select></div>
+        <div class="field"><label>客訴件數</label><input type="number" id="i-complaints" min="0" max="50" value="0" style="width:4.5rem" /></div>
+        <div class="field"><label>懲處</label><select id="i-penalty"><option value="">無</option><option>小過</option><option>大過</option></select></div>
+        <div class="field"><label>賠償金額</label><input type="number" id="i-comp" min="0" value="0" style="width:6rem" /></div>
+        <div class="field flex-1 min-w-[10rem]"><label>備註（選填）</label><input type="text" id="i-note" maxlength="200" class="w-full" placeholder="例如案件與原因" /></div>
+        <button type="button" class="btn btn-main" id="btn-add-incident">新增</button>
+      </div></div>
+      <h3 class="list-title">本業績月紀錄<span class="muted" id="incident-count"></span></h3>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>日期</th><th>人員</th><th>客訴</th><th>懲處</th><th>賠償金額</th><th>備註</th><th>登錄者</th><th></th></tr></thead>
+        <tbody id="incident-list"></tbody>
+      </table></div>
+    </div>
+
+    <div id="tab-training" class="space-y-4 hidden">
+      <div class="page-head"><h2>教育訓練</h2><p>所有人的影片觀看進度與考試分數；系統自動判定，不用登錄</p></div>
+      <details class="help"><summary>怎麼算通過？</summary>
+        <p>物審、房客、預審、複審：看完教學影片（看過 95% 以上）＋線上考試滿分＋實作完成，三項都完成才算通過。實作要在模擬公司系統環境做，環境建置中，完成前實作都顯示「準備中」。執行要點：線上考試全部題目都考過滿分就算通過，明細看「執行要點考試」。</p>
+      </details>
+      <div class="toolbar">
+        <div class="flex gap-2 pb-1">
+          <button type="button" class="seg is-on" data-t-view="people">每人進度</button>
+          <button type="button" class="seg" data-t-view="items">考試紀錄</button>
+        </div>
+        <div class="field"><label>組長</label><select id="t-leader"></select></div>
+        <div class="field" id="t-course-wrap"><label>課程</label><select id="t-course"><option value="">全部課程</option></select></div>
+        <span class="muted pb-2" id="t-count"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="t-refresh">重新整理</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="t-csv">下載 CSV</button>
+        </div>
       </div>
-      <div id="report-sheet"></div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="t-stats"></div>
+      <div class="overflow-x-auto"><table>
+        <thead id="t-head"></thead>
+        <tbody id="t-rows"></tbody>
+      </table></div>
+    </div>
+
+    <div id="tab-exam" class="space-y-4 hidden">
+      <div class="page-head"><h2>執行要點考試</h2><p>同仁在工具箱考試後自動記錄</p></div>
+      <details class="help"><summary>怎麼看？</summary>
+        <p>題庫 196 題、每份 20 題全對才通過。點「每人進度」的人可以看他的每次考試；點「考試紀錄」的一列可以展開作答明細與正確答案（只有後台看得到）。</p>
+      </details>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="x-stats"></div>
+      <div class="toolbar">
+        <div class="flex gap-2 pb-1">
+          <button type="button" class="seg is-on" data-x-view="people">每人進度</button>
+          <button type="button" class="seg" data-x-view="items">考試紀錄</button>
+        </div>
+        <div class="field"><label>組長</label><select id="x-leader"></select></div>
+        <div class="field"><label>搜尋</label><input type="search" id="x-q" placeholder="姓名或處別" class="min-w-[9rem]" /></div>
+        <div class="field hidden" id="x-status-wrap"><label>結果</label>
+          <select id="x-status">
+            <option value="submitted">已交卷</option>
+            <option value="passed">通過</option>
+            <option value="failed">需補考</option>
+            <option value="">全部</option>
+            <option value="in_progress">作答中</option>
+            <option value="abandoned">未交卷（作廢）</option>
+          </select>
+        </div>
+        <span class="muted pb-2" id="x-count"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="x-refresh">重新整理</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="x-csv">匯出 CSV</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto"><table>
+        <thead id="x-head"></thead>
+        <tbody id="x-rows"></tbody>
+      </table></div>
+    </div>
+
+    <div id="tab-plan" class="space-y-4 hidden">
+      <div class="page-head"><h2>改善計畫</h2><p>評等 D 的同仁每兩週要寫一次，這裡看誰該寫、誰逾期</p></div>
+      <details class="help"><summary>規則</summary>
+        <p>評等 D 的同仁要在工具箱「個人明細」自己寫改善計畫，每 14 天一次，從上一次送出起算。這頁依上方業績月計算每個人目前的評等。點表格中的人可以看他寫過的計畫。</p>
+      </details>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="p-stats"></div>
+      <div class="toolbar">
+        <div class="field"><label>組長</label><select id="p-leader"></select></div>
+        <div class="field"><label>顯示</label>
+          <select id="p-filter">
+            <option value="todo">需要追蹤（D、逾期、快到期）</option>
+            <option value="">全部在職正職</option>
+          </select>
+        </div>
+        <span class="muted pb-2" id="p-stamp"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="p-calc">重新計算評等</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="p-csv">匯出 CSV</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>姓名</th><th>組長</th><th>本月評等</th><th>最需改善</th><th>最近一次填寫</th><th>下次截止</th><th>狀態</th><th>紀錄</th></tr></thead>
+        <tbody id="p-track"></tbody>
+      </table></div>
+      <details class="fold" id="p-list-fold">
+        <summary id="p-list-title">全部改善計畫紀錄</summary>
+        <div class="fold-body space-y-2">
+          <div id="p-list-filter"></div>
+          <div class="overflow-x-auto"><table>
+            <thead><tr><th>填寫時間</th><th>姓名</th><th>當時評等</th><th>業績月</th><th>要改善的項目</th><th>具體做法</th><th>目標與完成日</th><th>上次執行結果</th><th></th></tr></thead>
+            <tbody id="p-list"></tbody>
+          </table></div>
+        </div>
+      </details>
     </div>
 
     <div id="tab-staff" class="space-y-4 hidden">
-      <div class="row">
-        <div class="field"><label>姓名（需與星鴻審核人姓名一致）</label><input type="text" id="s-name" maxlength="30" /></div>
-        <div class="field"><label>身分</label><select id="s-kind"><option>正職</option><option>工讀生</option></select></div>
-        <div class="field"><label>狀態</label><select id="s-status"><option>在職</option><option>離職</option></select></div>
-        <div class="field"><label>地區／部別</label><input type="text" id="s-region" maxlength="30" style="width:6rem" /></div>
-        <div class="field"><label>營業處</label><input type="text" id="s-office" maxlength="60" style="width:8rem" /></div>
-        <div class="field"><label>到職日</label><input type="date" id="s-hire" /></div>
-        <div class="field"><label>專案任務</label><input type="text" id="s-project" maxlength="100" style="width:10rem" /></div>
-        <button type="button" class="btn btn-main" id="btn-add-staff">新增</button>
-      </div>
-      <div class="card p-3 space-y-2" style="background:#0f172a">
-        <div class="row">
-          <button type="button" class="btn btn-ghost" id="btn-auditors">從星鴻帶入本業績月審核人</button>
-          <span class="muted">需先在同一個瀏覽器登入工具箱；列出還不在名單內的審核人與件數，勾選行政同仁後一次加入。</span>
+      <div class="page-head"><h2>人力明細</h2><p>點數表、報表、評等、考試都只算這裡「在職」的人</p></div>
+      <details class="help"><summary>注意事項</summary>
+        <p>姓名要和星鴻審核人姓名、工具箱帳號姓名一致，才對得上點數和改善計畫。離職請改狀態，不要刪除。改完一列要按該列的「儲存」。</p>
+      </details>
+      <details class="fold">
+        <summary>新增人員</summary>
+        <div class="fold-body"><div class="row">
+          <div class="field"><label>姓名（與星鴻審核人一致）</label><input type="text" id="s-name" maxlength="30" /></div>
+          <div class="field"><label>身分</label><select id="s-kind"><option>正職</option><option>工讀生</option></select></div>
+          <div class="field"><label>狀態</label><select id="s-status"><option>在職</option><option>離職</option></select></div>
+          <div class="field"><label>地區／部別</label><input type="text" id="s-region" maxlength="30" style="width:6rem" /></div>
+          <div class="field"><label>營業處</label><input type="text" id="s-office" maxlength="60" style="width:8rem" /></div>
+          <div class="field"><label>到職日</label><input type="date" id="s-hire" /></div>
+          <div class="field"><label>專案任務</label><input type="text" id="s-project" maxlength="100" style="width:10rem" /></div>
+          <div class="field"><label>組長</label><input type="text" id="s-leader" maxlength="30" style="width:6rem" /></div>
+          <button type="button" class="btn btn-main" id="btn-add-staff">新增</button>
+        </div></div>
+      </details>
+      <details class="fold">
+        <summary>從星鴻帶入審核人</summary>
+        <div class="fold-body space-y-2">
+          <div class="row">
+            <button type="button" class="btn btn-ghost" id="btn-auditors">列出本業績月還不在名單內的審核人</button>
+            <button type="button" class="btn btn-ghost hidden" id="btn-add-me"></button>
+          </div>
+          <p class="muted">需先在同一個瀏覽器登入工具箱；勾選行政同仁後一次加入。</p>
+          <div id="auditor-pick"></div>
         </div>
-        <div id="auditor-pick"></div>
+      </details>
+      <div class="toolbar">
+        <h3 class="list-title">人員名單<span class="muted" id="staff-count"></span></h3>
+        <label class="muted pb-0.5 push"><input type="checkbox" id="s-show-off" style="width:auto" /> 顯示離職人員</label>
       </div>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>姓名</th><th>身分</th><th>狀態</th><th>地區／部別</th><th>營業處</th><th>到職日</th><th>專案任務</th><th>備註</th><th></th></tr></thead>
+        <thead><tr><th>姓名</th><th>身分</th><th>狀態</th><th>地區／部別</th><th>營業處</th><th>到職日</th><th>專案任務</th><th>區域主管</th><th>備註</th><th></th></tr></thead>
         <tbody id="staff-list"></tbody>
       </table></div>
     </div>
+
+    <div id="tab-org" class="space-y-4 hidden">
+      <div class="page-head"><h2>組織圖</h2><p>工具箱「行政專區」行事曆下方的「全台行政組織與人力配置」</p></div>
+      <details class="help"><summary>怎麼改？</summary>
+        <p>直接改格子，改完按最下面「儲存組織圖」才會生效（工具箱重新整理就看得到）。狀態選「待補」是黃色待補列；營業處填「工讀生」算工讀生（另計）；現有、待補、規劃人數會自動算。主管姓名填「待補」會顯示成虛線待補框。這裡只管組織圖顯示，點數表、抽查用的組長仍以「人力明細」為準。</p>
+      </details>
+      <div id="org-editor" class="space-y-3"><p class="muted">讀取中…</p></div>
+      <div class="row">
+        <button type="button" class="btn btn-ghost" data-org-act="add-group">＋ 新增一組</button>
+        <button type="button" class="btn btn-main" id="btn-org-save">儲存組織圖</button>
+        <span class="muted" id="org-saved"></span>
+      </div>
+    </div>
+    </main>
+   </div>
   </section>
 
   <script>
     (function () {
       const Core = window.AdminPointsCore;
       const SECRET_KEY = 'skyfun-admin-qa-secret';
+      const OLD_SECRET_KEY = 'skyfun-pages-admin-secret';
+      const TAB_KEY = 'skyfun-admin-points-tab';
       const AUTH_STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
       const RPA_BASE = 'https://skyfun-arrears-rpa.dahwork123.workers.dev';
+      const TABS = ['boss', 'report', 'takeup', 'kpi', 'manual', 'check', 'incident', 'training', 'exam', 'plan', 'staff', 'org'];
+      const PLAN_CYCLE_DAYS = 14;
+      const DAY_MS = 86400000;
       let secret = '';
       let client = null;
       let data = { staff: [], manual: [], checks: [] };
       let report = null;
+      let tab = 'report';
+      const calcCache = new Map();
       const $ = (id) => document.getElementById(id);
 
       function toolboxSession() {
@@ -174,6 +641,9 @@
       }
       function toolboxToken() {
         return toolboxSession()?.supabaseToken || '';
+      }
+      function toolboxName() {
+        return String(toolboxSession()?.user?.name || '').trim();
       }
       function sb() {
         if (client) return client;
@@ -190,15 +660,44 @@
       function esc(s) {
         return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
       }
+      let toastTimer = null;
       function say(text, ok) {
-        $('msg').textContent = text || '';
-        $('msg').className = 'text-sm ' + (ok ? 'ok' : 'err');
+        const el = $('msg');
+        clearTimeout(toastTimer);
+        el.textContent = text || '';
+        el.className = `toast ${ok ? 'is-ok' : 'is-err'}${text ? '' : ' hidden'}`;
+        if (text) toastTimer = setTimeout(() => el.classList.add('hidden'), ok ? 3000 : 8000);
+      }
+      $('msg').addEventListener('click', () => $('msg').classList.add('hidden'));
+      function fmtTime(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return String(iso);
+        const p = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear() - 1911}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+      }
+      function downloadCsv(name, head, rows) {
+        const csv = [head].concat(rows).map((r) => r.map((v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+        a.download = `${name}${Core.isoDate(new Date())}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+      function leadersOf(staff) {
+        return [...new Set(staff.map((s) => s.leader).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+      }
+      function leaderOptions(sel, allLabel) {
+        const cur = sel.value;
+        const list = leadersOf((data.staff || []).filter((s) => s.status === '在職'));
+        sel.innerHTML = `<option value="">${allLabel}</option>` + list.map((l) => `<option${l === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
       }
 
       function months() {
         let { year, month } = Core.perfMonthOf(new Date());
         const out = [];
         for (let i = 0; i < 4; i++) {
+          if (out.length && Core.beforeFirstPerf(year, month)) break;
           out.push(Core.perfMonthRange(year, month));
           month -= 1;
           if (month < 1) { month = 12; year -= 1; }
@@ -208,6 +707,14 @@
       function range() {
         return months().find((m) => `${m.year}-${m.month}` === $('month').value) || months()[0];
       }
+      const monthKey = (r) => `${r.year}-${r.month}`;
+
+      function renderWho() {
+        const name = toolboxName();
+        $('who').innerHTML = toolboxToken()
+          ? `<span class="pill pill-ok" title="報表、評等、從星鴻帶入會用這個登入讀星鴻資料">● ${esc(name || '工具箱已登入')}</span>`
+          : '<span class="pill pill-warn" title="報表、評等、從星鴻帶入都需要先登入工具箱，登入後按重新整理">未登入工具箱 · <a href="../index.html" target="_blank" rel="noopener">去登入</a></span>';
+      }
 
       async function load() {
         const r = range();
@@ -215,128 +722,12 @@
         renderStaff();
         renderManual();
         renderChecks();
+        renderIncidents();
+        renderTraining();
+        if (exam.loaded) renderExam();
       }
 
-      function renderStaff() {
-        const rows = data.staff || [];
-        const text = (f, v, w, max) => `<input type="text" data-f="${f}" value="${esc(v)}" maxlength="${max}" style="width:${w}" />`;
-        $('staff-list').innerHTML = rows.length
-          ? rows.map((s) => `<tr data-id="${s.id}" data-name="${esc(s.name)}" class="${s.status === '在職' ? '' : 'is-off'}">
-              <td>${esc(s.name)}</td>
-              <td><select data-f="kind"><option${s.kind === '正職' ? ' selected' : ''}>正職</option><option${s.kind === '工讀生' ? ' selected' : ''}>工讀生</option></select></td>
-              <td><select data-f="status"><option${s.status === '在職' ? ' selected' : ''}>在職</option><option${s.status === '離職' ? ' selected' : ''}>離職</option></select></td>
-              <td>${text('region', s.region, '5rem', 30)}</td>
-              <td>${text('office', s.office, '7rem', 60)}</td>
-              <td><input type="date" data-f="hireDate" value="${esc(s.hireDate || '')}" /></td>
-              <td>${text('project', s.project, '9rem', 100)}</td>
-              <td>${text('note', s.note, '7rem', 200)}</td>
-              <td><button type="button" class="btn btn-ghost btn-sm" data-act="save">儲存</button> <button type="button" class="btn btn-del" data-act="del">刪除</button></td>
-            </tr>`).join('')
-          : '<tr><td colspan="9" class="muted">尚無人員，請新增或從星鴻帶入</td></tr>';
-        const active = rows.filter((s) => s.status === '在職');
-        const opts = '<option value="">請選擇</option>' + active.map((s) => `<option>${esc(s.name)}</option>`).join('');
-        $('m-name').innerHTML = opts;
-        $('c-name').innerHTML = opts;
-      }
-
-      function pct(n) {
-        return `${(n * 100).toFixed(1)}%`;
-      }
-
-      function renderChecks() {
-        const rows = (data.checks || []).slice().reverse();
-        $('check-list').innerHTML = rows.length
-          ? rows.map((c) => `<tr>
-              <td>${esc(c.date)}</td><td>${esc(c.name)}</td><td>${c.checked}</td><td>${c.correct}</td>
-              <td>${pct(c.correct / c.checked)}</td><td>${esc(c.note)}</td><td class="muted">${esc(c.createdBy)}</td>
-              <td><button type="button" class="btn btn-del" data-del-check="${c.id}">刪除</button></td>
-            </tr>`).join('')
-          : '<tr><td colspan="8" class="muted">本業績月尚無抽查紀錄</td></tr>';
-      }
-
-      function renderManual() {
-        const rows = (data.manual || []).slice().reverse();
-        $('manual-list').innerHTML = rows.length
-          ? rows.map((m) => `<tr>
-              <td>${esc(m.date)}</td><td>${esc(m.name)}</td><td>${esc(m.item)}</td>
-              <td>${m.qty}</td><td>${m.points}</td><td>${esc(m.note)}</td><td class="muted">${esc(m.createdBy)}</td>
-              <td><button type="button" class="btn btn-del" data-del-manual="${m.id}">刪除</button></td>
-            </tr>`).join('')
-          : '<tr><td colspan="8" class="muted">本業績月尚無手填點數</td></tr>';
-      }
-
-      async function saveStaff(id, name, kind, status, extra) {
-        const x = extra || {};
-        await rpc('admin_points_admin_save_staff', {
-          p_id: id || null,
-          p_name: name,
-          p_status: status,
-          p_kind: kind,
-          p_note: x.note || '',
-          p_region: x.region || '',
-          p_office: x.office || '',
-          p_hire_date: x.hireDate || null,
-          p_project: x.project || ''
-        });
-      }
-
-      $('btn-login').addEventListener('click', async () => {
-        secret = $('admin-secret').value.trim();
-        $('login-msg').classList.add('hidden');
-        try {
-          await load();
-          sessionStorage.setItem(SECRET_KEY, secret);
-          $('login-panel').classList.add('hidden');
-          $('main-panel').classList.remove('hidden');
-          const u = toolboxSession()?.user;
-          $('who').textContent = u ? `登錄者：${u.name || u.username}` : '未偵測到工具箱登入，登錄者會留空；「從星鴻帶入」也需要先登入工具箱';
-        } catch (e) {
-          $('login-msg').textContent = e.message || '連線失敗';
-          $('login-msg').classList.remove('hidden');
-        }
-      });
-
-      $('month').addEventListener('change', () => load().catch((e) => say(e.message)));
-      $('btn-reload').addEventListener('click', () => load().then(() => say('已更新', true)).catch((e) => say(e.message)));
-
-      document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach((x) => x.classList.toggle('is-active', x === b));
-        for (const t of ['manual', 'check', 'staff', 'report']) $(`tab-${t}`).classList.toggle('hidden', b.dataset.tab !== t);
-      }));
-
-      $('btn-add-check').addEventListener('click', async (e) => {
-        const btn = e.currentTarget;
-        btn.disabled = true;
-        try {
-          await rpc('admin_points_admin_add_check', {
-            p_token: toolboxToken(),
-            p_date: $('c-date').value,
-            p_name: $('c-name').value,
-            p_checked: Number($('c-checked').value) || 0,
-            p_correct: Number($('c-correct').value),
-            p_note: $('c-note').value
-          });
-          $('c-note').value = '';
-          await load();
-          say('已新增抽查紀錄', true);
-        } catch (err) {
-          say(err.message);
-        } finally {
-          btn.disabled = false;
-        }
-      });
-
-      $('check-list').addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-del-check]');
-        if (!btn || !confirm('確定刪除這筆抽查紀錄？')) return;
-        try {
-          await rpc('admin_points_admin_delete_check', { p_id: Number(btn.dataset.delCheck) });
-          await load();
-          say('已刪除', true);
-        } catch (err) {
-          say(err.message);
-        }
-      });
+      /* ---------- 星鴻資料＋計算（報表與評等共用，每個業績月快取一次） ---------- */
 
       async function fetchWorker(path, label, r) {
         const res = await fetch(`${RPA_BASE}${path}?start=${r.start}&end=${r.end}`, {
@@ -347,19 +738,58 @@
         return payload;
       }
 
+      async function monthCalc(force, perf) {
+        const r = perf || range();
+        const key = monthKey(r);
+        if (!force && calcCache.has(key)) return calcCache.get(key);
+        if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料（報表與評等都需要）');
+        const [audit, expenses, term, src] = await Promise.all([
+          fetchWorker('/admin-points/audit-log', '審核時間紀錄', r),
+          fetchWorker('/admin-points/expenses', '補助審核', r),
+          fetchWorker('/admin-points/terminations', '解約', r).catch((e) => ({ fields: [], rows: [], error: e.message })),
+          key === monthKey(range()) ? data : rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end })
+        ]);
+        const auditRows = Core.rowsFromPayload(audit);
+        const expenseRows = Core.rowsFromPayload(expenses);
+        const staff = src.staff || [];
+        const result = Core.compute(auditRows, {
+          start: r.start,
+          end: r.end,
+          staff,
+          manual: src.manual || [],
+          opinions: src.opinions || [],
+          expenses: expenseRows,
+          terminations: Core.rowsFromPayload(term)
+        });
+        const dur = Core.durationReport(auditRows, { start: r.start, end: r.end, staff });
+        const today = Core.isoDate(new Date());
+        const weeks = Core.weeksOf(r).filter((w) => w.start <= today);
+        const profiles = new Map();
+        for (const s of staff.filter((x) => x.status === '在職' && x.kind !== '工讀生')) {
+          profiles.set(s.name, Core.personProfile(result, dur, {
+            name: s.name, staff, checks: src.checks || [], incidents: src.incidents || [], weeks
+          }));
+        }
+        const calc = { range: r, result, profiles, staff, auditRows, expenseRows, termError: term.error || '', at: new Date() };
+        calcCache.set(key, calc);
+        return calc;
+      }
+
+      /* ---------- 每月進度報表 ---------- */
+
       function slashDate(iso) {
         return String(iso).replace(/-/g, '/');
       }
-
+      function pct(n) {
+        return `${(n * 100).toFixed(1)}%`;
+      }
       function rateText(r) {
         return r.rate == null ? '未抽查' : pct(r.rate);
       }
-
       function projectClass(p) {
         if (!p) return '';
         return p.includes('清冊') ? 'rpt-proj-list' : 'rpt-proj-lvr';
       }
-
       function reportHead(r) {
         const today = Core.isoDate(new Date());
         const asOf = r.end < today ? r.end : today;
@@ -370,10 +800,8 @@
           sum: (c) => `正職行政 ${c.full} 人｜第二階段 ${c.stage2} 人｜第一階段 ${c.stage1} 人｜未達第一階段 ${c.none} 人`
         };
       }
-
       const FULL_HEAD = ['排名', '姓名', '地區／部別', '營業處', '報到年月', '專案任務', '月累計點數', '月度級距', '抽查件數', '組長抽查良率'];
       const PART_HEAD = ['姓名', '地區／部別', '營業處', '月累計點數', '抽查件數', '抽查良率'];
-
       function fullCells(x) {
         return [x.rank, x.name, x.region, x.office, x.hire, x.project, x.points, x.stageLabel, x.checked, rateText(x)];
       }
@@ -407,39 +835,40 @@
         </div>`;
       }
 
-      $('btn-report').addEventListener('click', async (e) => {
-        const btn = e.currentTarget;
-        if (!toolboxToken()) return say('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
-        btn.disabled = true;
-        $('report-sheet').innerHTML = '<p class="muted">讀取星鴻審核紀錄與補助審核中…約 5～10 秒</p>';
+      let reportBusy = false;
+      async function makeReport(force) {
+        if (reportBusy) return;
+        const r = range();
+        if (!force && report && monthKey(report.range) === monthKey(r)) return;
+        reportBusy = true;
+        $('btn-report').disabled = true;
+        $('btn-report-xlsx').disabled = true;
+        $('btn-report-print').disabled = true;
+        $('report-sheet').innerHTML = '<p class="muted">讀取星鴻審核紀錄、補助審核與解約資料中…約 5～10 秒</p>';
         try {
-          const r = range();
-          const [audit, expenses] = await Promise.all([
-            fetchWorker('/admin-points/audit-log', '審核時間紀錄', r),
-            fetchWorker('/admin-points/expenses', '補助審核', r),
-            load()
-          ]);
-          const result = Core.compute(Core.rowsFromPayload(audit), {
-            start: r.start,
-            end: r.end,
-            staff: data.staff || [],
-            manual: data.manual || [],
-            expenses: Core.rowsFromPayload(expenses)
-          });
-          report = { range: r, rep: Core.monthlyReport(result, { staff: data.staff || [], checks: data.checks || [] }) };
+          if (force) await load();
+          const calc = await monthCalc(force);
+          report = { range: calc.range, rep: Core.monthlyReport(calc.result, { staff: data.staff || [], checks: data.checks || [] }) };
           renderReport();
           $('btn-report-xlsx').disabled = false;
           $('btn-report-print').disabled = false;
-          say('報表已產出', true);
+          $('report-stamp').textContent = `產出時間 ${fmtTime(calc.at)}${calc.result.sheet ? `｜月累計點數依表單「${calc.result.sheet}」` : ''}${calc.termError ? `（解約資料暫時讀不到：${calc.termError}）` : ''}`;
         } catch (err) {
-          $('report-sheet').innerHTML = '';
-          say(err.message);
+          report = null;
+          $('report-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
         } finally {
-          btn.disabled = false;
+          reportBusy = false;
+          $('btn-report').disabled = false;
         }
-      });
+      }
 
-      $('btn-report-print').addEventListener('click', () => window.print());
+      $('btn-report').addEventListener('click', () => makeReport(true));
+      function printTab(name) {
+        document.querySelectorAll('.print-on').forEach((el) => el.classList.remove('print-on'));
+        $(`tab-${name}`).classList.add('print-on');
+        window.print();
+      }
+      $('btn-report-print').addEventListener('click', () => printTab('report'));
 
       function loadXlsx() {
         if (window.XLSX?.utils) return Promise.resolve(window.XLSX);
@@ -528,23 +957,646 @@
         }
       });
 
+      /* ---------- 地區承接率 ---------- */
+
+      const takeup = { data: null, range: null, view: 'week', busy: false, tenant: null };
+      const mmdd = (iso) => iso.slice(5).replace('-', '/');
+
+      function tkClass(rate) {
+        if (rate == null) return 'tk-none';
+        if (rate >= 0.95) return 'tk-g';
+        if (rate >= 0.8) return '';
+        if (rate >= 0.6) return 'tk-y';
+        return 'tk-r';
+      }
+      const tkPct = (rate) => `${Math.round(rate * 100)}%`;
+      function tkCols(t) {
+        if (takeup.view === 'month') return [{ key: 'all', label: '本月合計', sub: `${mmdd(takeup.range.start)}–${mmdd(takeup.range.end)}` }];
+        const today = Core.isoDate(new Date());
+        return t.weeks
+          .map((w, i) => ({ key: i, label: `第${i + 1}週`, sub: `${mmdd(w.start)}–${mmdd(w.end)}`, start: w.start }))
+          .filter((c) => c.start <= today);
+      }
+      function tkRows(t) {
+        return t.items.map((i) => ({ key: i.key, label: i.key === 'tenant' ? '房審 ※' : i.label })).concat([{ key: 'total', label: '整體承接率', total: true }]);
+      }
+      function tkNote(t) {
+        const u = t.unplaced;
+        const tn = takeup.tenant || {};
+        const tenant = tn.error
+          ? `房客地區暫時查不到（${tn.error}），本月房審 ${u.tenant} 件未列入`
+          : `依房客管理的縣市分區${u.tenant ? `；${u.tenant} 件查不到縣市未列入` : ''}${tn.pending ? `（還有 ${tn.pending} 位房客的地區在查詢中，稍後按「重新產出」會補上）` : ''}`;
+        return `承接率＝行政審核件數／總件數；行＝人力明細上的行政，非＝其他人（業務、主管等）。※ 房審：${tenant}。${u.noAddress ? `另有 ${u.noAddress} 件地址看不出縣市，未列入。` : ''}`;
+      }
+
+      function renderTakeup() {
+        const t = takeup.data;
+        const r = takeup.range;
+        const cols = tkCols(t);
+        const rows = tkRows(t);
+        const today = Core.isoDate(new Date());
+        const cell = (region, item, col) => {
+          const x = t.get(region, item, col);
+          if (!x) return '<td class="tk-cell tk-none">—</td>';
+          return `<td class="tk-cell ${tkClass(x.rate)}"><b>${tkPct(x.rate)}</b><small>行${x.local}｜非${x.other}｜總${x.total}</small></td>`;
+        };
+        const areas = t.areas.map((a) => `<div class="tk-area">
+            <div class="tk-area-title">${esc(a.name)}｜案件所在地行政承接率</div>
+            <table class="tk-table"><thead>
+              <tr><th class="tk-label">地區</th>${a.regions.map((g) => `<th class="tk-region" colspan="${cols.length}">${esc(g)}</th>`).join('')}</tr>
+              <tr><th class="tk-label">${takeup.view === 'month' ? '期間' : '週別'}</th>${a.regions.map(() => cols.map((c) => `<th class="tk-week">${c.label}<small>${c.sub}</small></th>`).join('')).join('')}</tr>
+            </thead><tbody>${rows.map((row) => `<tr class="${row.total ? 'tk-total' : ''}"><th class="tk-label">${row.label}</th>${a.regions.map((g) => cols.map((c) => cell(g, row.key, c.key)).join('')).join('')}</tr>`).join('')}</tbody></table>
+          </div>`).join('');
+        $('takeup-sheet').innerHTML = `<div class="rpt-sheet">
+            <div class="rpt-title">${r.year - 1911}年${r.month}月｜各地區行政承接率</div>
+            <div class="rpt-info">業績月：${slashDate(r.start)}–${slashDate(r.end)}　｜　資料截至：${slashDate(r.end < today ? r.end : today)}</div>
+            <div class="rpt-note">${esc(tkNote(t))}</div>
+            <div style="height:0.7rem"></div>
+            ${areas || '<p class="muted">本業績月沒有可分地區的案件</p>'}
+          </div>`;
+        const regions = t.areas.flatMap((a) => a.regions).filter((g) => t.outsiders.get(g)?.length);
+        $('takeup-who').innerHTML = regions.length
+          ? `<div class="tk-who">${regions.map((g) => `<div><b>${esc(g)}</b>　非行政 ${t.get(g, 'total', 'all').other} 件<br>${t.outsiders.get(g).map(([n, c]) => `${esc(n)} ${c}`).join('、')}</div>`).join('')}</div>
+             <p class="muted mt-2">名單裡如果有人其實是行政，到「人力明細」把他加進去（離職的也留著改狀態就好），承接率就會算對。</p>`
+          : '<p class="muted">本月所有案件都是行政審核 👍</p>';
+      }
+
+      async function makeTakeup(force) {
+        if (takeup.busy) return;
+        const r = range();
+        if (!force && takeup.data && monthKey(takeup.range) === monthKey(r)) return;
+        takeup.busy = true;
+        for (const id of ['btn-takeup', 'btn-takeup-xlsx', 'btn-takeup-print']) $(id).disabled = true;
+        $('takeup-sheet').innerHTML = '<p class="muted">讀取星鴻審核紀錄與補助審核中…約 5～10 秒</p>';
+        try {
+          if (force) await load();
+          const calc = await monthCalc(force);
+          const tc = await fetchWorker('/admin-points/tenant-cities', '房客地區', calc.range).catch((e) => ({ rows: [], total: 0, pending: 0, error: e.message }));
+          takeup.range = calc.range;
+          takeup.tenant = { total: Number(tc.total) || 0, pending: Number(tc.pending) || 0, error: tc.error || '' };
+          takeup.data = Core.takeupReport(calc.auditRows, {
+            start: calc.range.start,
+            end: calc.range.end,
+            staff: data.staff || [],
+            expenses: calc.expenseRows,
+            tenantCities: new Map((tc.rows || []).map(([id, city]) => [String(id), city]))
+          });
+          renderTakeup();
+          $('btn-takeup-xlsx').disabled = false;
+          $('btn-takeup-print').disabled = false;
+          $('takeup-stamp').textContent = `產出時間 ${fmtTime(calc.at)}`;
+        } catch (err) {
+          takeup.data = null;
+          $('takeup-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
+        } finally {
+          takeup.busy = false;
+          $('btn-takeup').disabled = false;
+        }
+      }
+
+      $('btn-takeup').addEventListener('click', () => makeTakeup(true));
+      $('btn-takeup-print').addEventListener('click', () => printTab('takeup'));
+      document.querySelectorAll('[data-tk-view]').forEach((b) => b.addEventListener('click', () => {
+        takeup.view = b.dataset.tkView;
+        document.querySelectorAll('[data-tk-view]').forEach((x) => x.classList.toggle('is-on', x === b));
+        if (takeup.data) renderTakeup();
+      }));
+
+      $('btn-takeup-xlsx').addEventListener('click', async () => {
+        const t = takeup.data;
+        if (!t) return;
+        try {
+          const XLSX = await loadXlsx();
+          const r = takeup.range;
+          const cols = tkCols(t);
+          const rows = tkRows(t);
+          const border = { style: 'thin', color: { rgb: '94A3B8' } };
+          const box = { top: border, bottom: border, left: border, right: border };
+          const font = (o) => Object.assign({ name: 'Microsoft JhengHei', sz: 10 }, o);
+          const center = { horizontal: 'center', vertical: 'center', wrapText: true };
+          const fill = (rgb) => ({ fgColor: { rgb } });
+          const FILL = { 'tk-g': 'D9F2D9', 'tk-y': 'FFF2CC', 'tk-r': 'F8D7DA' };
+          const st = {
+            title: { font: font({ bold: true, sz: 13, color: { rgb: 'FFFFFF' } }), fill: fill('0B1F44'), alignment: center },
+            note: { font: font({ sz: 9 }), fill: fill('EEF5F8'), alignment: { wrapText: true, vertical: 'center' } },
+            head: { font: font({ bold: true }), fill: fill('D9EAD3'), alignment: center, border: box },
+            week: { font: font({ bold: true, sz: 9 }), alignment: center, border: box }
+          };
+          const cellStyle = (cls, bold) => Object.assign({ font: font({ bold: !!bold, sz: 9 }), alignment: center, border: box }, FILL[cls] ? { fill: fill(FILL[cls]) } : {});
+          const width = 1 + Math.max(1, ...t.areas.map((a) => a.regions.length)) * cols.length;
+          const aoa = [];
+          const merges = [];
+          const heights = [];
+          const blank = (s) => ({ v: '', t: 's', s });
+          const line = (text, s, h) => {
+            merges.push({ s: { r: aoa.length, c: 0 }, e: { r: aoa.length, c: width - 1 } });
+            heights[aoa.length] = h || 22;
+            aoa.push([{ v: text, t: 's', s }, ...Array.from({ length: width - 1 }, () => blank(s))]);
+          };
+          line(`${r.year - 1911}年${r.month}月｜各地區行政承接率`, st.title, 26);
+          line(tkNote(t), st.note, 34);
+          for (const a of t.areas) {
+            aoa.push([]);
+            line(`${a.name}｜案件所在地行政承接率`, st.title);
+            const h1 = [{ v: '地區', t: 's', s: st.head }];
+            for (const g of a.regions) {
+              merges.push({ s: { r: aoa.length, c: h1.length }, e: { r: aoa.length, c: h1.length + cols.length - 1 } });
+              h1.push({ v: g, t: 's', s: st.head }, ...Array.from({ length: cols.length - 1 }, () => blank(st.head)));
+            }
+            aoa.push(h1);
+            heights[aoa.length] = 28;
+            aoa.push([{ v: takeup.view === 'month' ? '期間' : '週別', t: 's', s: st.head }, ...a.regions.flatMap(() => cols.map((c) => ({ v: `${c.label}\n${c.sub}`, t: 's', s: st.week })))]);
+            for (const row of rows) {
+              heights[aoa.length] = 28;
+              aoa.push([{ v: row.label, t: 's', s: st.head }, ...a.regions.flatMap((g) => cols.map((c) => {
+                const x = t.get(g, row.key, c.key);
+                return x
+                  ? { v: `${tkPct(x.rate)}\n行${x.local}｜非${x.other}｜總${x.total}`, t: 's', s: cellStyle(tkClass(x.rate), row.total) }
+                  : { v: '—', t: 's', s: cellStyle('') };
+              }))]);
+            }
+          }
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
+          ws['!merges'] = merges;
+          ws['!cols'] = [{ wch: 11 }, ...Array.from({ length: width - 1 }, () => ({ wch: 15 }))];
+          ws['!rows'] = aoa.map((_, i) => ({ hpt: heights[i] || 16 }));
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, `${r.month}月地區承接率`);
+          XLSX.writeFile(wb, `${r.year - 1911}年${r.month}月各地區行政承接率.xlsx`);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      /* ---------- KPI 報表：清冊／審件作業良率、第一階段以上達成率、行政承接率 ---------- */
+
+      const KPI_BLOCKS = [['全區', '台北', '新北', '基隆', '宜蘭', '桃園', '新竹'], ['台中', '彰化', '南投', '嘉義', '台南', '高雄']];
+      const kpiErrRate = (x) => (x.total ? Math.max(0, (x.total - x.err) / x.total) : null);
+      const KPI_ROWS = [
+        { key: 'roster', label: '清冊作業良率', target: 0.9, monthly: true, rate: kpiErrRate, text: (x) => `錯${x.err}／總${x.total}`, empty: '無件數' },
+        { key: 'audit', label: '審件作業良率', target: 0.9, monthly: true, rate: kpiErrRate, text: (x) => `錯${x.err}／總${x.total}`, empty: '無件數' },
+        { key: 'stage', label: '第一階段以上達成率', week: '累計到該週', target: 0.8, rate: (x) => (x.total ? x.hit / x.total : null), text: (x) => `達標${x.hit}／${x.total}人`, empty: '無正職行政' },
+        { key: 'takeup', label: '行政承接率', week: '各週件數', target: 0.8, rate: (x) => (x.total ? x.local / x.total : null), text: (x) => `行${x.local}／總${x.total}`, empty: '無件數' }
+      ];
+      const KPI_PERIODS = ['4期', '4-1期', '5期'];
+      const KPI_PARTS = { roster04: '表單04', roster07: '表單07', cases: '起租已生效案件' };
+      const kpi = { cache: new Map(), cur: null, busy: false, view: 'month' };
+
+      function kpiMonths() {
+        const now = new Date();
+        return Array.from({ length: 12 }, (_, i) => {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          return { year: d.getFullYear() - 1911, month: d.getMonth() + 1 };
+        });
+      }
+      function kpiMonth() {
+        const [year, month] = $('kpi-month').value.split('-').map(Number);
+        return { year, month, key: `${year}-${month}`, guild: `${year}/${String(month).padStart(2, '0')}` };
+      }
+      const kpiPct = (rate) => `${(rate * 100).toFixed(1).replace(/\.0$/, '')}%`;
+      function kpiClass(rate, target) {
+        if (rate == null) return 'tk-none';
+        if (rate >= target) return 'tk-g';
+        if (rate >= target - 0.1) return 'tk-y';
+        return 'tk-r';
+      }
+
+      async function fetchKpiPart(m, part, refresh) {
+        const res = await fetch(`${RPA_BASE}/admin-points/kpi?year=${m.year}&month=${m.month}&part=${part}${refresh ? '&refresh=1' : ''}`, {
+          headers: { 'X-Skyfun-Session': toolboxToken() }
+        });
+        const payload = await res.json().catch(() => null);
+        if (!res.ok || !payload?.ok) throw new Error(payload?.error || `${KPI_PARTS[part]}讀取失敗（HTTP ${res.status}）`);
+        return payload;
+      }
+
+      /** 同月份業績月的點數（第一階段以上達成率）與承接率 */
+      async function kpiPerf(m, force) {
+        const year = m.year + 1911;
+        if (Core.beforeFirstPerf(year, m.month)) return { missing: '115/09 起才有' };
+        try {
+          const r = Core.perfMonthRange(year, m.month);
+          const calc = await monthCalc(force, r);
+          const tc = await fetchWorker('/admin-points/tenant-cities', '房客地區', r).catch((e) => ({ rows: [], pending: 0, error: e.message }));
+          const weeks = Core.takeupWeeks(r);
+          const takeup = Core.takeupReport(calc.auditRows, {
+            start: r.start,
+            end: r.end,
+            staff: calc.staff,
+            expenses: calc.expenseRows,
+            tenantCities: new Map((tc.rows || []).map(([id, city]) => [String(id), city])),
+            regionOf: Core.kpiRegionOfCity
+          });
+          return {
+            range: r,
+            weeks,
+            stage: Core.kpiStageReport(calc.result, { staff: calc.staff, weeks }),
+            takeup,
+            tenant: { pending: Number(tc.pending) || 0, error: tc.error || '', unplaced: takeup.unplaced.tenant }
+          };
+        } catch (err) {
+          return { missing: '讀取失敗', error: err.message };
+        }
+      }
+
+      function kpiBuild(m, r04, r07, cases, opinions, perf) {
+        const regions = ['全區', ...Core.KPI_REGIONS];
+        const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
+        const roster = blank();
+        const audit = blank();
+        const companies = new Map();
+        for (const [form, d] of [['04', r04], ['07', r07]]) {
+          for (const [region, company, period, n] of d.rows || []) {
+            if (roster[region]) roster[region].total += n;
+            roster['全區'].total += n;
+            const key = `${region}|${company}`;
+            const c = companies.get(key) || { region, company, n: {} };
+            c.n[`${form}-${period}`] = (c.n[`${form}-${period}`] || 0) + n;
+            companies.set(key, c);
+          }
+        }
+        const caseCities = [];
+        for (const [region, city, n] of cases.rows || []) {
+          audit['全區'].total += n;
+          if (audit[region]) audit[region].total += n;
+          caseCities.push({ region, city, n });
+        }
+        const errors = (opinions || []).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? Core.kpiRegionOfCaseNo(o.caseNo) : '') }));
+        for (const o of errors) {
+          const bucket = o.kind === 'roster' ? roster : audit;
+          bucket['全區'].err += 1;
+          if (o.area && bucket[o.area]) bucket[o.area].err += 1;
+        }
+        const fetched = [r04, r07, cases].map((d) => d.fetchedAt).filter(Boolean).sort()[0];
+        return { m, roster, audit, perf, companies: [...companies.values()], caseCities, errors, fetchedAt: fetched, cached: [r04, r07, cases].some((d) => d.cached) };
+      }
+
+      /** col：'all' 整月，數字為週序號；回傳 null 表示沒有資料 */
+      function kpiValue(k, row, g, col) {
+        if (row.monthly) return col === 'all' ? k[row.key][g] : null;
+        if (!k.perf.range) return null;
+        return row.key === 'stage' ? k.perf.stage.get(g, col) : k.perf.takeup.get(g, 'total', col);
+      }
+      function kpiEmpty(k, row) {
+        return row.monthly || k.perf.range ? row.empty : k.perf.missing;
+      }
+      function kpiWeekCols(k) {
+        if (!k.perf.range) return [];
+        const today = Core.isoDate(new Date());
+        return k.perf.weeks
+          .map((w, i) => ({ key: i, label: `第${i + 1}週`, sub: `${mmdd(w.start)}–${mmdd(w.end)}`, start: w.start }))
+          .filter((c) => c.start <= today);
+      }
+
+      function kpiTitle(k, week) {
+        return `${k.m.year}年${String(k.m.month).padStart(2, '0')}月 各地區KPI指標${week ? '（週報）' : ''}`;
+      }
+      function kpiInfo(k) {
+        const perf = k.perf.range ? `業績月 ${slashDate(k.perf.range.start)}–${slashDate(k.perf.range.end)}` : k.perf.missing;
+        return `清冊：表單04＋表單07（4期、4-1期、5期｜期別二、已歸檔）　｜　審件：媒合管理起租日 ${k.m.guild} 已生效　｜　錯誤件數：公會期數 ${k.m.guild} 的清冊／案件意見　｜　第一階段以上達成率、行政承接率：${perf}`;
+      }
+      function kpiNote(k) {
+        const noArea = k.errors.filter((o) => !o.area).length;
+        const other = k.caseCities.filter((c) => !c.region).reduce((s, c) => s + c.n, 0);
+        const parts = [];
+        if (other) parts.push(`審件另有 ${other} 件在其他縣市，只算在全區`);
+        if (noArea) parts.push(`${noArea} 筆意見沒有縣市，只算在全區`);
+        if (k.perf.error) parts.push(`點數／承接率讀取失敗：${k.perf.error}`);
+        const tn = k.perf.tenant;
+        if (tn?.error) parts.push(`房客地區暫時查不到（${tn.error}），房審只算在全區`);
+        else if (tn?.unplaced) parts.push(`承接率有 ${tn.unplaced} 件房審查不到縣市，只算在全區${tn.pending ? `（還有 ${tn.pending} 位房客的地區在查詢中，稍後按「重新抓取」會補上）` : ''}`);
+        parts.push('第一階段以上達成率依人力明細地區，大台北的行政算在台北；新北、基隆、南投目前沒有行政');
+        return parts.join('；');
+      }
+
+      function kpiCellHtml(k, row, g, col) {
+        const x = kpiValue(k, row, g, col);
+        const rate = x ? row.rate(x) : null;
+        if (rate == null) return `<td class="tk-cell tk-none">—<small>${esc(x ? row.empty : kpiEmpty(k, row))}</small></td>`;
+        return `<td class="tk-cell ${kpiClass(rate, row.target)}"><b>${kpiPct(rate)}</b><small>${esc(row.text(x)).replace('／', '／<wbr>')}</small></td>`;
+      }
+
+      function kpiMonthTables(k) {
+        return KPI_BLOCKS.map((regions) => `<table class="tk-table kpi-table"><thead>
+            <tr><th class="tk-label" rowspan="2">KPI 指標</th>${regions.map((g) => `<th class="tk-region" colspan="2">${g}</th>`).join('')}</tr>
+            <tr>${regions.map(() => '<th class="tk-week">目標</th><th class="tk-week">本月<wbr>實績</th>').join('')}</tr>
+          </thead><tbody>${KPI_ROWS.map((row) => `<tr><th class="tk-label">${row.label}</th>${regions.map((g) => `<td class="kpi-goal">${kpiPct(row.target)}</td>${kpiCellHtml(k, row, g, 'all')}`).join('')}</tr>`).join('')}</tbody></table>`).join('<div style="height:0.8rem"></div>');
+      }
+
+      function kpiWeekTables(k) {
+        const cols = kpiWeekCols(k);
+        if (!cols.length) return `<p class="muted">${esc(k.perf.missing || '這個業績月還沒開始')}，沒有週資料。</p>`;
+        const regions = ['全區', ...Core.KPI_REGIONS];
+        return KPI_ROWS.filter((row) => !row.monthly).map((row) => `<div class="tk-area">
+            <div class="tk-area-title">${row.label}｜目標 ${kpiPct(row.target)}｜${row.week}</div>
+            <table class="tk-table kpi-table kpi-week"><thead>
+              <tr><th class="tk-label">地區</th>${cols.map((c) => `<th class="tk-week">${c.label}<small>${c.sub}</small></th>`).join('')}<th class="tk-week">本月<small>整月</small></th></tr>
+            </thead><tbody>${regions.map((g) => `<tr class="${g === '全區' ? 'tk-total' : ''}"><th class="tk-label">${g}</th>${cols.map((c) => kpiCellHtml(k, row, g, c.key)).join('')}${kpiCellHtml(k, row, g, 'all')}</tr>`).join('')}</tbody></table>
+          </div>`).join('');
+      }
+
+      function renderKpi() {
+        const k = kpi.cur;
+        const week = kpi.view === 'week';
+        const note = kpiNote(k);
+        $('kpi-sheet').innerHTML = `<div class="rpt-sheet">
+            <div class="rpt-title">${esc(kpiTitle(k, week))}</div>
+            <div class="rpt-info">${esc(kpiInfo(k))}</div>
+            ${note ? `<div class="rpt-note">${esc(note)}</div>` : ''}
+            <div style="height:0.7rem"></div>
+            ${week ? kpiWeekTables(k) : kpiMonthTables(k)}
+          </div>`;
+
+        const errs = k.errors.slice().sort((a, b) => a.kind.localeCompare(b.kind) || Core.KPI_REGIONS.indexOf(a.area) - Core.KPI_REGIONS.indexOf(b.area));
+        $('kpi-errors').innerHTML = errs.length
+          ? `<div class="overflow-x-auto"><table><thead><tr><th>類別</th><th>縣市</th><th>媒合編號／清冊期數</th><th>行政</th><th>填寫日</th><th>公會意見內容</th></tr></thead><tbody>${errs.map((o) => `<tr>
+              <td>${o.kind === 'roster' ? '清冊' : '審件'}</td><td>${esc(o.area || '—')}${o.area && !o.region ? ' <span class="muted">(依編號)</span>' : ''}</td>
+              <td>${esc(o.kind === 'roster' ? o.rosterPeriod : o.caseNo)}</td><td>${esc(o.name)}</td><td>${esc(o.date)}</td>
+              <td style="white-space:pre-wrap;min-width:14rem">${esc(o.content)}</td></tr>`).join('')}</tbody></table></div>`
+          : `<p class="muted">公會期數 ${esc(k.m.guild)} 還沒有行政填寫的清冊／案件意見，錯誤件數都是 0。</p>`;
+
+        const head = ['04', '07'].flatMap((f) => KPI_PERIODS.map((p) => `<th>表單${f}<br>${p}</th>`)).join('');
+        const keys = ['04', '07'].flatMap((f) => KPI_PERIODS.map((p) => `${f}-${p}`));
+        const sum = (list) => keys.map((key) => list.reduce((s, c) => s + (c.n[key] || 0), 0));
+        const compRows = k.companies.map((c) => {
+          const v = keys.map((key) => c.n[key]);
+          return `<tr><td class="l">${esc(c.region)}</td><td class="l">${esc(c.company)}</td>${v.map((n) => `<td>${n == null ? '<span class="muted">—</span>' : n}</td>`).join('')}<td><b>${v.reduce((s, n) => s + (n || 0), 0)}</b></td></tr>`;
+        }).join('');
+        const tot = sum(k.companies);
+        const cities = k.caseCities.slice().sort((a, b) => (Core.KPI_REGIONS.indexOf(a.region) + 99 * !a.region) - (Core.KPI_REGIONS.indexOf(b.region) + 99 * !b.region));
+        $('kpi-sources').innerHTML = `<p class="list-title mb-1">清冊總件數</p>
+          <div class="overflow-x-auto"><table class="kpi-src"><thead><tr><th class="l">地區</th><th class="l">公司</th>${head}<th>合計</th></tr></thead>
+            <tbody>${compRows}<tr class="sum"><td class="l" colspan="2">全區</td>${tot.map((n) => `<td>${n}</td>`).join('')}<td>${tot.reduce((s, n) => s + n, 0)}</td></tr></tbody></table></div>
+          <p class="list-title mt-3 mb-1">審件總件數（起租已生效，依登記縣市）</p>
+          <div class="overflow-x-auto"><table class="kpi-src" style="width:auto"><thead><tr><th class="l">地區</th><th class="l">登記縣市</th><th>件數</th></tr></thead>
+            <tbody>${cities.map((c) => `<tr><td class="l">${esc(c.region || '其他（只算全區）')}</td><td class="l">${esc(c.city)}</td><td>${c.n}</td></tr>`).join('')}
+            <tr class="sum"><td class="l" colspan="2">全區</td><td>${k.audit['全區'].total}</td></tr></tbody></table></div>`;
+      }
+
+      async function makeKpi(force) {
+        if (kpi.busy) return;
+        const m = kpiMonth();
+        if (!force && kpi.cache.has(m.key)) {
+          kpi.cur = kpi.cache.get(m.key);
+          renderKpi();
+          kpiStamp();
+          return;
+        }
+        kpi.busy = true;
+        for (const id of ['btn-kpi', 'btn-kpi-xlsx', 'btn-kpi-print']) $(id).disabled = true;
+        $('kpi-sheet').innerHTML = `<p class="muted">讀取星鴻表單04、表單07、媒合管理與審核紀錄中…第一次約 10～30 秒</p>`;
+        $('kpi-errors').innerHTML = '';
+        $('kpi-sources').innerHTML = '';
+        try {
+          if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
+          const [r04, r07, cases, op, perf] = await Promise.all([
+            fetchKpiPart(m, 'roster04', force),
+            fetchKpiPart(m, 'roster07', force),
+            fetchKpiPart(m, 'cases', force),
+            rpc('admin_points_kpi_opinions', { p_guild_period: m.guild }),
+            kpiPerf(m, force)
+          ]);
+          const k = kpiBuild(m, r04, r07, cases, op.opinions, perf);
+          kpi.cache.set(m.key, k);
+          if (kpiMonth().key !== m.key) return;
+          kpi.cur = k;
+          renderKpi();
+          kpiStamp();
+          $('btn-kpi-xlsx').disabled = false;
+          $('btn-kpi-print').disabled = false;
+        } catch (err) {
+          kpi.cur = null;
+          $('kpi-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
+        } finally {
+          kpi.busy = false;
+          $('btn-kpi').disabled = false;
+          if (kpiMonth().key !== m.key) makeKpi(false);
+        }
+      }
+      function kpiStamp() {
+        const k = kpi.cur;
+        $('kpi-stamp').textContent = k ? `星鴻資料時間 ${fmtTime(k.fetchedAt)}${k.cached ? '（快取）' : ''}` : '';
+        $('btn-kpi-xlsx').disabled = !k;
+        $('btn-kpi-print').disabled = !k;
+      }
+
+      $('kpi-month').innerHTML = kpiMonths().map((x) => `<option value="${x.year}-${x.month}">${x.year} 年 ${x.month} 月</option>`).join('');
+      $('kpi-month').selectedIndex = 1;
+      $('kpi-month').addEventListener('change', () => makeKpi(false));
+      $('btn-kpi').addEventListener('click', () => makeKpi(true));
+      $('btn-kpi-print').addEventListener('click', () => printTab('kpi'));
+      document.querySelectorAll('[data-kpi-view]').forEach((b) => b.addEventListener('click', () => {
+        kpi.view = b.dataset.kpiView;
+        document.querySelectorAll('[data-kpi-view]').forEach((x) => x.classList.toggle('is-on', x === b));
+        if (kpi.cur) renderKpi();
+      }));
+
+      $('btn-kpi-xlsx').addEventListener('click', async () => {
+        const k = kpi.cur;
+        if (!k) return;
+        try {
+          const XLSX = await loadXlsx();
+          const border = { style: 'thin', color: { rgb: '94A3B8' } };
+          const box = { top: border, bottom: border, left: border, right: border };
+          const font = (o) => Object.assign({ name: 'Microsoft JhengHei', sz: 10 }, o);
+          const center = { horizontal: 'center', vertical: 'center', wrapText: true };
+          const fill = (rgb) => ({ fgColor: { rgb } });
+          const FILL = { 'tk-g': 'D9F2D9', 'tk-y': 'FFF2CC', 'tk-r': 'F8D7DA', 'tk-none': 'F8FAFC' };
+          const st = {
+            title: { font: font({ bold: true, sz: 13, color: { rgb: 'FFFFFF' } }), fill: fill('0B1F44'), alignment: center },
+            info: { font: font({ bold: true, sz: 9 }), fill: fill('FBF3E4'), alignment: { wrapText: true, vertical: 'center' } },
+            head: { font: font({ bold: true }), fill: fill('D9EAD3'), alignment: center, border: box },
+            goal: { font: font({ bold: true, color: { rgb: '475569' } }), alignment: center, border: box }
+          };
+          const xCell = (row, g, col) => {
+            const x = kpiValue(k, row, g, col);
+            const rate = x ? row.rate(x) : null;
+            return {
+              v: rate == null ? `—\n${x ? row.empty : kpiEmpty(k, row)}` : `${kpiPct(rate)}\n${row.text(x)}`,
+              t: 's',
+              s: { font: font({ bold: true }), alignment: center, border: box, fill: fill(FILL[kpiClass(rate, row.target)] || 'FFFFFF') }
+            };
+          };
+          const sheet = (width) => {
+            const aoa = [];
+            const merges = [];
+            const heights = [];
+            const blank = (s) => ({ v: '', t: 's', s });
+            const line = (text, s, h) => {
+              merges.push({ s: { r: aoa.length, c: 0 }, e: { r: aoa.length, c: width - 1 } });
+              heights[aoa.length] = h || 22;
+              aoa.push([{ v: text, t: 's', s }, ...Array.from({ length: width - 1 }, () => blank(s))]);
+            };
+            return { aoa, merges, heights, blank, line };
+          };
+          const finishSheet = (s, cols) => {
+            const ws = XLSX.utils.aoa_to_sheet(s.aoa);
+            ws['!merges'] = s.merges;
+            ws['!cols'] = cols;
+            ws['!rows'] = s.aoa.map((_, i) => ({ hpt: s.heights[i] || 18 }));
+            return ws;
+          };
+          const note = kpiNote(k);
+          const wb = XLSX.utils.book_new();
+
+          const width = 1 + Math.max(...KPI_BLOCKS.map((b) => b.length)) * 2;
+          const ms = sheet(width);
+          ms.line(kpiTitle(k), st.title, 26);
+          ms.line(kpiInfo(k), st.info, 34);
+          if (note) ms.line(note, st.info, 34);
+          for (const regions of KPI_BLOCKS) {
+            ms.aoa.push([]);
+            const h1 = [{ v: 'KPI 指標', t: 's', s: st.head }];
+            ms.merges.push({ s: { r: ms.aoa.length, c: 0 }, e: { r: ms.aoa.length + 1, c: 0 } });
+            for (const g of regions) {
+              ms.merges.push({ s: { r: ms.aoa.length, c: h1.length }, e: { r: ms.aoa.length, c: h1.length + 1 } });
+              h1.push({ v: g, t: 's', s: st.head }, ms.blank(st.head));
+            }
+            ms.aoa.push(h1);
+            ms.aoa.push([ms.blank(st.head), ...regions.flatMap(() => [{ v: '目標', t: 's', s: st.head }, { v: '本月實績', t: 's', s: st.head }])]);
+            for (const row of KPI_ROWS) {
+              ms.heights[ms.aoa.length] = 30;
+              ms.aoa.push([{ v: row.label, t: 's', s: st.head }, ...regions.flatMap((g) => [{ v: kpiPct(row.target), t: 's', s: st.goal }, xCell(row, g, 'all')])]);
+            }
+          }
+          XLSX.utils.book_append_sheet(wb, finishSheet(ms, [{ wch: 18 }, ...Array.from({ length: width - 1 }, (_, i) => ({ wch: i % 2 ? 13 : 7 }))]), `${k.m.month}月KPI`);
+
+          const cols = kpiWeekCols(k);
+          if (cols.length) {
+            const ww = cols.length + 2;
+            const ws = sheet(ww);
+            ws.line(kpiTitle(k, true), st.title, 26);
+            ws.line(kpiInfo(k), st.info, 46);
+            for (const row of KPI_ROWS.filter((r) => !r.monthly)) {
+              ws.aoa.push([]);
+              ws.line(`${row.label}｜目標 ${kpiPct(row.target)}｜${row.week}`, st.title);
+              ws.heights[ws.aoa.length] = 30;
+              ws.aoa.push([{ v: '地區', t: 's', s: st.head }, ...cols.map((c) => ({ v: `${c.label}\n${c.sub}`, t: 's', s: st.head })), { v: '本月', t: 's', s: st.head }]);
+              for (const g of ['全區', ...Core.KPI_REGIONS]) {
+                ws.heights[ws.aoa.length] = 30;
+                ws.aoa.push([{ v: g, t: 's', s: st.head }, ...cols.map((c) => xCell(row, g, c.key)), xCell(row, g, 'all')]);
+              }
+            }
+            XLSX.utils.book_append_sheet(wb, finishSheet(ws, [{ wch: 8 }, ...Array.from({ length: ww - 1 }, () => ({ wch: 14 }))]), `${k.m.month}月KPI週報`);
+          }
+
+          const detail = [['類別', '縣市', '媒合編號／清冊期數', '行政', '填寫日', '公會意見內容']].concat(
+            k.errors.map((o) => [o.kind === 'roster' ? '清冊' : '審件', o.area || '', o.kind === 'roster' ? o.rosterPeriod : o.caseNo, o.name, o.date, o.content])
+          );
+          const ws2 = XLSX.utils.aoa_to_sheet(detail);
+          ws2['!cols'] = [{ wch: 6 }, { wch: 6 }, { wch: 22 }, { wch: 10 }, { wch: 11 }, { wch: 60 }];
+          XLSX.utils.book_append_sheet(wb, ws2, '錯誤件數明細');
+          const keys = ['04', '07'].flatMap((f) => KPI_PERIODS.map((p) => `${f}-${p}`));
+          const src = [['地區', '公司', ...keys.map((x) => `表單${x}`), '合計']].concat(
+            k.companies.map((c) => [c.region, c.company, ...keys.map((x) => c.n[x] ?? ''), keys.reduce((s, x) => s + (c.n[x] || 0), 0)]),
+            [[]],
+            [['地區', '登記縣市', '起租已生效件數']],
+            k.caseCities.map((c) => [c.region || '其他', c.city, c.n])
+          );
+          const ws3 = XLSX.utils.aoa_to_sheet(src);
+          ws3['!cols'] = [{ wch: 8 }, { wch: 12 }, ...keys.map(() => ({ wch: 11 })), { wch: 8 }];
+          XLSX.utils.book_append_sheet(wb, ws3, '總件數來源');
+          XLSX.writeFile(wb, `${kpiTitle(k)}.xlsx`);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      /* ---------- 組長登錄：手填點數／審件抽查／客訴懲處 ---------- */
+
+      function renderManual() {
+        const rows = (data.manual || []).slice().reverse();
+        $('manual-count').textContent = rows.length ? `${rows.length} 筆，共 ${rows.reduce((s, m) => s + (Number(m.points) || 0), 0)} 點` : '';
+        $('manual-list').innerHTML = rows.length
+          ? rows.map((m) => `<tr>
+              <td>${esc(m.date)}</td><td>${esc(m.leader)}</td><td>${esc(m.name)}</td><td>${esc(m.item)}</td>
+              <td>${m.qty}</td><td>${m.points}</td><td>${esc(m.note)}</td><td class="muted">${esc(m.createdBy)}</td>
+              <td><button type="button" class="btn btn-del" data-del-manual="${m.id}">刪除</button></td>
+            </tr>`).join('')
+          : '<tr><td colspan="9" class="muted">本業績月尚無人工計點</td></tr>';
+        renderOpinions();
+      }
+
+      function renderOpinions() {
+        const all = (data.opinions || []).slice().reverse();
+        ['case', 'roster'].forEach((kind) => {
+          const rows = all.filter((o) => o.kind === kind);
+          $(`op-${kind}-count`).textContent = rows.length ? `${rows.length} 筆，共 ${rows.length} 點` : '';
+          $(`op-${kind}-list`).innerHTML = rows.length
+            ? rows.map((o) => `<tr>
+                <td>${esc(o.date)}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
+                <td>${esc(kind === 'case' ? o.caseNo : o.rosterPeriod)}</td><td>${esc(o.opinionDate || '')}</td>
+                <td style="white-space:pre-wrap;min-width:12rem">${esc(o.content)}</td>
+                ${kind === 'roster' ? `<td style="white-space:pre-wrap;min-width:12rem;background:#fefce8">${esc(o.measure)}</td>` : ''}
+                <td><button type="button" class="btn btn-del" data-del-opinion="${o.id}">刪除</button></td>
+              </tr>`).join('')
+            : `<tr><td colspan="${kind === 'case' ? 8 : 9}" class="muted">本業績月尚無行政填寫的${kind === 'case' ? '案件' : '清冊'}意見</td></tr>`;
+        });
+      }
+
+      function renderManualNames() {
+        const leader = $('m-leader').value;
+        const cur = $('m-name').value;
+        const members = leader ? (data.staff || []).filter((s) => s.status === '在職' && s.leader === leader) : [];
+        $('m-name').innerHTML = `<option value="">${leader ? '請選擇' : '請先選組長'}</option>` +
+          members.map((s) => `<option${s.name === cur ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
+      }
+
+      function renderChecks() {
+        const rows = (data.checks || []).slice().reverse();
+        $('check-count').textContent = rows.length ? `${rows.length} 筆` : '';
+        $('check-list').innerHTML = rows.length
+          ? rows.map((c) => `<tr>
+              <td>${esc(c.date)}</td><td>${esc(c.name)}</td><td>${c.checked}</td><td>${c.correct}</td>
+              <td>${pct(c.correct / c.checked)}</td><td>${esc(c.note)}</td><td class="muted">${esc(c.createdBy)}</td>
+              <td><button type="button" class="btn btn-del" data-del-check="${c.id}">刪除</button></td>
+            </tr>`).join('')
+          : '<tr><td colspan="8" class="muted">本業績月尚無抽查紀錄</td></tr>';
+      }
+
+      function renderIncidents() {
+        const rows = (data.incidents || []).slice().reverse();
+        $('incident-count').textContent = rows.length ? `${rows.length} 筆` : '';
+        $('incident-list').innerHTML = rows.length
+          ? rows.map((x) => `<tr>
+              <td>${esc(x.date)}</td><td>${esc(x.name)}</td><td>${x.complaints}</td><td>${esc(x.penalty || '—')}</td>
+              <td>${x.compensation ? Number(x.compensation).toLocaleString('en-US') : ''}</td><td>${esc(x.note)}</td><td class="muted">${esc(x.createdBy)}</td>
+              <td><button type="button" class="btn btn-del" data-del-incident="${x.id}">刪除</button></td>
+            </tr>`).join('')
+          : '<tr><td colspan="8" class="muted">本業績月尚無客訴或懲處紀錄</td></tr>';
+      }
+
+      const afterEdit = async (text) => {
+        calcCache.delete(monthKey(range()));
+        if (report && monthKey(report.range) === monthKey(range())) report = null;
+        takeup.data = null;
+        kpi.cache.clear();
+        await load();
+        say(text, true);
+      };
+
       $('btn-add-manual').addEventListener('click', async (e) => {
         const btn = e.currentTarget;
+        if (!$('m-leader').value) return say('請先選組長');
+        if (!$('m-name').value) return say('請選行政');
+        const points = Number($('m-points').value);
+        if (!Number.isInteger(points) || points < 1 || points > 150) return say('給予點數需為 1～150 的整數');
         btn.disabled = true;
         try {
           const res = await rpc('admin_points_admin_add_manual', {
             p_token: toolboxToken(),
             p_date: $('m-date').value,
+            p_leader: $('m-leader').value,
             p_name: $('m-name').value,
             p_item: $('m-item').value,
             p_qty: Number($('m-qty').value) || 1,
             p_note: $('m-note').value,
-            p_points: Number($('m-points').value) || 1
+            p_points: points
           });
           $('m-note').value = '';
           $('m-qty').value = '1';
-          await load();
-          say(`已新增 ${res.points} 點`, true);
+          suggestPoints();
+          await afterEdit(`已新增 ${res.points} 點`);
         } catch (err) {
           say(err.message);
         } finally {
@@ -554,15 +1606,656 @@
 
       $('manual-list').addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-del-manual]');
-        if (!btn || !confirm('確定刪除這筆手填點數？')) return;
+        if (!btn || !confirm('確定刪除這筆人工計點？')) return;
         try {
           await rpc('admin_points_admin_delete_manual', { p_id: Number(btn.dataset.delManual) });
-          await load();
+          await afterEdit('已刪除');
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      ['op-case-list', 'op-roster-list'].forEach((id) => $(id).addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-del-opinion]');
+        if (!btn || !confirm('確定刪除這筆意見？這位行政會少 1 點。')) return;
+        try {
+          await rpc('admin_points_opinion_admin_delete', { p_id: Number(btn.dataset.delOpinion) });
+          await afterEdit('已刪除');
+        } catch (err) {
+          say(err.message);
+        }
+      }));
+
+      $('btn-add-check').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          await rpc('admin_points_admin_add_check', {
+            p_token: toolboxToken(),
+            p_date: $('c-date').value,
+            p_name: $('c-name').value,
+            p_checked: Number($('c-checked').value) || 0,
+            p_correct: Number($('c-correct').value),
+            p_note: $('c-note').value
+          });
+          $('c-note').value = '';
+          await afterEdit('已新增抽查紀錄');
+        } catch (err) {
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      $('check-list').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-del-check]');
+        if (!btn || !confirm('確定刪除這筆抽查紀錄？')) return;
+        try {
+          await rpc('admin_points_admin_delete_check', { p_id: Number(btn.dataset.delCheck) });
+          await afterEdit('已刪除');
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      $('btn-add-incident').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          await rpc('admin_points_admin_add_incident', {
+            p_token: toolboxToken(),
+            p_date: $('i-date').value,
+            p_name: $('i-name').value,
+            p_complaints: Number($('i-complaints').value) || 0,
+            p_penalty: $('i-penalty').value,
+            p_compensation: Number($('i-comp').value) || 0,
+            p_note: $('i-note').value
+          });
+          $('i-note').value = '';
+          $('i-complaints').value = '0';
+          $('i-penalty').value = '';
+          $('i-comp').value = '0';
+          await afterEdit('已新增客訴／懲處紀錄');
+        } catch (err) {
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      $('incident-list').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-del-incident]');
+        if (!btn || !confirm('確定刪除這筆客訴／懲處紀錄？')) return;
+        try {
+          await rpc('admin_points_admin_delete_incident', { p_id: Number(btn.dataset.delIncident) });
+          await afterEdit('已刪除');
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      /* ---------- 教育訓練：看完影片＋考試滿分＋實作完成，系統自動判定 ---------- */
+
+      const COURSES = Core.VIDEO_COURSES.map((key) => ({ key, label: Core.SKILL_NODES.find((n) => n.key === key)?.label || key }));
+      const COURSE_LABEL = new Map(COURSES.map((c) => [c.key, c.label]));
+      const train = { loaded: false, loading: false, view: 'people', people: new Map(), videos: new Map(), items: [], guide: new Map(), guideTotal: 0 };
+      $('t-course').innerHTML += COURSES.map((c) => `<option value="${c.key}">${esc(c.label)}</option>`).join('');
+
+      async function loadTraining() {
+        if (train.loading) return;
+        train.loading = true;
+        $('t-count').textContent = '讀取中…';
+        try {
+          const [res, gx] = await Promise.all([
+            rpc('course_exam_admin_list', { p_limit: 5000 }),
+            rpc('guide_exam_admin_list', { p_query: '', p_limit: 1 }).catch(() => null)
+          ]);
+          Object.assign(train, {
+            loaded: true,
+            people: new Map((res.people || []).map((x) => [`${x.course}|${x.name}`, x])),
+            videos: new Map((res.videos || []).map((x) => [`${x.course}|${x.name}`, x])),
+            items: res.items || [],
+            guide: new Map(((gx && gx.people) || []).map((p) => [p.userName, p])),
+            guideTotal: Number(gx && gx.total) || 0
+          });
+          renderTraining();
+        } catch (e) {
+          $('t-count').textContent = '';
+          say(e.message);
+        } finally {
+          train.loading = false;
+        }
+      }
+
+      const examScore = (correct, total) => (correct == null ? null : Math.round(Number(correct) / (Number(total) || 20) * 100));
+      function courseOf(course, name) {
+        const ex = train.people.get(`${course}|${name}`);
+        const v = train.videos.get(`${course}|${name}`);
+        return { ex, v, st: Core.trainingState(course, { videoDone: !!(v && v.completedAt), examPassed: !!(ex && ex.passed) }) };
+      }
+      function guideOf(name) {
+        const g = train.guide.get(name);
+        const passed = g ? Number(g.passed) || 0 : 0;
+        return { passed, done: !!train.guideTotal && passed >= train.guideTotal };
+      }
+      function trainCourses() {
+        const c = $('t-course').value;
+        return c ? COURSES.filter((x) => x.key === c) : COURSES;
+      }
+      function trainNames() {
+        const leader = $('t-leader').value;
+        const names = (data.staff || [])
+          .filter((s) => s.status === '在職' && (!leader || s.leader === leader))
+          .sort((a, b) => (a.leader || '').localeCompare(b.leader || '', 'zh-Hant') || a.name.localeCompare(b.name, 'zh-Hant'))
+          .map((s) => s.name);
+        if (!leader) {
+          const known = new Set(names);
+          const extra = new Set([...train.people.values(), ...train.videos.values()].map((x) => x.name).filter((n) => !known.has(n)));
+          names.push(...[...extra].sort((a, b) => a.localeCompare(b, 'zh-Hant')));
+        }
+        return names;
+      }
+      function trainItems() {
+        const leader = $('t-leader').value;
+        const course = $('t-course').value;
+        return train.items.filter((it) => (!leader || staffLeader(it.name) === leader) && (!course || it.course === course));
+      }
+
+      function courseCell(course, name) {
+        const { ex, v, st } = courseOf(course, name);
+        const n = st.steps.filter((x) => x.ok).length;
+        const head = st.done ? '<b class="pass">✔ 通過</b>' : `<b>${n}／${st.steps.length}</b>`;
+        const video = v ? `影片 ${v.completedAt ? '✅ 看完' : v.pct + '%'}` : '影片 未看';
+        const best = ex ? examScore(ex.best, ex.total) : null;
+        const exam = !ex || !Number(ex.attempts) ? '考試 還沒考'
+          : ex.passed ? `考試 ✅ 100 分（${ex.attempts} 次）`
+          : `考試 最高 <span class="fail">${best} 分</span>（${ex.attempts} 次）`;
+        return `<td class="train-cell${st.done ? ' is-on' : ''}">${head}<br>${video}<br>${exam}<br><span class="pend">實作 準備中</span></td>`;
+      }
+
+      function renderTraining() {
+        document.querySelectorAll('[data-t-view]').forEach((b) => b.classList.toggle('is-on', b.dataset.tView === train.view));
+        if (!train.loaded) {
+          $('t-stats').innerHTML = '';
+          $('t-head').innerHTML = '';
+          $('t-rows').innerHTML = `<tr><td class="muted">${train.loading ? '讀取中…' : '切到這一頁會自動讀取'}</td></tr>`;
+          return;
+        }
+        const names = trainNames();
+        const courses = trainCourses();
+        let videoDone = 0, examDone = 0, scored = 0, scoreSum = 0;
+        for (const name of names) {
+          for (const c of courses) {
+            const { ex, v } = courseOf(c.key, name);
+            if (v && v.completedAt) videoDone++;
+            if (ex && ex.passed) examDone++;
+            if (ex && Number(ex.attempts)) { scored++; scoreSum += examScore(ex.best, ex.total); }
+          }
+        }
+        $('t-stats').innerHTML = [
+          ['列入人數', names.length],
+          ['影片看完（人次）', videoDone],
+          ['考試滿分（人次）', examDone],
+          ['已考人次平均最高分', scored ? Math.round(scoreSum / scored) + ' 分' : '—']
+        ].map(([k, v]) => '<div class="stat"><b>' + v + '</b><span>' + esc(k) + '</span></div>').join('');
+
+        if (train.view === 'people') {
+          const guideHead = train.guideTotal ? '<th>執行要點考試</th>' : '';
+          $('t-head').innerHTML = '<tr><th>姓名</th><th>組長</th>' + courses.map((c) => `<th>${esc(c.label)}</th>`).join('') + guideHead + '<th>通過</th></tr>';
+          $('t-count').textContent = '共 ' + names.length + ' 人';
+          $('t-rows').innerHTML = names.map((name) => {
+            const g = guideOf(name);
+            const guideCell = train.guideTotal
+              ? `<td class="train-cell${g.done ? ' is-on' : ''}">${g.done ? '<b class="pass">✔ 通過</b>' : `<b>${Math.round(g.passed / train.guideTotal * 100)}%</b>`}<br>${g.passed}／${train.guideTotal} 題</td>`
+              : '';
+            const passed = courses.filter((c) => courseOf(c.key, name).st.done).length + (train.guideTotal && g.done ? 1 : 0);
+            const total = courses.length + (train.guideTotal ? 1 : 0);
+            return `<tr><td class="font-bold">${esc(name)}</td><td class="muted">${esc(staffLeader(name) || '—')}</td>` +
+              courses.map((c) => courseCell(c.key, name)).join('') + guideCell + `<td>${passed}／${total}</td></tr>`;
+          }).join('') || `<tr><td colspan="${courses.length + 4}" class="muted">沒有人員</td></tr>`;
+          return;
+        }
+        const list = trainItems();
+        $('t-head').innerHTML = '<tr><th>考試時間</th><th>姓名</th><th>組長</th><th>處別</th><th>課程</th><th>次別</th><th>答對</th><th>分數</th><th>用時</th><th>結果</th></tr>';
+        $('t-count').textContent = '共 ' + list.length + ' 筆';
+        $('t-rows').innerHTML = list.map((it) => {
+          const done = it.status === 'submitted';
+          const cls = done ? (it.passed ? 'pass' : 'fail') : 'muted';
+          const result = done ? (it.passed ? '<span class="badge b-done">滿分通過</span>' : '<span class="badge b-fail">需重考</span>') : '<span class="badge b-run">作答中</span>';
+          return '<tr><td>' + fmtTime(it.startedAt) + '</td><td class="font-bold">' + esc(it.name) + '</td><td>' + esc(staffLeader(it.name) || '—') + '</td><td>' + esc(it.team || '—') + '</td>' +
+            '<td>' + esc(COURSE_LABEL.get(it.course) || it.course) + '</td><td>第 ' + (Number(it.retake) + 1) + ' 次</td>' +
+            '<td class="' + cls + '">' + (it.correct == null ? '—' : it.correct + '／' + it.total) + '</td>' +
+            '<td class="' + cls + '">' + (done ? examScore(it.correct, it.total) + ' 分' : '—') + '</td>' +
+            '<td>' + dur(it.durationSec) + '</td><td>' + result +
+            (it.autoSubmitted ? '<span class="badge b-warn">時間到自動交卷</span>' : '') + (it.overtime ? '<span class="badge b-warn">逾時</span>' : '') + '</td></tr>';
+        }).join('') || '<tr><td colspan="10" class="muted">還沒有考試紀錄</td></tr>';
+      }
+
+      document.querySelectorAll('[data-t-view]').forEach((b) => b.addEventListener('click', () => {
+        train.view = b.dataset.tView;
+        renderTraining();
+      }));
+      $('t-leader').addEventListener('change', renderTraining);
+      $('t-course').addEventListener('change', renderTraining);
+      $('t-refresh').addEventListener('click', loadTraining);
+      $('t-csv').addEventListener('click', () => {
+        if (!train.loaded) return;
+        const courses = trainCourses();
+        if (train.view === 'people') {
+          const head = ['姓名', '組長'];
+          courses.forEach((c) => head.push(c.label + '影片(%)', c.label + '影片看完', c.label + '考試最高分', c.label + '考試次數', c.label + '考試滿分', c.label + '實作', c.label + '通過'));
+          if (train.guideTotal) head.push('執行要點已考滿分題數', '執行要點總題數');
+          downloadCsv('教育訓練_每人進度_', head, trainNames().map((name) => {
+            const row = [name, staffLeader(name)];
+            courses.forEach((c) => {
+              const { ex, v, st } = courseOf(c.key, name);
+              row.push(v ? v.pct : 0, v && v.completedAt ? 'Y' : '', ex && Number(ex.attempts) ? examScore(ex.best, ex.total) : '', ex ? ex.attempts : 0, ex && ex.passed ? 'Y' : '', '準備中', st.done ? 'Y' : '');
+            });
+            if (train.guideTotal) row.push(guideOf(name).passed, train.guideTotal);
+            return row;
+          }));
+          return;
+        }
+        downloadCsv('教育訓練_考試紀錄_', ['考試時間', '姓名', '組長', '處別', '課程', '次別', '答對', '題數', '分數', '結果', '用時(秒)', '自動交卷', '逾時'],
+          trainItems().map((it) => [fmtTime(it.startedAt), it.name, staffLeader(it.name), it.team, COURSE_LABEL.get(it.course) || it.course, Number(it.retake) + 1,
+            it.correct ?? '', it.total, it.status === 'submitted' ? examScore(it.correct, it.total) : '',
+            it.status === 'submitted' ? (it.passed ? '滿分通過' : '需重考') : '作答中', it.durationSec ?? '', it.autoSubmitted ? 'Y' : '', it.overtime ? 'Y' : '']));
+      });
+
+      /* ---------- 執行要點考試 ---------- */
+
+      const QUESTIONS = new Map(((window.GUIDE_EXAM && window.GUIDE_EXAM.questions) || []).map((q) => [q.id, q]));
+      const exam = { loaded: false, loading: false, total: 196, people: [], items: [], view: 'people', openId: null };
+
+      function staffLeader(name) {
+        return (data.staff || []).find((s) => s.name === name)?.leader || '';
+      }
+      function examPct(n) {
+        return Math.round((Number(n) || 0) / (Number(exam.total) || 196) * 1000) / 10;
+      }
+      function setLabel(it) {
+        return '第 ' + it.setNo + ' 份' + (it.retake ? '（補考 ' + it.retake + '）' : '');
+      }
+      function dur(sec) {
+        if (sec == null) return '—';
+        return Math.floor(sec / 60) + ' 分 ' + String(sec % 60).padStart(2, '0') + ' 秒';
+      }
+      function statusBadge(it) {
+        if (it.status === 'submitted') {
+          let html = it.passed ? '<span class="badge b-done">通過</span>' : '<span class="badge b-fail">需補考</span>';
+          if (it.autoSubmitted) html += '<span class="badge b-warn">時間到自動交卷</span>';
+          if (it.overtime) html += '<span class="badge b-warn">逾時</span>';
+          return html;
+        }
+        return it.status === 'in_progress' ? '<span class="badge b-run">作答中</span>' : '<span class="badge b-void">未交卷</span>';
+      }
+      function examPeople() {
+        const leader = $('x-leader').value;
+        return exam.people.filter((p) => !leader || staffLeader(p.userName) === leader);
+      }
+      function examItems() {
+        const leader = $('x-leader').value;
+        const st = $('x-status').value;
+        return exam.items.filter((it) => {
+          if (leader && staffLeader(it.userName) !== leader) return false;
+          if (!st) return true;
+          if (st === 'passed') return it.status === 'submitted' && it.passed;
+          if (st === 'failed') return it.status === 'submitted' && !it.passed;
+          return it.status === st;
+        });
+      }
+
+      function renderExam() {
+        leaderOptions($('x-leader'), '全部組長');
+        document.querySelectorAll('[data-x-view]').forEach((b) => b.classList.toggle('is-on', b.dataset.xView === exam.view));
+        $('x-status-wrap').classList.toggle('hidden', exam.view !== 'items');
+        const total = Number(exam.total) || 196;
+        const people = examPeople();
+        const done = exam.items.filter((it) => it.status === 'submitted' && people.some((p) => p.userName === it.userName));
+        const finished = people.filter((p) => Number(p.passed) >= total).length;
+        const avg = people.length ? people.reduce((s, p) => s + examPct(p.passed), 0) / people.length : 0;
+        const passRate = done.length ? Math.round(done.filter((it) => it.passed).length / done.length * 100) : 0;
+        $('x-stats').innerHTML = [
+          ['應考人數', people.length],
+          ['已交卷次數（全對 ' + passRate + '%）', done.length],
+          [total + ' 題全部考完人數', finished],
+          ['平均進度', people.length ? (Math.round(avg * 10) / 10) + '%' : '—']
+        ].map(([k, v]) => '<div class="stat"><b>' + v + '</b><span>' + esc(k) + '</span></div>').join('');
+
+        if (exam.view === 'people') {
+          $('x-head').innerHTML = '<tr><th>姓名</th><th>組長</th><th>處別</th><th>進度</th><th></th><th>已考滿分</th><th>通過份數</th><th>交卷次數</th><th>目前狀態</th><th>最後考試</th></tr>';
+          $('x-count').textContent = '共 ' + people.length + ' 人';
+          $('x-rows').innerHTML = people.map((p) => {
+            const v = examPct(p.passed);
+            const state = Number(p.passed) >= total ? '<span class="badge b-done">全部完成</span>'
+              : p.pendingRetake ? '<span class="badge b-fail">待補考</span>'
+              : '<span class="badge b-void">可考下一份</span>';
+            return '<tr class="click" data-x-person="' + esc(p.userName) + '">' +
+              '<td class="font-bold">' + esc(p.userName) + '</td><td>' + esc(staffLeader(p.userName) || '—') + '</td><td>' + esc(p.team || '—') + '</td>' +
+              '<td>' + v + '%</td><td><div class="bar"><span style="width:' + v + '%"></span></div></td>' +
+              '<td>' + p.passed + '／' + total + ' 題</td><td>' + p.passedSets + ' 份</td><td>' + p.attempts + ' 次</td>' +
+              '<td>' + state + '</td><td>' + fmtTime(p.lastAt) + '</td></tr>';
+          }).join('') || '<tr><td colspan="10" class="muted">還沒有人考過</td></tr>';
+          return;
+        }
+        const list = examItems();
+        $('x-head').innerHTML = '<tr><th>考試時間</th><th>姓名</th><th>組長</th><th>處別</th><th>份別</th><th>答對</th><th>用時</th><th>結果</th></tr>';
+        $('x-count').textContent = '共 ' + list.length + ' 筆';
+        $('x-rows').innerHTML = list.map((it) => {
+          const cls = it.status === 'submitted' ? (it.passed ? 'pass' : 'fail') : 'muted';
+          return '<tr class="click' + (exam.openId === it.id ? ' is-open' : '') + '" data-x-id="' + it.id + '">' +
+            '<td>' + fmtTime(it.startedAt) + '</td><td class="font-bold">' + esc(it.userName) + '</td><td>' + esc(staffLeader(it.userName) || '—') + '</td><td>' + esc(it.team || '—') + '</td>' +
+            '<td>' + esc(setLabel(it)) + '</td>' +
+            '<td class="' + cls + '">' + (it.correct == null ? '—' : it.correct + '／' + it.total) + '</td>' +
+            '<td>' + dur(it.durationSec) + '</td><td>' + statusBadge(it) + '</td></tr>' +
+            (exam.openId === it.id ? '<tr><td colspan="8" class="detail" id="x-detail"><p class="muted">載入中…</p></td></tr>' : '');
+        }).join('') || '<tr><td colspan="8" class="muted">沒有資料</td></tr>';
+      }
+
+      function optText(q, id) {
+        if (id == null || id === '') return '（未作答）';
+        const o = q && q.options.find((x) => x.id === String(id));
+        return o ? o.text : '選項 ' + id;
+      }
+
+      async function renderExamDetail(id) {
+        const cell = $('x-detail');
+        if (!cell) return;
+        try {
+          const res = await rpc('guide_exam_admin_get', { p_id: id });
+          const it = res.item;
+          if (!it.results) { cell.innerHTML = '<p class="muted">這份考卷還沒交卷，沒有作答明細。</p>'; return; }
+          const answers = it.answers || {};
+          let html = '<p class="text-sm mb-2">' + esc(it.userName) + '（' + esc(it.team || '未設定處別') + '）· ' + esc(setLabel(it)) +
+            ' · 答對 ' + it.correct + '／' + it.total + ' · 交卷 ' + esc(fmtTime(it.submittedAt)) + '</p>';
+          (it.qids || []).forEach((qid, i) => {
+            const q = QUESTIONS.get(qid);
+            const ok = !!(it.results || {})[qid];
+            html += '<div class="q ' + (ok ? 'ok' : 'bad') + '"><span class="res ' + (ok ? 'pass' : 'fail') + '">' + (ok ? '✔ 答對' : '✘ 答錯') + '</span>' +
+              '<b>' + (i + 1) + '. ' + esc(q ? q.text : qid) + '</b>' +
+              '<div class="line"><span>作答</span>' + esc(optText(q, answers[qid])) + '</div>' +
+              (ok ? '' : '<div class="line key"><span>正確答案</span>' + esc(optText(q, (it.keys || {})[qid])) + '</div>') +
+              (q && q.basis ? '<div class="line"><span>出處</span>執行要點 ' + esc(q.basis) + '</div>' : '') +
+              '</div>';
+          });
+          cell.innerHTML = html;
+        } catch (e) {
+          cell.innerHTML = '<p class="err">' + esc(e.message) + '</p>';
+        }
+      }
+
+      async function loadExam() {
+        if (exam.loading) return;
+        exam.loading = true;
+        $('x-count').textContent = '讀取中…';
+        try {
+          const res = await rpc('guide_exam_admin_list', { p_query: $('x-q').value.trim(), p_limit: 2000 });
+          Object.assign(exam, { loaded: true, total: res.total || 196, people: res.people || [], items: res.items || [] });
+          renderExam();
+          if (exam.openId && exam.view === 'items') renderExamDetail(exam.openId);
+        } catch (e) {
+          $('x-count').textContent = '';
+          say(e.message);
+        } finally {
+          exam.loading = false;
+        }
+      }
+
+      document.querySelectorAll('[data-x-view]').forEach((b) => b.addEventListener('click', () => {
+        exam.view = b.dataset.xView;
+        exam.openId = null;
+        renderExam();
+      }));
+      $('x-rows').addEventListener('click', (e) => {
+        const person = e.target.closest('tr[data-x-person]');
+        if (person) {
+          exam.view = 'items';
+          exam.openId = null;
+          $('x-q').value = person.dataset.xPerson;
+          $('x-status').value = '';
+          loadExam();
+          return;
+        }
+        const tr = e.target.closest('tr[data-x-id]');
+        if (!tr) return;
+        const id = Number(tr.dataset.xId);
+        exam.openId = exam.openId === id ? null : id;
+        renderExam();
+        if (exam.openId) renderExamDetail(exam.openId);
+      });
+      $('x-status').addEventListener('change', renderExam);
+      $('x-leader').addEventListener('change', renderExam);
+      $('x-refresh').addEventListener('click', loadExam);
+      let xTimer = null;
+      $('x-q').addEventListener('input', () => { clearTimeout(xTimer); xTimer = setTimeout(loadExam, 400); });
+      $('x-csv').addEventListener('click', () => {
+        const total = Number(exam.total) || 196;
+        if (exam.view === 'people') {
+          downloadCsv('執行要點考試_每人進度_', ['姓名', '組長', '處別', '進度(%)', '已考滿分題數', '總題數', '通過份數', '交卷次數', '目前狀態', '最後考試'],
+            examPeople().map((p) => [p.userName, staffLeader(p.userName), p.team, examPct(p.passed), p.passed, total, p.passedSets, p.attempts,
+              Number(p.passed) >= total ? '全部完成' : p.pendingRetake ? '待補考' : '可考下一份', fmtTime(p.lastAt)]));
+          return;
+        }
+        downloadCsv('執行要點考試_考試紀錄_', ['考試時間', '姓名', '組長', '處別', '份別', '補考次數', '答對', '題數', '結果', '用時(秒)', '自動交卷', '逾時'],
+          examItems().map((it) => [fmtTime(it.startedAt), it.userName, staffLeader(it.userName), it.team, it.setNo, it.retake, it.correct ?? '', it.total,
+            it.status === 'submitted' ? (it.passed ? '通過' : '需補考') : it.status === 'in_progress' ? '作答中' : '未交卷',
+            it.durationSec ?? '', it.autoSubmitted ? 'Y' : '', it.overtime ? 'Y' : '']));
+      });
+
+      /* ---------- 改善計畫追蹤 ---------- */
+
+      const plan = { items: null, loading: false, calc: null, calcError: '', name: '' };
+      const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
+
+      async function loadPlans() {
+        if (plan.loading) return;
+        plan.loading = true;
+        try {
+          const res = await rpc('admin_points_admin_plan_list', { p_name: '' });
+          plan.items = res.items || [];
+        } catch (e) {
+          plan.items = plan.items || [];
+          say(e.message);
+        } finally {
+          plan.loading = false;
+        }
+        renderPlan();
+      }
+
+      async function calcPlanGrades(force) {
+        plan.calcError = '';
+        $('p-stamp').textContent = '計算本月評等中…約 5～10 秒';
+        try {
+          plan.calc = await monthCalc(force);
+        } catch (e) {
+          plan.calc = null;
+          plan.calcError = e.message;
+        }
+        renderPlan();
+      }
+
+      function planStatus(grade, last) {
+        if (grade !== 'D') {
+          if (!last) return { key: 'none', order: 4, html: '<span class="badge b-void">不需要</span>' };
+          return { key: 'none', order: 4, html: '<span class="badge b-void">不需要（有自主填寫）</span>' };
+        }
+        if (!last) return { key: 'missing', order: 0, html: '<span class="badge b-fail">未填寫</span>' };
+        const due = new Date(startOfDay(last).getTime() + PLAN_CYCLE_DAYS * DAY_MS);
+        const days = Math.round((due - startOfDay(new Date())) / DAY_MS);
+        if (days < 0) return { key: 'overdue', order: 1, due, html: `<span class="badge b-fail">逾期 ${-days} 天</span>` };
+        if (days <= 3) return { key: 'soon', order: 2, due, html: `<span class="badge b-warn">剩 ${days} 天</span>` };
+        return { key: 'ok', order: 3, due, html: '<span class="badge b-done">已填寫</span>' };
+      }
+
+      function planRows() {
+        const leader = $('p-leader').value;
+        const byName = new Map();
+        for (const it of plan.items || []) {
+          if (!byName.has(it.name)) byName.set(it.name, []);
+          byName.get(it.name).push(it);
+        }
+        return (data.staff || [])
+          .filter((s) => s.status === '在職' && s.kind !== '工讀生' && (!leader || s.leader === leader))
+          .map((s) => {
+            const pf = plan.calc?.profiles.get(s.name) || null;
+            const grade = pf ? pf.grade : '';
+            const list = byName.get(s.name) || [];
+            const last = list[0] ? new Date(list[0].createdAt) : null;
+            const st = pf ? planStatus(grade, last) : { key: 'unknown', order: 5, html: '<span class="muted">—</span>' };
+            return { s, pf, grade, last, count: list.length, st };
+          })
+          .sort((a, b) => a.st.order - b.st.order || (a.s.leader || '').localeCompare(b.s.leader || '', 'zh-Hant') || a.s.name.localeCompare(b.s.name, 'zh-Hant'));
+      }
+
+      function renderPlan() {
+        leaderOptions($('p-leader'), '全部組長');
+        const all = planRows();
+        const todo = $('p-filter').value === 'todo';
+        const rows = todo && plan.calc ? all.filter((r) => ['missing', 'overdue', 'soon'].includes(r.st.key)) : all;
+        const count = (k) => all.filter((r) => r.st.key === k).length;
+        $('p-stats').innerHTML = [
+          ['本月評等 D', all.filter((r) => r.grade === 'D').length],
+          ['D 未填寫', count('missing')],
+          ['D 已逾期', count('overdue')],
+          ['3 天內到期', count('soon')]
+        ].map(([k, v]) => `<div class="stat"><b>${plan.calc ? v : '—'}</b><span>${esc(k)}</span></div>`).join('');
+        const r = range();
+        $('p-stamp').textContent = plan.calc
+          ? `${r.year - 1911} 年 ${r.month} 月評等 · 計算時間 ${fmtTime(plan.calc.at)}`
+          : plan.calcError ? `評等無法計算：${plan.calcError}` : '';
+        $('p-track').innerHTML = rows.length
+          ? rows.map(({ s, pf, grade, last, count: n, st }) => `<tr class="click" data-p-name="${esc(s.name)}">
+              <td class="font-bold">${esc(s.name)}</td><td>${esc(s.leader || '—')}</td>
+              <td>${pf ? `<span class="g-${esc(grade)}">${esc(grade)}</span> <span class="muted">${pf.score == null ? '資料不足' : Math.round(pf.score) + ' 分'}</span>` : '<span class="muted">—</span>'}</td>
+              <td>${pf?.weak?.[0] ? esc(pf.weak[0].area) : '<span class="muted">—</span>'}</td>
+              <td>${last ? fmtTime(last.toISOString()) : '<span class="muted">—</span>'}</td>
+              <td>${st.due ? md(st.due) : '<span class="muted">—</span>'}</td>
+              <td>${st.html}</td><td>${n} 筆</td>
+            </tr>`).join('')
+          : `<tr><td colspan="8" class="muted">${plan.calc ? (todo ? '目前沒有需要追蹤的人 👍' : '沒有在職正職人員') : '評等計算完成後才會列出狀態'}</td></tr>`;
+
+        const items = (plan.items || []).filter((it) => !plan.name || it.name === plan.name);
+        $('p-list-title').textContent = plan.name
+          ? `${plan.name} 的改善計畫紀錄（${items.length} 筆）`
+          : `全部改善計畫紀錄（${(plan.items || []).length} 筆）`;
+        $('p-list-filter').innerHTML = plan.name
+          ? `<span class="muted">只顯示 ${esc(plan.name)}</span> <button type="button" class="btn btn-ghost btn-sm" data-p-clear>看全部</button>`
+          : '<span class="muted">點上表的人只看他的紀錄</span>';
+        $('p-list').innerHTML = plan.items == null
+          ? '<tr><td colspan="9" class="muted">讀取中…</td></tr>'
+          : items.length
+            ? items.map((it) => `<tr>
+                <td>${fmtTime(it.createdAt)}${it.updatedAt && it.updatedAt !== it.createdAt ? '<br><span class="muted">已修改</span>' : ''}</td>
+                <td class="font-bold">${esc(it.name)}</td>
+                <td><span class="g-${esc(it.grade)}">${esc(it.grade || '—')}</span>${it.score != null ? ` <span class="muted">${Math.round(Number(it.score))} 分</span>` : ''}</td>
+                <td>${it.perfYear ? `${it.perfYear - 1911}/${String(it.perfMonth).padStart(2, '0')}` : '—'}</td>
+                <td class="wrap-cell">${esc(it.focus)}</td><td class="wrap-cell">${esc(it.actions)}</td>
+                <td class="wrap-cell">${esc(it.target)}</td><td class="wrap-cell">${esc(it.review)}</td>
+                <td><button type="button" class="btn btn-del" data-p-del="${it.id}">刪除</button></td>
+              </tr>`).join('')
+            : '<tr><td colspan="9" class="muted">還沒有改善計畫紀錄</td></tr>';
+      }
+
+      function showPlan() {
+        if (plan.items == null) loadPlans();
+        const r = range();
+        if (!plan.calc || monthKey(plan.calc.range) !== monthKey(r)) calcPlanGrades(false);
+        else renderPlan();
+      }
+
+      $('p-leader').addEventListener('change', renderPlan);
+      $('p-filter').addEventListener('change', renderPlan);
+      $('p-calc').addEventListener('click', async () => {
+        await load().catch((e) => say(e.message));
+        await Promise.all([loadPlans(), calcPlanGrades(true)]);
+      });
+      $('p-track').addEventListener('click', (e) => {
+        const tr = e.target.closest('tr[data-p-name]');
+        if (!tr) return;
+        plan.name = plan.name === tr.dataset.pName ? '' : tr.dataset.pName;
+        renderPlan();
+        $('p-list-fold').open = true;
+        $('p-list-fold').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      $('p-list-filter').addEventListener('click', (e) => {
+        if (!e.target.closest('[data-p-clear]')) return;
+        plan.name = '';
+        renderPlan();
+      });
+      $('p-list').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-p-del]');
+        if (!btn || !confirm('確定刪除這筆改善計畫？刪除後工具箱也看不到。')) return;
+        try {
+          await rpc('admin_points_admin_plan_delete', { p_id: Number(btn.dataset.pDel) });
+          await loadPlans();
           say('已刪除', true);
         } catch (err) {
           say(err.message);
         }
       });
+      $('p-csv').addEventListener('click', () => {
+        const rows = planRows();
+        downloadCsv('改善計畫追蹤_', ['姓名', '組長', '本月評等', '分數', '最需改善', '最近一次填寫', '下次截止', '狀態', '紀錄筆數'],
+          rows.map(({ s, pf, grade, last, count: n, st }) => [s.name, s.leader || '', grade, pf?.score == null ? '' : Math.round(pf.score),
+            pf?.weak?.[0]?.area || '', last ? fmtTime(last.toISOString()) : '', st.due ? md(st.due) : '',
+            { missing: '未填寫', overdue: '逾期', soon: '快到期', ok: '已填寫', none: '不需要', unknown: '' }[st.key], n]));
+      });
+
+      /* ---------- 人力明細 ---------- */
+
+      function renderStaff() {
+        const all = data.staff || [];
+        const showOff = $('s-show-off').checked;
+        const rows = showOff ? all : all.filter((s) => s.status === '在職');
+        const off = all.length - all.filter((s) => s.status === '在職').length;
+        $('staff-count').textContent = `在職 ${all.length - off} 人${off ? `，離職 ${off} 人${showOff ? '' : '（已隱藏）'}` : ''}`;
+        const text = (f, v, w, max) => `<input type="text" data-f="${f}" value="${esc(v)}" maxlength="${max}" style="width:${w}" />`;
+        $('staff-list').innerHTML = rows.length
+          ? rows.map((s) => `<tr data-id="${s.id}" data-name="${esc(s.name)}" class="${s.status === '在職' ? '' : 'is-off'}">
+              <td>${esc(s.name)}</td>
+              <td><select data-f="kind"><option${s.kind === '正職' ? ' selected' : ''}>正職</option><option${s.kind === '工讀生' ? ' selected' : ''}>工讀生</option></select></td>
+              <td><select data-f="status"><option${s.status === '在職' ? ' selected' : ''}>在職</option><option${s.status === '離職' ? ' selected' : ''}>離職</option></select></td>
+              <td>${text('region', s.region, '5rem', 30)}</td>
+              <td>${text('office', s.office, '6rem', 60)}</td>
+              <td><input type="date" data-f="hireDate" value="${esc(s.hireDate || '')}" style="width:8.5rem" /></td>
+              <td>${text('project', s.project, '7rem', 100)}</td>
+              <td>${text('leader', s.leader, '4.5rem', 30)}</td>
+              <td>${text('note', s.note, '6rem', 200)}</td>
+              <td><button type="button" class="btn btn-ghost btn-sm" data-act="save">儲存</button> <button type="button" class="btn btn-del" data-act="del">刪除</button></td>
+            </tr>`).join('')
+          : `<tr><td colspan="10" class="muted">${all.length ? '沒有在職人員' : '尚無人員，請新增或從星鴻帶入'}</td></tr>`;
+        const active = all.filter((s) => s.status === '在職');
+        const opts = '<option value="">請選擇</option>' + active.map((s) => `<option>${esc(s.name)}</option>`).join('');
+        leaderOptions($('m-leader'), '請選擇');
+        leaderOptions($('t-leader'), '全部組長');
+        renderManualNames();
+        $('c-name').innerHTML = opts;
+        $('i-name').innerHTML = opts;
+        const me = toolboxName();
+        const meBtn = $('btn-add-me');
+        const known = all.some((s) => s.name === me);
+        meBtn.classList.toggle('hidden', !me || known);
+        meBtn.textContent = `把我（${me}）加入人力明細`;
+      }
+
+      $('s-show-off').addEventListener('change', renderStaff);
+
+      async function saveStaff(id, name, kind, status, extra) {
+        const x = extra || {};
+        await rpc('admin_points_admin_save_staff', {
+          p_id: id || null,
+          p_name: name,
+          p_status: status,
+          p_kind: kind,
+          p_note: x.note || '',
+          p_region: x.region || '',
+          p_office: x.office || '',
+          p_hire_date: x.hireDate || null,
+          p_project: x.project || '',
+          p_leader: x.leader || ''
+        });
+      }
 
       $('btn-add-staff').addEventListener('click', async () => {
         const name = $('s-name').value.trim();
@@ -572,13 +2265,27 @@
             region: $('s-region').value,
             office: $('s-office').value,
             hireDate: $('s-hire').value,
-            project: $('s-project').value
+            project: $('s-project').value,
+            leader: $('s-leader').value
           });
-          for (const id of ['s-name', 's-region', 's-office', 's-hire', 's-project']) $(id).value = '';
-          await load();
-          say(`已新增 ${name}`, true);
+          for (const id of ['s-name', 's-region', 's-office', 's-hire', 's-project', 's-leader']) $(id).value = '';
+          await afterEdit(`已新增 ${name}`);
         } catch (err) {
           say(err.message);
+        }
+      });
+
+      $('btn-add-me').addEventListener('click', async (e) => {
+        const me = toolboxName();
+        if (!me) return;
+        e.currentTarget.disabled = true;
+        try {
+          await saveStaff(null, me, '正職', '在職', { note: '測試用' });
+          await afterEdit(`已把 ${me} 加入人力明細（在職正職，備註「測試用」；測完改成離職即可）`);
+        } catch (err) {
+          say(err.message);
+        } finally {
+          e.currentTarget.disabled = false;
         }
       });
 
@@ -597,11 +2304,11 @@
               region: f('region'),
               office: f('office'),
               hireDate: f('hireDate'),
-              project: f('project')
+              project: f('project'),
+              leader: f('leader')
             });
           }
-          await load();
-          say('已更新', true);
+          await afterEdit('已更新');
         } catch (err) {
           say(err.message);
         }
@@ -614,12 +2321,7 @@
         btn.disabled = true;
         $('auditor-pick').innerHTML = '<p class="muted">讀取星鴻審核時間紀錄中…</p>';
         try {
-          const r = range();
-          const res = await fetch(`${RPA_BASE}/admin-points/audit-log?start=${r.start}&end=${r.end}`, {
-            headers: { 'X-Skyfun-Session': token }
-          });
-          const payload = await res.json().catch(() => null);
-          if (!res.ok || !payload?.ok) throw new Error(payload?.error || `讀取失敗（HTTP ${res.status}）`);
+          const payload = await fetchWorker('/admin-points/audit-log', '審核時間紀錄', range());
           const known = new Set((data.staff || []).map((s) => s.name));
           const counts = new Map();
           for (const row of Core.rowsFromPayload(payload)) {
@@ -647,8 +2349,7 @@
         try {
           for (const n of names) await saveStaff(null, n, $('pick-kind').value, '在職');
           $('auditor-pick').innerHTML = '';
-          await load();
-          say(`已加入 ${names.length} 人`, true);
+          await afterEdit(`已加入 ${names.length} 人`);
         } catch (err) {
           say(err.message);
         } finally {
@@ -656,19 +2357,395 @@
         }
       });
 
+      /* ---------- 主管月報／週報 ---------- */
+
+      const Report = window.AdminPointsReport;
+      const boss = { rep: null, busy: false };
+      const fullCache = new Map();
+
+      function prevMonthRange(r) {
+        let { year, month } = r;
+        month -= 1;
+        if (month < 1) { month = 12; year -= 1; }
+        return Core.perfMonthRange(year, month);
+      }
+
+      /** 某個業績月的星鴻資料＋點數計算＋後台登錄資料（抽查、客訴） */
+      async function fullCalc(r, force) {
+        const key = monthKey(r);
+        if (!force && fullCache.has(key)) return fullCache.get(key);
+        if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
+        const sbData = key === monthKey(range()) ? data : await rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end });
+        const [audit, expenses, term] = await Promise.all([
+          fetchWorker('/admin-points/audit-log', `${r.month} 月審核時間紀錄`, r),
+          fetchWorker('/admin-points/expenses', `${r.month} 月補助審核`, r),
+          fetchWorker('/admin-points/terminations', `${r.month} 月解約`, r).catch(() => ({ fields: [], rows: [] }))
+        ]);
+        const auditRows = Core.rowsFromPayload(audit);
+        const result = Core.compute(auditRows, {
+          start: r.start,
+          end: r.end,
+          staff: data.staff || [],
+          manual: sbData.manual || [],
+          opinions: sbData.opinions || [],
+          expenses: Core.rowsFromPayload(expenses),
+          terminations: Core.rowsFromPayload(term)
+        });
+        const c = { range: r, auditRows, result, sb: { ...sbData, staff: data.staff || [] } };
+        fullCache.set(key, c);
+        return c;
+      }
+
+      function bossWeeks() {
+        const today = Core.isoDate(new Date());
+        return Core.weeksOf(range()).filter((w) => w.start <= today);
+      }
+
+      function fillBossWeeks() {
+        const weeks = bossWeeks();
+        const cur = $('b-week').value;
+        $('b-week').innerHTML = weeks
+          .map((w, i) => `<option value="${i}">第 ${i + 1} 週（${w.start.slice(5).replace('-', '/')}～${w.end.slice(5).replace('-', '/')}）</option>`)
+          .join('');
+        $('b-week').value = cur && Number(cur) < weeks.length ? cur : String(Math.max(0, weeks.length - 1));
+      }
+
+      function resetBoss() {
+        boss.rep = null;
+        ['btn-boss-xlsx', 'btn-boss-print', 'btn-boss-copy'].forEach((id) => { $(id).disabled = true; });
+        $('boss-stamp').textContent = '';
+        $('boss-sheet').innerHTML = '<p class="muted">選好業績月與報告類型，按「一鍵產生報告」。</p>';
+        fillBossWeeks();
+      }
+
+      async function makeBoss() {
+        if (boss.busy) return;
+        boss.busy = true;
+        $('btn-boss').disabled = true;
+        $('boss-sheet').innerHTML = '<p class="muted">讀取本月與上月的星鴻審核紀錄、抽查與客訴資料中…約 10～20 秒</p>';
+        try {
+          await load();
+          const r = range();
+          const pr = prevMonthRange(r);
+          const [cur, before] = await Promise.all([fullCalc(r, true), fullCalc(pr, false)]);
+          const today = Core.isoDate(new Date());
+          const roc = r.year - 1911;
+          let opts;
+          if ($('b-type').value === 'week') {
+            const weeks = bossWeeks();
+            const i = Number($('b-week').value) || 0;
+            const w = weeks[i];
+            if (!w) throw new Error('這個業績月還沒有可以出週報的週');
+            const shift = (iso) => Core.isoDate(new Date(new Date(iso + 'T00:00:00').getTime() - 7 * DAY_MS));
+            opts = {
+              type: 'week',
+              title: `${roc}年${r.month}月 第${i + 1}週 行政績效週報`,
+              periodLabel: '本週',
+              prevLabel: '上週',
+              period: { start: w.start, end: w.end },
+              prev: { start: shift(w.start), end: shift(w.end) },
+              asOf: w.end < today ? w.end : today
+            };
+          } else {
+            opts = {
+              type: 'month',
+              title: `${roc}年${r.month}月 行政績效月報`,
+              periodLabel: `${r.month}月`,
+              prevLabel: `${pr.month}月`,
+              period: { start: r.start, end: r.end },
+              prev: { start: pr.start, end: pr.end },
+              asOf: r.end < today ? r.end : today
+            };
+          }
+          boss.rep = Report.build({ ...opts, cur, before });
+          $('boss-sheet').innerHTML = Report.html(boss.rep);
+          ['btn-boss-xlsx', 'btn-boss-print', 'btn-boss-copy'].forEach((id) => { $(id).disabled = false; });
+          $('boss-stamp').textContent = `產出時間 ${fmtTime(new Date())}`;
+        } catch (err) {
+          boss.rep = null;
+          $('boss-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
+        } finally {
+          boss.busy = false;
+          $('btn-boss').disabled = false;
+        }
+      }
+
+      $('btn-boss').addEventListener('click', makeBoss);
+      $('b-type').addEventListener('change', () => {
+        $('b-week-wrap').classList.toggle('hidden', $('b-type').value !== 'week');
+        resetBoss();
+      });
+      $('b-week').addEventListener('change', () => {
+        const w = $('b-week').value;
+        resetBoss();
+        $('b-week').value = w;
+      });
+      $('btn-boss-print').addEventListener('click', () => printTab('boss'));
+      $('btn-boss-copy').addEventListener('click', async () => {
+        if (!boss.rep) return;
+        try {
+          await navigator.clipboard.writeText(Report.text(boss.rep));
+          say('已複製文字摘要，可以直接貼到 LINE', true);
+        } catch {
+          say('複製失敗，請改用列印或 Excel');
+        }
+      });
+      $('btn-boss-xlsx').addEventListener('click', async () => {
+        if (!boss.rep) return;
+        try {
+          const XLSX = await loadXlsx();
+          XLSX.writeFile(Report.workbook(boss.rep, XLSX), `${boss.rep.title}.xlsx`);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      /* ---------- 小組長抽查：抽查日與 LINE 提醒 ---------- */
+
+      const DOW = ['一', '二', '三', '四', '五', '六', '日'];
+      const spotRule = { loaded: false, days: [] };
+
+      function renderSpotRule(res) {
+        spotRule.days = res.days || [];
+        $('spot-days').innerHTML =
+          DOW.map((d, i) => `<label class="muted" style="display:inline-flex;align-items:center;gap:0.25rem"><input type="checkbox" data-spot-dow="${i + 1}" style="width:auto"${spotRule.days.includes(i + 1) ? ' checked' : ''} /> 週${d}</label>`).join('') +
+          '<button type="button" class="btn btn-main btn-sm" id="btn-spot-days">儲存抽查日</button>';
+        const list = res.preview?.list || [];
+        const preview = list.length
+          ? list.map((x) => `<li><b>${esc(x.leader)}</b>${x.recipients ? '' : '<span class="err">（還沒綁定 LINE，收不到）</span>'}<pre class="muted" style="white-space:pre-wrap;margin:0.2rem 0 0">${esc(x.message)}</pre></li>`).join('')
+          : '<li class="muted">今天不用提醒任何人（不是抽查日，或本週該抽的都抽完、判定完了）。</li>';
+        const log = (res.log || []).map((l) => `<tr><td>${esc(fmtTime(l.at))}</td><td>${esc(l.leader)}</td><td>${l.recipients ? `已送出（${l.recipients}）` : `<span class="err">${esc(l.error || '未送出')}</span>`}</td></tr>`).join('');
+        $('spot-remind').innerHTML = `<details class="fold"><summary>今天的提醒預覽</summary><div class="fold-body"><ul class="space-y-2">${preview}</ul></div></details>
+          <details class="fold"><summary>最近提醒紀錄</summary><div class="fold-body">${log ? `<div class="overflow-x-auto"><table><thead><tr><th>時間</th><th>組長</th><th>結果</th></tr></thead><tbody>${log}</tbody></table></div>` : '<p class="muted">還沒有提醒紀錄</p>'}</div></details>`;
+      }
+
+      async function loadSpotRule(days) {
+        try {
+          const res = await rpc('admin_points_spot_rule_admin', { p_days: days || null });
+          spotRule.loaded = true;
+          renderSpotRule(res);
+          if (days) say('抽查日已儲存', true);
+        } catch (e) {
+          $('spot-remind').innerHTML = `<p class="err">讀取失敗：${esc(e.message)}</p>`;
+        }
+      }
+
+      $('spot-days').addEventListener('click', (e) => {
+        if (!e.target.closest('#btn-spot-days')) return;
+        const days = [...document.querySelectorAll('[data-spot-dow]:checked')].map((x) => Number(x.dataset.spotDow));
+        if (!days.length) return say('至少要選一天');
+        loadSpotRule(days);
+      });
+
+      /* ---------- 組織圖 ---------- */
+
+      const org = { loaded: false, data: null };
+      const ORG_COLS = [['status', '狀態'], ['name', '姓名／職稱', '6rem'], ['dept', '部別', '5rem'], ['joined', '報到年月', '6rem'], ['office', '營業處', '7rem'], ['deputy', '代理人', '5rem']];
+      const orgBlank = () => ({ status: '在職', name: '', dept: '', joined: '', office: '', deputy: '' });
+
+      function orgCollect() {
+        const d = org.data;
+        if (!d) return;
+        document.querySelectorAll('#org-editor [data-o]').forEach((el) => { d[el.dataset.o] = el.value.trim(); });
+        document.querySelectorAll('#org-editor [data-lead]').forEach((el) => { d.lead[+el.dataset.lead][el.dataset.k] = el.value.trim(); });
+        document.querySelectorAll('#org-editor [data-g][data-k]').forEach((el) => {
+          const g = d.groups[+el.dataset.g];
+          if (el.dataset.p == null) g[el.dataset.k] = el.value.trim();
+          else g.people[+el.dataset.p][el.dataset.k] = el.value.trim();
+        });
+      }
+
+      function orgStats(g) {
+        const open = (p) => p.status === '待補';
+        const intern = (p) => !open(p) && String(p.office || '').trim() === '工讀生';
+        const now = g.people.filter((p) => !open(p) && !intern(p)).length;
+        const o = g.people.filter(open).length;
+        return `現有 ${now} 人 · 待補 ${o} 人 · 規劃 ${now + o} 人 · 工讀生 ${g.people.filter(intern).length} 人（另計）`;
+      }
+
+      function renderOrg() {
+        const d = org.data;
+        const inp = (attrs, v, w) => `<input type="text" ${attrs} value="${esc(v || '')}" maxlength="80" style="width:${w || '100%'}" />`;
+        const leads = d.lead.map((l, i) => `<div class="row">
+            <div class="field"><label>職稱</label>${inp(`data-lead="${i}" data-k="role"`, l.role, '12rem')}</div>
+            <div class="field"><label>姓名（待補就填「待補」）</label>${inp(`data-lead="${i}" data-k="name"`, l.name, '8rem')}</div>
+            <button type="button" class="btn btn-del" data-org-act="del-lead" data-i="${i}">刪除</button>
+          </div>`).join('');
+        const groups = d.groups.map((g, gi) => {
+          const rows = g.people.map((p, pi) => `<tr>${ORG_COLS.map(([k, , w]) => `<td>${k === 'status'
+              ? `<select data-g="${gi}" data-p="${pi}" data-k="status">${['在職', '待補'].map((s) => `<option${s === p.status ? ' selected' : ''}>${s}</option>`).join('')}</select>`
+              : inp(`data-g="${gi}" data-p="${pi}" data-k="${k}"`, p[k], w)}</td>`).join('')}
+              <td><button type="button" class="btn btn-ghost btn-sm" data-org-act="up" data-g="${gi}" data-i="${pi}" title="上移">↑</button>
+                <button type="button" class="btn btn-ghost btn-sm" data-org-act="down" data-g="${gi}" data-i="${pi}" title="下移">↓</button>
+                <button type="button" class="btn btn-del" data-org-act="del-row" data-g="${gi}" data-i="${pi}">刪除</button></td></tr>`).join('');
+          return `<div class="form-card space-y-2">
+              <div class="row">
+                <div class="field"><label>組名</label>${inp(`data-g="${gi}" data-k="name"`, g.name, '9rem')}</div>
+                <div class="field"><label>組長</label>${inp(`data-g="${gi}" data-k="lead"`, g.lead, '7rem')}</div>
+                <span class="muted">${esc(orgStats(g))}</span>
+                <button type="button" class="btn btn-del" data-org-act="del-group" data-g="${gi}" style="margin-left:auto">刪除這組</button>
+              </div>
+              <div class="overflow-x-auto"><table><thead><tr>${ORG_COLS.map(([, t]) => `<th>${t}</th>`).join('')}<th></th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">尚無人員</td></tr>'}</tbody></table></div>
+              <button type="button" class="btn btn-ghost btn-sm" data-org-act="add-row" data-g="${gi}">＋ 新增一列</button>
+            </div>`;
+        }).join('');
+        $('org-editor').innerHTML = `<div class="form-card space-y-2"><b>標題與說明</b>
+            <div class="field"><label>標題</label>${inp('data-o="title"', d.title)}</div>
+            <div class="field"><label>下方說明</label><textarea data-o="note" maxlength="500">${esc(d.note || '')}</textarea></div>
+          </div>
+          <div class="form-card space-y-2"><b>主管</b>${leads}<button type="button" class="btn btn-ghost btn-sm" data-org-act="add-lead">＋ 新增主管</button></div>
+          ${groups}`;
+      }
+
+      async function loadOrg() {
+        try {
+          const res = await rpc('admin_org_admin_get', {});
+          const d = res.data || {};
+          org.data = {
+            title: d.title || '行政管理部｜全台行政組織與人力配置',
+            note: d.note || '',
+            lead: Array.isArray(d.lead) ? d.lead.map((l) => ({ role: l.role || '', name: l.name || '' })) : [],
+            groups: Array.isArray(d.groups) ? d.groups.map((g) => ({ name: g.name || '', lead: g.lead || '', people: (g.people || []).map((p) => Object.assign(orgBlank(), p)) })) : []
+          };
+          org.loaded = true;
+          $('org-saved').textContent = res.updatedAt ? `上次儲存 ${fmtTime(res.updatedAt)}` : '';
+          renderOrg();
+        } catch (e) {
+          $('org-editor').innerHTML = `<p class="err">讀取失敗：${esc(e.message)}</p>`;
+        }
+      }
+
+      $('tab-org').addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-org-act]');
+        if (!b || !org.data) return;
+        orgCollect();
+        const d = org.data;
+        const g = d.groups[+b.dataset.g];
+        const i = +b.dataset.i;
+        const act = b.dataset.orgAct;
+        if (act === 'add-lead') d.lead.push({ role: '', name: '' });
+        else if (act === 'del-lead') d.lead.splice(i, 1);
+        else if (act === 'add-group') d.groups.push({ name: '新的一組', lead: '', people: [orgBlank()] });
+        else if (act === 'del-group') {
+          if (!confirm(`刪除「${g.name || '這組'}」整組（${g.people.length} 列）？儲存後才會生效。`)) return;
+          d.groups.splice(+b.dataset.g, 1);
+        } else if (act === 'add-row') g.people.push(orgBlank());
+        else if (act === 'del-row') g.people.splice(i, 1);
+        else if (act === 'up' && i > 0) [g.people[i - 1], g.people[i]] = [g.people[i], g.people[i - 1]];
+        else if (act === 'down' && i < g.people.length - 1) [g.people[i + 1], g.people[i]] = [g.people[i], g.people[i + 1]];
+        renderOrg();
+      });
+
+      $('btn-org-save').addEventListener('click', async (e) => {
+        if (!org.data) return;
+        orgCollect();
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          const res = await rpc('admin_org_admin_save', { p_data: org.data });
+          $('org-saved').textContent = `上次儲存 ${fmtTime(res.updatedAt)}`;
+          say('組織圖已儲存，工具箱重新整理就會看到', true);
+        } catch (err) {
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      /* ---------- 頁籤與登入 ---------- */
+
+      function showTab(name) {
+        tab = TABS.includes(name) ? name : 'boss';
+        sessionStorage.setItem(TAB_KEY, tab);
+        if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
+        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab));
+        for (const t of TABS) $(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        $('month-wrap').classList.toggle('hidden', tab === 'training' || tab === 'exam' || tab === 'kpi' || tab === 'org');
+        say('');
+        if (tab === 'boss' && !boss.rep) fillBossWeeks();
+        if (tab === 'report') makeReport(false);
+        if (tab === 'takeup') makeTakeup(false);
+        if (tab === 'kpi') makeKpi(false);
+        if (tab === 'exam' && !exam.loaded) loadExam();
+        if (tab === 'training' && !train.loaded) loadTraining();
+        if (tab === 'plan') showPlan();
+        if (tab === 'check' && !spotRule.loaded) loadSpotRule();
+        if (tab === 'org' && !org.loaded) loadOrg();
+      }
+
+      $('nav').addEventListener('click', (e) => {
+        const b = e.target.closest('.tab-btn');
+        if (b) showTab(b.dataset.tab);
+      });
+
+      $('month').addEventListener('change', async () => {
+        resetBoss();
+        try {
+          await load();
+          if (tab === 'report') makeReport(false);
+          if (tab === 'takeup') makeTakeup(false);
+          if (tab === 'plan') showPlan();
+        } catch (e) {
+          say(e.message);
+        }
+      });
+      $('btn-reload').addEventListener('click', async () => {
+        renderWho();
+        calcCache.clear();
+        fullCache.clear();
+        report = null;
+        takeup.data = null;
+        kpi.cache.clear();
+        plan.calc = null;
+        try {
+          await load();
+          if (exam.loaded) await loadExam();
+          if (train.loaded) await loadTraining();
+          if (plan.items) await loadPlans();
+          showTab(tab);
+          say('已更新', true);
+        } catch (e) {
+          say(e.message);
+        }
+      });
+
+      async function login() {
+        secret = $('admin-secret').value.trim();
+        $('login-msg').classList.add('hidden');
+        try {
+          await load();
+          sessionStorage.setItem(SECRET_KEY, secret);
+          $('login-panel').classList.add('hidden');
+          $('main-panel').classList.remove('hidden');
+          $('top-tools').classList.remove('hidden');
+          renderWho();
+          showTab(location.hash.slice(1) || sessionStorage.getItem(TAB_KEY) || 'boss');
+        } catch (e) {
+          $('login-msg').textContent = e.message || '連線失敗';
+          $('login-msg').classList.remove('hidden');
+        }
+      }
+      $('btn-login').addEventListener('click', login);
+      $('admin-secret').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
       $('month').innerHTML = months().map((m) => `<option value="${m.year}-${m.month}">${m.year - 1911} 年 ${m.month} 月（${m.start.slice(5)}～${m.end.slice(5)}）</option>`).join('');
-      $('m-item').innerHTML = Core.MANUAL_ITEMS.map((i) => `<option value="${i.key}">${i.key}（${i.maxPoints ? `${i.points}～${i.maxPoints} 點` : `${i.points} 點／件`}）</option>`).join('');
-      const syncItemFields = () => {
-        const qa = $('m-item').value === '行政QA';
-        $('m-qty-wrap').classList.toggle('hidden', qa);
-        $('m-points-wrap').classList.toggle('hidden', !qa);
+      $('m-item').innerHTML = Core.MANUAL_ITEMS.map((i) => `<option value="${i.key}">${i.key}（建議 ${i.maxPoints ? `${i.points}～${i.maxPoints} 點` : `${i.points} 點／件`}）</option>`).join('');
+      const suggestPoints = () => {
+        const item = Core.MANUAL_ITEMS.find((i) => i.key === $('m-item').value);
+        $('m-points').value = (item?.points || 1) * (Number($('m-qty').value) || 1);
       };
-      $('m-item').addEventListener('change', syncItemFields);
-      syncItemFields();
+      $('m-item').addEventListener('change', suggestPoints);
+      $('m-qty').addEventListener('input', suggestPoints);
+      $('m-leader').addEventListener('change', renderManualNames);
+      suggestPoints();
       $('m-date').value = Core.isoDate(new Date());
       $('c-date').value = Core.isoDate(new Date());
-      const saved = sessionStorage.getItem(SECRET_KEY);
-      if (saved) $('admin-secret').value = saved;
+      $('i-date').value = Core.isoDate(new Date());
+      const saved = sessionStorage.getItem(SECRET_KEY) || sessionStorage.getItem(OLD_SECRET_KEY);
+      if (saved) {
+        $('admin-secret').value = saved;
+        login();
+      }
     })();
   </script>
 </body>
