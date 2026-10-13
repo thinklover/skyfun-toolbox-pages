@@ -35,6 +35,7 @@
   };
   let debounceTimer = null;
   let currentQuestionId = null;
+  let detailData = null;
   let sbClient = null;
   let aqaInited = false;
   let canParticipate = false;
@@ -59,8 +60,9 @@
     }
   }
 
+  /** 列表全寬（已通過｜待審核 左右兩欄），點題目後整區換成詳情，不再左右分割 */
   function isAqaSplit() {
-    return window.matchMedia('(min-width: 900px)').matches;
+    return false;
   }
 
   function detailEmptyHtml() {
@@ -132,11 +134,6 @@
     const label = labels[kind] || labels.question;
     const tip = tips[kind] || tips.question;
     return '<span class="aqa-badge aqa-badge--quality" title="' + esc(tip) + '">' + label + '</span>';
-  }
-
-  function itemQualityClass(isQuality, hasQualityAnswer) {
-    if (isQuality || hasQualityAnswer) return ' aqa-item--quality';
-    return '';
   }
 
   function cardQualityClass(isQuality) {
@@ -428,20 +425,48 @@
     }
   }
 
-  /** 卡片點一下展開／收合問答區；open 有給值時直接指定 */
-  window.adminQaToggle = function (open) {
-    const panel = $('aqa-fold');
-    const card = $('aqa-entry');
-    if (!panel) return;
-    const show = typeof open === 'boolean' ? open : panel.hidden;
-    panel.hidden = !show;
-    if (card) {
-      card.setAttribute('aria-expanded', String(show));
-      card.classList.toggle('is-open', show);
-    }
-    if (show) requestAnimationFrame(function () { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  /** 舊連結相容：行政問答已改成獨立頁面 */
+  window.adminQaToggle = function () {
+    if (typeof window.showPage === 'function') window.showPage('admin-qa');
   };
 
+  /** 列表用的短日期：今年只顯示月/日 */
+  function fmtShort(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    const md = (d.getMonth() + 1) + '/' + d.getDate();
+    return d.getFullYear() === new Date().getFullYear() ? md : d.getFullYear() + '/' + md;
+  }
+
+  function itemHtml(it) {
+    const hasImg = Array.isArray(it.images) && it.images.length;
+    const hasFile = Array.isArray(it.files) && it.files.length;
+    const approved = it.askReviewStatus === 'approved' && it.askReviewedAt;
+    const when = approved
+      ? '<span class="aqa-row-when aqa-row-when--ok" title="通過時間 ' + esc(fmtDate(it.askReviewedAt)) + '">' + esc(fmtShort(it.askReviewedAt)) + ' 通過</span>'
+      : '<span class="aqa-row-when" title="提問時間 ' + esc(fmtDate(it.createdAt)) + '">' + esc(fmtShort(it.createdAt)) + ' 提問</span>';
+    const cat = categoryLabel(it.category);
+    const star = it.isQuality ? '<span class="aqa-row-star" title="優質問題，點數翻倍">⭐</span>' : '';
+    const n = Number(it.answerCount) || 0;
+    return (
+      '<button type="button" class="aqa-item aqa-row' + (it.isQuality ? ' aqa-row--quality' : '') + '" data-id="' + esc(it.id) + '">' +
+      '<span class="aqa-row-main">' +
+      '<span class="aqa-row-title">' + star + esc(it.title) + '</span>' +
+      '<span class="aqa-row-meta">' +
+      (cat ? '<span class="aqa-row-cat">' + esc(cat) + '</span>' : '') +
+      '<span>' + esc(it.askerName) + '</span>' + when +
+      (hasImg ? '<span title="有附圖">📷</span>' : '') + (hasFile ? '<span title="有附件">📎</span>' : '') +
+      (it.hasQualityAnswer ? '<span class="aqa-row-tag" title="有優質回答，點數翻倍">⭐ 優質回答</span>' : '') +
+      '</span></span>' +
+      '<span class="aqa-row-ans' + (n ? '' : ' aqa-row-ans--zero') + '"><b>' + n + '</b><small>' + (n ? '回答' : '待回答') + '</small></span>' +
+      '</button>'
+    );
+  }
+
+  const time = (v) => (v ? new Date(v).getTime() || 0 : 0);
+
+  /** 依檢核狀態分區：已通過（依通過時間新到舊）、待審核（依提問時間新到舊），未通過收在最下面 */
   function renderList(items) {
     const list = $('aqa-list');
     if (!list) return;
@@ -449,24 +474,32 @@
       list.innerHTML = '<p class="aqa-empty">尚無問題，或搜尋無結果。</p>';
       return;
     }
-    list.innerHTML = items.map(function (it) {
-      const hasImg = Array.isArray(it.images) && it.images.length;
-      const hasFile = Array.isArray(it.files) && it.files.length;
-      const qClass = itemQualityClass(it.isQuality, it.hasQualityAnswer);
+    const by = (status) => items.filter(function (it) { return it.askReviewStatus === status; });
+    const passed = by('approved').sort(function (a, b) {
+      return time(b.askReviewedAt) - time(a.askReviewedAt) || time(b.createdAt) - time(a.createdAt);
+    });
+    const newest = function (a, b) { return time(b.createdAt) - time(a.createdAt); };
+    const pending = by('pending').sort(newest);
+    const rejected = by('rejected').sort(newest);
+    const group = function (key, icon, title, sub, rows, emptyText) {
       return (
-        '<button type="button" class="aqa-item' + qClass + '" data-id="' + esc(it.id) + '">' +
-        '<div class="aqa-item-head">' +
-        '<h3 class="aqa-item-title">' + esc(it.title) + '</h3>' +
-        qualityBadge('question', it.isQuality) +
-        qualityBadge('answer', it.hasQualityAnswer) +
-        reviewBadge(it.askReviewStatus) +
-        '</div>' +
-        '<p class="aqa-item-meta">' + categoryBadge(it.category) +
-        '<span class="aqa-role aqa-role--ask">提問</span> ' + esc(it.askerName) + ' · ' + esc(fmtDate(it.createdAt)) +
-        ' · 回答 ' + esc(it.answerCount || 0) + ' 則' + (hasImg ? ' · 📷' : '') + (hasFile ? ' · 📎' : '') + '</p>' +
-        '</button>'
+        '<details class="aqa-group aqa-group--' + key + '"' + (key === 'rejected' ? '' : ' open') + '>' +
+        '<summary class="aqa-group-title">' +
+        '<span class="aqa-group-icon" aria-hidden="true">' + icon + '</span>' +
+        '<span class="aqa-group-text"><b>' + title + '</b><small>' + sub + '</small></span>' +
+        '<span class="aqa-group-count">' + rows.length + '</span>' +
+        '</summary>' +
+        '<div class="aqa-group-body">' +
+        (rows.length ? rows.map(itemHtml).join('') : '<p class="aqa-empty">' + esc(emptyText) + '</p>') +
+        '</div></details>'
       );
-    }).join('');
+    };
+    list.innerHTML =
+      '<div class="aqa-group-cols">' +
+      group('approved', '✓', '已通過', '依通過時間排序，最新在上', passed, '目前沒有已通過的問題') +
+      group('pending', '⏳', '待審核', '等待小組長檢核，歡迎協助回答', pending, '目前沒有待審核的問題') +
+      '</div>' +
+      (rejected.length ? group('rejected', '✕', '未通過', '未通過檢核的問題', rejected, '') : '');
   }
 
   async function loadList(query, category) {
@@ -476,7 +509,7 @@
       const data = await rpc('admin_qa_list', {
         p_token: token(),
         p_query: query || '',
-        p_limit: 40,
+        p_limit: 200,
         p_offset: 0,
         p_category: category || '',
       });
@@ -512,8 +545,11 @@
   }
 
   function closeDetail() {
+    const back = currentQuestionId;
     currentQuestionId = null;
     showDetailPanel(false);
+    const item = back && document.querySelector('#aqa-list .aqa-item[data-id="' + back + '"]');
+    if (item) item.scrollIntoView({ block: 'center' });
   }
 
   async function openQuestion(id) {
@@ -523,22 +559,31 @@
     setListActive(id);
     detail.innerHTML = '<p class="aqa-msg">載入中…</p>';
     showDetailPanel(true);
+    const ws = $('aqa-workspace');
+    if (ws && ws.getBoundingClientRect().top < 0) ws.scrollIntoView({ block: 'start' });
     try {
       const data = await rpc('admin_qa_get', { p_token: token(), p_question_id: id });
       if (!data?.ok) throw new Error(data?.error || '讀取失敗');
       const q = data.question;
       const answers = data.answers || [];
+      const canEdit = !!data.canEdit;
+      detailData = { question: q, answers: answers };
+      const editBtn = function (key) {
+        return canEdit ? '<button type="button" class="aqa-edit-btn" data-aqa-edit="' + esc(key) + '">✏️ 修改</button>' : '';
+      };
       detail.innerHTML =
         '<button type="button" id="aqa-back-list" class="btn btn-sm tone-slate-soft mb-4' + (isAqaSplit() ? ' hidden' : '') + '">← 返回列表</button>' +
-        '<article class="aqa-detail-card' + cardQualityClass(q.isQuality) + '">' +
+        '<article class="aqa-detail-card' + cardQualityClass(q.isQuality) + '" data-aqa-card="q">' +
         '<div class="aqa-item-head">' +
         '<h3 class="aqa-detail-title">' + esc(q.title) + '</h3>' +
         qualityBadge('question', q.isQuality) +
         reviewBadge(q.askReviewStatus) +
+        editBtn('q') +
         '</div>' +
         '<p class="aqa-item-meta">' + categoryBadge(q.category) +
         '<span class="aqa-role aqa-role--ask">提問</span> ' + esc(q.askerName) + ' · 送出 ' + esc(fmtDate(q.createdAt)) + '</p>' +
         reviewPassedMeta(q.askReviewStatus, q.askReviewedAt, q.askReviewedBy) +
+        editedMeta(q.editedAt, q.editedBy) +
         '<div class="aqa-detail-body">' + esc(q.body || '（無補充說明）') + '</div>' +
         attachmentsHtml(q.images, q.files) +
         reviewNoteHtml(q.askReviewStatus, q.askReviewNote) +
@@ -548,15 +593,17 @@
         (answers.length
           ? answers.map(function (a) {
               return (
-                '<article class="aqa-answer-card' + cardQualityClass(a.isQuality) + '">' +
+                '<article class="aqa-answer-card' + cardQualityClass(a.isQuality) + '" data-aqa-card="a:' + esc(a.id) + '">' +
                 '<div class="aqa-item-head">' +
                 '<span class="aqa-role aqa-role--ans">回答</span> ' +
                 '<span class="aqa-answer-who">' + esc(a.answererName) + '</span>' +
                 qualityBadge('answer', a.isQuality) +
                 reviewBadge(a.reviewStatus) +
+                editBtn('a:' + a.id) +
                 '</div>' +
                 '<p class="aqa-item-meta">送出 ' + esc(fmtDate(a.createdAt)) + '</p>' +
                 reviewPassedMeta(a.reviewStatus, a.reviewedAt, a.reviewedBy) +
+                editedMeta(a.editedAt, a.editedBy) +
                 '<div class="aqa-detail-body">' + esc(a.body) + '</div>' +
                 attachmentsHtml(a.images, a.files) +
                 reviewNoteHtml(a.reviewStatus, a.reviewNote) +
@@ -596,6 +643,71 @@
       }
     } catch (err) {
       detail.innerHTML = '<p class="aqa-msg aqa-msg--err">' + esc(err.message || err) + '</p>';
+    }
+  }
+
+  function editedMeta(at, by) {
+    if (!at) return '';
+    const who = String(by || '').trim();
+    return '<p class="aqa-item-meta aqa-item-meta--edited">✏️ ' + (who ? esc(who) + ' ' : '') + '修改於 ' + esc(fmtDate(at)) + '</p>';
+  }
+
+  /** 有修改權限的人：把卡片換成編輯表單（取消或存檔後整個詳情重畫） */
+  function startEdit(key) {
+    const card = document.querySelector('#aqa-detail [data-aqa-card="' + key + '"]');
+    if (!card || !detailData) return;
+    const btns =
+      '<div class="aqa-edit-btns">' +
+      '<button type="button" class="btn btn-sm btn-solid-emerald" data-aqa-save="' + esc(key) + '">儲存修改</button>' +
+      '<button type="button" class="btn btn-sm tone-slate-soft" data-aqa-cancel="1">取消</button>' +
+      '</div><p class="aqa-msg hidden" data-e="msg"></p>';
+    if (key === 'q') {
+      const q = detailData.question;
+      const opts = Object.keys(CATEGORY_LABELS).map(function (k, i) {
+        return '<option value="' + k + '"' + (k === q.category ? ' selected' : '') + '>' + (i + 1) + '. ' + esc(CATEGORY_LABELS[k]) + '</option>';
+      }).join('');
+      card.innerHTML =
+        '<h4 class="aqa-section-title">✏️ 修改問題</h4>' +
+        '<select class="aqa-select" data-e="category">' + opts + '</select>' +
+        '<input type="text" class="aqa-input aqa-edit-title" data-e="title" maxlength="120" value="' + esc(q.title) + '" />' +
+        '<textarea class="aqa-textarea" data-e="body" rows="6" placeholder="補充說明（選填）">' + esc(q.body || '') + '</textarea>' +
+        btns;
+    } else {
+      const a = detailData.answers.find(function (x) { return 'a:' + x.id === key; });
+      if (!a) return;
+      card.innerHTML =
+        '<h4 class="aqa-section-title">✏️ 修改 ' + esc(a.answererName) + ' 的回答</h4>' +
+        '<textarea class="aqa-textarea" data-e="body" rows="8">' + esc(a.body || '') + '</textarea>' +
+        btns;
+    }
+    card.querySelector('[data-e="body"]')?.focus();
+  }
+
+  async function saveEdit(key, btn) {
+    const card = btn.closest('[data-aqa-card]');
+    const val = function (name) { return (card.querySelector('[data-e="' + name + '"]')?.value || '').trim(); };
+    const msg = card.querySelector('[data-e="msg"]');
+    const say = function (text, err) {
+      msg.textContent = text;
+      msg.classList.remove('hidden');
+      msg.classList.toggle('aqa-msg--err', !!err);
+    };
+    btn.disabled = true;
+    say('儲存中…');
+    try {
+      const data = key === 'q'
+        ? await rpc('admin_qa_edit_question', {
+          p_token: token(), p_question_id: currentQuestionId,
+          p_title: val('title'), p_body: val('body'), p_category: val('category'),
+        })
+        : await rpc('admin_qa_edit_answer', { p_token: token(), p_answer_id: key.slice(2), p_body: val('body') });
+      if (!data?.ok) throw new Error(data?.error || '儲存失敗');
+      await openQuestion(currentQuestionId);
+      const f = listFilters();
+      loadList(f.query, f.category).then(function () { setListActive(currentQuestionId); });
+    } catch (err) {
+      btn.disabled = false;
+      say(err.message || String(err), true);
     }
   }
 
@@ -733,6 +845,13 @@
       const btn = e.target.closest?.('[data-id]');
       if (!btn?.dataset?.id) return;
       openQuestion(btn.dataset.id);
+    });
+    $('aqa-detail')?.addEventListener('click', function (e) {
+      const edit = e.target.closest?.('[data-aqa-edit]');
+      if (edit) return startEdit(edit.dataset.aqaEdit);
+      const save = e.target.closest?.('[data-aqa-save]');
+      if (save) return saveEdit(save.dataset.aqaSave, save);
+      if (e.target.closest?.('[data-aqa-cancel]') && currentQuestionId) openQuestion(currentQuestionId);
     });
   }
 

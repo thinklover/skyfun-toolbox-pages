@@ -5,6 +5,7 @@
     'use strict';
 
     window.SITE_FILE_SEARCH_INDEX = [
+        { file: './docs/weekly-meeting/files/1012業務周會.pdf', title: '115/10/12 1012業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1012 獎金 結績 紙本合約 工具箱 手機版 官方LINE 退件 1019 包租 解約 退押 押金 新制 虛擬帳號 帳號查詢 財產 所得 資格審查 家庭成員 限額 所得清單 給付總額 平均每人每月所得 動產 利息 存款本金 不動產 房屋現值 土地現值 自有住宅 更換房東 更換房客 死亡 繼承 買賣 更名 代管 轉租 異動 契約起日 行政審核' },
         { file: './docs/weekly-meeting/files/1005業務周會.pdf', title: '115/10/05 1005業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1005 獎金 結績 工具箱 手機版 官方LINE 退件 星財補 財補 證照補助 代管 1101 證照 公司登錄 代管費 雙證照 點交 糾紛 自然耗損 人為毀損 折舊 殘值 窗簾 油漆 壁癌 補漆 判決 調解 押金返還 虛擬帳戶 匯錯 帳戶凍結 配偶 賣屋 換約' },
         { file: './docs/weekly-meeting/files/租賃住宅管理人員配置調整同意書.pdf', title: '租賃住宅管理人員配置調整同意書', category: '檔案 · PDF · 業務周會', keywords: '租賃管理人員 配置調整 同意書 證照 代管 公告 20260624 附件一 表單 周會' },
         { file: './docs/weekly-meeting/files/0914業務周會.pdf', title: '115/09/14 0914業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0914 獎金 結績 廣告 591 複審 解約 催收 SOP 本票 強制執行' },

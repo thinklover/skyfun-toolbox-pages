@@ -17,6 +17,13 @@
     .b-rejected { background: #fee2e2; color: #b91c1c; }
     .chip { font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 999px; border: 1px solid #cbd5e1; color: #334155; background: #fff; font-weight: 800; cursor: pointer; }
     .chip.is-active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .chip .n { margin-left: 0.3rem; font-weight: 700; opacity: 0.7; }
+    .cat { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 800; background: #f1f5f9; color: #475569; }
+    .cat-hr { background: #ede9fe; color: #6d28d9; }
+    .cat-bonus { background: #fef3c7; color: #b45309; }
+    .cat-comp { background: #fee2e2; color: #b91c1c; }
+    .cat-pay { background: #e0f2fe; color: #0369a1; }
+    .cat-other { background: #f1f5f9; color: #475569; }
     .detail { background: #f8fafc; border-top: 2px solid #6366f1; }
     .kv { display: grid; grid-template-columns: 1fr; gap: 0.5rem 1.25rem; }
     @media (min-width: 768px) { .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -59,7 +66,7 @@
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
         <h2 class="section-h">可選的主管、審核與總經理室會辦人員</h2>
-        <p class="text-sm text-slate-400">勾選後，承辦人送簽時只會看到這些人；同一帳號可具備多種資格，但同一份簽呈的主管、審核與會辦需由不同人處理。</p>
+        <p class="text-sm text-slate-400">勾選後，承辦人送簽時只會看到這些人；同一帳號可具備多種資格，同一份簽呈的主管、審核與會辦也可以是同一人（會依序各簽一次）。</p>
       </div>
       <button type="button" id="btn-approver-save" class="btn btn-main">儲存勾選名單</button>
     </div>
@@ -93,11 +100,15 @@
       <input type="search" id="q" placeholder="搜尋主旨／承辦人／部門／處理人" class="flex-1 min-w-[12rem]" />
       <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
     </div>
+    <div class="flex flex-wrap items-center gap-1.5">
+      <span class="text-xs text-slate-500 font-bold mr-1">簽呈類型</span>
+      <div class="flex flex-wrap gap-1.5" id="cat-chips"></div>
+    </div>
     <p id="msg" class="text-sm text-slate-400"></p>
     <div class="overflow-x-auto">
       <table>
         <thead>
-          <tr><th>送出時間</th><th>主旨</th><th>承辦人</th><th>目前狀態</th><th>部門主管</th><th>審核</th><th>會辦（總經理室）</th><th>LINE</th></tr>
+          <tr><th>送出時間</th><th>類型</th><th>主旨</th><th>承辦人</th><th>目前狀態</th><th>部門主管</th><th>審核</th><th>會辦（總經理室）</th><th>LINE</th></tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
@@ -117,11 +128,13 @@
       const STAGE_NAME = { applicant: '承辦人', manager: '部門主管', director: '審核', office: '會辦單位', gm: '總經理決行' };
       const STAGE_ORDER = ['applicant', 'manager', 'director', 'office', 'gm'];
       const ACTION = { submit: '送出簽呈', approve: '簽核完成', reject: '退回', resubmit: '修改後重新送出', withdraw: '撤回' };
+      const CATS = { 人事相關: 'cat-hr', 獎金辦法: 'cat-bonus', 賠償案件: 'cat-comp', 薪資出勤: 'cat-pay', 其他: 'cat-other' };
       const details = {};
       let secret = '';
       let items = [];
       let accounts = [];
       let stage = '';
+      let cat = '';
       let openId = null;
 
       const $ = (id) => document.getElementById(id);
@@ -150,6 +163,16 @@
       function badge(st) {
         const [cls, label] = STATUS[st] || ['b-wait', st];
         return '<span class="badge ' + cls + '">' + label + '</span>';
+      }
+
+      function categoryOf(it) {
+        const c = String(it.content?.category || '').trim();
+        if (!c) return { group: '未分類', label: '未分類' };
+        return c.startsWith('其他') ? { group: '其他', label: c.replace(/^其他：?/, '') || '其他' } : { group: c, label: c };
+      }
+      function catBadge(it) {
+        const c = categoryOf(it);
+        return '<span class="cat ' + (CATS[c.group] || '') + '"' + (c.group === '其他' ? ' title="其他：' + esc(c.label) + '"' : '') + '>' + esc(c.label) + '</span>';
       }
 
       function rejectedBy(d) {
@@ -288,6 +311,7 @@
         if (!d) return '<p class="muted text-sm">載入中…</p>';
         const kv = (k, v, wide) => '<div' + (wide ? ' class="wide"' : '') + '><dt>' + k + '</dt><dd>' + esc(v || '—') + '</dd></div>';
         return '<dl class="kv">' +
+          kv('簽呈類型', d.content?.category || '未分類') +
           kv('主旨', d.title, true) +
           kv('補充說明', d.note, true) +
           kv('承辦人（部門）', d.userName + (d.team ? '（' + d.team + '）' : '')) +
@@ -309,16 +333,24 @@
 
       function renderRows() {
         document.querySelectorAll('#stage-chips .chip').forEach((c) => c.classList.toggle('is-active', c.dataset.stage === stage));
-        $('count').textContent = '共 ' + items.length + ' 筆';
-        $('rows').innerHTML = items.map((it) =>
+        const counts = {};
+        items.forEach((it) => { const g = categoryOf(it).group; counts[g] = (counts[g] || 0) + 1; });
+        const groups = Object.keys(CATS).concat(counts['未分類'] ? ['未分類'] : []);
+        if (cat && !groups.includes(cat)) cat = '';
+        $('cat-chips').innerHTML = ['<button type="button" class="chip' + (cat ? '' : ' is-active') + '" data-cat="">全部<span class="n">' + items.length + '</span></button>']
+          .concat(groups.map((g) => '<button type="button" class="chip' + (cat === g ? ' is-active' : '') + '" data-cat="' + esc(g) + '">' + esc(g) + '<span class="n">' + (counts[g] || 0) + '</span></button>'))
+          .join('');
+        const shown = cat ? items.filter((it) => categoryOf(it).group === cat) : items;
+        $('count').textContent = '共 ' + shown.length + ' 筆';
+        $('rows').innerHTML = shown.map((it) =>
           '<tr class="row' + (openId === it.id ? ' is-open' : '') + '" data-id="' + it.id + '">' +
-          '<td class="nw">' + fmt(it.createdAt) + '</td><td>' + esc(it.title) + (it.round > 1 ? ' <span class="muted">（第 ' + it.round + ' 次）</span>' : '') + '</td>' +
+          '<td class="nw">' + fmt(it.createdAt) + '</td><td>' + catBadge(it) + '</td><td>' + esc(it.title) + (it.round > 1 ? ' <span class="muted">（第 ' + it.round + ' 次）</span>' : '') + '</td>' +
           '<td class="nw">' + esc(it.userName) + (it.team ? '<div class="muted text-xs">' + esc(it.team) + '</div>' : '') + '</td>' +
           '<td>' + badge(it.stage) + '</td>' +
           '<td class="nw">' + esc(it.managerName) + '</td><td class="nw">' + esc(it.directorName) + '</td><td class="nw">' + esc(it.officeName) + '</td>' +
           '<td>' + (it.lineError ? '<span class="warn text-xs">' + esc(it.lineError) + '</span>' : (it.lineNotifiedAt ? '<span class="text-emerald-300 text-xs">已通知</span>' : '<span class="muted text-xs">—</span>')) + '</td></tr>' +
-          (openId === it.id ? '<tr><td colspan="8" class="detail" data-detail="' + it.id + '">' + detailHtml(it) + '</td></tr>' : '')
-        ).join('') || '<tr><td colspan="8" class="muted">沒有符合條件的簽呈</td></tr>';
+          (openId === it.id ? '<tr><td colspan="9" class="detail" data-detail="' + it.id + '">' + detailHtml(it) + '</td></tr>' : '')
+        ).join('') || '<tr><td colspan="9" class="muted">沒有符合條件的簽呈</td></tr>';
       }
 
       async function loadList() {
@@ -390,6 +422,12 @@
         if (!chip) return;
         stage = chip.dataset.stage;
         loadList();
+      });
+      $('cat-chips').addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-cat]');
+        if (!chip) return;
+        cat = chip.dataset.cat;
+        renderRows();
       });
       let qTimer = null;
       $('q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(loadList, 350); });

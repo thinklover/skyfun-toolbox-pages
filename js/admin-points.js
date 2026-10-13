@@ -41,7 +41,8 @@
     sb: null,
     prev: null,
     pick: null,
-    openPoint: ''
+    openPoint: '',
+    lkpi: null
   };
 
   function esc(s) {
@@ -138,6 +139,7 @@
       ]);
       state.auditRows = Core.rowsFromPayload(audit);
       state.expenseRows = Core.rowsFromPayload(expenses);
+      state.lkpi = null;
       state.result = Core.compute(state.auditRows, {
         start: range.start,
         end: range.end,
@@ -239,7 +241,7 @@
 
   const GROUPS = [
     { key: '行政', note: '人力明細在職人員' },
-    { key: '非行政', note: '有審核紀錄、但不在人力明細' }
+    { key: '非行政', note: '有審核紀錄或教育訓練測試帳號、但不在人力明細' }
   ];
 
   function groupTitle(g, count, sum) {
@@ -655,6 +657,7 @@
     return Core.trainingState(key, {
       videoDone: c?.video?.done,
       examPassed: c?.passed,
+      practiceDone: window.SimPractice?.statusOf(key, name)?.done,
       guideRate: key === 'guide' ? guideExamRate(name) : null
     });
   }
@@ -680,27 +683,37 @@
       </button>`;
   }
 
+  const WEEK_CN = ['一', '二', '三', '四', '五', '六'];
+
   function courseBlocks(pf, active) {
     courseCache.set(pf.name, { pf, active });
     const cs = Core.courseScores((key) => trainState(key, pf.name));
     const byKey = new Map(pf.training.map((s) => [s.key, s]));
     const g = Math.round(cs.generalScore);
-    const general = cs.general.map((c) => courseCard(pf, byKey.get(c.key), c, active, `占 ${c.weight}%`)).join('');
-    const projects = cs.projects.map((c) => courseCard(pf, byKey.get(c.key), c, active, '獨立 100 分')).join('');
+    const weeks = cs.weeks
+      .map((w) => {
+        const label = `第${WEEK_CN[w.week - 1]}週`;
+        const done = w.items.filter((c) => trainState(c.key, pf.name).done).length;
+        return `<div class="apt-train-week">
+          <div class="apt-train-week-head"><b>${label}</b><small>${w.items.map((c) => esc(c.label)).join('、')}</small><span>${done}／${w.items.length} 項通過</span></div>
+          <div class="apt-skills apt-trains apt-trains--week">${w.items.map((c) => courseCard(pf, byKey.get(c.key), c, active, label)).join('')}</div>
+        </div>`;
+      })
+      .join('');
     return `<div class="apt-course-wrap" data-course-of="${esc(pf.name)}">
         <div class="apt-course apt-course--general">
           <div class="apt-course-head">
-            <div class="apt-course-name"><b>📘 秘書通識課程</b><small>執行要點占 30%，其餘 7 項各占 10%；看完影片、考試滿分、實作完成才算通過（各占 1／3 分數），執行要點依考試進度計分</small></div>
-            <div class="apt-course-total"><span>通識總分</span><strong style="color:${scoreColor(g)}">${g}</strong><small>／100</small></div>
+            <div class="apt-course-name"><b>📘 行政教育訓練（五週課程）</b><small>每週 2～3 項，照週次完成；每一項比重相同。有影片的課程要看完影片、考試滿分、實作完成才算通過（各占 1／3 分數），執行要點依考試進度計分</small></div>
+            <div class="apt-course-total"><span>訓練總分</span><strong style="color:${scoreColor(g)}">${g}</strong><small>／100</small></div>
             <span class="apt-course-bar"><i style="width:${g}%;background:${scoreColor(g)}"></i></span>
           </div>
-          <div class="apt-skills apt-trains apt-trains--general">${general}</div>
+          ${weeks}
         </div>
         <div class="apt-course apt-course--project">
           <div class="apt-course-head">
-            <div class="apt-course-name"><b>🗂️ 專案課程</b><small>單獨科目，每一科各自 100 分，不併入通識總分</small></div>
+            <div class="apt-course-name"><b>🗂️ 專案課程</b><small>單獨科目，每一科各自 100 分，不併入訓練總分</small></div>
           </div>
-          <div class="apt-skills apt-trains apt-trains--project">${projects}</div>
+          <div class="apt-skills apt-trains apt-trains--project">${cs.projects.map((c) => courseCard(pf, byKey.get(c.key), c, active, '獨立 100 分')).join('')}</div>
         </div>
       </div>`;
   }
@@ -1611,6 +1624,10 @@
 
   function trainStepText(key, name, step) {
     if (step.pending) return '實作：模擬系統準備中';
+    if (step.key === 'practice') {
+      const p = window.SimPractice?.statusOf(key, name);
+      return `${step.label} ${step.ok ? '✅' : p?.loaded ? `${p.passes}／${p.target} 題` : '⬜'}`;
+    }
     if (step.key === 'video') {
       const v = window.CourseExam?.statusOf(key, name)?.video;
       return `${step.label} ${step.ok ? '✅' : v?.loaded ? `${v.pct}%` : '⬜'}`;
@@ -1679,6 +1696,7 @@
             ${status}
             <h5 class="apt-sec-title">線上考試</h5>
             <div id="course-exam-root" data-course="${s.key}" data-name="${esc(pf.name)}"></div>
+            ${window.SimPractice ? `<h5 class="apt-sec-title">實作（模擬系統）</h5><div id="sim-practice-root" data-course="${s.key}" data-name="${esc(pf.name)}"></div>` : ''}
           </div>
           <div class="apt-train-col apt-train-col--material">
             <h5 class="apt-sec-title">教材</h5>
@@ -1820,7 +1838,6 @@
       .map((l) => `<option value="${esc(l)}"${l === state.leader ? ' selected' : ''}>${l ? `${esc(l)}${areaText(l) ? `（${esc(areaText(l))}）` : ''}` : '全部組長'}</option>`)
       .join('');
     const s = rep.summary;
-    const pct = (v) => (v == null ? '' : `${(v * 100).toFixed(1)}%`);
     const bonusCell = (r) => {
       if (r.bonusPending) return prevErr ? '<span title="上月點數讀取失敗，未套用八折判斷">?</span>' : '計算中…';
       return money(r.bonus);
@@ -1851,7 +1868,7 @@
         num: true,
         dir: -1,
         value: (r) => (r.rate == null ? null : r.rate * 1000),
-        cell: (r) => `<td class="num${r.rate != null && r.rate < 0.9 ? ' apt-bad' : ''}">${pct(r.rate) || NIL}</td>`
+        cell: (r) => `<td class="num">${rateChip(r.rate) || NIL}</td>`
       },
       { key: 'complaints', label: '客訴件數', num: true, dir: 1, value: (r) => r.complaints, cell: (r) => `<td class="num">${r.complaints}</td>` },
       {
@@ -1875,15 +1892,154 @@
     return `<div class="apt-sub-bar">
         <label>週 <select id="apt-week">${weekOpts}</select></label>
         <label class="${state.leader ? 'apt-leader-picked' : ''}">組長 <select id="apt-leader">${leaderOpts}</select></label>
-        <span class="apt-sub-note">本週總點數 <b>${s.weekPoints}</b> · 本週登錄人數 <b>${s.active}</b> · 本週審件良率 <b>${pct(s.rate) || '-'}</b> · 本週客訴件數 <b>${s.complaints}</b></span>
+        <span class="apt-sub-note">本週總點數 <b>${s.weekPoints}</b> · 本週登錄人數 <b>${s.active}</b> · 本週審件良率 ${rateChip(s.rate) || '<b>-</b>'} · 本週客訴件數 <b>${s.complaints}</b></span>
       </div>
       ${leaderBanner(state.leader ? scopes.get(state.leader) || { leader: state.leader, members: rep.rows.length, regions: [], areas: [], cities: [] } : null, [...scopes.values()])}
       <div class="apt-table-wrap"><table class="apt-table">
         <thead><tr><th>#</th>${sortHead('weekly', cols)}</tr></thead>
         <tbody>${rows || `<tr><td colspan="${cols.length + 1}" class="apt-empty">沒有符合的人員</td></tr>`}</tbody>
       </table></div>
-      <p class="apt-sub-note">點欄位標題就用那一欄排序，再點一次反過來；# 是目前排序的名次（同值同名次）。本週點數、審件抽查／正確／良率、客訴件數依所選週（週一～週日）加總；月累積點數、月度級距、預估個人獎金、本月懲處依業績月。不含工讀生。到職未滿一個月（以週結束日判斷）為「新人首月排除」，不發獎金。預估獎金：達 ${Core.STAGE_1} 點 2,000、達 ${Core.STAGE_2} 點 5,000，上個業績月未達 ${Core.STAGE_1} 點打八折；達 ${Core.STAGE_1} 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。${prevErr ? `<br><span class="apt-bad">上月點數讀取失敗：${esc(prevErr)}</span>` : ''}</p>
+      <p class="apt-sub-note">點欄位標題就用那一欄排序，再點一次反過來；# 是目前排序的名次（同值同名次）。本週點數、審件抽查／正確／良率、客訴件數依所選週（週一～週日）加總；月累積點數、月度級距、預估個人獎金、本月懲處依業績月。不含工讀生。到職未滿一個月（以週結束日判斷）為「新人首月排除」，不發獎金。預估獎金：達 ${Core.STAGE_1} 點 2,000、達 ${Core.STAGE_2} 點 5,000，上個業績月未達 ${Core.STAGE_1} 點打八折；達 ${Core.STAGE_1} 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。審件良率顏色：90% 以上綠、60%～未滿 90% 黃、未滿 60% 紅（同主管簡報）。${prevErr ? `<br><span class="apt-bad">上月點數讀取失敗：${esc(prevErr)}</span>` : ''}</p>
+      ${leaderKpiSection(range, week, state.leader ? scopes.get(state.leader) || { leader: state.leader, cities: [] } : null)}
       ${guideBoardSection(state.leader ? `${state.leader} 組` : '全部組別')}`;
+  }
+
+  /** 審件良率色塊：門檻同主管簡報（90% 以上綠、60% 以上黃、其餘紅） */
+  function rateChip(rate) {
+    if (rate == null) return '';
+    const tone = rate >= 0.9 ? 'g' : rate >= 0.6 ? 'y' : 'r';
+    return `<span class="apt-rate apt-rate--${tone}">${(rate * 100).toFixed(1)}%</span>`;
+  }
+
+  /* ---------- 組長週報：負責地區的承接率與清冊／審件作業良率（同「各地區KPI指標」） ---------- */
+
+  /** 清冊／審件良率依公會期數，採上個月（同主管簡報月報） */
+  function prevGuild(range) {
+    const year = range.month === 1 ? range.year - 1 : range.year;
+    const month = range.month === 1 ? 12 : range.month - 1;
+    return { year: year - 1911, month, guild: `${year - 1911}/${String(month).padStart(2, '0')}` };
+  }
+
+  async function fetchKpiPart(m, part) {
+    let res;
+    try {
+      res = await fetch(`${RPA_BASE}/admin-points/kpi?year=${m.year}&month=${m.month}&part=${part}`, {
+        headers: { 'X-Skyfun-Session': token() }
+      });
+    } catch {
+      throw new Error('連不到星鴻資料服務（Worker）');
+    }
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok) throw new Error(data?.error || `表單04／07、媒合管理讀取失敗（HTTP ${res.status}）`);
+    return data;
+  }
+
+  async function loadLeaderKpi(range) {
+    const key = `${range.year}-${range.month}`;
+    const g = prevGuild(range);
+    const lk = { key, busy: true, guild: g.guild, takeup: null, tenant: null, quality: null };
+    state.lkpi = lk;
+    const [tc, quality] = await Promise.all([
+      fetchWorker('/admin-points/tenant-cities', '房客地區', range).catch((e) => ({ rows: [], pending: 0, error: e.message })),
+      Promise.all([
+        fetchKpiPart(g, 'roster04'),
+        fetchKpiPart(g, 'roster07'),
+        fetchKpiPart(g, 'cases'),
+        window.skyfunAuth.rpc('admin_points_kpi_opinions_view', { p_token: token(), p_guild_period: g.guild })
+      ])
+        .then(([r04, r07, cases, op]) => {
+          if (!op?.ok) throw new Error(op?.error || '公會意見讀取失敗');
+          return Core.kpiQuality(r04, r07, cases, op.opinions);
+        })
+        .catch((e) => ({ error: String(e.message || e) }))
+    ]);
+    if (state.lkpi !== lk) return;
+    lk.tenant = { pending: Number(tc.pending) || 0, error: tc.error || '' };
+    lk.takeup = Core.takeupReport(state.auditRows, {
+      start: range.start,
+      end: range.end,
+      staff: state.sb?.staff || [],
+      expenses: state.expenseRows || [],
+      tenantCities: new Map((tc.rows || []).map(([id, city]) => [String(id), city])),
+      regionOf: Core.kpiRegionOfCity
+    });
+    lk.quality = quality;
+    lk.busy = false;
+    if (state.tab === 'weekly') render();
+  }
+
+  /** scope：選了組長＝該組管理縣市對到的 KPI 地區（加小計）；全部組長＝全區＋12 區 */
+  function leaderKpiSection(range, week, scope) {
+    const key = `${range.year}-${range.month}`;
+    if (state.lkpi?.key !== key) loadLeaderKpi(range).catch((e) => console.warn('組長週報 KPI', e));
+    const lk = state.lkpi;
+    const regions = scope ? Core.kpiRegionsOfAreas(scope.areas) : ['全區', ...Core.KPI_REGIONS];
+    const title = `<h4 class="apt-sec-title">${scope ? `${esc(scope.leader)} 組負責地區（${esc((scope.areas || []).join('・'))}）` : '各地區'}｜第一階段達成率・行政承接率・清冊／審件作業良率</h4>`;
+    if (!regions.length) return `${title}<p class="apt-empty">這位組長的組員在人力明細沒有部別，對不到地區</p>`;
+    const cols = scope && regions.length > 1 ? [...regions, '小計'] : regions;
+    const partsOf = (g) => (g === '小計' ? regions : [g]);
+    const short = (d) => d.slice(5).replace('-', '/');
+
+    const stageEnd = week.end < range.end ? week.end : range.end;
+    const stage = state.result ? Core.kpiStageReport(state.result, { staff: state.sb?.staff || [], weeks: [{ start: range.start, end: stageEnd }] }) : null;
+    const stageX = (g) => {
+      if (!stage) return null;
+      let hit = 0;
+      let total = 0;
+      for (const r of partsOf(g)) {
+        const x = stage.get(r, 0);
+        if (x) {
+          hit += x.hit;
+          total += x.total;
+        }
+      }
+      return { rate: total ? hit / total : null, text: `達標${hit}／${total}人` };
+    };
+
+    const takeupX = (g, col) => {
+      if (!lk?.takeup || col < 0) return null;
+      let local = 0;
+      let total = 0;
+      for (const r of partsOf(g)) {
+        const x = lk.takeup.get(r, 'total', col);
+        if (x) {
+          local += x.local;
+          total += x.total;
+        }
+      }
+      return { rate: total ? local / total : null, text: `行${local}／總${total}` };
+    };
+    const qualityX = (kind, g) => {
+      const q = lk?.quality;
+      if (!q || q.error) return null;
+      const x = partsOf(g).reduce((s, r) => ({ total: s.total + (q[kind][r]?.total || 0), err: s.err + (q[kind][r]?.err || 0) }), { total: 0, err: 0 });
+      return { rate: Core.kpiErrRate(x), text: `錯${x.err}／總${x.total}` };
+    };
+    const rows = [
+      { label: '第一階段以上達成率', sub: `業績月累計到 ${short(stageEnd)}`, target: 0.8, get: stageX, empty: '無正職行政' },
+      { label: '行政承接率', sub: '本業績月累計', target: 0.8, get: (g) => takeupX(g, 'all'), loading: !lk?.takeup },
+      { label: '清冊作業良率', sub: `公會期數 ${lk?.guild || prevGuild(range).guild}`, target: 0.9, get: (g) => qualityX('roster', g), loading: !lk?.quality },
+      { label: '審件作業良率', sub: `公會期數 ${lk?.guild || prevGuild(range).guild}`, target: 0.9, get: (g) => qualityX('audit', g), loading: !lk?.quality }
+    ];
+    const cell = (row, g) => {
+      if (row.loading) return '<td class="apt-kpi-cell apt-kpi--none">讀取中…</td>';
+      const x = row.get(g);
+      if (!x || x.rate == null) return `<td class="apt-kpi-cell apt-kpi--none">—<small>${row.label.includes('良率') && lk?.quality?.error ? '讀取失敗' : row.empty || '無件數'}</small></td>`;
+      const tone = x.rate >= row.target ? 'g' : x.rate >= row.target - 0.1 ? 'y' : 'r';
+      return `<td class="apt-kpi-cell apt-kpi--${tone}${g === '小計' ? ' apt-kpi-sum' : ''}"><b>${(x.rate * 100).toFixed(1)}%</b><small>${x.text}</small></td>`;
+    };
+    const notes = [];
+    if (lk?.quality?.error) notes.push(`清冊／審件良率讀取失敗：${lk.quality.error}`);
+    if (lk?.tenant?.error) notes.push(`房客地區暫時查不到（${lk.tenant.error}），房審只算在全區`);
+    else if (lk?.tenant?.pending) notes.push(`還有 ${lk.tenant.pending} 位房客的地區在查詢中，稍後按「重新整理」會補上`);
+    return `${title}
+      <div class="apt-table-wrap"><table class="apt-table apt-kpi-table">
+        <thead><tr><th>指標</th><th class="num">目標</th>${cols.map((g) => `<th class="apt-kpi-head">${esc(g)}</th>`).join('')}</tr></thead>
+        <tbody>${rows
+          .map((row) => `<tr><th class="apt-kpi-label">${row.label}<small>${esc(row.sub)}</small></th><td class="num">${Math.round(row.target * 100)}%</td>${cols.map((g) => cell(row, g)).join('')}</tr>`)
+          .join('')}</tbody>
+      </table></div>
+      <p class="apt-sub-note">和後台「各地區KPI指標」同一套算法，地區依組長負責的北／中／南區列出。第一階段以上達成率＝在職正職行政中，業績月第一天累計到本週日（或業績月最後一天）點數達 ${Core.STAGE_1} 點的人數 ÷ 人數（依人力明細部別分區）。承接率＝行政審核件數 ÷ 總件數（案件依物件／合約縣市、房審依房客縣市分區）。清冊／審件作業良率＝（總件數 − 公會意見錯誤件數）÷ 總件數，依公會期數按月計算，採上個月（同主管簡報月報）。顏色：達目標綠、差 10% 以內黃、其餘紅。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`;
   }
 
   const AREA_TONE = { 北區: 'north', 中區: 'mid', 南區: 'south', 東部及離島: 'east' };
@@ -1909,7 +2065,7 @@
         </div>`;
     }
     if (!all.length) return '';
-    return `<div class="apt-leader-list">
+    return `<div class="apt-leader-list" style="--n:${all.length}">
         <span class="apt-leader-list-title">各組長負責區域<small>點一下只看該組</small></span>
         ${all
           .map(
@@ -2162,7 +2318,13 @@
       state.sb.checks = checks;
       state.spotWeek = null;
       delete state.spotEdit[i];
-      setMsg('');
+      const n = res.notice;
+      if (n?.kind === 'fail') {
+        if (n.recipients > 0) setMsg(`已用 LINE 通知 ${s.name}，他的工具箱首頁也會顯示這件未通過。`, 'ok');
+        else setMsg(`${s.name}${n.error === 'LINE 尚未設定' ? '：LINE 尚未設定' : ' 還沒綁定 LINE'}，這次沒有推 LINE；未通過通知只會顯示在他的工具箱首頁。`, 'warn');
+      } else if (n?.kind === 'cleared') {
+        setMsg(`已改判通過，${s.name} 首頁的未通過通知已收起${n.recipients > 0 ? '，也用 LINE 補通知了' : ''}。`, 'ok');
+      } else setMsg('');
     } catch (e) {
       setMsg(`抽查結果沒有存到：${e.message || e}`, 'err');
     }
@@ -2245,7 +2407,7 @@
         ${status}
       </div>
       ${state.leader ? spotWeekNote() : ''}
-      <p class="apt-sub-note">抽前一天的案件：每位在職行政各從前一天審過的物審、房客、預審、修繕審核抽一件（前一天＝今天以前最近一個有審核紀錄的日子，週一會抽上週五）。按「複製網址」再貼到已登入的星鴻分頁；也可以把按鈕直接拖到那個分頁上。修繕審核沒有單件網址，會打開補助審核頁，再用合約編號查。看完按「通過」或「未通過」（要寫原因），結果算一件審件抽查，計入審件良率；同一件改判會覆蓋原本結果。</p>
+      <p class="apt-sub-note">抽前一天的案件：每位在職行政各從前一天審過的物審、房客、預審、修繕審核抽一件（前一天＝今天以前最近一個有審核紀錄的日子，週一會抽上週五）。按「複製網址」再貼到已登入的星鴻分頁；也可以把按鈕直接拖到那個分頁上。修繕審核沒有單件網址，會打開補助審核頁，再用合約編號查。看完按「通過」或「未通過」（要寫原因），結果算一件審件抽查，計入審件良率；同一件改判會覆蓋原本結果。判「未通過」會立刻用 LINE 通知該行政（他要先綁定 LINE），並顯示在他的工具箱首頁；改判通過會收起通知。</p>
       ${drawn ? `<div class="apt-table-wrap"><table class="apt-table apt-spot-table">
         <thead><tr><th>姓名</th><th>節點</th><th>案件</th><th>審核時間</th><th></th><th>抽查結果</th></tr></thead>
         <tbody>${rows}</tbody>
@@ -2890,6 +3052,11 @@
       const cx = $('course-exam-root');
       if (cx) window.CourseExam.mount({ course: cx.dataset.course, self: cx.dataset.name === myName(), name: cx.dataset.name });
     }
+    if (state.tab === 'person' && window.SimPractice) {
+      window.SimPractice.loadOverview();
+      const sp = $('sim-practice-root');
+      if (sp) window.SimPractice.mount({ course: sp.dataset.course, self: sp.dataset.name === myName(), name: sp.dataset.name });
+    }
     if ($('guide-exam-board') && window.GuideExam) {
       window.GuideExam.mountBoard({
         staff: activeStaff(),
@@ -2966,7 +3133,7 @@
             ? '<label><span>媒合編號 <em>*</em></span><input name="caseNo" maxlength="60" placeholder="例如 星華AM…" autocomplete="off"></label>'
             : `<label><span>清冊期數 <em>*</em></span><input name="rosterPeriod" maxlength="20" list="apt-op-roster-periods" placeholder="選擇或輸入"><datalist id="apt-op-roster-periods">${ROSTER_PERIODS.map((p) => `<option value="${p}">`).join('')}</datalist></label>`}
           <label><span>意見時間</span><input type="date" name="opinionDate"></label>
-          <label class="apt-op-wide"><span>公會意見內容 <em>*</em></span><textarea name="content" rows="3" maxlength="2000" placeholder="照公會回傳的意見填寫；沒有意見可以填「無」"></textarea></label>
+          <label class="apt-op-wide"><span>公會意見內容 <em>*</em></span><textarea name="content" rows="3" maxlength="2000" placeholder="照公會回傳的意見填寫"></textarea></label>
           ${isCase ? '' : '<label class="apt-op-wide apt-op-measure-field"><span>行政檢討對策 <em>*</em></span><textarea name="measure" rows="3" maxlength="2000" placeholder="這個意見要怎麼改善、之後怎麼避免"></textarea></label>'}
           <div class="apt-op-actions apt-op-wide"><button type="submit" class="apt-op-save">送出</button><span class="apt-op-msg" role="status" aria-live="polite"></span></div>
         </form>
@@ -3364,6 +3531,7 @@
           el.textContent = courseExamText(course, name);
         });
       });
+      window.SimPractice?.onChange(refreshTraining);
     }
     if (!state.result) load(false);
   };

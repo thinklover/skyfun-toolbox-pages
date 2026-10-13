@@ -7,8 +7,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261011-41"></script>
-  <script src="../js/admin-points-report.js?v=20261011-1"></script>
+  <script src="../js/admin-points-core.js?v=20261013-1"></script>
+  <script src="../js/admin-deck.js?v=20261012-2"></script>
+  <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
   <style>
     body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #f1f5f9; color: #0f172a; min-height: 100vh; }
@@ -142,6 +143,13 @@
     .stat span { font-size: 0.75rem; color: #64748b; }
     .seg { padding: 0.3rem 0.8rem; border-radius: 999px; border: 1px solid #cbd5e1; background: #fff; font-size: 0.8rem; font-weight: 800; color: #334155; }
     .seg.is-on { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .seg small { margin-left: 0.25rem; font-weight: 700; opacity: 0.75; }
+    .op-sum { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; }
+    .op-sum b { font-size: 0.92rem; color: #1e1b4b; }
+    .op-sum .badge { font-weight: 800; }
+    .op-k-case { background: #e0e7ff; color: #3730a3; }
+    .op-k-roster { background: #ccfbf1; color: #115e59; }
+    .op-sub { font-size: 0.72rem; font-weight: 700; color: #64748b; }
     tr.click { cursor: pointer; }
     tr.click:hover td { background: #eef2ff; }
     tr.click.is-open td { background: #e0e7ff; }
@@ -265,16 +273,22 @@
     <nav class="side" id="nav">
       <h6>報表</h6>
       <button type="button" class="tab-btn" data-tab="boss">🧾 主管月報／週報</button>
-      <button type="button" class="tab-btn" data-tab="report">📊 每月進度報表</button>
-      <button type="button" class="tab-btn" data-tab="takeup">🏢 地區承接率</button>
-      <button type="button" class="tab-btn" data-tab="kpi">📈 KPI 報表</button>
+      <button type="button" class="tab-btn" data-tab="wprog">📅 行政每週進度</button>
+      <button type="button" class="tab-btn" data-tab="takeup">🏢 各地區行政承接率</button>
+      <button type="button" class="tab-btn" data-tab="report">📊 行政每月進度</button>
+      <button type="button" class="tab-btn" data-tab="kpiyear">🎯 管理部KPI月報</button>
+      <button type="button" class="tab-btn" data-tab="kpi">📈 各地區KPI指標</button>
+      <button type="button" class="tab-btn" data-tab="eff">⏱️ 系統作業效率月報</button>
+      <button type="button" class="tab-btn" data-tab="tarea">🧭 房客審核者地區</button>
       <h6>組長登錄</h6>
       <button type="button" class="tab-btn" data-tab="manual">✍️ 人工計點</button>
+      <button type="button" class="tab-btn" data-tab="opinion">💬 公會意見</button>
       <button type="button" class="tab-btn" data-tab="check">🔍 審件抽查</button>
       <button type="button" class="tab-btn" data-tab="incident">⚠️ 客訴／懲處</button>
       <h6>訓練與考試</h6>
       <button type="button" class="tab-btn" data-tab="training">🎓 教育訓練</button>
       <button type="button" class="tab-btn" data-tab="exam">📝 執行要點考試</button>
+      <button type="button" class="tab-btn" data-tab="sim">🧪 物審模擬系統</button>
       <h6>追蹤</h6>
       <button type="button" class="tab-btn" data-tab="plan">📌 改善計畫</button>
       <h6>設定</h6>
@@ -284,24 +298,111 @@
 
     <main class="content card p-4">
     <div id="tab-boss" class="space-y-4 hidden">
-      <div class="page-head"><h2>主管月報／週報</h2><p>一鍵產生給老闆看的報告；可列印成 PDF、下載 Excel，或複製文字摘要貼到 LINE</p></div>
-      <details class="help"><summary>報告內容與算法</summary>
-        <p>月報＝上方選的業績月 vs 上個業績月；週報＝選的那一週（週一到週日）vs 前一週。對象是人力明細上在職的正職行政（不含工讀生）。內容有：重點摘要（自動寫好的文字）、關鍵指標與上期比較、各節點平均審一件要多久、綜合評等分布（月報）、各組比較、人員明細、需關注人員、審件抽查未通過明細、客訴／懲處明細。點數、評等與工具箱「行政績效中心」同一套算法；耗時不含實價登錄。每人的速度變化是拿同一人上期同節點的平均來比，不會因為本期多做了比較費時的節點就被算成變慢。</p>
+      <div class="page-head"><h2>主管月報／週報</h2><p>一鍵產生和「管理部週報」「業務管理部月會報告」同樣版面的簡報，先預覽再下載 PPT</p></div>
+      <details class="help"><summary>簡報內容與資料來源</summary>
+        <p><b>週報</b>：封面、一《管理部｜年度KPI》上下半年、行政人員每月進度、二 北／中／南區行政量能承接率。<b>月報</b>：封面、年度KPI上下半年、附件1-1 各地區KPI、附件1-2 北中南區承接率週變化、二 行政個人效能、三 系統作業效率月報、四 新媒合包租率月報。投影片內文字級至少 11pt，所以人員進度依人數分成數頁、承接率依週數把一區拆成數頁。</p>
+        <p class="mt-2">每一頁的數字和左邊同名報表相同：年度KPI取「管理部KPI月報」（第一階段以上達成率、行政承接率自動帶入本月與各週實績；清冊／審件良率自動帶入本月與上個月實績），其餘來自星鴻審核紀錄、補助審核、表單04／07、媒合管理與本後台的抽查。週別從業績月第一天起算，每週到星期五為止；週報只算到選定那週的最後一天。業務相關指標（續約率、包租新件率、續轉包率、新媒合包租率）目前沒有自動資料，年度KPI請在「管理部KPI月報」頁填寫。</p>
       </details>
       <div class="row">
-        <div class="field"><label>報告類型</label><select id="b-type"><option value="month">月報（本業績月 vs 上個業績月）</option><option value="week">週報（選定週 vs 前一週）</option></select></div>
-        <div class="field hidden" id="b-week-wrap"><label>週別</label><select id="b-week"></select></div>
-        <button type="button" class="btn btn-main" id="btn-boss">一鍵產生報告</button>
-        <button type="button" class="btn btn-ghost" id="btn-boss-print" disabled>列印／存 PDF</button>
-        <button type="button" class="btn btn-ghost" id="btn-boss-xlsx" disabled>下載 Excel</button>
-        <button type="button" class="btn btn-ghost" id="btn-boss-copy" disabled>複製文字摘要（貼 LINE）</button>
+        <div class="field"><label>報告類型</label><select id="b-type"><option value="week">週報</option><option value="month">月報</option></select></div>
+        <div class="field" id="b-week-wrap"><label>週別</label><select id="b-week"></select></div>
+        <div class="field"><label>報告人</label><input type="text" id="b-reporter" maxlength="20" style="width:7rem" /></div>
+        <div class="field"><label>製作人</label><input type="text" id="b-maker" maxlength="20" style="width:7rem" /></div>
+        <button type="button" class="btn btn-main" id="btn-boss">一鍵產生預覽</button>
+        <button type="button" class="btn btn-ghost" id="btn-boss-ppt" disabled>下載 PPT</button>
         <span class="muted" id="boss-stamp"></span>
       </div>
-      <div id="boss-sheet" class="print-sheet"><p class="muted">選好業績月與報告類型，按「一鍵產生報告」。第一次要讀本月與上月的星鴻資料，約 10～20 秒。</p></div>
+      <div id="boss-sheet"><p class="muted">選好業績月、報告類型與週別，按「一鍵產生預覽」。第一次要讀星鴻資料，約 10～30 秒。</p></div>
+    </div>
+
+    <div id="tab-wprog" class="space-y-4 hidden">
+      <div class="page-head"><h2>行政每週進度</h2><p>北中南區正職行政每週的累積點數與審件良率</p></div>
+      <details class="help"><summary>怎麼算？</summary>
+        <p>累積點數＝業績月第一天起累計到各週最後一天（和點數表同一套算法）；審件良率＝當週組長抽查的正確件數 ÷ 抽查件數，沒有抽查顯示「—」；還沒開始的週留白。週別從業績月第一天起算，每週到星期五為止。只列人力明細在職的正職行政，依地區／部別分北中南區，工讀生不列入。</p>
+      </details>
+      <div class="toolbar">
+        <span class="muted pb-2" id="wprog-stamp"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-wprog">重新產出</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-wprog-xlsx" disabled>下載 Excel</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-wprog-print" disabled>列印／存 PDF</button>
+        </div>
+      </div>
+      <div id="wprog-sheet" class="print-sheet"></div>
+    </div>
+
+    <div id="tab-kpiyear" class="space-y-4 hidden">
+      <div class="page-head"><h2>管理部KPI月報</h2><p>全年度每月的去年同期、目標、實績；主管月報／週報的年度KPI頁就是這張表</p></div>
+      <details class="help"><summary>資料來源與怎麼填</summary>
+        <p>行政四項（第一階段以上達成率、行政承接率、清冊／審件作業良率）可以按「帶入星鴻實績」從星鴻資料算好，和「各地區KPI指標」的全區相同；確認後按「儲存」。業務各項（續約率、包租新件率、續轉包率）目前沒有自動資料，請手動填寫，之後串接資料來源會改成自動帶入。數字填百分比（例如 80 或 80.5），空白表示沒有資料。過去月份沒有資料顯示「-」，未來月份留白。</p>
+        <p class="mt-2">產生主管簡報時，本月的第一階段以上達成率、行政承接率（含各週）會即時重算覆蓋；本月與上個月的清冊／審件良率如果這裡還沒填，會自動帶入（該月有件數才帶）。</p>
+      </details>
+      <div class="toolbar">
+        <div class="field"><label>年度</label><select id="ky-year"></select></div>
+        <span class="muted pb-2" id="ky-stamp"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-ky-reload">重新讀取</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-ky-xlsx" disabled>下載 Excel</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-ky-print" disabled>列印／存 PDF</button>
+        </div>
+      </div>
+      <div id="ky-sheet" class="print-sheet"><p class="muted">讀取中…</p></div>
+      <details class="fold" id="ky-edit-fold">
+        <summary>填寫／修改某個月</summary>
+        <div class="fold-body space-y-2">
+          <div class="row">
+            <div class="field"><label>月份</label><select id="ky-month"></select></div>
+            <button type="button" class="btn btn-ghost" id="btn-ky-live">帶入星鴻實績（行政四項）</button>
+            <button type="button" class="btn btn-main" id="btn-ky-save">儲存</button>
+            <span class="muted" id="ky-live-msg"></span>
+          </div>
+          <div class="overflow-x-auto" id="ky-edit"></div>
+        </div>
+      </details>
+    </div>
+
+    <div id="tab-eff" class="space-y-4 hidden">
+      <div class="page-head"><h2>系統作業效率月報</h2><p>七個作業節點的完成次數、行政完成比例與耗時分布</p></div>
+      <details class="help"><summary>資料口徑</summary>
+        <p>資料來源：星鴻審核時間紀錄（物審、房客、預審、複審、四期產編、五期產編、實價登錄七個節點，依審核前狀態判斷；產編期別不明的不列入）。行政＝人力明細上的人（含組長、工讀生、已離職），其餘為非行政。完成次數含 0 秒紀錄；耗時排除 0 秒，參考耗時採中位數；右側比例以計時紀錄數計算。同案不同節點分別計次，已排除重複匯入。修繕不在審核時間紀錄內。</p>
+        <p class="mt-2">預設本期＝上方選的業績月（到今天為止）、對照＝上個業績月、月累計＝業績月第一天到本期最後一天；可以自己改日期再按「產出」。</p>
+      </details>
+      <div class="toolbar">
+        <div class="field"><label>本期起</label><input type="date" id="eff-cs" /></div>
+        <div class="field"><label>本期迄</label><input type="date" id="eff-ce" /></div>
+        <div class="field"><label>對照起</label><input type="date" id="eff-ps" /></div>
+        <div class="field"><label>對照迄</label><input type="date" id="eff-pe" /></div>
+        <button type="button" class="btn btn-main btn-sm mb-1" id="btn-eff">產出</button>
+        <span class="muted pb-2" id="eff-stamp"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-eff-xlsx" disabled>下載 Excel</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-eff-print" disabled>列印／存 PDF</button>
+        </div>
+      </div>
+      <div id="eff-sheet" class="print-sheet"></div>
+    </div>
+
+    <div id="tab-tarea" class="space-y-4 hidden">
+      <div class="page-head"><h2>房客審核者地區</h2><p>房審沒有地址，依星鴻房客管理查到的縣市自動分區；這裡看每位審核人的房審落在哪些地區</p></div>
+      <details class="help"><summary>說明</summary>
+        <p>「各地區行政承接率」與「各地區KPI指標」的房審，都是依每位房客在星鴻房客管理登記的縣市分到地區，不用再手動填審核者所在地區。這頁列出上方業績月每位審核人審了幾件房客、分別落在哪些地區；「查不到縣市」的件數不會列入各地區（只算在全區）。房客縣市第一次查詢需要一點時間，還在查詢中時稍後按「重新產出」。</p>
+      </details>
+      <div class="toolbar">
+        <span class="muted pb-2" id="tarea-stamp"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-tarea">重新產出</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-tarea-xlsx" disabled>下載 Excel</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="tarea-stats"></div>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>審核者</th><th>身分</th><th>所在地區（最多）</th><th>房客有效件數</th><th>各地區件數</th><th>查不到縣市</th><th>套用狀態</th></tr></thead>
+        <tbody id="tarea-list"></tbody>
+      </table></div>
     </div>
 
     <div id="tab-report" class="space-y-4 hidden">
-      <div class="page-head"><h2>每月進度報表</h2><p>依上方業績月自動產出，可下載 Excel 或列印</p></div>
+      <div class="page-head"><h2>行政每月進度</h2><p>依上方業績月自動產出，可下載 Excel 或列印</p></div>
       <details class="help"><summary>資料來源與算法</summary>
         <p>資料來源：星鴻審核紀錄、補助審核、媒合管理解約，加上本後台的人工計點、行政填寫的公會意見與審件抽查；與工具箱「行政績效中心」同一套算法。換業績月會自動重算，按「重新產出」會重新讀取最新資料。</p>
       </details>
@@ -315,7 +416,7 @@
     </div>
 
     <div id="tab-takeup" class="space-y-4 hidden">
-      <div class="page-head"><h2>地區承接率</h2><p>各地區案件有多少是行政審的、多少不是</p></div>
+      <div class="page-head"><h2>各地區行政承接率</h2><p>各地區案件有多少是行政審的、多少不是</p></div>
       <details class="help"><summary>怎麼算？</summary>
         <p>案件依物件／合約地址的縣市分到地區，房審依星鴻房客管理的縣市。「行」＝人力明細上的行政（含工讀生、已離職）審核，「非」＝不在人力明細的人審核（業務、主管等），承接率＝行／總。案件判定與去重和點數表相同（同一案件退件重送只算一次）；修繕依補助審核的租屋地址；解約不列入。週別從業績月第一天起算，每週到星期五為止。</p>
       </details>
@@ -346,11 +447,11 @@
     </div>
 
     <div id="tab-kpi" class="space-y-4 hidden">
-      <div class="page-head"><h2>KPI 報表</h2><p>清冊／審件作業良率、第一階段以上達成率、行政承接率，分地區與全區</p></div>
+      <div class="page-head"><h2>各地區KPI指標</h2><p>第一階段以上達成率、行政承接率、清冊／審件作業良率，分地區與全區</p></div>
       <details class="help"><summary>資料來源與算法</summary>
-        <p><b>清冊／審件作業良率</b>（目標 90%）：正確率＝（總件數－錯誤件數）÷ 總件數。清冊總件數＝星鴻「表單製作」表單04＋表單07（期別二、表單狀態已歸檔）的筆數，每個縣市抓 4 期、4-1 期、5 期；台北的 4 期、4-1 期抓星華，嘉義的 4 期、4-1 期抓星華嘉義，新竹含竹市竹縣、嘉義 5 期含嘉市嘉縣。審件總件數＝「媒合管理」起租日在當月、狀態已生效的案件，依登記縣市分區。錯誤件數＝行政填寫的清冊意見／案件意見中，公會期數等於這個月的筆數，依填寫的縣市分區（案件意見沒填縣市時依媒合編號判斷）。全區含其他縣市與分不到地區的件數。星鴻資料快取 6 小時，按「重新抓取」會重讀最新資料。</p>
-        <p class="mt-2"><b>第一階段以上達成率</b>（目標 80%）：同月份業績月（前月 29 日～當月 28 日）在職正職行政中，月累計點數達 250 點以上的人數 ÷ 正職行政人數，依人力明細的地區分（大台北的行政算在台北），點數和「點數月累計」相同。週報為業績月第一天累計到該週最後一天。</p>
-        <p class="mt-2"><b>行政承接率</b>（目標 80%）：和「地區承接率」相同算法（行政審核件數 ÷ 總件數，房審依房客縣市），改依案件縣市分到這 12 區；全區含其他縣市。週報為該週的件數。</p>
+        <p><b>第一階段以上達成率</b>（目標 80%）：同月份業績月（前月 29 日～當月 28 日）在職正職行政中，月累計點數達 250 點以上的人數 ÷ 正職行政人數，依人力明細的地區分（大台北的行政算在台北），點數和「點數月累計」相同。週報為業績月第一天累計到該週最後一天。</p>
+        <p class="mt-2"><b>行政承接率</b>（目標 80%）：和「各地區行政承接率」相同算法（行政審核件數 ÷ 總件數，房審依房客縣市），改依案件縣市分到這 12 區；全區含其他縣市。週報為該週的件數。</p>
+        <p class="mt-2"><b>清冊／審件作業良率</b>（目標 90%）：正確率＝（總件數－錯誤件數）÷ 總件數。清冊總件數＝星鴻「表單製作」表單04＋表單07（期別二、表單狀態已歸檔）的筆數，每個縣市抓 4 期、4-1 期、5 期；台北的 4 期、4-1 期抓星華，嘉義的 4 期、4-1 期抓星華嘉義，新竹含竹市竹縣、嘉義 5 期含嘉市嘉縣。審件總件數＝「媒合管理」起租日在當月、狀態已生效的案件，依登記縣市分區。錯誤件數＝行政填寫的清冊意見／案件意見中，公會期數等於這個月的筆數，依填寫的縣市分區（案件意見沒填縣市時依媒合編號判斷）。全區含其他縣市與分不到地區的件數。星鴻資料快取 6 小時，按「重新抓取」會重讀最新資料。</p>
         <p class="mt-2">週別從業績月第一天起算，每週到星期五為止（和地區承接率相同）。清冊／審件作業良率依公會期數按月計算，只在月報顯示。</p>
       </details>
       <div class="toolbar">
@@ -415,6 +516,38 @@
       </table></div>
     </div>
 
+    <div id="tab-opinion" class="space-y-4 hidden">
+      <div class="page-head"><h2>公會意見</h2><p>行政在工具箱填的案件意見、清冊意見，全部期間都列在這裡，可以依公會期數、縣市、行政、組別分類</p></div>
+      <details class="help"><summary>說明</summary>
+        <p>不受上方業績月限制，列出全部意見（最近 5000 筆）。先選案件／清冊，再選分類方式；篩選條件可以疊加。每筆 1 點，填錯可以按「刪除」，那位行政會少 1 點。「人工計點」頁最下面仍只列本業績月的意見。</p>
+      </details>
+      <div class="toolbar">
+        <div class="flex gap-2 pb-1" id="op-kinds">
+          <button type="button" class="seg is-on" data-op-kind="all">全部</button>
+          <button type="button" class="seg" data-op-kind="case">案件意見</button>
+          <button type="button" class="seg" data-op-kind="roster">清冊意見</button>
+        </div>
+        <div class="field"><label>分類方式</label>
+          <select id="op-group">
+            <option value="guild">公會期數</option>
+            <option value="region">縣市</option>
+            <option value="name">行政</option>
+            <option value="leader">組別（組長）</option>
+          </select>
+        </div>
+        <div class="field"><label>公會期數</label><select id="op-f-guild"></select></div>
+        <div class="field"><label>縣市</label><select id="op-f-region"></select></div>
+        <div class="field"><label>行政</label><select id="op-f-name"></select></div>
+        <div class="field"><label>關鍵字</label><input type="search" id="op-f-q" placeholder="媒合編號、意見內容…" /></div>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="op-reload">重新讀取</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="op-xlsx">匯出 Excel</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="op-stats"></div>
+      <div id="op-groups" class="space-y-2"><p class="muted">讀取中…</p></div>
+    </div>
+
     <div id="tab-check" class="space-y-4 hidden">
       <div class="page-head"><h2>審件抽查</h2><p>良率＝正確／抽查，計入「審件品質」分數</p></div>
       <details class="help"><summary>怎麼算？</summary>
@@ -464,7 +597,7 @@
     <div id="tab-training" class="space-y-4 hidden">
       <div class="page-head"><h2>教育訓練</h2><p>所有人的影片觀看進度與考試分數；系統自動判定，不用登錄</p></div>
       <details class="help"><summary>怎麼算通過？</summary>
-        <p>物審、房客、預審、複審：看完教學影片（看過 95% 以上）＋線上考試滿分＋實作完成，三項都完成才算通過。實作要在模擬公司系統環境做，環境建置中，完成前實作都顯示「準備中」。執行要點：線上考試全部題目都考過滿分就算通過，明細看「執行要點考試」。</p>
+        <p>物審、房客、預審、複審：看完教學影片（看過 95% 以上）＋線上考試滿分＋實作完成，三項都完成才算通過。實作在模擬公司系統做：物審已開放，通過指定題數就算完成，題庫與作答明細看「物審模擬系統」；房客、預審、複審的模擬環境建置中，實作先顯示「準備中」。執行要點：線上考試全部題目都考過滿分就算通過，明細看「執行要點考試」。</p>
       </details>
       <div class="toolbar">
         <div class="flex gap-2 pb-1">
@@ -518,6 +651,44 @@
       <div class="overflow-x-auto"><table>
         <thead id="x-head"></thead>
         <tbody id="x-rows"></tbody>
+      </table></div>
+    </div>
+
+    <div id="tab-sim" class="space-y-4 hidden">
+      <div class="page-head"><h2>物審模擬系統</h2><p>從公司系統抓已核准的物件當題目，新人在模擬系統審案、系統自動評分</p></div>
+      <details class="help"><summary>怎麼運作？</summary>
+        <p>題目：在「從公司系統加題」挑已核准的物件按「加入題庫」，會把物件、房東、安全檢核資料與附件複製一份到模擬系統（附件存在私有空間，只有作答中的同仁看得到），並算出這個案件可以埋哪些錯。<br>
+        個資：房東（含代理人、共有人）的姓名、身分證字號、生日、電話、Email、戶籍／通訊地址、銀行帳號會換成同格式的假資料；身分證正反面、存摺封面、建物謄本、權狀、房屋稅單、稅籍證明改用假資料畫的模擬文件（謄本標示部、稅籍編號、坐落、持分照案件資料；稅單的現值與稅額是模擬數字），原件不會下載；代理人身分證、同意書、戶籍資料等其他房東個資附件以示意圖代替。物件地址維持原樣。已加入的題目要按「重新抓取」才會換成新的模擬文件。<br>
+        出題：同仁從工具箱點數表「教育訓練 › 物審 › 實作」進入，每題隨機挑一個案件、隨機改錯 0～3 處（約 2 成完全沒錯）。<br>
+        評分：放行／退回判斷正確 40 分；找錯 60 分依錯誤數平分（沒有錯的案件判斷正確就給滿）；每誤標一處扣 5 分。判斷正確、錯誤全部找到、誤標不超過 1 處才算這題通過，通過 <b id="sim-target">3</b> 題算實作完成。<br>
+        題庫要有足夠的案件，同一個人才不會一直遇到同一件；建議至少 10 件。停用的案件不會再出題，已作答的紀錄保留。</p>
+      </details>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="sim-stats"></div>
+      <div class="toolbar">
+        <div class="flex gap-2 pb-1">
+          <button type="button" class="seg is-on" data-sim-view="items">作答紀錄</button>
+          <button type="button" class="seg" data-sim-view="cases">題庫</button>
+          <button type="button" class="seg" data-sim-view="add">從公司系統加題</button>
+        </div>
+        <div class="field" data-sim-only="items"><label>組長</label><select id="sim-leader"></select></div>
+        <span class="muted pb-2" id="sim-count"></span>
+        <div class="push pb-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="sim-refresh">重新整理</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="sim-csv" data-sim-only="items">匯出 CSV</button>
+        </div>
+      </div>
+      <div class="form-card hidden" id="sim-add-bar">
+        <div class="row">
+          <button type="button" class="btn btn-main btn-sm" id="sim-src-load">讀取公司系統已核准物件</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="sim-src-prev">上一頁</button>
+          <span class="muted" id="sim-src-page"></span>
+          <button type="button" class="btn btn-ghost btn-sm" id="sim-src-next">下一頁</button>
+          <span class="muted" id="sim-src-progress"></span>
+        </div>
+      </div>
+      <div class="overflow-x-auto"><table>
+        <thead id="sim-head"></thead>
+        <tbody id="sim-rows"></tbody>
       </table></div>
     </div>
 
@@ -589,10 +760,12 @@
       </details>
       <div class="toolbar">
         <h3 class="list-title">人員名單<span class="muted" id="staff-count"></span></h3>
-        <label class="muted pb-0.5 push"><input type="checkbox" id="s-show-off" style="width:auto" /> 顯示離職人員</label>
+        <label class="muted pb-0.5 push"><input type="checkbox" id="s-line-off" style="width:auto" /> 只看未綁定 LINE</label>
+        <label class="muted pb-0.5"><input type="checkbox" id="s-show-off" style="width:auto" /> 顯示離職人員</label>
       </div>
+      <p class="muted" style="margin:0 0 6px">未綁定 LINE 的人收不到抽查未通過等通知，只能在工具箱首頁看到；請他登入工具箱，依畫面提示加「星鴻萬能小幫手」好友並傳驗證碼完成綁定。</p>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>姓名</th><th>身分</th><th>狀態</th><th>地區／部別</th><th>營業處</th><th>到職日</th><th>專案任務</th><th>區域主管</th><th>備註</th><th></th></tr></thead>
+        <thead><tr><th>姓名</th><th>LINE</th><th>身分</th><th>狀態</th><th>地區／部別</th><th>營業處</th><th>到職日</th><th>專案任務</th><th>區域主管</th><th>備註</th><th></th></tr></thead>
         <tbody id="staff-list"></tbody>
       </table></div>
     </div>
@@ -601,6 +774,7 @@
       <div class="page-head"><h2>組織圖</h2><p>工具箱「行政專區」行事曆下方的「全台行政組織與人力配置」</p></div>
       <details class="help"><summary>怎麼改？</summary>
         <p>直接改格子，改完按最下面「儲存組織圖」才會生效（工具箱重新整理就看得到）。狀態選「待補」是黃色待補列；營業處填「工讀生」算工讀生（另計）；現有、待補、規劃人數會自動算。主管姓名填「待補」會顯示成虛線待補框。這裡只管組織圖顯示，點數表、抽查用的組長仍以「人力明細」為準。</p>
+        <p>邱奕棋、黃怡婷、簡為倢、李芷琳、侯思廷登入工具箱後，可以直接在行政專區的組織圖點人員修改、新增或刪除待補；改成離職要填離職日，會記在下面「離職紀錄」。工具箱上顯示時會依部別→營業處→報到年月自動排序。前台有人改過後，這裡要重新整理再改，以免蓋掉。</p>
       </details>
       <div id="org-editor" class="space-y-3"><p class="muted">讀取中…</p></div>
       <div class="row">
@@ -621,7 +795,7 @@
       const TAB_KEY = 'skyfun-admin-points-tab';
       const AUTH_STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
       const RPA_BASE = 'https://skyfun-arrears-rpa.dahwork123.workers.dev';
-      const TABS = ['boss', 'report', 'takeup', 'kpi', 'manual', 'check', 'incident', 'training', 'exam', 'plan', 'staff', 'org'];
+      const TABS = ['boss', 'wprog', 'takeup', 'report', 'kpiyear', 'kpi', 'eff', 'tarea', 'manual', 'opinion', 'check', 'incident', 'training', 'exam', 'sim', 'plan', 'staff', 'org'];
       const PLAN_CYCLE_DAYS = 14;
       const DAY_MS = 86400000;
       let secret = '';
@@ -718,7 +892,7 @@
 
       async function load() {
         const r = range();
-        data = await rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end });
+        [data] = await Promise.all([rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end }), loadLine()]);
         renderStaff();
         renderManual();
         renderChecks();
@@ -790,9 +964,10 @@
         if (!p) return '';
         return p.includes('清冊') ? 'rpt-proj-list' : 'rpt-proj-lvr';
       }
-      function reportHead(r) {
+      function reportHead(r, until) {
         const today = Core.isoDate(new Date());
-        const asOf = r.end < today ? r.end : today;
+        const last = until && until < r.end ? until : r.end;
+        const asOf = last < today ? last : today;
         return {
           title: `${r.year - 1911}年${r.month}月｜行政人員每月進度`,
           info: `業績月：${r.year - 1911}年${r.month}月　｜　期間：${slashDate(r.start)}–${slashDate(r.end)}　｜　資料截至：${slashDate(asOf)}　｜　第一階段${Core.STAGE_1}點／第二階段${Core.STAGE_2}點`,
@@ -957,7 +1132,23 @@
         }
       });
 
-      /* ---------- 地區承接率 ---------- */
+      /** 房客 targetId → 縣市（房審分區用）；還在查詢中或失敗時不快取 */
+      const tcCache = new Map();
+      async function tenantCities(r, force) {
+        const key = monthKey(r);
+        if (!force && tcCache.has(key)) return tcCache.get(key);
+        const tc = await fetchWorker('/admin-points/tenant-cities', '房客地區', r).catch((e) => ({ rows: [], total: 0, pending: 0, error: e.message }));
+        const v = {
+          map: new Map((tc.rows || []).map(([id, city]) => [String(id), city])),
+          total: Number(tc.total) || 0,
+          pending: Number(tc.pending) || 0,
+          error: tc.error || ''
+        };
+        if (!v.error && !v.pending) tcCache.set(key, v);
+        return v;
+      }
+
+      /* ---------- 各地區行政承接率 ---------- */
 
       const takeup = { data: null, range: null, view: 'week', busy: false, tenant: null };
       const mmdd = (iso) => iso.slice(5).replace('-', '/');
@@ -1031,15 +1222,15 @@
         try {
           if (force) await load();
           const calc = await monthCalc(force);
-          const tc = await fetchWorker('/admin-points/tenant-cities', '房客地區', calc.range).catch((e) => ({ rows: [], total: 0, pending: 0, error: e.message }));
+          const tc = await tenantCities(calc.range, force);
           takeup.range = calc.range;
-          takeup.tenant = { total: Number(tc.total) || 0, pending: Number(tc.pending) || 0, error: tc.error || '' };
+          takeup.tenant = tc;
           takeup.data = Core.takeupReport(calc.auditRows, {
             start: calc.range.start,
             end: calc.range.end,
             staff: data.staff || [],
             expenses: calc.expenseRows,
-            tenantCities: new Map((tc.rows || []).map(([id, city]) => [String(id), city]))
+            tenantCities: tc.map
           });
           renderTakeup();
           $('btn-takeup-xlsx').disabled = false;
@@ -1128,15 +1319,15 @@
         }
       });
 
-      /* ---------- KPI 報表：清冊／審件作業良率、第一階段以上達成率、行政承接率 ---------- */
+      /* ---------- KPI 報表：第一階段以上達成率、行政承接率、清冊／審件作業良率 ---------- */
 
       const KPI_BLOCKS = [['全區', '台北', '新北', '基隆', '宜蘭', '桃園', '新竹'], ['台中', '彰化', '南投', '嘉義', '台南', '高雄']];
-      const kpiErrRate = (x) => (x.total ? Math.max(0, (x.total - x.err) / x.total) : null);
+      const kpiErrRate = Core.kpiErrRate;
       const KPI_ROWS = [
-        { key: 'roster', label: '清冊作業良率', target: 0.9, monthly: true, rate: kpiErrRate, text: (x) => `錯${x.err}／總${x.total}`, empty: '無件數' },
-        { key: 'audit', label: '審件作業良率', target: 0.9, monthly: true, rate: kpiErrRate, text: (x) => `錯${x.err}／總${x.total}`, empty: '無件數' },
         { key: 'stage', label: '第一階段以上達成率', week: '累計到該週', target: 0.8, rate: (x) => (x.total ? x.hit / x.total : null), text: (x) => `達標${x.hit}／${x.total}人`, empty: '無正職行政' },
-        { key: 'takeup', label: '行政承接率', week: '各週件數', target: 0.8, rate: (x) => (x.total ? x.local / x.total : null), text: (x) => `行${x.local}／總${x.total}`, empty: '無件數' }
+        { key: 'takeup', label: '行政承接率', week: '各週件數', target: 0.8, rate: (x) => (x.total ? x.local / x.total : null), text: (x) => `行${x.local}／總${x.total}`, empty: '無件數' },
+        { key: 'roster', label: '清冊作業良率', target: 0.9, monthly: true, rate: kpiErrRate, text: (x) => `錯${x.err}／總${x.total}`, empty: '無件數' },
+        { key: 'audit', label: '審件作業良率', target: 0.9, monthly: true, rate: kpiErrRate, text: (x) => `錯${x.err}／總${x.total}`, empty: '無件數' }
       ];
       const KPI_PERIODS = ['4期', '4-1期', '5期'];
       const KPI_PARTS = { roster04: '表單04', roster07: '表單07', cases: '起租已生效案件' };
@@ -1149,9 +1340,13 @@
           return { year: d.getFullYear() - 1911, month: d.getMonth() + 1 };
         });
       }
+      /** year 為民國年 */
+      function kpiM(year, month) {
+        return { year, month, key: `${year}-${month}`, guild: `${year}/${String(month).padStart(2, '0')}` };
+      }
       function kpiMonth() {
         const [year, month] = $('kpi-month').value.split('-').map(Number);
-        return { year, month, key: `${year}-${month}`, guild: `${year}/${String(month).padStart(2, '0')}` };
+        return kpiM(year, month);
       }
       const kpiPct = (rate) => `${(rate * 100).toFixed(1).replace(/\.0$/, '')}%`;
       function kpiClass(rate, target) {
@@ -1177,14 +1372,14 @@
         try {
           const r = Core.perfMonthRange(year, m.month);
           const calc = await monthCalc(force, r);
-          const tc = await fetchWorker('/admin-points/tenant-cities', '房客地區', r).catch((e) => ({ rows: [], pending: 0, error: e.message }));
+          const tc = await tenantCities(r, force);
           const weeks = Core.takeupWeeks(r);
           const takeup = Core.takeupReport(calc.auditRows, {
             start: r.start,
             end: r.end,
             staff: calc.staff,
             expenses: calc.expenseRows,
-            tenantCities: new Map((tc.rows || []).map(([id, city]) => [String(id), city])),
+            tenantCities: tc.map,
             regionOf: Core.kpiRegionOfCity
           });
           return {
@@ -1192,7 +1387,7 @@
             weeks,
             stage: Core.kpiStageReport(calc.result, { staff: calc.staff, weeks }),
             takeup,
-            tenant: { pending: Number(tc.pending) || 0, error: tc.error || '', unplaced: takeup.unplaced.tenant }
+            tenant: { pending: tc.pending, error: tc.error, unplaced: takeup.unplaced.tenant }
           };
         } catch (err) {
           return { missing: '讀取失敗', error: err.message };
@@ -1200,33 +1395,17 @@
       }
 
       function kpiBuild(m, r04, r07, cases, opinions, perf) {
-        const regions = ['全區', ...Core.KPI_REGIONS];
-        const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
-        const roster = blank();
-        const audit = blank();
+        const { roster, audit, errors } = Core.kpiQuality(r04, r07, cases, opinions);
         const companies = new Map();
         for (const [form, d] of [['04', r04], ['07', r07]]) {
           for (const [region, company, period, n] of d.rows || []) {
-            if (roster[region]) roster[region].total += n;
-            roster['全區'].total += n;
             const key = `${region}|${company}`;
             const c = companies.get(key) || { region, company, n: {} };
             c.n[`${form}-${period}`] = (c.n[`${form}-${period}`] || 0) + n;
             companies.set(key, c);
           }
         }
-        const caseCities = [];
-        for (const [region, city, n] of cases.rows || []) {
-          audit['全區'].total += n;
-          if (audit[region]) audit[region].total += n;
-          caseCities.push({ region, city, n });
-        }
-        const errors = (opinions || []).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? Core.kpiRegionOfCaseNo(o.caseNo) : '') }));
-        for (const o of errors) {
-          const bucket = o.kind === 'roster' ? roster : audit;
-          bucket['全區'].err += 1;
-          if (o.area && bucket[o.area]) bucket[o.area].err += 1;
-        }
+        const caseCities = (cases.rows || []).map(([region, city, n]) => ({ region, city, n }));
         const fetched = [r04, r07, cases].map((d) => d.fetchedAt).filter(Boolean).sort()[0];
         return { m, roster, audit, perf, companies: [...companies.values()], caseCities, errors, fetchedAt: fetched, cached: [r04, r07, cases].some((d) => d.cached) };
       }
@@ -1333,6 +1512,24 @@
             <tr class="sum"><td class="l" colspan="2">全區</td><td>${k.audit['全區'].total}</td></tr></tbody></table></div>`;
       }
 
+      /** 某月的 KPI 資料（快取）；lite＝只要清冊／審件，不重算點數與承接率 */
+      async function kpiLoad(m, force, lite) {
+        if (!force && kpi.cache.has(m.key)) return kpi.cache.get(m.key);
+        const liteKey = `${m.key}|lite`;
+        if (lite && !force && kpi.cache.has(liteKey)) return kpi.cache.get(liteKey);
+        if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
+        const [r04, r07, cases, op, perf] = await Promise.all([
+          fetchKpiPart(m, 'roster04', force),
+          fetchKpiPart(m, 'roster07', force),
+          fetchKpiPart(m, 'cases', force),
+          rpc('admin_points_kpi_opinions', { p_guild_period: m.guild }),
+          lite ? { missing: '未計算' } : kpiPerf(m, force)
+        ]);
+        const k = kpiBuild(m, r04, r07, cases, op.opinions, perf);
+        kpi.cache.set(lite ? liteKey : m.key, k);
+        return k;
+      }
+
       async function makeKpi(force) {
         if (kpi.busy) return;
         const m = kpiMonth();
@@ -1348,16 +1545,7 @@
         $('kpi-errors').innerHTML = '';
         $('kpi-sources').innerHTML = '';
         try {
-          if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
-          const [r04, r07, cases, op, perf] = await Promise.all([
-            fetchKpiPart(m, 'roster04', force),
-            fetchKpiPart(m, 'roster07', force),
-            fetchKpiPart(m, 'cases', force),
-            rpc('admin_points_kpi_opinions', { p_guild_period: m.guild }),
-            kpiPerf(m, force)
-          ]);
-          const k = kpiBuild(m, r04, r07, cases, op.opinions, perf);
-          kpi.cache.set(m.key, k);
+          const k = await kpiLoad(m, force);
           if (kpiMonth().key !== m.key) return;
           kpi.cur = k;
           renderKpi();
@@ -1620,6 +1808,7 @@
         if (!btn || !confirm('確定刪除這筆意見？這位行政會少 1 點。')) return;
         try {
           await rpc('admin_points_opinion_admin_delete', { p_id: Number(btn.dataset.delOpinion) });
+          op.loaded = false;
           await afterEdit('已刪除');
         } catch (err) {
           say(err.message);
@@ -1698,7 +1887,21 @@
 
       const COURSES = Core.VIDEO_COURSES.map((key) => ({ key, label: Core.SKILL_NODES.find((n) => n.key === key)?.label || key }));
       const COURSE_LABEL = new Map(COURSES.map((c) => [c.key, c.label]));
-      const train = { loaded: false, loading: false, view: 'people', people: new Map(), videos: new Map(), items: [], guide: new Map(), guideTotal: 0 };
+      const train = { loaded: false, loading: false, view: 'people', people: new Map(), videos: new Map(), items: [], guide: new Map(), guideTotal: 0, sim: new Map(), simTarget: 3 };
+      const PRACTICE_COURSES = Core.PRACTICE_COURSES || [];
+
+      /** 模擬系統作答紀錄 → 每人通過題數、作答數、最高分 */
+      function simPeople(items) {
+        const m = new Map();
+        for (const it of items) {
+          const p = m.get(it.name) || { passes: 0, attempts: 0, best: null };
+          p.attempts++;
+          if (it.passed) p.passes++;
+          if (it.score != null) p.best = Math.max(p.best ?? 0, Number(it.score));
+          m.set(it.name, p);
+        }
+        return m;
+      }
       $('t-course').innerHTML += COURSES.map((c) => `<option value="${c.key}">${esc(c.label)}</option>`).join('');
 
       async function loadTraining() {
@@ -1706,9 +1909,10 @@
         train.loading = true;
         $('t-count').textContent = '讀取中…';
         try {
-          const [res, gx] = await Promise.all([
+          const [res, gx, sx] = await Promise.all([
             rpc('course_exam_admin_list', { p_limit: 5000 }),
-            rpc('guide_exam_admin_list', { p_query: '', p_limit: 1 }).catch(() => null)
+            rpc('guide_exam_admin_list', { p_query: '', p_limit: 1 }).catch(() => null),
+            rpc('sim_obj_admin_list', { p_limit: 5000 }).catch(() => null)
           ]);
           Object.assign(train, {
             loaded: true,
@@ -1716,7 +1920,9 @@
             videos: new Map((res.videos || []).map((x) => [`${x.course}|${x.name}`, x])),
             items: res.items || [],
             guide: new Map(((gx && gx.people) || []).map((p) => [p.userName, p])),
-            guideTotal: Number(gx && gx.total) || 0
+            guideTotal: Number(gx && gx.total) || 0,
+            sim: simPeople((sx && sx.items) || []),
+            simTarget: Number(sx && sx.target) || 3
           });
           renderTraining();
         } catch (e) {
@@ -1731,7 +1937,13 @@
       function courseOf(course, name) {
         const ex = train.people.get(`${course}|${name}`);
         const v = train.videos.get(`${course}|${name}`);
-        return { ex, v, st: Core.trainingState(course, { videoDone: !!(v && v.completedAt), examPassed: !!(ex && ex.passed) }) };
+        const p = course === 'obj' ? train.sim.get(name) || { passes: 0, attempts: 0, best: null } : null;
+        return { ex, v, p, st: Core.trainingState(course, { videoDone: !!(v && v.completedAt), examPassed: !!(ex && ex.passed), practiceDone: !!p && p.passes >= train.simTarget }) };
+      }
+      function practiceText(course, p, st) {
+        if (!PRACTICE_COURSES.includes(course) || !p) return '準備中';
+        if (st.steps[2] && st.steps[2].ok) return `✅ 通過 ${p.passes} 題`;
+        return p.attempts ? `${p.passes}／${train.simTarget} 題（最高 ${p.best} 分）` : '還沒做';
       }
       function guideOf(name) {
         const g = train.guide.get(name);
@@ -1762,7 +1974,7 @@
       }
 
       function courseCell(course, name) {
-        const { ex, v, st } = courseOf(course, name);
+        const { ex, v, p, st } = courseOf(course, name);
         const n = st.steps.filter((x) => x.ok).length;
         const head = st.done ? '<b class="pass">✔ 通過</b>' : `<b>${n}／${st.steps.length}</b>`;
         const video = v ? `影片 ${v.completedAt ? '✅ 看完' : v.pct + '%'}` : '影片 未看';
@@ -1770,7 +1982,8 @@
         const exam = !ex || !Number(ex.attempts) ? '考試 還沒考'
           : ex.passed ? `考試 ✅ 100 分（${ex.attempts} 次）`
           : `考試 最高 <span class="fail">${best} 分</span>（${ex.attempts} 次）`;
-        return `<td class="train-cell${st.done ? ' is-on' : ''}">${head}<br>${video}<br>${exam}<br><span class="pend">實作 準備中</span></td>`;
+        const practice = practiceText(course, p, st);
+        return `<td class="train-cell${st.done ? ' is-on' : ''}">${head}<br>${video}<br>${exam}<br>${practice === '準備中' ? '<span class="pend">實作 準備中</span>' : '實作 ' + esc(practice)}</td>`;
       }
 
       function renderTraining() {
@@ -1848,8 +2061,8 @@
           downloadCsv('教育訓練_每人進度_', head, trainNames().map((name) => {
             const row = [name, staffLeader(name)];
             courses.forEach((c) => {
-              const { ex, v, st } = courseOf(c.key, name);
-              row.push(v ? v.pct : 0, v && v.completedAt ? 'Y' : '', ex && Number(ex.attempts) ? examScore(ex.best, ex.total) : '', ex ? ex.attempts : 0, ex && ex.passed ? 'Y' : '', '準備中', st.done ? 'Y' : '');
+              const { ex, v, p, st } = courseOf(c.key, name);
+              row.push(v ? v.pct : 0, v && v.completedAt ? 'Y' : '', ex && Number(ex.attempts) ? examScore(ex.best, ex.total) : '', ex ? ex.attempts : 0, ex && ex.passed ? 'Y' : '', practiceText(c.key, p, st), st.done ? 'Y' : '');
             });
             if (train.guideTotal) row.push(guideOf(name).passed, train.guideTotal);
             return row;
@@ -1860,6 +2073,275 @@
           trainItems().map((it) => [fmtTime(it.startedAt), it.name, staffLeader(it.name), it.team, COURSE_LABEL.get(it.course) || it.course, Number(it.retake) + 1,
             it.correct ?? '', it.total, it.status === 'submitted' ? examScore(it.correct, it.total) : '',
             it.status === 'submitted' ? (it.passed ? '滿分通過' : '需重考') : '作答中', it.durationSec ?? '', it.autoSubmitted ? 'Y' : '', it.overtime ? 'Y' : '']));
+      });
+
+      /* ---------- 物審模擬系統：題庫（從公司系統抓已核准物件）＋作答紀錄 ---------- */
+
+      const SIM_BASE = String(window.SKYFUN_SIM_BASE || 'https://skyfun-sim-obj.pages.dev').replace(/\/$/, '');
+      const SIM_FILE_BASE = 'https://skyfun-training-video.dahwork123.workers.dev';
+      const SIM_PAGE = { A: '物件審核頁', L: '房東資料', S: '安全檢核表' };
+      const SIM_DECISION = { 1: '核准', 2: '退回' };
+      const sim = { loaded: false, loading: false, busy: false, view: 'items', target: 3, cases: [], items: [], openId: null, src: null };
+
+      async function loadSim() {
+        if (sim.loading) return;
+        sim.loading = true;
+        $('sim-count').textContent = '讀取中…';
+        try {
+          const res = await rpc('sim_obj_admin_list', { p_limit: 5000 });
+          Object.assign(sim, { loaded: true, target: Number(res.target) || 3, cases: res.cases || [], items: res.items || [] });
+        } catch (e) {
+          say(e.message);
+        } finally {
+          sim.loading = false;
+          renderSim();
+        }
+      }
+
+      /** 出題規則、模擬證件畫圖放在模擬系統網站（與網站畫面同一份），用到時才載入 */
+      function loadSimScript(file, name) {
+        if (window[name]) return Promise.resolve(window[name]);
+        return new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = `${SIM_BASE}/sim/${file}?v=${Date.now()}`;
+          s.onload = () => (window[name] ? resolve(window[name]) : reject(new Error(`${file} 載入失敗`)));
+          s.onerror = () => {
+            s.remove();
+            reject(new Error('連不到模擬系統網站，無法載入出題規則'));
+          };
+          document.head.append(s);
+        });
+      }
+      let simBankList = null;
+      async function loadSimTools() {
+        const [rules, cards] = await Promise.all([loadSimScript('sim-obj-rules.js', 'SimObjRules'), loadSimScript('sim-cards.js', 'SimCards')]);
+        if (!simBankList) simBankList = await fetch(`${SIM_BASE}/json/bankList.json`).then((r) => r.json()).catch(() => []);
+        return { R: rules, C: cards };
+      }
+
+      async function simCompany(path, asFile) {
+        const res = await fetch(`${RPA_BASE}/sim/obj/${path}`, { headers: { 'X-Admin-Secret': secret } });
+        if (asFile && res.ok) return { blob: await res.blob(), type: res.headers.get('content-type') || '' };
+        const payload = await res.json().catch(() => null);
+        if (!res.ok || !payload?.ok) throw new Error(payload?.error || `公司系統讀取失敗（HTTP ${res.status}）`);
+        return payload;
+      }
+
+      /** 附件圖片縮到長邊 1600px 的 JPEG，夠看清楚又不佔空間 */
+      async function simShrink(blob) {
+        const bmp = await createImageBitmap(blob);
+        const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+        const w = Math.max(1, Math.round(bmp.width * scale));
+        const h = Math.max(1, Math.round(bmp.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(bmp, 0, 0, w, h);
+        if (bmp.close) bmp.close();
+        return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('圖片轉檔失敗'))), 'image/jpeg', 0.82));
+      }
+
+      async function simImport(id, btn) {
+        if (sim.busy) return;
+        sim.busy = true;
+        btn.disabled = true;
+        const prog = (t) => { $('sim-src-progress').textContent = t; };
+        try {
+          const { R, C } = await loadSimTools();
+          prog(`#${id} 讀取案件資料…`);
+          const b = await simCompany(`bundle?id=${id}`);
+          // 房東個資換成同格式的假資料；身分證、存摺、謄本、權狀用假資料重畫，不下載原件
+          const { data, cards } = R.anonymize(R.prepare({ id: b.id, obj: b.obj, landlord: b.landlord, safety: b.safety, safeObj: b.safeObj, audit: b.audit }), id);
+          const names = R.collectFiles(data);
+          const files = {};
+          const failed = [];
+          for (let i = 0; i < names.length; i++) {
+            prog(`#${id} 複製附件 ${i + 1}／${names.length}…`);
+            try {
+              let body;
+              let pdf = false;
+              if (cards[names[i]]) {
+                body = await C.draw(cards[names[i]], data, { seed: id, bankList: simBankList, format: /\.pdf$/i.test(names[i]) ? 'pdf' : 'jpeg' });
+                pdf = body.type === 'application/pdf';
+              } else {
+                const f = await simCompany(`file?name=${encodeURIComponent(names[i])}`, true);
+                pdf = /pdf/i.test(f.type) || /\.pdf$/i.test(names[i]);
+                body = pdf ? f.blob : await simShrink(f.blob);
+              }
+              const type = pdf ? 'application/pdf' : 'image/jpeg';
+              const key = `sim/obj/${id}/${i + 1}.${pdf ? 'pdf' : 'jpg'}`;
+              const up = await fetch(`${SIM_FILE_BASE}/s/${key}`, {
+                method: 'PUT',
+                headers: { 'x-admin-secret': secret, 'content-type': type },
+                body
+              });
+              if (!up.ok) throw new Error((await up.text().catch(() => '')) || `HTTP ${up.status}`);
+              files[names[i]] = { key, type };
+            } catch (e) {
+              failed.push(e.message);
+            }
+          }
+          const title = `${data.obj.registerCity || ''}${data.obj.registerDistrict || ''} #${id}`;
+          prog(`#${id} 存入題庫…`);
+          const res = await rpc('sim_obj_admin_save_case', {
+            p_source_id: id, p_title: title, p_data: data, p_files: files, p_candidates: R.generate(data)
+          });
+          say(`已加入題庫：${title}，可埋的錯 ${res.candidates} 種${failed.length ? `；${failed.length} 個附件複製失敗（${failed[0]}），可以按「重新抓取」再試` : ''}`, !failed.length);
+          await loadSim();
+        } catch (e) {
+          say(e.message);
+        } finally {
+          prog('');
+          sim.busy = false;
+          btn.disabled = false;
+          renderSim();
+        }
+      }
+
+      async function simLoadSource(page) {
+        $('sim-src-progress').textContent = '讀取公司系統…';
+        try {
+          sim.src = await simCompany(`cases?page=${Math.max(1, page)}`);
+        } catch (e) {
+          say(e.message);
+        } finally {
+          $('sim-src-progress').textContent = '';
+          renderSim();
+        }
+      }
+
+      function simItems() {
+        const leader = $('sim-leader').value;
+        return sim.items.filter((it) => !leader || staffLeader(it.name) === leader);
+      }
+      function simErrors(it) {
+        return (it.result && it.result.errors) || [];
+      }
+      function simDetail(it) {
+        const r = it.result || {};
+        const errs = simErrors(it).map((e) => `<div class="q ${e.found ? 'ok' : 'bad'}"><span class="res ${e.found ? 'pass' : 'fail'}">${e.found ? '✅ 找到' : '❌ 漏掉'}</span>
+            <b>${esc(e.label)}</b><div class="line"><span>位置</span>${esc(SIM_PAGE[e.page] || e.page)}　教學影片 ${esc(e.video)}</div><div class="line">${esc(e.explain)}</div></div>`).join('');
+        const falses = (r.falseFlags || []).map((k) => `<div class="q bad"><span class="res fail">⚠ 誤標</span><b>${esc(SIM_PAGE[k[0]] || '')}</b><div class="line">${esc(k.slice(2))}</div></div>`).join('');
+        return `<div class="space-y-1">
+            <div>判斷：${esc(SIM_DECISION[r.decision] || '—')}（正確是 ${esc(SIM_DECISION[r.expected] || '—')}）${r.decisionOk ? '<span class="badge b-done">正確</span>' : '<span class="badge b-fail">錯誤</span>'}</div>
+            ${it.reason ? `<div>退回理由：${esc(it.reason)}</div>` : ''}
+            ${errs || '<div class="muted">這一題沒有埋錯，應該核准。</div>'}
+            ${falses}
+          </div>`;
+      }
+
+      function renderSim() {
+        document.querySelectorAll('[data-sim-view]').forEach((b) => b.classList.toggle('is-on', b.dataset.simView === sim.view));
+        document.querySelectorAll('[data-sim-only]').forEach((el) => el.classList.toggle('hidden', el.dataset.simOnly !== sim.view));
+        $('sim-add-bar').classList.toggle('hidden', sim.view !== 'add');
+        $('sim-target').textContent = sim.target;
+        if (!sim.loaded) {
+          $('sim-stats').innerHTML = '';
+          $('sim-head').innerHTML = '';
+          $('sim-count').textContent = '';
+          $('sim-rows').innerHTML = `<tr><td class="muted">${sim.loading ? '讀取中…' : '切到這一頁會自動讀取'}</td></tr>`;
+          return;
+        }
+        leaderOptions($('sim-leader'), '全部組長');
+        const people = simPeople(sim.items);
+        const scores = sim.items.filter((it) => it.score != null);
+        $('sim-stats').innerHTML = [
+          ['題庫（啟用中／全部）', `${sim.cases.filter((c) => c.enabled).length}／${sim.cases.length}`],
+          ['已交卷題數', sim.items.length],
+          [`實作完成人數（通過 ${sim.target} 題）`, [...people.values()].filter((p) => p.passes >= sim.target).length],
+          ['平均分數', scores.length ? Math.round(scores.reduce((s, it) => s + Number(it.score), 0) / scores.length) + ' 分' : '—']
+        ].map(([k, v]) => '<div class="stat"><b>' + v + '</b><span>' + esc(k) + '</span></div>').join('');
+
+        if (sim.view === 'cases') {
+          $('sim-head').innerHTML = '<tr><th>題庫編號</th><th>案件</th><th>公司物件編號</th><th>可埋的錯</th><th>附件</th><th>作答次數</th><th>更新時間</th><th>狀態</th><th></th></tr>';
+          $('sim-count').textContent = '共 ' + sim.cases.length + ' 件';
+          $('sim-rows').innerHTML = sim.cases.map((c) => `<tr class="${c.enabled ? '' : 'is-off'}"><td>${c.id}</td><td class="font-bold">${esc(c.title)}</td><td>${esc(c.sourceId)}</td>
+              <td title="${esc((c.codes || []).join('、'))}">${c.candidates} 種</td><td>${c.files} 個</td><td>${c.attempts}</td><td>${fmtTime(c.updatedAt)}</td>
+              <td>${c.enabled ? '<span class="badge b-done">出題中</span>' : '<span class="badge b-void">停用</span>'}</td>
+              <td><button type="button" class="btn btn-ghost btn-sm" data-sim-toggle="${c.id}" data-on="${c.enabled ? 0 : 1}">${c.enabled ? '停用' : '啟用'}</button>
+                <button type="button" class="btn btn-del" data-sim-del="${c.id}">刪除</button></td></tr>`).join('') ||
+            '<tr><td colspan="9" class="muted">題庫是空的，到「從公司系統加題」挑案件加入</td></tr>';
+          return;
+        }
+
+        if (sim.view === 'add') {
+          const src = sim.src;
+          const pages = src ? Math.max(1, Math.ceil(src.total / 50)) : 0;
+          $('sim-src-page').textContent = src ? `第 ${src.page}／${pages} 頁（已核准 ${src.total} 件）` : '';
+          $('sim-src-prev').disabled = !src || src.page <= 1;
+          $('sim-src-next').disabled = !src || src.page >= pages;
+          $('sim-count').textContent = '';
+          const inBank = new Set(sim.cases.map((c) => Number(c.sourceId)));
+          $('sim-head').innerHTML = '<tr><th>公司物件編號</th><th>案件類型</th><th>地址</th><th>業者</th><th>期別</th><th>申請日</th><th></th></tr>';
+          $('sim-rows').innerHTML = !src
+            ? '<tr><td colspan="7" class="muted">按上方「讀取公司系統已核准物件」</td></tr>'
+            : src.items.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.caseType)}</td><td>${esc(r.address)}</td><td>${esc(r.agentName)}</td><td>${esc(r.periodName)}</td><td>${esc(r.applyDate)}</td>
+                <td><button type="button" class="btn ${inBank.has(Number(r.id)) ? 'btn-ghost' : 'btn-main'} btn-sm" data-sim-add="${esc(r.id)}"${sim.busy ? ' disabled' : ''}>${inBank.has(Number(r.id)) ? '重新抓取' : '加入題庫'}</button></td></tr>`).join('') ||
+              '<tr><td colspan="7" class="muted">這一頁沒有案件</td></tr>';
+          return;
+        }
+
+        const list = simItems();
+        $('sim-head').innerHTML = '<tr><th>交卷時間</th><th>姓名</th><th>組長</th><th>處別</th><th>案件</th><th>埋錯</th><th>找到</th><th>誤標</th><th>判斷</th><th>分數</th><th>結果</th><th>用時</th></tr>';
+        $('sim-count').textContent = '共 ' + list.length + ' 筆（點一列看明細）';
+        $('sim-rows').innerHTML = list.map((it) => {
+          const errs = simErrors(it);
+          const r = it.result || {};
+          const open = sim.openId === it.id;
+          const row = `<tr class="click${open ? ' is-open' : ''}" data-sim-open="${it.id}"><td>${fmtTime(it.submittedAt)}</td><td class="font-bold">${esc(it.name)}</td><td>${esc(staffLeader(it.name) || '—')}</td><td>${esc(it.team || '—')}</td>
+              <td>${esc(it.caseTitle)}</td><td>${errs.length}</td><td>${errs.filter((e) => e.found).length}</td><td>${(r.falseFlags || []).length}</td>
+              <td class="${r.decisionOk ? 'pass' : 'fail'}">${esc(SIM_DECISION[it.decision] || '—')}</td><td class="${it.passed ? 'pass' : 'fail'}">${it.score} 分</td>
+              <td>${it.passed ? '<span class="badge b-done">通過</span>' : '<span class="badge b-fail">未通過</span>'}</td><td>${dur(it.durationSec)}</td></tr>`;
+          return open ? row + `<tr><td colspan="12" class="detail">${simDetail(it)}</td></tr>` : row;
+        }).join('') || '<tr><td colspan="12" class="muted">還沒有人交卷</td></tr>';
+      }
+
+      document.querySelectorAll('[data-sim-view]').forEach((b) => b.addEventListener('click', () => {
+        sim.view = b.dataset.simView;
+        renderSim();
+      }));
+      $('sim-leader').addEventListener('change', renderSim);
+      $('sim-refresh').addEventListener('click', () => (sim.view === 'add' && sim.src ? simLoadSource(sim.src.page) : loadSim()));
+      $('sim-src-load').addEventListener('click', () => simLoadSource(1));
+      $('sim-src-prev').addEventListener('click', () => sim.src && simLoadSource(sim.src.page - 1));
+      $('sim-src-next').addEventListener('click', () => sim.src && simLoadSource(sim.src.page + 1));
+      $('sim-rows').addEventListener('click', async (e) => {
+        const add = e.target.closest('[data-sim-add]');
+        if (add) return simImport(Number(add.dataset.simAdd), add);
+        const toggle = e.target.closest('[data-sim-toggle]');
+        const del = e.target.closest('[data-sim-del]');
+        if (toggle || del) {
+          if (del && !confirm('刪除這個題目？已作答的紀錄會保留，但看不到題目內容。')) return;
+          try {
+            await rpc('sim_obj_admin_set_case', toggle
+              ? { p_case_id: Number(toggle.dataset.simToggle), p_enabled: toggle.dataset.on === '1', p_delete: false }
+              : { p_case_id: Number(del.dataset.simDel), p_enabled: null, p_delete: true });
+            await loadSim();
+          } catch (err) {
+            say(err.message);
+          }
+          return;
+        }
+        const row = e.target.closest('[data-sim-open]');
+        if (row) {
+          const id = Number(row.dataset.simOpen);
+          sim.openId = sim.openId === id ? null : id;
+          renderSim();
+        }
+      });
+      $('sim-csv').addEventListener('click', () => {
+        if (!sim.loaded) return;
+        downloadCsv('物審模擬系統_作答紀錄_', ['交卷時間', '姓名', '組長', '處別', '案件', '埋錯數', '找到', '漏掉的錯', '誤標數', '判斷', '正確判斷', '分數', '通過', '用時(秒)', '退回理由'],
+          simItems().map((it) => {
+            const errs = simErrors(it);
+            const r = it.result || {};
+            return [fmtTime(it.submittedAt), it.name, staffLeader(it.name), it.team, it.caseTitle, errs.length, errs.filter((e) => e.found).length,
+              errs.filter((e) => !e.found).map((e) => e.label).join('、'), (r.falseFlags || []).length, SIM_DECISION[it.decision] || '', SIM_DECISION[r.expected] || '',
+              it.score, it.passed ? 'Y' : '', it.durationSec ?? '', it.reason || ''];
+          }));
       });
 
       /* ---------- 執行要點考試 ---------- */
@@ -2204,16 +2686,39 @@
 
       /* ---------- 人力明細 ---------- */
 
+      let lineMap = null;
+      async function loadLine() {
+        try {
+          const res = await rpc('line_admin_bindings');
+          lineMap = new Map((res.items || []).map((b) => [String(b.name || b.username || '').trim(), b]));
+        } catch (e) {
+          lineMap = { error: e.message };
+        }
+      }
+      const lineOf = (s) => (lineMap instanceof Map ? lineMap.get(String(s.name || '').trim()) || null : undefined);
+      function lineCell(s) {
+        if (!lineMap) return '<span class="muted">讀取中</span>';
+        if (lineMap.error) return `<span class="muted" title="${esc(lineMap.error)}">讀取失敗</span>`;
+        const b = lineOf(s);
+        return b
+          ? `<span class="pill pill-ok" title="LINE 名稱：${esc(b.lineName || '—')}｜${fmtTime(b.boundAt)} 綁定">已綁定</span>`
+          : '<span class="pill pill-warn" title="收不到 LINE 通知">未綁定</span>';
+      }
+
       function renderStaff() {
         const all = data.staff || [];
         const showOff = $('s-show-off').checked;
-        const rows = showOff ? all : all.filter((s) => s.status === '在職');
-        const off = all.length - all.filter((s) => s.status === '在職').length;
-        $('staff-count').textContent = `在職 ${all.length - off} 人${off ? `，離職 ${off} 人${showOff ? '' : '（已隱藏）'}` : ''}`;
+        const lineOff = $('s-line-off').checked && lineMap instanceof Map;
+        const rows = (showOff ? all : all.filter((s) => s.status === '在職')).filter((s) => !lineOff || !lineOf(s));
+        const active = all.filter((s) => s.status === '在職');
+        const off = all.length - active.length;
+        const bound = lineMap instanceof Map ? `，LINE 已綁定 ${active.filter(lineOf).length}／${active.length} 人` : '';
+        $('staff-count').textContent = `在職 ${active.length} 人${off ? `，離職 ${off} 人${showOff ? '' : '（已隱藏）'}` : ''}${bound}`;
         const text = (f, v, w, max) => `<input type="text" data-f="${f}" value="${esc(v)}" maxlength="${max}" style="width:${w}" />`;
         $('staff-list').innerHTML = rows.length
           ? rows.map((s) => `<tr data-id="${s.id}" data-name="${esc(s.name)}" class="${s.status === '在職' ? '' : 'is-off'}">
               <td>${esc(s.name)}</td>
+              <td>${lineCell(s)}</td>
               <td><select data-f="kind"><option${s.kind === '正職' ? ' selected' : ''}>正職</option><option${s.kind === '工讀生' ? ' selected' : ''}>工讀生</option></select></td>
               <td><select data-f="status"><option${s.status === '在職' ? ' selected' : ''}>在職</option><option${s.status === '離職' ? ' selected' : ''}>離職</option></select></td>
               <td>${text('region', s.region, '5rem', 30)}</td>
@@ -2224,8 +2729,7 @@
               <td>${text('note', s.note, '6rem', 200)}</td>
               <td><button type="button" class="btn btn-ghost btn-sm" data-act="save">儲存</button> <button type="button" class="btn btn-del" data-act="del">刪除</button></td>
             </tr>`).join('')
-          : `<tr><td colspan="10" class="muted">${all.length ? '沒有在職人員' : '尚無人員，請新增或從星鴻帶入'}</td></tr>`;
-        const active = all.filter((s) => s.status === '在職');
+          : `<tr><td colspan="11" class="muted">${!all.length ? '尚無人員，請新增或從星鴻帶入' : lineOff ? '在職人員都已綁定 LINE' : '沒有在職人員'}</td></tr>`;
         const opts = '<option value="">請選擇</option>' + active.map((s) => `<option>${esc(s.name)}</option>`).join('');
         leaderOptions($('m-leader'), '請選擇');
         leaderOptions($('t-leader'), '全部組長');
@@ -2240,6 +2744,7 @@
       }
 
       $('s-show-off').addEventListener('change', renderStaff);
+      $('s-line-off').addEventListener('change', renderStaff);
 
       async function saveStaff(id, name, kind, status, extra) {
         const x = extra || {};
@@ -2357,11 +2862,13 @@
         }
       });
 
-      /* ---------- 主管月報／週報 ---------- */
+      /* ---------- 報表表格共用：網頁顯示＋Excel ---------- */
 
-      const Report = window.AdminPointsReport;
-      const boss = { rep: null, busy: false };
-      const fullCache = new Map();
+      const Deck = window.AdminDeck;
+      const BD = window.AdminBossDeck;
+      const pad2 = (n) => String(n).padStart(2, '0');
+      const todayIso = () => Core.isoDate(new Date());
+      const minIso = (a, b) => (a < b ? a : b);
 
       function prevMonthRange(r) {
         let { year, month } = r;
@@ -2370,99 +2877,618 @@
         return Core.perfMonthRange(year, month);
       }
 
-      /** 某個業績月的星鴻資料＋點數計算＋後台登錄資料（抽查、客訴） */
-      async function fullCalc(r, force) {
-        const key = monthKey(r);
-        if (!force && fullCache.has(key)) return fullCache.get(key);
-        if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
-        const sbData = key === monthKey(range()) ? data : await rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end });
-        const [audit, expenses, term] = await Promise.all([
-          fetchWorker('/admin-points/audit-log', `${r.month} 月審核時間紀錄`, r),
-          fetchWorker('/admin-points/expenses', `${r.month} 月補助審核`, r),
-          fetchWorker('/admin-points/terminations', `${r.month} 月解約`, r).catch(() => ({ fields: [], rows: [] }))
-        ]);
-        const auditRows = Core.rowsFromPayload(audit);
-        const result = Core.compute(auditRows, {
-          start: r.start,
-          end: r.end,
-          staff: data.staff || [],
-          manual: sbData.manual || [],
-          opinions: sbData.opinions || [],
-          expenses: Core.rowsFromPayload(expenses),
-          terminations: Core.rowsFromPayload(term)
-        });
-        const c = { range: r, auditRows, result, sb: { ...sbData, staff: data.staff || [] } };
-        fullCache.set(key, c);
-        return c;
+      /** 表格版面（admin-deck.js 格式）→ Excel 工作表；parts：[{ line, bold, size } | { table }] */
+      function modelSheet(XLSX, parts) {
+        const border = { style: 'thin', color: { rgb: 'B7C0CE' } };
+        const box = { top: border, bottom: border, left: border, right: border };
+        const font = (sz, bold, rgb) => Object.assign({ name: 'Microsoft JhengHei', sz, bold: !!bold }, rgb ? { color: { rgb } } : {});
+        const width = Math.max(1, ...parts.filter((p) => p.table).map((p) => p.table.colW.length));
+        const aoa = [];
+        const merges = [];
+        const heights = [];
+        for (const p of parts) {
+          if (!p.table) {
+            merges.push({ s: { r: aoa.length, c: 0 }, e: { r: aoa.length, c: width - 1 } });
+            heights[aoa.length] = p.bold ? 24 : 20;
+            aoa.push([{ v: p.line || '', t: 's', s: { font: font(p.size || 10, p.bold), alignment: { wrapText: true, vertical: 'center' } } }]);
+            continue;
+          }
+          const t = p.table;
+          const r0 = aoa.length;
+          const occ = new Set();
+          t.rows.forEach((row, ri) => {
+            const r = r0 + ri;
+            const line = aoa[r] || (aoa[r] = []);
+            let c = 0;
+            for (const raw of row) {
+              while (occ.has(`${r},${c}`)) c += 1;
+              const x = raw && typeof raw === 'object' ? raw : { v: raw };
+              const hasSub = x.sub != null && x.sub !== '';
+              const v = hasSub ? `${x.v ?? ''}\n${x.sub}` : x.v ?? '';
+              const s = { font: font(Math.max(9, Math.round((x.size || t.size || 9) + 1)), x.bold, x.color), alignment: { horizontal: x.align || 'center', vertical: 'center', wrapText: true }, border: box };
+              if (x.fill) s.fill = { fgColor: { rgb: x.fill } };
+              line[c] = { v, t: typeof v === 'number' ? 'n' : 's', s };
+              if (hasSub || String(v).includes('\n')) heights[r] = Math.max(heights[r] || 0, 30);
+              const cs = x.cs || 1;
+              const rs = x.rs || 1;
+              if (cs > 1 || rs > 1) {
+                merges.push({ s: { r, c }, e: { r: r + rs - 1, c: c + cs - 1 } });
+                for (let i = 0; i < rs; i++) {
+                  for (let j = 0; j < cs; j++) {
+                    if (!i && !j) continue;
+                    occ.add(`${r + i},${c + j}`);
+                    (aoa[r + i] || (aoa[r + i] = []))[c + j] = { v: '', t: 's', s };
+                  }
+                }
+              }
+              c += cs;
+            }
+          });
+          aoa.push([]);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(aoa.map((r) => Array.from({ length: Math.max(r.length, 1) }, (_, i) => r[i] || { v: '', t: 's' })));
+        ws['!merges'] = merges;
+        const first = parts.find((p) => p.table)?.table;
+        const total = first ? first.colW.reduce((s, x) => s + x, 0) : 1;
+        ws['!cols'] = Array.from({ length: width }, (_, i) => ({ wch: first && first.colW[i] ? Math.max(6, Math.round((first.colW[i] / total) * width * 9)) : 10 }));
+        ws['!rows'] = aoa.map((_, i) => ({ hpt: heights[i] || 18 }));
+        return ws;
+      }
+      async function downloadModel(file, sheets) {
+        const XLSX = await loadXlsx();
+        const wb = XLSX.utils.book_new();
+        for (const s of sheets) XLSX.utils.book_append_sheet(wb, modelSheet(XLSX, s.parts), s.name.slice(0, 31));
+        XLSX.writeFile(wb, file);
       }
 
+      /* ---------- 行政每週進度 ---------- */
+
+      const wprog = { data: null, range: null, busy: false };
+      const WEEK_ZH = ['一', '二', '三', '四', '五', '六'];
+
+      function wprogParts() {
+        const { range: r, data: wp } = wprog;
+        const cols = wp.weeks.map((w, i) => ({ key: i, label: `第${WEEK_ZH[i]}週`, sub: `${BD.mmdd(w.start)}–${BD.mmdd(w.end)}` }));
+        const h = {
+          title: `${r.year - 1911}年${r.month}月｜北中南區行政每週進度`,
+          info: `業績月：${slashDate(r.start)}–${slashDate(r.end)}　｜　資料截至：${slashDate(wp.asOf)}　｜　第一階段${Core.STAGE_1}點／第二階段${Core.STAGE_2}點`,
+          note: `累積點數＝${BD.mmdd(r.start)}起至各週截止｜審件良率＝當週正確／抽查；—＝未抽查｜未開始週留白`,
+          sum: `在職行政${wp.total}人｜${wp.areas.map((a) => `${a.name}${a.rows.length}人`).join('｜')}｜工讀生不列入`
+        };
+        return { h, tables: wp.areas.map((a) => BD.weeklyProgressTable(wp, a, cols)) };
+      }
+
+      function renderWprog() {
+        const { h, tables } = wprogParts();
+        $('wprog-sheet').innerHTML = `<div class="rpt-sheet">
+            <div class="rpt-title">${esc(h.title)}</div>
+            <div class="rpt-info">${esc(h.info)}</div>
+            <div class="rpt-note">${esc(h.note)}</div>
+            <div class="rpt-sum">${esc(h.sum)}</div>
+            ${tables.map((t) => `<div class="mt-3">${Deck.tableHtml(t)}</div>`).join('') || '<p class="muted">人力明細沒有在職正職人員</p>'}
+          </div>`;
+      }
+
+      async function makeWprog(force) {
+        if (wprog.busy) return;
+        const r = range();
+        if (!force && wprog.data && monthKey(wprog.range) === monthKey(r)) return;
+        wprog.busy = true;
+        for (const id of ['btn-wprog', 'btn-wprog-xlsx', 'btn-wprog-print']) $(id).disabled = true;
+        $('wprog-sheet').innerHTML = '<p class="muted">讀取星鴻審核紀錄中…約 5～10 秒</p>';
+        try {
+          if (force) await load();
+          const calc = await monthCalc(force);
+          wprog.range = calc.range;
+          wprog.data = Core.weeklyProgress(calc.result, {
+            staff: data.staff || [],
+            checks: data.checks || [],
+            weeks: Core.takeupWeeks(calc.range),
+            asOf: minIso(calc.range.end, todayIso())
+          });
+          renderWprog();
+          $('btn-wprog-xlsx').disabled = false;
+          $('btn-wprog-print').disabled = false;
+          $('wprog-stamp').textContent = `產出時間 ${fmtTime(calc.at)}`;
+        } catch (err) {
+          wprog.data = null;
+          $('wprog-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
+        } finally {
+          wprog.busy = false;
+          $('btn-wprog').disabled = false;
+        }
+      }
+
+      $('btn-wprog').addEventListener('click', () => makeWprog(true));
+      $('btn-wprog-print').addEventListener('click', () => printTab('wprog'));
+      $('btn-wprog-xlsx').addEventListener('click', () => {
+        if (!wprog.data) return;
+        const { h, tables } = wprogParts();
+        downloadModel(`${wprog.range.year - 1911}年${wprog.range.month}月行政每週進度.xlsx`, [
+          { name: `${wprog.range.month}月行政每週進度`, parts: [{ line: h.title, bold: true, size: 13 }, { line: h.info }, { line: h.note }, { line: h.sum, bold: true }, ...tables.map((table) => ({ table }))] }
+        ]).catch((e) => say(e.message));
+      });
+
+      /* ---------- 管理部KPI月報（年度，存在 Supabase） ---------- */
+
+      const ky = { year: 0, data: null, at: null, busy: false };
+      const annualCache = new Map();
+      const KY_FIELDS = [['last', '去年同期'], ['target', '目標'], ['actual', '實績'], ...[0, 1, 2, 3, 4].map((i) => [`w${i}`, `第${WEEK_ZH[i]}週`])];
+
+      async function annualGet(year, force) {
+        if (!force && annualCache.has(year)) return annualCache.get(year);
+        const res = await rpc('admin_kpi_annual_get', { p_year: year });
+        const v = { data: res.data && res.data.rows ? res.data : { rows: {} }, updatedAt: res.updatedAt || null };
+        annualCache.set(year, v);
+        return v;
+      }
+
+      /** 某月 KPI 的全區實績：第一階段以上達成率、行政承接率（含各週，只算到 until 那天以前開始的週）、清冊／審件良率 */
+      function kpiLive(k, until) {
+        const out = {};
+        if (k.perf.range) {
+          const st = (col) => {
+            const x = k.perf.stage.get('全區', col);
+            return x && x.total ? x.hit / x.total : null;
+          };
+          const tk = (col) => k.perf.takeup.get('全區', 'total', col)?.rate ?? null;
+          const idx = k.perf.weeks.map((w, i) => (w.start <= until ? i : -1)).filter((i) => i >= 0);
+          out.stage = { actual: st('all'), weeks: idx.map(st) };
+          out.takeup = { actual: tk('all'), weeks: idx.map(tk) };
+        }
+        out.roster = { actual: kpiErrRate(k.roster['全區']) };
+        out.audit = { actual: kpiErrRate(k.audit['全區']) };
+        return out;
+      }
+
+      function kyTables() {
+        const year = ky.year;
+        const cur = Core.perfMonthOf(new Date());
+        const curMonth = year < cur.year ? 13 : year > cur.year ? 0 : cur.month;
+        const weekCount = year === cur.year ? Math.max(0, ...BD.KPI_ANNUAL_ROWS.map((r) => (ky.data.rows?.[r.key]?.months?.[cur.month]?.weeks || []).length)) : 0;
+        return [0, 1].map((half) => BD.kpiAnnualTable(ky.data, { roc: year - 1911, half, year, thisYear: year, curMonth, weekMonth: cur.month, weekCount }));
+      }
+
+      function renderKy() {
+        $('ky-sheet').innerHTML = `<div class="rpt-sheet space-y-3">${kyTables().map((t) => Deck.tableHtml(t)).join('')}</div>`;
+        $('ky-stamp').textContent = ky.at ? `上次儲存 ${fmtTime(ky.at)}` : '還沒有儲存過';
+        $('btn-ky-xlsx').disabled = false;
+        $('btn-ky-print').disabled = false;
+        kyRenderEdit();
+      }
+
+      function kyRenderEdit() {
+        const m = Number($('ky-month').value);
+        const val = (v) => (v == null ? '' : String(Math.round(v * 1000) / 10));
+        $('ky-edit').innerHTML = `<table><thead><tr><th>項目</th>${KY_FIELDS.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead><tbody>${BD.KPI_ANNUAL_ROWS.map((r) => {
+          const x = ky.data?.rows?.[r.key]?.months?.[m] || {};
+          return `<tr><td><b>${esc(r.item)}</b>　${esc(r.label)}</td>${KY_FIELDS.map(([f]) => {
+            const v = f[0] === 'w' ? x.weeks?.[Number(f.slice(1))] : x[f];
+            return `<td><input type="number" step="0.1" min="0" max="100" data-ky-key="${r.key}" data-ky-f="${f}" value="${val(v)}" style="width:4.6rem" /></td>`;
+          }).join('')}</tr>`;
+        }).join('')}</tbody></table><p class="muted mt-1">單位：%（例如 80 或 80.5）；空白表示沒有資料。改完按「儲存」。</p>`;
+      }
+
+      function kyCollect() {
+        const m = String(Number($('ky-month').value));
+        const next = JSON.parse(JSON.stringify(ky.data || { rows: {} }));
+        if (!next.rows) next.rows = {};
+        const byKey = new Map();
+        document.querySelectorAll('#ky-edit [data-ky-key]').forEach((el) => {
+          const s = el.value.trim();
+          if (s !== '' && !Number.isFinite(Number(s))) throw new Error('請填數字（百分比）');
+          const v = s === '' ? null : Math.round(Number(s) * 10) / 1000;
+          if (!byKey.has(el.dataset.kyKey)) byKey.set(el.dataset.kyKey, { last: null, target: null, actual: null, weeks: [] });
+          const o = byKey.get(el.dataset.kyKey);
+          const f = el.dataset.kyF;
+          if (f[0] === 'w') o.weeks[Number(f.slice(1))] = v;
+          else o[f] = v;
+        });
+        for (const [key, o] of byKey) {
+          const weeks = Array.from({ length: 5 }, (_, i) => o.weeks[i] ?? null);
+          while (weeks.length && weeks[weeks.length - 1] == null) weeks.pop();
+          const row = next.rows[key] || (next.rows[key] = { months: {} });
+          if (!row.months) row.months = {};
+          const cell = { last: o.last, target: o.target, actual: o.actual };
+          if (weeks.length) cell.weeks = weeks;
+          if (cell.last == null && cell.target == null && cell.actual == null && !weeks.length) delete row.months[m];
+          else row.months[m] = cell;
+        }
+        return next;
+      }
+
+      async function loadKy(force) {
+        const year = Number($('ky-year').value);
+        if (!force && ky.data && ky.year === year) return renderKy();
+        if (ky.busy) return;
+        ky.busy = true;
+        $('ky-sheet').innerHTML = '<p class="muted">讀取中…</p>';
+        try {
+          const v = await annualGet(year, force);
+          ky.year = year;
+          ky.data = v.data;
+          ky.at = v.updatedAt;
+          renderKy();
+        } catch (err) {
+          $('ky-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
+        } finally {
+          ky.busy = false;
+        }
+      }
+
+      (function initKy() {
+        const now = new Date();
+        const cur = Core.perfMonthOf(now);
+        $('ky-year').innerHTML = [cur.year, cur.year - 1].map((y) => `<option value="${y}">${y - 1911} 年</option>`).join('');
+        $('ky-month').innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}"${i + 1 === cur.month ? ' selected' : ''}>${i + 1} 月</option>`).join('');
+      })();
+      $('ky-year').addEventListener('change', () => loadKy(false));
+      $('ky-month').addEventListener('change', () => ky.data && kyRenderEdit());
+      $('btn-ky-reload').addEventListener('click', () => loadKy(true));
+      $('btn-ky-print').addEventListener('click', () => printTab('kpiyear'));
+      $('btn-ky-xlsx').addEventListener('click', () => {
+        if (!ky.data) return;
+        downloadModel(`${ky.year - 1911}年度管理部KPI月報.xlsx`, [{ name: '管理部KPI月報', parts: kyTables().map((table) => ({ table })) }]).catch((e) => say(e.message));
+      });
+      $('btn-ky-live').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const m = Number($('ky-month').value);
+        btn.disabled = true;
+        $('ky-live-msg').textContent = '計算中…第一次約 10～30 秒';
+        try {
+          const k = await kpiLoad(kpiM(ky.year - 1911, m), false);
+          const live = kpiLive(k, todayIso());
+          const put = (key, f, v) => {
+            const el = document.querySelector(`#ky-edit [data-ky-key="${key}"][data-ky-f="${f}"]`);
+            if (el && v != null) el.value = String(Math.round(v * 1000) / 10);
+          };
+          for (const key of ['stage', 'takeup', 'roster', 'audit']) {
+            const x = live[key];
+            if (!x) continue;
+            put(key, 'actual', x.actual);
+            (x.weeks || []).forEach((v, i) => put(key, `w${i}`, v));
+          }
+          $('ky-live-msg').textContent = `已帶入 ${m} 月星鴻實績${k.perf.range ? '' : `（第一階段以上達成率、行政承接率：${k.perf.missing}）`}，確認後按「儲存」`;
+        } catch (err) {
+          $('ky-live-msg').textContent = '';
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+      $('btn-ky-save').addEventListener('click', async (e) => {
+        if (!ky.data) return;
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          const next = kyCollect();
+          const res = await rpc('admin_kpi_annual_save', { p_year: ky.year, p_data: next });
+          ky.data = next;
+          ky.at = res.updatedAt;
+          annualCache.set(ky.year, { data: next, updatedAt: res.updatedAt });
+          renderKy();
+          say('管理部KPI月報已儲存', true);
+        } catch (err) {
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      /* ---------- 系統作業效率月報 ---------- */
+
+      const eff = { view: null, key: '', busy: false };
+
+      function effFill() {
+        const r = range();
+        const pr = prevMonthRange(r);
+        const today = todayIso();
+        $('eff-cs').value = r.start;
+        $('eff-ce').value = minIso(r.end, today);
+        $('eff-ps').value = pr.start;
+        $('eff-pe').value = minIso(pr.end, today);
+      }
+
+      /** 涵蓋 start～end 的業績月（審核紀錄依業績月讀取並快取） */
+      function perfRangesBetween(start, end) {
+        const out = [];
+        let { year, month } = Core.perfMonthOf(new Date(start + 'T00:00:00'));
+        while (out.length < 6) {
+          const r = Core.perfMonthRange(year, month);
+          if (r.start > end) break;
+          out.push(r);
+          month += 1;
+          if (month > 12) { month = 1; year += 1; }
+        }
+        return out;
+      }
+
+      async function effCompute(p, force) {
+        const calcs = [];
+        for (const r of perfRangesBetween(minIso(p.cs, p.ps), p.ce > p.pe ? p.ce : p.pe)) calcs.push(await monthCalc(force, r));
+        const rows = calcs.flatMap((c) => c.auditRows);
+        const staff = data.staff || [];
+        const pm = Core.perfMonthOf(new Date(p.ce + 'T00:00:00'));
+        const monthStart = Core.perfMonthRange(pm.year, pm.month).start;
+        const mk = (start, end) => Core.efficiencyReport(rows, { start, end, staff });
+        return { p, pm, monthStart, cur: mk(p.cs, p.ce), prev: mk(p.ps, p.pe), month: mk(monthStart, p.ce) };
+      }
+
+      function effView(e) {
+        const last = e.cur.lastTime ? e.cur.lastTime.slice(5, 16).replace(/-/g, '/') : BD.mmdd(e.p.ce);
+        return {
+          title: `${e.pm.year - 1911}年${pad2(e.pm.month)}月　系統作業效率月報`,
+          info: `本期分析 ${slashDate(e.p.cs)}–${BD.mmdd(e.p.ce)}　｜　資料截至 ${last}　｜　行政與非行政完成紀錄`,
+          cur: e.cur,
+          prev: e.prev,
+          month: e.month,
+          curLabel: `${BD.mmdd(e.p.cs)}–${BD.mmdd(e.p.ce)}`,
+          prevLabel: `${BD.mmdd(e.p.ps)}–${BD.mmdd(e.p.pe)}`,
+          monthLabel: `${BD.mmdd(e.monthStart)}–${BD.mmdd(e.p.ce)}`
+        };
+      }
+
+      function renderEff() {
+        const e = BD.efficiencyTables(eff.view);
+        $('eff-sheet').innerHTML = `<div class="rpt-sheet space-y-2">
+            ${Deck.tableHtml(e.summary)}
+            ${Deck.tableHtml(e.compare)}
+            <p class="muted text-xs">${esc(e.note)}</p>
+            <p class="text-center font-bold" style="color:#142238">${esc(e.headline)}</p>
+            ${Deck.tableHtml(e.nodeTable)}
+            <ul class="muted text-xs list-disc pl-5">${e.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>
+          </div>`;
+      }
+
+      async function makeEff(force) {
+        if (eff.busy) return;
+        if (!$('eff-cs').value) effFill();
+        const p = { cs: $('eff-cs').value, ce: $('eff-ce').value, ps: $('eff-ps').value, pe: $('eff-pe').value };
+        if (![p.cs, p.ce, p.ps, p.pe].every(Boolean) || p.cs > p.ce || p.ps > p.pe) return say('請確認本期與對照的起訖日期');
+        const key = JSON.stringify(p);
+        if (!force && eff.view && eff.key === key) return;
+        eff.busy = true;
+        for (const id of ['btn-eff', 'btn-eff-xlsx', 'btn-eff-print']) $(id).disabled = true;
+        $('eff-sheet').innerHTML = '<p class="muted">讀取星鴻審核時間紀錄中…約 5～20 秒</p>';
+        try {
+          const e = await effCompute(p, force);
+          eff.view = effView(e);
+          eff.key = key;
+          renderEff();
+          $('btn-eff-xlsx').disabled = false;
+          $('btn-eff-print').disabled = false;
+          $('eff-stamp').textContent = `產出時間 ${fmtTime(new Date())}`;
+        } catch (err) {
+          eff.view = null;
+          $('eff-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
+        } finally {
+          eff.busy = false;
+          $('btn-eff').disabled = false;
+        }
+      }
+
+      $('btn-eff').addEventListener('click', () => makeEff(true));
+      $('btn-eff-print').addEventListener('click', () => printTab('eff'));
+      $('btn-eff-xlsx').addEventListener('click', () => {
+        if (!eff.view) return;
+        const e = BD.efficiencyTables(eff.view);
+        downloadModel(`${eff.view.title.replace('　', ' ')}.xlsx`, [
+          {
+            name: '系統作業效率月報',
+            parts: [{ table: e.summary }, { table: e.compare }, { line: e.note }, { line: e.headline, bold: true }, { table: e.nodeTable }, ...e.notes.map((line) => ({ line }))]
+          }
+        ]).catch((err) => say(err.message));
+      });
+
+      /* ---------- 房客審核者地區 ---------- */
+
+      const tarea = { data: null, range: null, tc: null, busy: false };
+
+      function renderTarea() {
+        const d = tarea.data;
+        const tc = tarea.tc;
+        $('tarea-stats').innerHTML = [
+          ['房審件數', d.total],
+          ['審核人數', d.rows.length],
+          ['已分到地區', d.total - d.unknown],
+          ['查不到縣市', d.unknown]
+        ].map(([k, v]) => `<div class="stat"><b>${v}</b><span>${esc(k)}</span></div>`).join('');
+        const note = tc.error ? `房客地區暫時查不到：${tc.error}` : tc.pending ? `還有 ${tc.pending} 位房客的地區在查詢中，稍後按「重新產出」會補上` : '';
+        $('tarea-stamp').textContent = `${tarea.range.year - 1911}年${tarea.range.month}月業績月${note ? `｜${note}` : ''}`;
+        $('tarea-list').innerHTML = d.rows.map((x) => `<tr>
+            <td><b>${esc(x.name)}</b></td><td>${x.isStaff ? '行政' : '<span class="muted">非行政</span>'}</td><td>${esc(x.main || '—')}</td><td>${x.total}</td>
+            <td style="white-space:normal">${x.regions.map(([g, n]) => `${esc(g)} ${n}`).join('、') || '—'}</td><td>${x.unknown || ''}</td>
+            <td>${x.unknown ? (x.main ? '部分查不到縣市' : '查不到縣市') : '已套用'}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">本業績月沒有房審紀錄</td></tr>';
+      }
+
+      async function makeTarea(force) {
+        if (tarea.busy) return;
+        const r = range();
+        if (!force && tarea.data && monthKey(tarea.range) === monthKey(r)) return;
+        tarea.busy = true;
+        $('btn-tarea').disabled = true;
+        $('btn-tarea-xlsx').disabled = true;
+        $('tarea-list').innerHTML = '<tr><td colspan="7" class="muted">讀取星鴻審核紀錄與房客縣市中…</td></tr>';
+        try {
+          if (force) await load();
+          const calc = await monthCalc(force);
+          const tc = await tenantCities(calc.range, force);
+          tarea.range = calc.range;
+          tarea.tc = tc;
+          tarea.data = Core.tenantReviewerReport(calc.auditRows, { start: calc.range.start, end: calc.range.end, staff: data.staff || [], tenantCities: tc.map });
+          renderTarea();
+          $('btn-tarea-xlsx').disabled = false;
+        } catch (err) {
+          tarea.data = null;
+          $('tarea-list').innerHTML = `<tr><td colspan="7" class="err">${esc(err.message)}</td></tr>`;
+        } finally {
+          tarea.busy = false;
+          $('btn-tarea').disabled = false;
+        }
+      }
+
+      $('btn-tarea').addEventListener('click', () => makeTarea(true));
+      $('btn-tarea-xlsx').addEventListener('click', async () => {
+        const d = tarea.data;
+        if (!d) return;
+        try {
+          const XLSX = await loadXlsx();
+          const aoa = [['審核者', '身分', '所在地區（最多）', '房客有效件數', '各地區件數', '查不到縣市', '套用狀態']].concat(
+            d.rows.map((x) => [x.name, x.isStaff ? '行政' : '非行政', x.main, x.total, x.regions.map(([g, n]) => `${g} ${n}`).join('、'), x.unknown || '', x.unknown ? (x.main ? '部分查不到縣市' : '查不到縣市') : '已套用'])
+          );
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
+          ws['!cols'] = [{ wch: 10 }, { wch: 8 }, { wch: 14 }, { wch: 12 }, { wch: 36 }, { wch: 10 }, { wch: 14 }];
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, '房客審核者地區');
+          XLSX.writeFile(wb, `${tarea.range.year - 1911}年${tarea.range.month}月房客審核者地區.xlsx`);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      /* ---------- 主管月報／週報（投影片） ---------- */
+
+      const boss = { slides: null, name: '', busy: false };
+      const BOSS_NAMES_KEY = 'skyfun-boss-report-names';
+
       function bossWeeks() {
-        const today = Core.isoDate(new Date());
-        return Core.weeksOf(range()).filter((w) => w.start <= today);
+        const today = todayIso();
+        return Core.takeupWeeks(range()).filter((w) => w.start <= today);
       }
 
       function fillBossWeeks() {
         const weeks = bossWeeks();
         const cur = $('b-week').value;
-        $('b-week').innerHTML = weeks
-          .map((w, i) => `<option value="${i}">第 ${i + 1} 週（${w.start.slice(5).replace('-', '/')}～${w.end.slice(5).replace('-', '/')}）</option>`)
-          .join('');
+        $('b-week').innerHTML = weeks.map((w, i) => `<option value="${i}">第 ${i + 1} 週（${BD.mmdd(w.start)}～${BD.mmdd(w.end)}）</option>`).join('');
         $('b-week').value = cur && Number(cur) < weeks.length ? cur : String(Math.max(0, weeks.length - 1));
       }
 
       function resetBoss() {
-        boss.rep = null;
-        ['btn-boss-xlsx', 'btn-boss-print', 'btn-boss-copy'].forEach((id) => { $(id).disabled = true; });
+        boss.slides = null;
+        $('btn-boss-ppt').disabled = true;
         $('boss-stamp').textContent = '';
-        $('boss-sheet').innerHTML = '<p class="muted">選好業績月與報告類型，按「一鍵產生報告」。</p>';
+        $('boss-sheet').innerHTML = '<p class="muted">選好業績月、報告類型與週別，按「一鍵產生預覽」。</p>';
         fillBossWeeks();
+      }
+
+      /** 年度KPI：本月第一階段以上達成率、行政承接率（含各週）即時覆蓋；本月與上個月清冊／審件良率沒填就帶入 */
+      function annualOverlay(base, r, k, kPrev, asOf, withActual) {
+        const d = JSON.parse(JSON.stringify(base || { rows: {} }));
+        if (!d.rows) d.rows = {};
+        const set = (key, month, patch, onlyEmpty) => {
+          const row = d.rows[key] || (d.rows[key] = { months: {} });
+          if (!row.months) row.months = {};
+          const cur = row.months[month] || {};
+          if (onlyEmpty && cur.actual != null) return;
+          row.months[month] = { ...cur, ...patch };
+        };
+        const live = kpiLive(k, asOf);
+        for (const key of ['stage', 'takeup']) {
+          if (!live[key]) continue;
+          set(key, r.month, withActual ? live[key] : { weeks: live[key].weeks });
+        }
+        for (const key of ['roster', 'audit']) {
+          if (live[key].actual != null) set(key, r.month, { actual: live[key].actual }, true);
+        }
+        if (kPrev && kPrev.m.year + 1911 === r.year) {
+          const prev = kpiLive(kPrev, asOf);
+          set('roster', kPrev.m.month, { actual: prev.roster.actual }, true);
+          set('audit', kPrev.m.month, { actual: prev.audit.actual }, true);
+        }
+        return d;
+      }
+
+      function bossKpiRegion(r, k, kPrev, annual, asOf) {
+        const roc = r.year - 1911;
+        const lastOf = (key, month) => annual?.rows?.[key]?.months?.[month]?.last ?? null;
+        const sameYear = kPrev.m.year + 1911 === r.year;
+        return {
+          title: `${roc}年${pad2(r.month)}月 各地區KPI指標`,
+          info: [
+            `第一階段達成率、行政承接率：${BD.mmdd(r.start)}–${BD.mmdd(asOf)}　｜　資料截至：${slashDate(asOf)}`,
+            `清冊／審件良率：本月實績採${kPrev.m.year}年${pad2(kPrev.m.month)}月（公會期數）；去年同期只有全區（取自管理部KPI月報）`
+          ],
+          blocks: KPI_BLOCKS,
+          rows: KPI_ROWS,
+          cell(row, g) {
+            if (row.monthly) {
+              const x = kPrev[row.key][g];
+              return { last: g === '全區' && sameYear ? lastOf(row.key, kPrev.m.month) : null, actual: { rate: x ? kpiErrRate(x) : null, text: '無件數' } };
+            }
+            const x = kpiValue(k, row, g, 'all');
+            return { last: g === '全區' ? lastOf(row.key, r.month) : null, actual: { rate: x ? row.rate(x) : null, text: row.key === 'stage' ? '無配置' : '無件數' } };
+          }
+        };
       }
 
       async function makeBoss() {
         if (boss.busy) return;
         boss.busy = true;
         $('btn-boss').disabled = true;
-        $('boss-sheet').innerHTML = '<p class="muted">讀取本月與上月的星鴻審核紀錄、抽查與客訴資料中…約 10～20 秒</p>';
+        $('btn-boss-ppt').disabled = true;
+        const type = $('b-type').value;
+        const reporter = $('b-reporter').value.trim();
+        const maker = $('b-maker').value.trim();
+        localStorage.setItem(BOSS_NAMES_KEY, JSON.stringify({ reporter, maker }));
+        const msg = (t) => { $('boss-sheet').innerHTML = `<p class="muted">${esc(t)}</p>`; };
+        msg('讀取星鴻審核紀錄、補助審核與後台資料中…');
         try {
           await load();
           const r = range();
-          const pr = prevMonthRange(r);
-          const [cur, before] = await Promise.all([fullCalc(r, true), fullCalc(pr, false)]);
-          const today = Core.isoDate(new Date());
+          const today = todayIso();
           const roc = r.year - 1911;
-          let opts;
-          if ($('b-type').value === 'week') {
-            const weeks = bossWeeks();
-            const i = Number($('b-week').value) || 0;
-            const w = weeks[i];
-            if (!w) throw new Error('這個業績月還沒有可以出週報的週');
-            const shift = (iso) => Core.isoDate(new Date(new Date(iso + 'T00:00:00').getTime() - 7 * DAY_MS));
-            opts = {
-              type: 'week',
-              title: `${roc}年${r.month}月 第${i + 1}週 行政績效週報`,
-              periodLabel: '本週',
-              prevLabel: '上週',
-              period: { start: w.start, end: w.end },
-              prev: { start: shift(w.start), end: shift(w.end) },
-              asOf: w.end < today ? w.end : today
-            };
-          } else {
-            opts = {
-              type: 'month',
-              title: `${roc}年${r.month}月 行政績效月報`,
-              periodLabel: `${r.month}月`,
-              prevLabel: `${pr.month}月`,
-              period: { start: r.start, end: r.end },
-              prev: { start: pr.start, end: pr.end },
-              asOf: r.end < today ? r.end : today
-            };
+          const weeks = Core.takeupWeeks(r);
+          let asOf = minIso(r.end, today);
+          let wi = -1;
+          if (type === 'week') {
+            wi = Number($('b-week').value);
+            const w = weeks[wi];
+            if (!w || w.start > today) throw new Error('這個業績月還沒有可以出週報的週');
+            asOf = minIso(w.end, today);
           }
-          boss.rep = Report.build({ ...opts, cur, before });
-          $('boss-sheet').innerHTML = Report.html(boss.rep);
-          ['btn-boss-xlsx', 'btn-boss-print', 'btn-boss-copy'].forEach((id) => { $(id).disabled = false; });
-          $('boss-stamp').textContent = `產出時間 ${fmtTime(new Date())}`;
+          const calc = await monthCalc(false);
+          msg('讀取表單04／07、媒合管理與房客地區中…第一次約 10～30 秒');
+          const pm = r.month === 1 ? kpiM(roc - 1, 12) : kpiM(roc, r.month - 1);
+          const [k, kPrev, annual, tc] = await Promise.all([kpiLoad(kpiM(roc, r.month), false), kpiLoad(pm, false, true), annualGet(r.year, false), tenantCities(r, false)]);
+          const takeupData = Core.takeupReport(calc.auditRows, { start: r.start, end: asOf, staff: data.staff || [], expenses: calc.expenseRows, tenantCities: tc.map });
+          const rep = Core.monthlyReport(calc.result, { staff: data.staff || [], checks: data.checks || [], asOf });
+          const head = reportHead(r, asOf);
+          const shown = weeks.filter((w) => w.start <= asOf).length;
+          const d = {
+            roc,
+            year: r.year,
+            month: r.month,
+            reporter,
+            maker,
+            coverDate: type === 'week' ? `${roc}年${r.month}月 第${wi + 1}週｜${BD.mmdd(weeks[wi].start)}–${BD.mmdd(weeks[wi].end)}` : `${roc}年${pad2(r.month)}月`,
+            annual: annualOverlay(annual.data, r, k, kPrev, asOf, type === 'month'),
+            weekMonth: type === 'week' ? r.month : 0,
+            weekCount: type === 'week' ? shown : 0,
+            progress: { rep, head: { title: head.title, info: head.info, note: head.note, sum: head.sum(rep.counts) } },
+            takeup: {
+              t: takeupData,
+              cols: takeupData.weeks.map((w, i) => ({ key: i, label: `第${i + 1}週`, sub: `${BD.mmdd(w.start)}–${BD.mmdd(w.end)}` })),
+              title: type === 'month' ? `${roc}年${pad2(r.month)}月｜各地區行政承接率` : ''
+            }
+          };
+          if (type === 'month') {
+            d.kpiRegion = bossKpiRegion(r, k, kPrev, annual.data, asOf);
+            msg('計算系統作業效率中…');
+            const pr = prevMonthRange(r);
+            try {
+              d.eff = effView(await effCompute({ cs: r.start, ce: asOf, ps: pr.start, pe: pr.end }, false));
+            } catch (err) {
+              d.eff = null;
+              d.effError = err.message;
+            }
+          }
+          boss.slides = type === 'week' ? BD.weekDeck(d) : BD.monthDeck(d);
+          boss.name = type === 'week' ? `管理部-週報-${asOf.replace(/-/g, '')}.pptx` : `管理部${roc}年${pad2(r.month)}月月報.pptx`;
+          Deck.mount($('boss-sheet'), boss.slides);
+          $('btn-boss-ppt').disabled = false;
+          $('boss-stamp').textContent = `產出時間 ${fmtTime(new Date())}｜共 ${boss.slides.length} 頁，確認沒問題再按「下載 PPT」`;
         } catch (err) {
-          boss.rep = null;
+          boss.slides = null;
           $('boss-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
         } finally {
           boss.busy = false;
@@ -2471,6 +3497,21 @@
       }
 
       $('btn-boss').addEventListener('click', makeBoss);
+      $('btn-boss-ppt').addEventListener('click', async (e) => {
+        if (!boss.slides) return;
+        const btn = e.currentTarget;
+        const label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '產生 PPT 中…';
+        try {
+          await Deck.pptx(boss.slides, boss.name);
+        } catch (err) {
+          say(err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = label;
+        }
+      });
       $('b-type').addEventListener('change', () => {
         $('b-week-wrap').classList.toggle('hidden', $('b-type').value !== 'week');
         resetBoss();
@@ -2480,25 +3521,13 @@
         resetBoss();
         $('b-week').value = w;
       });
-      $('btn-boss-print').addEventListener('click', () => printTab('boss'));
-      $('btn-boss-copy').addEventListener('click', async () => {
-        if (!boss.rep) return;
-        try {
-          await navigator.clipboard.writeText(Report.text(boss.rep));
-          say('已複製文字摘要，可以直接貼到 LINE', true);
-        } catch {
-          say('複製失敗，請改用列印或 Excel');
-        }
-      });
-      $('btn-boss-xlsx').addEventListener('click', async () => {
-        if (!boss.rep) return;
-        try {
-          const XLSX = await loadXlsx();
-          XLSX.writeFile(Report.workbook(boss.rep, XLSX), `${boss.rep.title}.xlsx`);
-        } catch (err) {
-          say(err.message);
-        }
-      });
+      try {
+        const n = JSON.parse(localStorage.getItem(BOSS_NAMES_KEY) || '{}');
+        $('b-reporter').value = n.reporter || '';
+        $('b-maker').value = n.maker || '';
+      } catch {
+        /* 舊資料格式不對就留空 */
+      }
 
       /* ---------- 小組長抽查：抽查日與 LINE 提醒 ---------- */
 
@@ -2539,7 +3568,7 @@
 
       /* ---------- 組織圖 ---------- */
 
-      const org = { loaded: false, data: null };
+      const org = { loaded: false, data: null, leaves: [] };
       const ORG_COLS = [['status', '狀態'], ['name', '姓名／職稱', '6rem'], ['dept', '部別', '5rem'], ['joined', '報到年月', '6rem'], ['office', '營業處', '7rem'], ['deputy', '代理人', '5rem']];
       const orgBlank = () => ({ status: '在職', name: '', dept: '', joined: '', office: '', deputy: '' });
 
@@ -2652,6 +3681,160 @@
         }
       });
 
+      /* ---------- 公會意見：全部期間的案件／清冊意見，依期數／縣市／行政／組別分類 ---------- */
+
+      const op = { loaded: false, busy: false, all: [], kind: 'all' };
+      const OP_KIND = { case: '案件意見', roster: '清冊意見' };
+      const OP_GROUP = {
+        guild: { label: '公會期數', key: (o) => o.guildPeriod || '未填期數', sort: (a, b) => b.localeCompare(a) },
+        region: { label: '縣市', key: (o) => o.region || '未填縣市', sort: (a, b) => opRegionRank(a) - opRegionRank(b) },
+        name: { label: '行政', key: (o) => o.name || '—', sort: (a, b) => a.localeCompare(b, 'zh-Hant') },
+        leader: { label: '組別', key: (o) => opLeader(o.name), sort: (a, b) => (a === '未對應組長') - (b === '未對應組長') || a.localeCompare(b, 'zh-Hant') }
+      };
+      const opRegionRank = (r) => {
+        const i = Core.KPI_REGIONS.indexOf(r);
+        return i < 0 ? 99 : i;
+      };
+      function opLeader(name) {
+        const s = (data.staff || []).find((x) => x.name === name);
+        return s && s.leader ? `${s.leader} 組` : '未對應組長';
+      }
+      const opRef = (o) => (o.kind === 'case' ? o.caseNo : o.rosterPeriod) || '';
+
+      async function loadOpinions() {
+        if (op.busy) return;
+        op.busy = true;
+        $('op-groups').innerHTML = '<p class="muted">讀取中…</p>';
+        try {
+          const res = await rpc('admin_points_opinion_all', {});
+          op.all = res.opinions || [];
+          op.loaded = true;
+          opFillFilters();
+          renderOpinionTab();
+        } catch (err) {
+          $('op-groups').innerHTML = `<p class="muted">讀取失敗：${esc(err.message)}</p>`;
+        } finally {
+          op.busy = false;
+        }
+      }
+
+      function opFillFilters() {
+        const fill = (id, label, values) => {
+          const el = $(id);
+          const cur = el.value;
+          el.innerHTML = `<option value="">全部${label}</option>` + values.map((v) => `<option${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('');
+        };
+        const uniq = (f) => [...new Set(op.all.map(f).filter(Boolean))];
+        fill('op-f-guild', '期數', uniq((o) => o.guildPeriod).sort((a, b) => b.localeCompare(a)));
+        fill('op-f-region', '縣市', uniq((o) => o.region).sort((a, b) => opRegionRank(a) - opRegionRank(b)));
+        fill('op-f-name', '行政', uniq((o) => o.name).sort((a, b) => a.localeCompare(b, 'zh-Hant')));
+      }
+
+      function opFiltered(ignoreKind) {
+        const g = $('op-f-guild').value;
+        const r = $('op-f-region').value;
+        const n = $('op-f-name').value;
+        const q = $('op-f-q').value.trim().toLowerCase();
+        return op.all.filter((o) =>
+          (ignoreKind || op.kind === 'all' || o.kind === op.kind) &&
+          (!g || o.guildPeriod === g) && (!r || o.region === r) && (!n || o.name === n) &&
+          (!q || [opRef(o), o.content, o.measure, o.name].some((v) => String(v || '').toLowerCase().includes(q))));
+      }
+
+      function renderOpinionTab() {
+        const base = opFiltered(true);
+        const rows = opFiltered(false);
+        const cnt = (k) => base.filter((o) => o.kind === k).length;
+        document.querySelectorAll('[data-op-kind]').forEach((b) => {
+          const k = b.dataset.opKind;
+          b.classList.toggle('is-on', k === op.kind);
+          b.innerHTML = `${k === 'all' ? '全部' : OP_KIND[k]}<small>${k === 'all' ? base.length : cnt(k)}</small>`;
+        });
+        $('op-stats').innerHTML = [
+          ['符合條件', rows.length],
+          ['案件意見', rows.filter((o) => o.kind === 'case').length],
+          ['清冊意見', rows.filter((o) => o.kind === 'roster').length],
+          ['涉及行政', new Set(rows.map((o) => o.name)).size + ' 人']
+        ].map(([k, v]) => `<div class="stat"><b>${v}</b><span>${esc(k)}</span></div>`).join('');
+        if (!rows.length) {
+          $('op-groups').innerHTML = `<p class="muted">${op.all.length ? '沒有符合條件的意見' : '目前還沒有行政填寫的公會意見'}</p>`;
+          return;
+        }
+        const grp = OP_GROUP[$('op-group').value] || OP_GROUP.guild;
+        const map = new Map();
+        rows.forEach((o) => {
+          const k = grp.key(o);
+          if (!map.has(k)) map.set(k, []);
+          map.get(k).push(o);
+        });
+        const showKind = op.kind === 'all';
+        const showMeasure = op.kind !== 'case';
+        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>公會意見內容</th>${showMeasure ? '<th>行政檢討對策</th>' : ''}<th></th></tr>`;
+        $('op-groups').innerHTML = [...map.keys()].sort(grp.sort).map((k, gi) => {
+          const list = map.get(k);
+          const c = list.filter((o) => o.kind === 'case').length;
+          const r = list.length - c;
+          const people = new Set(list.map((o) => o.name)).size;
+          const body = list.map((o) => `<tr>
+              ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
+              <td>${esc(o.date)}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
+              <td>${esc(opRef(o))}</td><td>${esc(o.opinionDate || '')}</td>
+              <td style="white-space:pre-wrap;min-width:14rem">${esc(o.content)}</td>
+              ${showMeasure ? `<td style="white-space:pre-wrap;min-width:12rem;${o.kind === 'roster' ? 'background:#fefce8' : ''}">${esc(o.kind === 'roster' ? o.measure : '')}</td>` : ''}
+              <td><button type="button" class="btn btn-del" data-op-del="${o.id}">刪除</button></td>
+            </tr>`).join('');
+          return `<details class="fold"${gi < 3 ? ' open' : ''}>
+            <summary><span class="op-sum"><b>${esc(k)}</b>
+              <span class="badge op-k-case">案件 ${c}</span><span class="badge op-k-roster">清冊 ${r}</span>
+              <span class="op-sub">共 ${list.length} 筆 · ${grp === OP_GROUP.name ? opLeader(k) : `${people} 位行政`}</span></span></summary>
+            <div class="fold-body"><div class="overflow-x-auto"><table><thead>${head}</thead><tbody>${body}</tbody></table></div></div>
+          </details>`;
+        }).join('');
+      }
+
+      $('op-kinds').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-op-kind]');
+        if (!b) return;
+        op.kind = b.dataset.opKind;
+        renderOpinionTab();
+      });
+      ['op-group', 'op-f-guild', 'op-f-region', 'op-f-name'].forEach((id) => $(id).addEventListener('change', renderOpinionTab));
+      $('op-f-q').addEventListener('input', renderOpinionTab);
+      $('op-reload').addEventListener('click', loadOpinions);
+      $('op-groups').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-op-del]');
+        if (!btn || !confirm('確定刪除這筆意見？這位行政會少 1 點。')) return;
+        try {
+          await rpc('admin_points_opinion_admin_delete', { p_id: Number(btn.dataset.opDel) });
+          op.all = op.all.filter((o) => String(o.id) !== btn.dataset.opDel);
+          renderOpinionTab();
+          await afterEdit('已刪除');
+        } catch (err) {
+          say(err.message);
+        }
+      });
+      $('op-xlsx').addEventListener('click', async () => {
+        const rows = opFiltered(false);
+        if (!rows.length) return say('沒有可以匯出的資料');
+        try {
+          await loadXlsx();
+          const grp = OP_GROUP[$('op-group').value] || OP_GROUP.guild;
+          const aoa = [[grp.label, '類別', '填寫日', '行政', '組別', '公會期數', '縣市', '媒合編號／清冊期數', '意見時間', '公會意見內容', '行政檢討對策']].concat(
+            rows.slice().sort((a, b) => grp.sort(grp.key(a), grp.key(b))).map((o) => [
+              grp.key(o), OP_KIND[o.kind] || o.kind, o.date || '', o.name || '', opLeader(o.name), o.guildPeriod || '', o.region || '',
+              opRef(o), o.opinionDate || '', o.content || '', o.kind === 'roster' ? o.measure || '' : ''
+            ])
+          );
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
+          ws['!cols'] = [{ wch: 12 }, { wch: 9 }, { wch: 11 }, { wch: 9 }, { wch: 10 }, { wch: 9 }, { wch: 6 }, { wch: 20 }, { wch: 11 }, { wch: 60 }, { wch: 40 }];
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, '公會意見');
+          XLSX.writeFile(wb, `公會意見_依${grp.label}.xlsx`);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
       /* ---------- 頁籤與登入 ---------- */
 
       function showTab(name) {
@@ -2660,17 +3843,23 @@
         if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
         document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab));
         for (const t of TABS) $(`tab-${t}`).classList.toggle('hidden', t !== tab);
-        $('month-wrap').classList.toggle('hidden', tab === 'training' || tab === 'exam' || tab === 'kpi' || tab === 'org');
+        $('month-wrap').classList.toggle('hidden', ['training', 'exam', 'sim', 'kpi', 'kpiyear', 'org', 'opinion'].includes(tab));
         say('');
-        if (tab === 'boss' && !boss.rep) fillBossWeeks();
+        if (tab === 'boss' && !boss.slides) fillBossWeeks();
+        if (tab === 'wprog') makeWprog(false);
         if (tab === 'report') makeReport(false);
         if (tab === 'takeup') makeTakeup(false);
+        if (tab === 'kpiyear') loadKy(false);
         if (tab === 'kpi') makeKpi(false);
+        if (tab === 'eff') makeEff(false);
+        if (tab === 'tarea') makeTarea(false);
         if (tab === 'exam' && !exam.loaded) loadExam();
         if (tab === 'training' && !train.loaded) loadTraining();
+        if (tab === 'sim') sim.loaded ? renderSim() : loadSim();
         if (tab === 'plan') showPlan();
         if (tab === 'check' && !spotRule.loaded) loadSpotRule();
         if (tab === 'org' && !org.loaded) loadOrg();
+        if (tab === 'opinion') op.loaded ? renderOpinionTab() : loadOpinions();
       }
 
       $('nav').addEventListener('click', (e) => {
@@ -2680,10 +3869,14 @@
 
       $('month').addEventListener('change', async () => {
         resetBoss();
+        effFill();
         try {
           await load();
+          if (tab === 'wprog') makeWprog(false);
           if (tab === 'report') makeReport(false);
           if (tab === 'takeup') makeTakeup(false);
+          if (tab === 'eff') makeEff(false);
+          if (tab === 'tarea') makeTarea(false);
           if (tab === 'plan') showPlan();
         } catch (e) {
           say(e.message);
@@ -2692,15 +3885,21 @@
       $('btn-reload').addEventListener('click', async () => {
         renderWho();
         calcCache.clear();
-        fullCache.clear();
+        tcCache.clear();
+        annualCache.clear();
         report = null;
         takeup.data = null;
+        wprog.data = null;
+        tarea.data = null;
+        eff.view = null;
+        ky.data = null;
         kpi.cache.clear();
         plan.calc = null;
         try {
           await load();
           if (exam.loaded) await loadExam();
           if (train.loaded) await loadTraining();
+          if (sim.loaded) await loadSim();
           if (plan.items) await loadPlans();
           showTab(tab);
           say('已更新', true);

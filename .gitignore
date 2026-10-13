@@ -1,1 +1,2 @@
 scripts/deploy-webhook.url
+services/*/node_modules/

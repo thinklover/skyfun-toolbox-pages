@@ -23,7 +23,10 @@
   const data = (course) => window.COURSE_EXAM?.[course];
   const auth = () => window.skyfunAuth;
   const token = () => auth()?.getToken?.() || '';
-  const root = () => document.getElementById('course-exam-root');
+  const root = () => (view?.rootEl?.isConnected ? view.rootEl : document.getElementById('course-exam-root'));
+  const ROOT_SEL = '#course-exam-root, [data-cx-root]';
+  /** 週會小考（kind: 'meeting'）出自簡報，沒有教學影片 */
+  const isMeeting = (d) => d?.kind === 'meeting';
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -226,11 +229,11 @@
     el.innerHTML = `<div class="gx-card">
         ${ring(best, done, pr ? (items.length ? `共考 ${items.filter((x) => x.status === 'submitted').length} 次` : '還沒考過') : '')}
         <div class="gx-rules">
-          <p><b>${esc(d.title)}線上考試</b>（題目出自右邊的${esc(d.video)}，共 ${total} 題）</p>
+          <p><b>${esc(d.title)}線上考試</b>（題目出自${isMeeting(d) ? '' : '右邊的'}${esc(d.video)}，共 ${total} 題）</p>
           <ul>
             <li>共 <b>${total} 題</b>單選題，限時 <b>${d.durationMin} 分鐘</b>，時間到自動交卷。</li>
             <li><b>全部答對（100 分）才算通過</b>；沒全對就用同一份題目重考，次數不限。</li>
-            <li>答錯的題目會標示影片時間點，可以回去看那一段。</li>
+            <li>${isMeeting(d) ? '答錯的題目會標示簡報第幾張，可以回去看那一張。' : '答錯的題目會標示影片時間點，可以回去看那一段。'}</li>
           </ul>
           ${status}
           ${message ? `<p class="gx-warn">${esc(message)}</p>` : ''}
@@ -406,7 +409,7 @@
         const ok = !!res.results?.[qid];
         return `<div class="gx-r ${ok ? 'is-right' : 'is-wrong'}">
             <p class="gx-q-title"><span class="gx-no">${i + 1}.</span>${esc(q?.text)}<span class="gx-r-mark">${ok ? '✔ 答對' : '✘ 答錯'}</span></p>
-            ${ok ? '' : `<p class="gx-r-line"><span>你的答案</span>${esc(optText(q, snapshot.answers[qid]))}</p><p class="gx-r-line is-src"><span>回去看</span>${esc(d?.video)} ${esc(q?.at)} 附近</p>`}
+            ${ok ? '' : `<p class="gx-r-line"><span>你的答案</span>${esc(optText(q, snapshot.answers[qid]))}</p><p class="gx-r-line is-src"><span>回去看</span>${esc(d?.video)} ${esc(q?.at)}${isMeeting(d) ? '' : ' 附近'}</p>`}
           </div>`;
       })
       .join('');
@@ -416,7 +419,7 @@
           <p class="gx-score-num">${score}<small> 分（答對 ${res.correct}／${res.total} 題）</small></p>
           <p class="gx-score-tag">${res.passed ? `✅ ${esc(d?.title)}考試通過！` : '❌ 還沒全對，需要重考'}</p>
           <p class="gx-muted">用時 ${fmtDuration(res.durationSec)}${res.autoSubmitted ? ' · 時間到自動交卷' : ''}${res.overtime ? ' · 逾時交卷' : ''} · 成績已記錄</p>
-          ${res.passed ? '' : `<p class="gx-warn">答錯 ${wrong.length} 題，重考一樣是這 ${res.total} 題（順序重排），全對才通過。下面列出答錯的題目與影片時間點。</p>`}
+          ${res.passed ? '' : `<p class="gx-warn">答錯 ${wrong.length} 題，重考一樣是這 ${res.total} 題（順序重排），全對才通過。下面列出答錯的題目與${isMeeting(d) ? '簡報頁數' : '影片時間點'}。</p>`}
           <div class="gx-score-btns">
             ${res.passed ? '' : '<button type="button" class="gx-start" data-cx="start">開始重考</button>'}
             <button type="button" class="gx-lite" data-cx="home">回考試首頁</button>
@@ -615,7 +618,7 @@
 
   function onClick(e) {
     const btn = e.target.closest?.('[data-cx]');
-    if (!btn || !btn.closest('#course-exam-root')) return;
+    if (!btn || !btn.closest(ROOT_SEL)) return;
     const act = btn.dataset.cx;
     if (act === 'start') startExam();
     else if (act === 'submit') submitExam(view?.course, false);
@@ -628,7 +631,7 @@
   function onChange(e) {
     const t = e.target;
     const ex = exams[view?.course];
-    if (!ex || !t.dataset?.cxQ || !t.closest('#course-exam-root')) return;
+    if (!ex || !t.dataset?.cxQ || !t.closest(ROOT_SEL)) return;
     ex.answers[t.dataset.cxQ] = t.value;
     saveState(ex.course);
     root()
@@ -637,11 +640,11 @@
     updateCount();
   }
 
-  /** 由點數表課程頁呼叫；self＝看的是自己才可以考試 */
+  /** 由點數表課程頁呼叫；self＝看的是自己才可以考試；opts.root＝自備的掛載點（週會小考，不載影片） */
   function mount(opts) {
-    mountVideo(opts);
-    if (!root() || !data(opts?.course)) return;
-    view = { course: opts.course, self: !!opts.self, name: opts.name || '' };
+    if (!opts?.root) mountVideo(opts);
+    if (!(opts?.root || document.getElementById('course-exam-root')) || !data(opts?.course)) return;
+    view = { course: opts.course, self: !!opts.self, name: opts.name || '', rootEl: opts.root || null };
     if (!view.self) {
       renderHome();
       loadOverview();

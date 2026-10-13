@@ -183,6 +183,49 @@ begin
 end;
 $$;
 
+-- 組長週報的清冊／審件作業良率：登入工具箱即可讀（同 admin_points_view 已能看到的意見）
+create or replace function public.admin_points_kpi_opinions_view(p_token text, p_guild_period text)
+returns json
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if public.admin_qa_user_id(p_token) is null then return json_build_object('ok', false, 'error', '請先登入工具箱'); end if;
+  return json_build_object('ok', true, 'opinions', coalesce((
+    select json_agg(json_build_object('kind', o.kind, 'region', o.region, 'caseNo', o.case_no) order by o.id)
+    from public.admin_points_opinion o
+    where o.guild_period = trim(coalesce(p_guild_period, ''))
+  ), '[]'::json));
+end;
+$$;
+revoke all on function public.admin_points_kpi_opinions_view(text, text) from public;
+grant execute on function public.admin_points_kpi_opinions_view(text, text) to anon, authenticated;
+
+-- 後台「公會意見」：全部期間的案件／清冊意見（分類、篩選在前端做）
+create or replace function public.admin_points_opinion_all(p_secret text)
+returns json
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if not public.toolbox_check_admin(p_secret) then return json_build_object('ok', false, 'error', '後台密碼錯誤'); end if;
+  return json_build_object('ok', true, 'opinions', coalesce((
+    select json_agg(json_build_object(
+      'id', o.id, 'kind', o.kind, 'date', o.work_date, 'name', o.staff_name,
+      'guildPeriod', o.guild_period, 'caseNo', o.case_no, 'rosterPeriod', o.roster_period, 'region', o.region,
+      'opinionDate', o.opinion_date, 'content', o.content, 'measure', o.measure, 'createdAt', o.created_at
+    ) order by o.work_date desc, o.id desc)
+    from (select * from public.admin_points_opinion order by work_date desc, id desc limit 5000) o
+  ), '[]'::json));
+end;
+$$;
+revoke all on function public.admin_points_opinion_all(text) from public;
+grant execute on function public.admin_points_opinion_all(text) to anon, authenticated;
+
 revoke all on function public.admin_points_kpi_opinions(text, text) from public;
 grant execute on function public.admin_points_kpi_opinions(text, text) to anon, authenticated;
 revoke all on function public.admin_points_opinion_save(text, text, jsonb) from public;

@@ -909,6 +909,86 @@
         .aqa-detail-body { white-space: pre-wrap; font-size: 0.9rem; color: #334155; line-height: 1.55; margin-top: 0.5rem; }
         .aqa-answer-who { font-weight: 800; color: #0f766e; font-size: 0.85rem; }
         .aqa-empty { font-size: 0.875rem; color: #94a3b8; text-align: center; padding: 1rem 0; }
+        .aqa-group {
+            --g-accent: #94a3b8; --g-strong: #475569; --g-soft: #f8fafc; --g-line: #e2e8f0;
+            border: 1px solid var(--g-line); border-radius: 1rem; background: #fff;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+        }
+        .aqa-group--approved { --g-accent: #10b981; --g-strong: #047857; --g-soft: #ecfdf5; --g-line: #a7f3d0; }
+        .aqa-group--pending { --g-accent: #f59e0b; --g-strong: #b45309; --g-soft: #fffbeb; --g-line: #fde68a; }
+        .aqa-list > .aqa-group, .aqa-list > .aqa-group-cols + .aqa-group { margin-top: 0.75rem; }
+        .aqa-group-title {
+            display: flex; align-items: center; gap: 0.65rem; cursor: pointer; list-style: none; user-select: none;
+            padding: 0.7rem 0.85rem; border-radius: 1rem; position: sticky; top: 0; z-index: 1;
+            background: linear-gradient(135deg, var(--g-soft) 0%, #fff 100%);
+            border-bottom: 1px solid transparent; transition: background 0.15s;
+        }
+        .aqa-group[open] > .aqa-group-title { border-radius: 1rem 1rem 0 0; border-bottom-color: var(--g-line); }
+        .aqa-group-title:hover { background: var(--g-soft); }
+        .aqa-group-title::-webkit-details-marker { display: none; }
+        .aqa-group-title::after {
+            content: ''; width: 0.5rem; height: 0.5rem; margin: 0 0.2rem 0 0.1rem; flex: none;
+            border-right: 2px solid var(--g-strong); border-bottom: 2px solid var(--g-strong);
+            transform: rotate(45deg) translateY(-2px); transition: transform 0.2s; opacity: 0.7;
+        }
+        .aqa-group:not([open]) > .aqa-group-title::after { transform: rotate(-45deg); }
+        .aqa-group-icon {
+            flex: none; width: 2rem; height: 2rem; border-radius: 999px; display: grid; place-items: center;
+            font-size: 0.95rem; font-weight: 900; color: #fff; background: var(--g-accent);
+            box-shadow: 0 3px 8px color-mix(in srgb, var(--g-accent) 35%, transparent);
+        }
+        .aqa-group-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+        .aqa-group-text b { font-size: 0.98rem; font-weight: 900; color: var(--g-strong); letter-spacing: 0.04em; }
+        .aqa-group-text small { font-size: 0.72rem; color: #64748b; margin-top: 0.1rem; }
+        .aqa-group-count {
+            flex: none; min-width: 1.9rem; text-align: center; font-size: 0.78rem; font-weight: 900;
+            padding: 0.15rem 0.55rem; border-radius: 999px; color: var(--g-strong);
+            background: #fff; border: 1px solid var(--g-line);
+        }
+        .aqa-group-body { display: flex; flex-direction: column; padding: 0.25rem 0; }
+        .aqa-group-body .aqa-empty { padding: 1.2rem 0; }
+        .aqa-group--rejected .aqa-group-text b { font-weight: 800; }
+        .aqa-group--rejected .aqa-row { opacity: 0.8; }
+        .aqa-group-body .aqa-row {
+            display: flex; align-items: center; gap: 0.85rem; width: 100%; text-align: left; cursor: pointer;
+            padding: 0.7rem 1rem 0.7rem 1.1rem; margin: 0; background: transparent; box-shadow: none;
+            border: 0; border-radius: 0; position: relative; transition: background 0.12s;
+        }
+        .aqa-group-body .aqa-row + .aqa-row { border-top: 1px solid #f1f5f9; }
+        .aqa-group-body .aqa-row:hover { background: var(--g-soft); box-shadow: none; }
+        .aqa-group-body .aqa-row.aqa-item--active { background: var(--g-soft); box-shadow: inset 3px 0 0 var(--g-accent); }
+        .aqa-row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+        .aqa-row-title {
+            font-size: 0.93rem; font-weight: 700; line-height: 1.45; color: #0f172a;
+            display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+        }
+        .aqa-row:hover .aqa-row-title { color: var(--g-strong); }
+        .aqa-row-star { margin-right: 0.25rem; font-size: 0.85em; }
+        .aqa-row-meta {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 0.15rem 0.55rem;
+            font-size: 0.74rem; color: #94a3b8; line-height: 1.3;
+        }
+        .aqa-row-cat {
+            font-weight: 700; color: #475569; background: #f1f5f9; border-radius: 0.3rem; padding: 0.08rem 0.4rem;
+        }
+        .aqa-row-when--ok { color: #059669; font-weight: 700; }
+        .aqa-row-tag { color: #7c3aed; font-weight: 700; }
+        .aqa-row-ans {
+            flex: none; width: 3.1rem; display: flex; flex-direction: column; align-items: center; line-height: 1.1;
+            padding: 0.3rem 0; border-radius: 0.6rem; background: #f8fafc; color: #475569;
+        }
+        .aqa-row-ans b { font-size: 1.05rem; font-weight: 900; }
+        .aqa-row-ans small { font-size: 0.62rem; color: #94a3b8; margin-top: 0.1rem; }
+        .aqa-row-ans--zero { background: #fff7ed; color: #c2410c; }
+        .aqa-row-ans--zero small { color: #ea580c; font-weight: 700; }
+        .aqa-edit-btn {
+            font-size: 0.72rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 0.4rem;
+            border: 1px solid #99f6e4; background: #f0fdfa; color: #0f766e; cursor: pointer; white-space: nowrap;
+        }
+        .aqa-edit-btn:hover { background: #ccfbf1; }
+        .aqa-item-meta--edited { color: #0f766e; }
+        .aqa-edit-title { margin-top: 0.5rem; }
+        .aqa-edit-btns { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
         .aqa-msg { font-size: 0.82rem; color: #0f766e; margin-top: 0.45rem; }
         .aqa-msg--err { color: #b91c1c; }
         .aqa-msg--muted { color: #64748b; }
@@ -991,8 +1071,13 @@
             display: grid; grid-template-columns: 1fr; gap: 0.75rem;
             min-height: min(72vh, 720px);
         }
+        .aqa-workspace:not(.aqa-workspace--detail-open) .aqa-main-panel,
+        .aqa-workspace.aqa-workspace--detail-open .aqa-sidebar { display: none; }
+        .aqa-workspace.aqa-workspace--detail-open .aqa-main-panel { min-height: min(70vh, 640px); }
+        .aqa-group-cols { display: grid; grid-template-columns: 1fr; gap: 0.75rem; align-items: start; }
+        .aqa-group-cols > .aqa-group + .aqa-group { margin-top: 0; }
         @media (min-width: 900px) {
-            .aqa-workspace { grid-template-columns: minmax(16rem, 38%) minmax(0, 1fr); }
+            .aqa-group-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
         }
         .aqa-sidebar, .aqa-main-panel {
             background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem;
@@ -1200,26 +1285,87 @@
         .pt-line a { color: #047857; font-weight: 700; text-decoration: underline; }
         .pt-line-note { font-size: 0.76rem; color: #94a3b8; }
         .pt-line-unbind { border: none; background: none; padding: 0; margin-left: 0.3rem; font-size: 0.72rem; color: #94a3b8; text-decoration: underline; cursor: pointer; }
-        .pt-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-bottom: 0.7rem; }
-        .pt-tab {
-            border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 999px;
-            padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 800; cursor: pointer;
+        .pt-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 0.4rem; }
+        .pt-head .admin-tools-title { margin: 0; }
+        .pt-head-btns { display: flex; align-items: center; gap: 0.75rem; }
+        .pt-new-btn {
+            padding: 0.55rem 1.2rem; border-radius: 0.75rem; border: 0; cursor: pointer; font-weight: 900; font-size: 0.92rem; color: #fff;
+            background: linear-gradient(135deg, #0f766e, #0d9488); box-shadow: 0 6px 14px -6px rgba(15, 118, 110, 0.7);
         }
-        .pt-tab:hover { border-color: #14b8a6; color: #0f766e; }
-        .pt-tab.is-active { background: #0f766e; border-color: #0f766e; color: #fff; }
-        .pt-tab-n { display: inline-block; min-width: 1.2rem; padding: 0 0.3rem; border-radius: 999px; background: rgba(15, 23, 42, 0.08); font-size: 0.72rem; text-align: center; }
-        .pt-tab.is-active .pt-tab-n { background: rgba(255, 255, 255, 0.25); }
-        .pt-tab.has-todo .pt-tab-n { background: #dc2626; color: #fff; }
-        .pt-refresh { margin-left: auto; border: none; background: none; color: #64748b; font-size: 0.76rem; font-weight: 700; cursor: pointer; text-decoration: underline; }
+        .pt-new-btn:hover { filter: brightness(1.08); }
+        .pt-new-btn[hidden] { display: none; }
+        .pt-help { margin-bottom: 0.7rem; font-size: 0.8rem; }
+        .pt-help summary { cursor: pointer; font-weight: 800; color: #0f766e; width: fit-content; }
+        .pt-help[open] summary { margin-bottom: 0.5rem; }
+        .pt-help .pt-lead { margin-bottom: 0; }
+        .pt-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.45rem; margin-bottom: 0.75rem; }
+        .pt-tabs:empty, .pt-tabs[hidden] { display: none; }
+        .pt-card {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; min-width: 0; text-align: left;
+            padding: 0.55rem 0.7rem; border-radius: 0.8rem; border: 1.5px solid #e2e8f0; background: #fff; cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .pt-card:hover { border-color: #5eead4; }
+        .pt-card-top { display: flex; align-items: baseline; gap: 0.35rem; }
+        .pt-card-n { font-size: 1.35rem; font-weight: 900; line-height: 1.1; color: #334155; }
+        .pt-card-label { font-size: 0.78rem; font-weight: 800; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .pt-card-hint { font-size: 0.68rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .pt-card.is-zero .pt-card-n { color: #cbd5e1; }
+        .pt-card--todo.has-n { border-color: #fca5a5; background: #fef2f2; }
+        .pt-card--todo.has-n .pt-card-n { color: #dc2626; }
+        .pt-card--rejected.has-n { border-color: #fcd34d; background: #fffbeb; }
+        .pt-card--rejected.has-n .pt-card-n { color: #b45309; }
+        .pt-card--wait.has-n .pt-card-n { color: #0369a1; }
+        .pt-card--done.has-n .pt-card-n { color: #059669; }
+        .pt-card.is-active { border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18); }
+        .pt-list-head { display: flex; align-items: baseline; gap: 0.5rem; margin: 0 0 0.1rem; font-size: 0.86rem; font-weight: 900; color: #0f172a; }
+        .pt-list-head small { font-size: 0.74rem; font-weight: 600; color: #64748b; }
+        .pt-empty { text-align: center; padding: 1.4rem 0.8rem; border: 1.5px dashed #cbd5e1; border-radius: 0.8rem; color: #64748b; font-size: 0.84rem; }
+        .pt-empty .pt-new-btn { margin-top: 0.6rem; }
+        .pt-refresh { border: none; background: none; color: #64748b; font-size: 0.76rem; font-weight: 700; cursor: pointer; text-decoration: underline; }
+        .pt-form-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.8rem; margin-bottom: 0.6rem; }
+        .pt-form-head b { font-size: 1rem; font-weight: 900; color: #0f172a; }
+        .pt-back { border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 999px; padding: 0.25rem 0.8rem; font-size: 0.78rem; font-weight: 800; cursor: pointer; }
+        .pt-back:hover { border-color: #14b8a6; color: #0f766e; }
+        .pt-sec { border: 1px solid #e2e8f0; border-radius: 0.9rem; padding: 0.4rem 0.85rem 0.85rem; margin: 0 0 0.75rem; background: #fcfdfd; min-width: 0; }
+        .pt-sec-title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.5rem; padding: 0 0.35rem; font-size: 0.95rem; font-weight: 900; color: #0f172a; }
+        .pt-sec-title b { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 999px; background: #0f766e; color: #fff; font-size: 0.8rem; }
+        .pt-sec-title small { font-size: 0.74rem; font-weight: 600; color: #64748b; }
+        .pt-more { border: 1px dashed #cbd5e1; border-radius: 0.65rem; padding: 0.45rem 0.65rem; background: #fff; }
+        .pt-more summary { cursor: pointer; font-size: 0.78rem; font-weight: 800; color: #64748b; }
+        .pt-more[open] summary { margin-bottom: 0.5rem; }
         .pt-label { font-size: 0.8rem; font-weight: 800; color: #334155; }
         .pt-pick select { cursor: pointer; }
         .pt-pick.is-invalid select { border-color: #f87171; background: #fef2f2; }
+        .acf-field.pt-pick.is-invalid input[type="search"] { border-color: #cbd5e1; background: #fff; }
         .pt-pick-warn { margin: 0; font-size: 0.72rem; font-weight: 700; color: #b45309; }
         .pt-pick-warn:empty { display: none; }
         .pt-gm { padding: 0.45rem 0.6rem; border: 1.5px dashed #cbd5e1; border-radius: 0.55rem; background: #fff; font-size: 0.82rem; color: #475569; }
         .pt-secondary { padding: 0.5rem 1rem; border-radius: 0.65rem; border: 1.5px solid #0f766e; background: #fff; color: #0f766e; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
         .pt-secondary:hover { background: #f0fdfa; }
         .pt-secondary:disabled { opacity: 0.6; cursor: wait; }
+        .pt-ai {
+            padding: 0.85rem 0.95rem; border-radius: 0.9rem; border: 1.5px solid #c4b5fd;
+            background: linear-gradient(135deg, #f5f3ff 0%, #fdf4ff 55%, #fff 100%);
+        }
+        .pt-ai-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; margin-bottom: 0.45rem; }
+        .pt-ai-head b { font-size: 0.95rem; font-weight: 900; color: #6d28d9; }
+        .pt-ai-head small { font-size: 0.76rem; color: #64748b; }
+        .pt-ai textarea { background: #fff; border-color: #ddd6fe; }
+        .pt-ai-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+        .pt-ai-btn {
+            padding: 0.5rem 1.1rem; border-radius: 0.65rem; border: 0; cursor: pointer; font-weight: 900; font-size: 0.88rem; color: #fff;
+            background: linear-gradient(135deg, #7c3aed, #c026d3); box-shadow: 0 6px 14px -6px rgba(124, 58, 237, 0.6);
+        }
+        .pt-ai-btn:hover { filter: brightness(1.06); }
+        .pt-ai-btn:disabled { opacity: 0.65; cursor: wait; }
+        .pt-ai-msg { flex: 1 1 14rem; font-size: 0.8rem; font-weight: 700; color: #6d28d9; white-space: pre-line; }
+        .pt-ai-msg.is-err { color: #dc2626; }
+        .pt-ai-msg.is-ok { color: #047857; }
+        .pt-ai-note { margin: 0.4rem 0 0; font-size: 0.72rem; color: #94a3b8; }
+        .acf-field.pt-ai-filled textarea, .acf-field.pt-ai-filled input, .acf-field.pt-ai-filled select {
+            border-color: #a78bfa; background: #faf5ff; transition: background 0.6s, border-color 0.6s;
+        }
         .pt-sign-pad { border: 1.5px solid #94a3b8; border-radius: 0.65rem; background: #fff; overflow: hidden; }
         .pt-sign-pad canvas { display: block; width: 100%; height: 10rem; background: #fff; touch-action: none; cursor: crosshair; }
         .pt-sign-tools { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.35rem; }
@@ -1232,29 +1378,57 @@
         .pt-template-head { display: flex; justify-content: space-between; gap: 1rem; font-weight: 800; }
         .pt-template h4 { margin: 0.8rem 0 0.25rem; font-weight: 900; }
         .pt-template p { white-space: pre-wrap; line-height: 1.65; }
-        .pt-form-actions { justify-content: flex-end; }
-        .pt-draft-bar { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; margin-top: 0.5rem; min-height: 1.6rem; }
+        .pt-form-actions {
+            justify-content: flex-end; position: sticky; bottom: 0; z-index: 5; margin: 0.5rem -0.2rem 0; padding: 0.6rem 0.2rem;
+            background: rgba(255, 255, 255, 0.96); border-top: 1px solid #e2e8f0; backdrop-filter: blur(4px);
+        }
+        .pt-form-actions .pt-clear { margin-right: auto; font-size: 0.78rem; color: #94a3b8; }
         .pt-badge--wait { background: #e0f2fe; color: #075985; }
         .pt-badge--done { background: #d1fae5; color: #065f46; }
         .pt-badge--rejected { background: #fee2e2; color: #991b1b; }
         .pt-turn { padding: 0.05rem 0.5rem; border-radius: 999px; background: #dc2626; color: #fff; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
-        .pt-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; list-style: none; margin: 0; padding: 0 0.75rem 0.6rem; }
-        .pt-steps li { position: relative; padding: 0.3rem 0.4rem; border-radius: 0.45rem; background: #f1f5f9; border: 1px solid #e2e8f0; min-width: 0; }
-        .pt-steps b { display: block; font-size: 0.66rem; color: #94a3b8; font-weight: 800; }
-        .pt-steps span { display: block; font-size: 0.76rem; font-weight: 700; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .pt-steps li.is-done { background: #ecfdf5; border-color: #a7f3d0; }
-        .pt-steps li.is-done b::after { content: ' ✓'; color: #059669; }
-        .pt-steps li.is-done span { color: #065f46; }
-        .pt-steps li.is-current { background: #e0f2fe; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25); }
-        .pt-steps li.is-current b { color: #0369a1; }
-        .pt-steps li.is-current b::after { content: ' ⏳'; }
-        .pt-steps li.is-current span { color: #0c4a6e; }
-        .pt-steps li.is-rejected { background: #fef2f2; border-color: #fca5a5; }
-        .pt-steps li.is-rejected b { color: #b91c1c; }
-        .pt-steps li.is-rejected b::after { content: ' ✕'; }
+        .pt-item { border-left: 4px solid #e2e8f0; }
+        .pt-item--wait { border-left-color: #38bdf8; }
+        .pt-item--rejected { border-left-color: #f59e0b; }
+        .pt-item--done { border-left-color: #34d399; }
+        .pt-item--turn { border-left-color: #dc2626; }
+        .pt-row { display: flex; flex-direction: column; gap: 0.25rem; width: 100%; padding: 0.6rem 0.8rem 0.45rem; text-align: left; background: none; border: none; cursor: pointer; }
+        .pt-row:hover { background: #f8fafc; }
+        .pt-row-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+        .pt-row-date { margin-left: auto; font-size: 0.72rem; color: #94a3b8; white-space: nowrap; }
+        .pt-row-title { font-size: 0.92rem; font-weight: 800; color: #0f172a; word-break: break-word; }
+        .pt-item.is-done .pt-row-title { color: #475569; }
+        .pt-row-now { font-size: 0.8rem; font-weight: 700; color: #0c4a6e; word-break: break-word; }
+        .pt-row-now--turn { color: #b91c1c; }
+        .pt-row-now--rejected { color: #92400e; }
+        .pt-row-now--done { color: #047857; }
+        .pt-row-now em { font-style: normal; font-weight: 600; color: #64748b; }
+        .pt-row-meta { font-size: 0.72rem; color: #64748b; }
+        .pt-row-more { font-size: 0.72rem; font-weight: 800; color: #0f766e; }
+        .pt-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); list-style: none; margin: 0; padding: 0.2rem 0.8rem 0.7rem; }
+        .pt-steps li { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; padding: 0 0.15rem; }
+        .pt-steps li::before {
+            content: ''; position: absolute; top: 0.55rem; left: -50%; width: 100%; height: 2px; background: #e2e8f0; z-index: 0;
+        }
+        .pt-steps li:first-child::before { display: none; }
+        .pt-steps li.is-done::before, .pt-steps li.is-current::before, .pt-steps li.is-rejected::before { background: #6ee7b7; }
+        .pt-steps i {
+            position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; width: 1.15rem; height: 1.15rem;
+            border-radius: 999px; background: #fff; border: 2px solid #cbd5e1; font-style: normal; font-size: 0.62rem; font-weight: 900; color: #94a3b8;
+        }
+        .pt-steps b { margin-top: 0.15rem; font-size: 0.68rem; color: #94a3b8; font-weight: 800; white-space: nowrap; }
+        .pt-steps span { max-width: 100%; font-size: 0.7rem; font-weight: 700; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pt-steps li.is-done i { background: #10b981; border-color: #10b981; color: #fff; }
+        .pt-steps li.is-done b, .pt-steps li.is-done span { color: #065f46; }
+        .pt-steps li.is-current i { background: #0284c7; border-color: #0284c7; color: #fff; box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.2); }
+        .pt-steps li.is-current b, .pt-steps li.is-current span { color: #0369a1; }
+        .pt-steps li.is-rejected i { background: #dc2626; border-color: #dc2626; color: #fff; }
+        .pt-steps li.is-rejected b, .pt-steps li.is-rejected span { color: #b91c1c; }
         .pt-rejected { border: 1.5px solid #fca5a5; background: #fef2f2; border-radius: 0.6rem; padding: 0.55rem 0.7rem; margin-bottom: 0.6rem; }
         .pt-rejected b { font-size: 0.84rem; color: #991b1b; }
         .pt-rejected p { margin: 0.25rem 0 0; font-size: 0.84rem; color: #7f1d1d; white-space: pre-wrap; word-break: break-word; }
+        .pt-jump { display: block; width: 100%; margin-bottom: 0.6rem; padding: 0.5rem; border-radius: 0.6rem; border: 1.5px solid #0f766e; background: #f0fdfa; color: #0f766e; font-weight: 900; font-size: 0.86rem; cursor: pointer; }
+        .pt-jump:hover { background: #ccfbf1; }
         .pt-donebox { border: 1.5px solid #6ee7b7; background: #ecfdf5; border-radius: 0.6rem; padding: 0.5rem 0.7rem; margin-bottom: 0.6rem; font-size: 0.84rem; font-weight: 800; color: #065f46; }
         .pt-fgroup { padding: 0.45rem 0.55rem; border-radius: 0.5rem; }
         .pt-fgroup + .pt-fgroup { margin-top: 0.35rem; }
@@ -1288,8 +1462,12 @@
         .pt-events b { color: #0f172a; }
         .pt-events li p { flex-basis: 100%; margin: 0; color: #64748b; white-space: pre-wrap; word-break: break-word; }
         .pt-line-err { margin: 0.5rem 0 0; font-size: 0.74rem; color: #b45309; }
-        @media (max-width: 560px) {
-            .pt-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (max-width: 640px) {
+            .pt-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; }
+            .pt-card { padding: 0.45rem 0.55rem; }
+            .pt-steps { padding-left: 0.4rem; padding-right: 0.4rem; }
+            .pt-steps span { font-size: 0.64rem; }
+            .pt-new-btn { padding: 0.5rem 0.9rem; }
         }
         .af-grid { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
         @media (min-width: 900px) { .af-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -1323,10 +1501,6 @@
         .af-link:hover { background: #d1fae5; border-color: #34d399; }
         .af-link--sheet { border-color: #cbd5e1; background: #f1f5f9; color: #475569; }
         .af-link--sheet:hover { background: #e2e8f0; border-color: #94a3b8; }
-        @media (max-width: 899px) {
-            .aqa-workspace.aqa-workspace--detail-open .aqa-sidebar { display: none; }
-            .aqa-workspace.aqa-workspace--detail-open .aqa-main-panel { min-height: min(70vh, 640px); }
-        }
         .aqa-review-note {
             margin-top: 0.55rem;
             padding: 0.5rem 0.65rem;
@@ -4182,8 +4356,8 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261011-76">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261011-23">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261013-1">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261013-1">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -4463,6 +4637,7 @@
 
         <!-- 首頁：專區按鈕 + 現有資料選單（美化版，租管師獨立） -->
         <div id="home-menu" class="max-w-7xl mx-auto mb-14 md:mb-16 space-y-8 md:space-y-10 px-1">
+            <div id="home-spot-notice" class="hidden"></div>
             <div class="home-welcome-banner text-sm md:text-base">
                 <span>請先選擇下方專區；進入後再依需求開啟各項工具或資料。</span>
             </div>
@@ -4810,135 +4985,19 @@
                 </span>
             </button>
 
-            <button type="button" class="apt-entry aqa-entry adz-hero adz-hero--qa" id="aqa-entry" aria-expanded="false" aria-controls="aqa-fold" onclick="adminQaToggle()">
+            <button type="button" class="apt-entry aqa-entry adz-hero adz-hero--qa" id="aqa-entry" onclick="showPage('admin-qa')">
                 <span class="apt-entry-icon" aria-hidden="true">💬</span>
                 <span class="apt-entry-text">
                     <strong>行政問答</strong>
                     <small>提問、回答都能賺點數，每業績月前三名有獎金</small>
                 </span>
-                <span class="aqa-entry-toggle" aria-hidden="true"></span>
+                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                 <span class="adz-hero-board">
                     <span class="adz-top-label">本業績月 排行榜前三名</span>
                     <span class="adz-top" id="aqa-card-top"></span>
                 </span>
             </button>
 
-            </div>
-
-            <div class="adz-qa-panel" id="aqa-fold" hidden>
-            <section class="aqa-zone" id="aqa-zone" aria-label="行政問答">
-                <div class="aqa-zone-head aqa-zone-head--compact">
-                    <h2 class="aqa-zone-title">💬 行政問答</h2>
-                    <div class="aqa-zone-actions">
-                        <a href="./admin/admin-qa-dashboard.html" target="_blank" rel="noopener noreferrer" class="aqa-admin-link ext-link-item no-underline" style="margin-top:0">
-                            <span class="ext-link-item__emoji" aria-hidden="true">✅</span>
-                            <span class="ext-link-item__label">檢核後台</span>
-                            <span class="ext-link-item__arrow" aria-hidden="true">↗</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="aqa-topbar">
-                    <div id="aqa-rank" class="aqa-rank">
-                        <div class="aqa-rank-head">
-                            <div class="aqa-rank-title">🏆 點數排行榜 TOP 3</div>
-                            <div class="aqa-rank-prizes">
-                                <span class="aqa-rank-prize aqa-rank-prize--1">🥇 第1名 1,000 元</span>
-                                <span class="aqa-rank-prize aqa-rank-prize--2">🥈 第2名 500 元</span>
-                                <span class="aqa-rank-prize aqa-rank-prize--3">🥉 第3名 300 元</span>
-                            </div>
-                        </div>
-                        <div class="aqa-rank-list">
-                            <p class="aqa-rank-empty">尚無排行榜資料，通過檢核後即可上榜。</p>
-                        </div>
-                    </div>
-                    <div id="aqa-stats" class="aqa-stats"></div>
-                </div>
-
-                <div class="aqa-rules-panel">
-                    <h3 class="aqa-rules-heading">📋 核心精神與計算規則</h3>
-                    <div class="aqa-hero-intro">
-                        <p class="aqa-hero-block">
-                            <span class="aqa-hero-label">核心精神</span>
-                            為了彙整大量行政問題、建立知識資料庫並訓練 AI 婷婷，讓日後常見問題可由 AI 即時回答，減輕同仁負擔，推動行政流程標準化。
-                        </p>
-                        <div class="aqa-hero-block">
-                            <span class="aqa-hero-label">計算規則</span>
-                            <ol class="aqa-hero-list">
-                                <li><span class="aqa-hero-num">1.</span>僅<strong>行政管理部</strong>同仁可提問與回答；其他部門可瀏覽問題與回答。</li>
-                                <li><span class="aqa-hero-num">2.</span>行政同仁可提問、互相回答；通過小組長檢核後，提問 1 點、回答 2 點</li>
-                                <li><span class="aqa-hero-num">3.</span>提問／回答<strong>認列</strong>各至多 50 點<br><span class="aqa-hero-sub">（超出部分不計入認列，但仍計入排行榜總點）</span></li>
-                                <li><span class="aqa-hero-num">4.</span>即使認列已達 50 點，仍可繼續累積排行榜點數、爭取前三名獎金。</li>
-                                <li><span class="aqa-hero-num">5.</span>婷婷當月認定為<strong>優質問題</strong>或<strong>優質回答</strong>，則該題或該則回答點數翻倍。</li>
-                                <li><span class="aqa-hero-num">6.</span>業績月以每月 <strong>29 日</strong>至<strong>次月 28 日</strong>計算；新業績月開始後，認列點數與排行榜點數<strong>歸零重新累計</strong>。</li>
-                            </ol>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="aqa-workspace" class="aqa-workspace">
-                    <aside class="aqa-sidebar">
-                        <details class="aqa-ask-fold hidden">
-                            <summary>✏️ 我要提問</summary>
-                            <select id="aqa-ask-category" class="aqa-select" required>
-                                <option value="">請選擇問題分類（必填）</option>
-                                <option value="system">1. 系統問題</option>
-                                <option value="subsidy300">2. 300億問題</option>
-                                <option value="review">3. 審核問題</option>
-                                <option value="guild">4. 公會問題</option>
-                                <option value="other">5. 其他</option>
-                            </select>
-                            <input id="aqa-ask-title" type="text" class="aqa-input" maxlength="120" placeholder="問題標題（至少 4 字，必填）" />
-                            <textarea id="aqa-ask-body" class="aqa-textarea" rows="2" placeholder="補充說明（選填）"></textarea>
-                            <div class="aqa-upload-row">
-                                <label class="aqa-upload-btn">
-                                    <input id="aqa-ask-images" type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple />
-                                    📷 附加圖片（選填，最多 4 張）
-                                </label>
-                                <div id="aqa-ask-preview" class="aqa-img-preview"></div>
-                            </div>
-                            <div class="aqa-upload-row">
-                                <label class="aqa-upload-btn">
-                                    <input id="aqa-ask-files" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.txt,.csv" multiple />
-                                    📎 附加檔案（選填，最多 4 個，單檔 10MB）
-                                </label>
-                                <div id="aqa-ask-files-preview" class="aqa-file-preview"></div>
-                            </div>
-                            <button type="button" id="aqa-submit-ask" class="btn btn-sm btn-solid-emerald mt-2">送出問題</button>
-                            <p id="aqa-ask-msg" class="aqa-msg hidden"></p>
-                        </details>
-
-                        <div id="aqa-participation-notice" class="aqa-participation-notice hidden">
-                            <p>提問與回答僅限<strong>行政管理部</strong>同仁使用，您仍可瀏覽問題與回答。<span id="aqa-participation-team" class="aqa-participation-team"></span></p>
-                        </div>
-
-                        <div id="aqa-list-wrap" class="aqa-list-panel">
-                            <h3 class="aqa-section-title">問題列表</h3>
-                            <div class="aqa-filter-row">
-                                <select id="aqa-filter-category" class="aqa-select">
-                                    <option value="">全部分類</option>
-                                    <option value="system">1. 系統問題</option>
-                                    <option value="subsidy300">2. 300億問題</option>
-                                    <option value="review">3. 審核問題</option>
-                                    <option value="guild">4. 公會問題</option>
-                                    <option value="other">5. 其他</option>
-                                </select>
-                                <input id="aqa-search" type="search" class="aqa-input aqa-search" placeholder="關鍵字搜尋…" />
-                            </div>
-                            <p id="aqa-list-msg" class="aqa-msg aqa-msg--muted"></p>
-                            <div class="aqa-list-scroll">
-                                <div id="aqa-list" class="aqa-list"></div>
-                            </div>
-                        </div>
-                    </aside>
-
-                    <main class="aqa-main-panel">
-                        <div id="aqa-detail" class="aqa-detail-pane">
-                            <div id="aqa-detail-empty" class="aqa-detail-empty">← 選擇左側問題查看詳情與回答</div>
-                        </div>
-                    </main>
-                </div>
-            </section>
             </div>
 
             <div class="adz-folds">
@@ -5115,14 +5174,21 @@
                 <p class="acf-admin-link"><a href="./admin/object-cancel-dashboard.html" target="_blank" rel="noopener">管理員：註銷申請後台 ↗</a></p>
             </details>
 
+            <details class="admin-tools-card admin-tools-card--compact af-fold" id="admin-meeting-zone">
+                <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🗓️</i>行政週會</span><span class="af-summary-hint">週會簡報 · 線上小考</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                <div id="admin-meeting-root" class="amt"></div>
+            </details>
+
             <button type="button" class="af-fold adz-go-card" id="adz-petition-card" onclick="showPage('petition')">
                 <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">✍️</i>簽呈簽核</span><span class="af-summary-hint">三方電子簽名 · 總經理決行</span><span class="pt-entry-badge" id="pt-entry-badge" hidden></span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
             </button>
             <script>
-                if (!window.SKYFUN_PREVIEW) {
+                (function () {
                     const card = document.getElementById('adz-petition-card');
-                    if (card) { card.parentElement.classList.add('adz-folds--two'); card.remove(); }
-                }
+                    if (!card) return;
+                    if (window.SKYFUN_PREVIEW) card.parentElement.classList.add('adz-folds--two');
+                    else card.remove();
+                })();
             </script>
             </div>
 
@@ -5130,8 +5196,125 @@
             <section class="adz-org" id="admin-org" aria-label="行政組織總覽"></section>
         </div>
 
-        <!-- 行政 QA（已併入行政專區，保留 id 供舊連結） -->
-        <div id="page-admin-qa" class="hidden" aria-hidden="true"></div>
+        <!-- 行政問答：從行政專區的卡片進入 -->
+        <div id="page-admin-qa" class="hidden max-w-6xl mx-auto space-y-4">
+            <button onclick="showPage('administration')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回行政專區
+            </button>
+            <section class="aqa-zone" id="aqa-zone" aria-label="行政問答">
+                <div class="aqa-zone-head aqa-zone-head--compact">
+                    <h2 class="aqa-zone-title">💬 行政問答</h2>
+                    <div class="aqa-zone-actions">
+                        <a href="./admin/admin-qa-dashboard.html" target="_blank" rel="noopener noreferrer" class="aqa-admin-link ext-link-item no-underline" style="margin-top:0">
+                            <span class="ext-link-item__emoji" aria-hidden="true">✅</span>
+                            <span class="ext-link-item__label">檢核後台</span>
+                            <span class="ext-link-item__arrow" aria-hidden="true">↗</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="aqa-topbar">
+                    <div id="aqa-rank" class="aqa-rank">
+                        <div class="aqa-rank-head">
+                            <div class="aqa-rank-title">🏆 點數排行榜 TOP 3</div>
+                            <div class="aqa-rank-prizes">
+                                <span class="aqa-rank-prize aqa-rank-prize--1">🥇 第1名 1,000 元</span>
+                                <span class="aqa-rank-prize aqa-rank-prize--2">🥈 第2名 500 元</span>
+                                <span class="aqa-rank-prize aqa-rank-prize--3">🥉 第3名 300 元</span>
+                            </div>
+                        </div>
+                        <div class="aqa-rank-list">
+                            <p class="aqa-rank-empty">尚無排行榜資料，通過檢核後即可上榜。</p>
+                        </div>
+                    </div>
+                    <div id="aqa-stats" class="aqa-stats"></div>
+                </div>
+
+                <div class="aqa-rules-panel">
+                    <h3 class="aqa-rules-heading">📋 核心精神與計算規則</h3>
+                    <div class="aqa-hero-intro">
+                        <p class="aqa-hero-block">
+                            <span class="aqa-hero-label">核心精神</span>
+                            為了彙整大量行政問題、建立知識資料庫並訓練 AI 婷婷，讓日後常見問題可由 AI 即時回答，減輕同仁負擔，推動行政流程標準化。
+                        </p>
+                        <div class="aqa-hero-block">
+                            <span class="aqa-hero-label">計算規則</span>
+                            <ol class="aqa-hero-list">
+                                <li><span class="aqa-hero-num">1.</span>僅<strong>行政管理部</strong>同仁可提問與回答；其他部門可瀏覽問題與回答。</li>
+                                <li><span class="aqa-hero-num">2.</span>行政同仁可提問、互相回答；通過小組長檢核後，提問 1 點、回答 2 點</li>
+                                <li><span class="aqa-hero-num">3.</span>提問／回答<strong>認列</strong>各至多 50 點<br><span class="aqa-hero-sub">（超出部分不計入認列，但仍計入排行榜總點）</span></li>
+                                <li><span class="aqa-hero-num">4.</span>即使認列已達 50 點，仍可繼續累積排行榜點數、爭取前三名獎金。</li>
+                                <li><span class="aqa-hero-num">5.</span>婷婷當月認定為<strong>優質問題</strong>或<strong>優質回答</strong>，則該題或該則回答點數翻倍。</li>
+                                <li><span class="aqa-hero-num">6.</span>業績月以每月 <strong>29 日</strong>至<strong>次月 28 日</strong>計算；新業績月開始後，認列點數與排行榜點數<strong>歸零重新累計</strong>。</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="aqa-workspace" class="aqa-workspace">
+                    <aside class="aqa-sidebar">
+                        <details class="aqa-ask-fold hidden">
+                            <summary>✏️ 我要提問</summary>
+                            <select id="aqa-ask-category" class="aqa-select" required>
+                                <option value="">請選擇問題分類（必填）</option>
+                                <option value="system">1. 系統問題</option>
+                                <option value="subsidy300">2. 300億問題</option>
+                                <option value="review">3. 審核問題</option>
+                                <option value="guild">4. 公會問題</option>
+                                <option value="other">5. 其他</option>
+                            </select>
+                            <input id="aqa-ask-title" type="text" class="aqa-input" maxlength="120" placeholder="問題標題（至少 4 字，必填）" />
+                            <textarea id="aqa-ask-body" class="aqa-textarea" rows="2" placeholder="補充說明（選填）"></textarea>
+                            <div class="aqa-upload-row">
+                                <label class="aqa-upload-btn">
+                                    <input id="aqa-ask-images" type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple />
+                                    📷 附加圖片（選填，最多 4 張）
+                                </label>
+                                <div id="aqa-ask-preview" class="aqa-img-preview"></div>
+                            </div>
+                            <div class="aqa-upload-row">
+                                <label class="aqa-upload-btn">
+                                    <input id="aqa-ask-files" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.txt,.csv" multiple />
+                                    📎 附加檔案（選填，最多 4 個，單檔 10MB）
+                                </label>
+                                <div id="aqa-ask-files-preview" class="aqa-file-preview"></div>
+                            </div>
+                            <button type="button" id="aqa-submit-ask" class="btn btn-sm btn-solid-emerald mt-2">送出問題</button>
+                            <p id="aqa-ask-msg" class="aqa-msg hidden"></p>
+                        </details>
+
+                        <div id="aqa-participation-notice" class="aqa-participation-notice hidden">
+                            <p>提問與回答僅限<strong>行政管理部</strong>同仁使用，您仍可瀏覽問題與回答。<span id="aqa-participation-team" class="aqa-participation-team"></span></p>
+                        </div>
+
+                        <div id="aqa-list-wrap" class="aqa-list-panel">
+                            <h3 class="aqa-section-title">問題列表</h3>
+                            <div class="aqa-filter-row">
+                                <select id="aqa-filter-category" class="aqa-select">
+                                    <option value="">全部分類</option>
+                                    <option value="system">1. 系統問題</option>
+                                    <option value="subsidy300">2. 300億問題</option>
+                                    <option value="review">3. 審核問題</option>
+                                    <option value="guild">4. 公會問題</option>
+                                    <option value="other">5. 其他</option>
+                                </select>
+                                <input id="aqa-search" type="search" class="aqa-input aqa-search" placeholder="關鍵字搜尋…" />
+                            </div>
+                            <p id="aqa-list-msg" class="aqa-msg aqa-msg--muted"></p>
+                            <div class="aqa-list-scroll">
+                                <div id="aqa-list" class="aqa-list"></div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <main class="aqa-main-panel">
+                        <div id="aqa-detail" class="aqa-detail-pane">
+                            <div id="aqa-detail-empty" class="aqa-detail-empty">← 選擇左側問題查看詳情與回答</div>
+                        </div>
+                    </main>
+                </div>
+            </section>
+        </div>
 
         <div id="page-admin-points" class="hidden max-w-6xl mx-auto space-y-4">
             <button onclick="showPage('administration')" class="mb-2 btn btn-sm tone-slate-soft">
@@ -5190,23 +5373,49 @@
                 ← 返回行政專區
             </button>
             <section class="admin-tools-card admin-tools-card--compact pt-zone">
-                <h3 class="admin-tools-title">✍️ 簽呈簽核</h3>
-                <ol class="pt-flow" aria-label="簽核流程">
-                    <li><b>1</b>承辦人電子簽</li>
-                    <li><b>2</b>主管電子簽</li>
-                    <li><b>3</b>經理／協理電子簽</li>
-                    <li><b>4</b>總經理室會辦</li>
-                    <li><b>5</b>總經理紙本決行</li>
-                </ol>
-                <p class="pt-lead">承辦人填好套版內容並電子簽名，部門主管、經理／協理依序在手機或電腦上電子簽名。三方簽完即可列印套好版的正式簽呈，送總經理紙本決行後再上傳。若承辦人就是部門主管，一次簽名會同時記錄兩個角色。填寫內容會自動存成草稿。</p>
+                <div class="pt-head">
+                    <h3 class="admin-tools-title">✍️ 簽呈簽核</h3>
+                    <div class="pt-head-btns">
+                        <button type="button" class="pt-refresh" data-refresh title="重新整理">↻ 重新整理</button>
+                        <button type="button" class="pt-new-btn" data-new>✍️ 寫新簽呈</button>
+                    </div>
+                </div>
+                <details class="pt-help">
+                    <summary>❓ 簽呈怎麼跑？（流程說明）</summary>
+                    <ol class="pt-flow" aria-label="簽核流程">
+                        <li><b>1</b>承辦人寫好並電子簽名</li>
+                        <li><b>2</b>部門主管電子簽</li>
+                        <li><b>3</b>經理／協理電子簽</li>
+                        <li><b>4</b>總經理室會辦</li>
+                        <li><b>5</b>總經理紙本決行</li>
+                    </ol>
+                    <p class="pt-lead">送出後會依序通知下一位簽核人（有綁 LINE 的人會收到通知）。三方簽完由總經理室列印正式簽呈送總經理紙本決行，決行後上傳就完成。被退回時，修改後可直接重新送出。若承辦人就是部門主管，一次簽名會同時記錄兩個角色。填寫內容會自動存成草稿。</p>
+                </details>
                 <div class="pt-line" id="pt-line"></div>
-                <div class="pt-tabs" id="pt-tabs" role="tablist" aria-label="簽呈分類"></div>
+                <div class="pt-tabs" id="pt-tabs" role="tablist" aria-label="簽呈狀態"></div>
                 <p class="acf-flash" id="pt-flash" role="status" aria-live="polite"></p>
                 <form id="pt-form" class="acf-form pt-form" novalidate hidden>
+                    <div class="pt-form-head">
+                        <button type="button" class="pt-back" data-back>← 回簽呈列表</button>
+                        <b>寫新簽呈</b>
+                        <span id="pt-draft-status" class="acf-hint"></span>
+                    </div>
+                    <fieldset class="pt-sec">
+                    <legend class="pt-sec-title"><b>1</b>寫內容<small>可以先在紫色框照你的意思打，再按「一鍵整理」</small></legend>
                     <div class="acf-grid">
                         <div class="acf-field acf-field--wide">
                             <span class="acf-label">承辦人（第一線人員／主管）</span>
                             <div class="pt-gm" id="pt-applicant">依登入帳號自動帶入</div>
+                        </div>
+                        <div class="acf-field acf-field--wide pt-ai">
+                            <div class="pt-ai-head"><b>✨ AI 一鍵整理</b><small>照你的意思打就好，AI 會幫你拆成下面的簽呈格式並潤飾文字；也可以直接填下面欄位，再按一鍵整理潤飾。</small></div>
+                            <textarea name="aiText" id="pt-ai-input" rows="5" maxlength="8000" placeholder="例如：五股那間房東說公證費一直沒收到，查了才發現當初業績表漏登，所以沒辦法請款。房東很不高興，想請公司專案補發，金額是…"></textarea>
+                            <div class="pt-ai-actions">
+                                <button type="button" class="pt-ai-btn" id="pt-ai-run">✨ 一鍵整理</button>
+                                <button type="button" class="pt-secondary" id="pt-ai-undo" hidden>↩ 復原整理前</button>
+                                <span class="pt-ai-msg" id="pt-ai-msg" role="status" aria-live="polite"></span>
+                            </div>
+                            <p class="pt-ai-note">AI 只會依你提供的內容整理，不會自己補金額、日期或人名；整理完請務必檢查一遍再送出。</p>
                         </div>
                         <div class="acf-field acf-field--wide">
                             <span class="acf-label">簽呈分類</span>
@@ -5243,26 +5452,32 @@
                             <span class="acf-label">四、擬辦</span>
                             <textarea name="proposal" rows="5" maxlength="5000" placeholder="每行填寫一項擬辦事項，套版時會保留編號與換行"></textarea>
                         </label>
-                        <label class="acf-field">
-                            <span class="pt-label">主旨結語</span>
-                            <select name="closing"><option value="擬請核示">擬請核示</option><option value="敬請核示">敬請核示</option></select>
-                        </label>
-                        <label class="acf-field">
+                        <label class="acf-field acf-field--wide">
                             <span class="pt-label">會辦單位及執行事項（選填）</span>
                             <input type="text" name="coOffice" maxlength="500" placeholder="例如：財務部（憑證核驗及付款確認）">
                         </label>
-                        <label class="acf-field acf-field--wide">
-                            <span class="pt-label">核後處理文字</span>
-                            <input type="text" name="afterApproval" maxlength="500" value="奉 核後，影印陳送各會辦單位存照。">
-                        </label>
-                        <label class="acf-field acf-field--wide">
-                            <span class="pt-label">附件名稱／圖說（選填）</span>
-                            <textarea name="attachments" rows="3" maxlength="2000" placeholder="例如：附件一｜出租人公證費收據影本、存摺"></textarea>
-                        </label>
-                        <label class="acf-field acf-field--wide flex-row items-center gap-2">
-                            <input type="checkbox" name="showRespect" class="w-auto">
-                            <span class="pt-label">在決行區前顯示「敬陳」</span>
-                        </label>
+                        <details class="acf-field acf-field--wide pt-more">
+                            <summary>⚙️ 進階設定（主旨結語、核後處理文字、敬陳；通常不用改）</summary>
+                            <div class="acf-grid">
+                                <label class="acf-field">
+                                    <span class="pt-label">主旨結語</span>
+                                    <select name="closing"><option value="擬請核示">擬請核示</option><option value="敬請核示">敬請核示</option></select>
+                                </label>
+                                <label class="acf-field">
+                                    <span class="pt-label">核後處理文字</span>
+                                    <input type="text" name="afterApproval" maxlength="500" value="奉 核後，影印陳送各會辦單位存照。">
+                                </label>
+                                <label class="acf-field acf-field--wide flex-row items-center gap-2">
+                                    <input type="checkbox" name="showRespect" class="w-auto">
+                                    <span class="pt-label">在決行區前顯示「敬陳」</span>
+                                </label>
+                            </div>
+                        </details>
+                    </div>
+                    </fieldset>
+                    <fieldset class="pt-sec">
+                    <legend class="pt-sec-title"><b>2</b>選簽核人<small>會記住你上次選的人</small></legend>
+                    <div class="acf-grid">
                         <div class="acf-field pt-pick" data-role="manager">
                             <span class="acf-label">部門主管</span>
                             <input type="search" placeholder="輸入姓名或處別篩選" aria-label="篩選部門主管">
@@ -5285,30 +5500,37 @@
                             <span class="pt-label">決行：總經理</span>
                             <div class="pt-gm">👔 三方電子簽名完成後，由總經理室列印送總經理紙本決行，再代為上傳。</div>
                         </div>
+                    </div>
+                    </fieldset>
+                    <fieldset class="pt-sec">
+                    <legend class="pt-sec-title"><b>3</b>附件與簽名送出</legend>
+                    <div class="acf-grid">
                         <label class="acf-field acf-field--wide">
-                            <span class="pt-label">補充說明（選填）</span>
-                            <textarea name="note" rows="3" maxlength="1000" placeholder="想讓審核及會辦人員先知道的事"></textarea>
+                            <span class="pt-label">附件檔案（選填）</span>
+                            <input type="file" name="file" accept="image/*,application/pdf" multiple>
+                            <span class="acf-hint">收據、存摺、對話截圖等佐證資料。可選多個圖片或 PDF（單檔 10MB 內、最多 10 個），手機可直接拍照。</span>
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="pt-label">附件名稱／圖說（選填，印在簽呈最後）</span>
+                            <textarea name="attachments" rows="2" maxlength="2000" placeholder="例如：附件一｜出租人公證費收據影本、存摺"></textarea>
+                        </label>
+                        <label class="acf-field acf-field--wide">
+                            <span class="pt-label">給簽核人的補充說明（選填，不會印在簽呈上）</span>
+                            <textarea name="note" rows="2" maxlength="1000" placeholder="想讓審核及會辦人員先知道的事"></textarea>
                         </label>
                         <div class="acf-field acf-field--wide">
                             <span class="acf-label">承辦人電子簽名</span>
                             <div class="pt-sign-pad"><canvas width="700" height="220" data-signature="applicant" aria-label="承辦人電子簽名板"></canvas></div>
                             <div class="pt-sign-tools"><span class="acf-hint">請用滑鼠、手機觸控或觸控筆簽名。</span><button type="button" class="pt-sign-clear" data-clear-sign="applicant">清除重簽</button></div>
                         </div>
-                        <label class="acf-field acf-field--wide">
-                            <span class="pt-label">附件檔案（選填）</span>
-                            <input type="file" name="file" accept="image/*,application/pdf" multiple>
-                            <span class="acf-hint">收據、存摺、對話截圖等佐證資料。可選多個圖片或 PDF（單檔 10MB 內、最多 10 個），手機可直接拍照。</span>
-                        </label>
                     </div>
+                    </fieldset>
+                    <p class="acf-msg" id="pt-msg" role="status" aria-live="polite"></p>
                     <div class="acf-actions pt-form-actions">
+                        <button type="button" class="pt-sign-clear pt-clear" id="pt-draft-clear">清空重填</button>
                         <button type="button" class="pt-secondary" id="pt-preview">👀 預覽套版</button>
                         <button type="submit" class="acf-submit" id="pt-submit">電子簽名並送出</button>
                     </div>
-                    <div class="pt-draft-bar">
-                        <span id="pt-draft-status" class="acf-hint"></span>
-                        <button type="button" class="pt-sign-clear" id="pt-draft-clear">清空重填</button>
-                    </div>
-                    <p class="acf-msg" id="pt-msg" role="status" aria-live="polite"></p>
                 </form>
                 <div class="acf-list" id="pt-list"></div>
                 <p class="acf-admin-link"><a href="./admin/petition-dashboard.html" target="_blank" rel="noopener">管理員：簽呈後台 ↗</a></p>
@@ -10892,17 +11114,20 @@
         <script src="./js/practice-tools.js"></script>
         <script src="./js/rentmgr-flow-guide.js"></script>
         <script src="./js/newbie-tools.js"></script>
-        <script src="./js/admin-qa.js?v=20261011-2"></script>
-        <script src="./js/admin-points-core.js?v=20261011-41"></script>
+        <script src="./js/admin-qa.js?v=20261013-5"></script>
+        <script src="./js/admin-points-core.js?v=20261013-1"></script>
         <script src="./js/admin-points-charts.js?v=20261011-3"></script>
-        <script src="./js/admin-training-content.js?v=20261011-11"></script>
+        <script src="./js/admin-training-content.js?v=20261011-13"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
         <script src="./js/guide-exam.js?v=20261011-5"></script>
         <script src="./js/course-exam-data.js?v=20261011-5"></script>
-        <script src="./js/course-exam.js?v=20261011-4"></script>
-        <script src="./js/improve-plan.js?v=20261011-4"></script>
-        <script src="./js/growth-compass.js?v=20261011-14"></script>
-        <script src="./js/admin-points.js?v=20261011-90"></script>
+        <script src="./js/admin-meeting-exam-data.js?v=20261012-1"></script>
+        <script src="./js/course-exam.js?v=20261012-5"></script>
+        <script src="./js/sim-practice.js?v=20261012-1"></script>
+        <script src="./js/improve-plan.js?v=20261012-1"></script>
+        <script src="./js/growth-compass.js?v=20261012-1"></script>
+        <script src="./js/admin-points.js?v=20261013-2"></script>
+        <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
         <script src="./js/nb-api-config.js"></script>
@@ -10922,11 +11147,12 @@
         <script src="./js/admin-cancel-form.js?v=20261011-5"></script>
         <script src="./js/admin-calendar-sheet.js?v=20261011-1"></script>
         <script src="./js/admin-calendar.js?v=20261011-5"></script>
-        <script src="./js/admin-org.js?v=20261011-7"></script>
-    <script src="./js/petition.js?v=20261007-10"></script>
+        <script src="./js/admin-org.js?v=20261012-9"></script>
+        <script src="./js/admin-meeting.js?v=20261012-3"></script>
+    <script src="./js/petition.js?v=20261013-3"></script>
         <script src="./js/receipt-endorsement-form.js?v=20261001-1"></script>
 <script src="./js/lite-hide-api.js?v=20261001-1"></script>
-<script src="./js/site-file-search-index.js?v=20261009-1"></script>
+<script src="./js/site-file-search-index.js?v=20261013-1"></script>
         <script src="./js/tenant-eligibility-legal.js"></script>
         <script src="./js/tenant-eligibility-regions.js"></script>
         <script src="./js/tenant-eligibility-calc.js"></script>
@@ -12767,7 +12993,7 @@
             announcement: 'page-announcement',
             'manager-bonus': 'page-manager-bonus',
             administration: 'page-administration',
-            'admin-qa': 'page-administration',
+            'admin-qa': 'page-admin-qa',
             'admin-points': 'page-admin-points',
             petition: 'page-petition',
             'newbie-business': 'page-newbie-business',
@@ -12942,7 +13168,6 @@
             if ((pageName === 'administration' || pageName === 'admin-qa') && typeof window.adminQaInit === 'function') {
                 window.adminQaInit();
             }
-            if (pageName === 'admin-qa' && typeof window.adminQaToggle === 'function') window.adminQaToggle(true);
             if (pageName === 'administration' && typeof window.adminPointsCardTop === 'function') window.adminPointsCardTop();
             if (pageName === 'admin-points' && typeof window.adminPointsInit === 'function') window.adminPointsInit();
             if (pageName === 'administration' && window.SKYFUN_PREVIEW && typeof window.petitionBadge === 'function') window.petitionBadge();

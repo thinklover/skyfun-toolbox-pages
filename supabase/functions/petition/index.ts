@@ -413,7 +413,6 @@ async function handleSubmit(form: FormData) {
   if (!directorId) return fail("請選擇審核人員");
   if (!officeId) return fail("請選擇總經理室會辦人員");
   if (directorId === uid || officeId === uid) return fail("審核或會辦人員不能選自己");
-  if (new Set([managerId, directorId, officeId]).size !== 3) return fail("部門主管、審核人員與會辦人員不能是同一人");
   const files = asFiles(form);
   const bad = files.length ? checkFiles(files) : "";
   if (bad) return fail(bad);

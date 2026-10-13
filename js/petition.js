@@ -18,10 +18,19 @@
         rejected: ['rejected', '已退回']
     };
     const ACTION = { submit: '送出簽呈', approve: '簽核完成', reject: '退回', resubmit: '修改後重新送出', withdraw: '撤回' };
-    const TABS = [['todo', '待我簽核'], ['mine', '我的簽呈'], ['new', '＋ 送出簽呈'], ['related', '與我相關']];
+    const TABS = [
+        ['todo', '待我簽核', '等你處理'],
+        ['wait', '簽核中', '我送出的'],
+        ['rejected', '被退回', '我送出的'],
+        ['done', '已完成', '我送出的'],
+        ['related', '與我相關', '我簽過的']
+    ];
+    const LIST_KEYS = TABS.map((t) => t[0]);
     const EMPTY = {
         todo: '目前沒有等你簽核的簽呈 👍',
-        mine: '你還沒有送出過簽呈。按「＋ 送出簽呈」開始。',
+        wait: '目前沒有簽核中的簽呈。',
+        rejected: '沒有被退回的簽呈 👍',
+        done: '還沒有已完成的簽呈。',
         related: '目前沒有其他與你相關的簽呈。'
     };
 
@@ -375,7 +384,7 @@
         }
     }
 
-    const DRAFT_FIELDS = ['category', 'otherCategory', 'title', 'summary', 'timeline', 'description', 'proposal',
+    const DRAFT_FIELDS = ['aiText', 'category', 'otherCategory', 'title', 'summary', 'timeline', 'description', 'proposal',
         'closing', 'coOffice', 'afterApproval', 'attachments', 'showRespect', 'note'];
 
     function draftKey() {
@@ -443,6 +452,102 @@
         try { localStorage.removeItem(draftKey()); } catch { /* ignore */ }
         draftStatus('');
         if (form) form.dataset.draftLoaded = draftKey();
+        ai.undo = null;
+        $('pt-ai-undo')?.setAttribute('hidden', '');
+        aiMsg('');
+    }
+
+    /* ---------- AI 一鍵整理 ---------- */
+
+    const AI_FIELDS = ['category', 'otherCategory', 'title', 'summary', 'timeline', 'description', 'proposal', 'coOffice', 'attachments'];
+    const ai = { busy: false, undo: null };
+    const aiUrl = () => String(window.SKYFUN_PETITION_AI_URL || 'https://skyfun-petition-ai.onrender.com').replace(/\/$/, '');
+
+    function aiMsg(text, kind) {
+        const el = $('pt-ai-msg');
+        if (!el) return;
+        el.textContent = text || '';
+        el.className = 'pt-ai-msg' + (kind ? ' is-' + kind : '');
+    }
+
+    function aiSnapshot(form) {
+        const snap = {};
+        AI_FIELDS.forEach((name) => { snap[name] = form.elements[name]?.value || ''; });
+        return snap;
+    }
+
+    function aiFill(form, values) {
+        const changed = [];
+        AI_FIELDS.forEach((name) => {
+            const el = form.elements[name];
+            if (!el) return;
+            const v = String(values[name] || '');
+            if (name === 'otherCategory') return;
+            if (!v && (name === 'category' || el.value.trim())) return;
+            if (el.value === v) return;
+            el.value = v;
+            changed.push(el.closest('.acf-field'));
+        });
+        const isOther = form.elements.category.value === '其他';
+        if (isOther && values.otherCategory) form.elements.otherCategory.value = values.otherCategory;
+        if (!isOther) form.elements.otherCategory.value = '';
+        $('pt-other-title')?.classList.toggle('hidden', !isOther);
+        changed.forEach((f) => { f?.classList.remove('is-invalid'); f?.classList.add('pt-ai-filled'); });
+        setTimeout(() => changed.forEach((f) => f?.classList.remove('pt-ai-filled')), 4000);
+        return changed.length;
+    }
+
+    async function aiOrganize(form) {
+        if (ai.busy) return;
+        if (!token()) { aiMsg('請先登入工具箱', 'err'); return; }
+        const text = (form.elements.aiText?.value || '').trim();
+        const fields = aiSnapshot(form);
+        if (!text && !AI_FIELDS.some((n) => n !== 'category' && fields[n].trim())) {
+            aiMsg('先在上面打下你想寫的內容，再按一鍵整理', 'err');
+            form.elements.aiText?.focus();
+            return;
+        }
+        const btn = $('pt-ai-run');
+        ai.busy = true;
+        if (btn) { btn.disabled = true; btn.textContent = '整理中…'; }
+        aiMsg('AI 整理中，大約 10～30 秒，請稍候…');
+        try {
+            const res = await fetch(aiUrl() + '/api/petition/organize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token(), text, fields }),
+                signal: AbortSignal.timeout(150000)
+            });
+            let data = null;
+            try { data = await res.json(); } catch { /* non-JSON */ }
+            if (!data?.ok) throw new Error(data?.error || ('AI 服務暫時無法使用（' + res.status + '）'));
+            ai.undo = fields;
+            const n = aiFill(form, data.fields || {});
+            saveDraft(form);
+            $('pt-ai-undo')?.removeAttribute('hidden');
+            const missing = (data.missing || []).length ? '\n建議補充：' + data.missing.join('、') : '';
+            const left = Number.isFinite(data.remaining) ? '（今天還可以用 ' + data.remaining + ' 次）' : '';
+            aiMsg('✅ 已整理 ' + n + ' 個欄位，請檢查內容再送出' + left + missing, 'ok');
+            form.elements.title?.closest('.acf-field')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (e) {
+            const msg = e?.name === 'TimeoutError' ? 'AI 整理逾時，請再按一次'
+                : e instanceof TypeError ? '連不上 AI 服務（可能剛啟動，請 30 秒後再按一次）'
+                : (e?.message || String(e));
+            aiMsg(msg, 'err');
+        } finally {
+            ai.busy = false;
+            if (btn) { btn.disabled = false; btn.textContent = '✨ 一鍵整理'; }
+        }
+    }
+
+    function aiUndo(form) {
+        if (!ai.undo) return;
+        AI_FIELDS.forEach((name) => { if (form.elements[name]) form.elements[name].value = ai.undo[name]; });
+        $('pt-other-title')?.classList.toggle('hidden', form.elements.category.value !== '其他');
+        ai.undo = null;
+        $('pt-ai-undo')?.setAttribute('hidden', '');
+        saveDraft(form);
+        aiMsg('已復原成整理前的內容');
     }
 
     function previewForm(form) {
@@ -496,11 +601,6 @@
         if (!directorId) missing.push('審核人員');
         pickBox('office').classList.toggle('is-invalid', !officeId);
         if (!officeId) missing.push('總經理室會辦人員');
-        const pickedIds = [managerId, directorId, officeId].filter(Boolean);
-        if (new Set(pickedIds).size !== pickedIds.length) {
-            ['manager', 'director', 'office'].forEach((role) => pickBox(role).classList.add('is-invalid'));
-            missing.push('主管、審核與會辦人員不能是同一人');
-        }
         if (missing.length) {
             setMsg('請補上：' + missing.join('、'), 'err');
             form.querySelector('.is-invalid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -534,7 +634,7 @@
             fillPicker('office', officeId);
             const nextWho = res.petition?.stage === 'director' ? '審核人員 ' + director.name : '部門主管 ' + manager.name;
             flash('✅ 已電子簽名並送出。' + lineText(res.line, nextWho));
-            state.tab = 'mine';
+            state.tab = 'wait';
             state.openId = res.petition?.id || null;
             await loadList();
         } catch (e) {
@@ -547,15 +647,31 @@
 
     /* ---------- 列表 ---------- */
 
+    function listOf(key) {
+        const mine = state.lists.mine;
+        if (key === 'wait') return mine.filter((p) => p.stage !== 'done' && p.stage !== 'rejected');
+        if (key === 'rejected') return mine.filter((p) => p.stage === 'rejected');
+        if (key === 'done') return mine.filter((p) => p.stage === 'done');
+        return state.lists[key] || [];
+    }
+
+    function defaultTab() {
+        return ['todo', 'rejected', 'wait'].find((k) => listOf(k).length) || (listOf('done').length ? 'done' : 'wait');
+    }
+
     function renderTabs() {
         const box = $('pt-tabs');
         if (!box) return;
-        const n = { todo: state.lists.todo.length, mine: state.lists.mine.length, related: state.lists.related.length };
-        box.innerHTML = TABS.map(([key, label]) =>
-            '<button type="button" role="tab" class="pt-tab' + (state.tab === key ? ' is-active' : '') +
-            (key === 'todo' && n.todo ? ' has-todo' : '') + '" data-tab="' + key + '" aria-selected="' + (state.tab === key) + '">' +
-            label + (key in n && state.loaded ? ' <span class="pt-tab-n">' + n[key] + '</span>' : '') + '</button>').join('') +
-            '<button type="button" class="pt-refresh" data-refresh title="重新整理">↻ 重新整理</button>';
+        box.hidden = state.tab === 'new';
+        if (!token()) { box.innerHTML = ''; return; }
+        box.innerHTML = TABS.map(([key, label, hint]) => {
+            const n = state.loaded ? listOf(key).length : null;
+            return '<button type="button" role="tab" class="pt-card pt-card--' + key + (state.tab === key ? ' is-active' : '') +
+                (n ? ' has-n' : n === 0 ? ' is-zero' : '') + '" data-tab="' + key + '" aria-selected="' + (state.tab === key) + '">' +
+                '<span class="pt-card-n">' + (n == null ? '…' : n) + '</span>' +
+                '<span class="pt-card-label">' + label + '</span>' +
+                '<span class="pt-card-hint">' + hint + '</span></button>';
+        }).join('');
     }
 
     function renderPane() {
@@ -565,18 +681,32 @@
         const isNew = state.tab === 'new';
         form.hidden = !isNew;
         list.hidden = isNew;
+        page()?.querySelectorAll('[data-new]').forEach((b) => { if (b.closest('.pt-head')) b.hidden = isNew; });
         if (isNew) { restoreDraft(form); ensureApprovers(); }
         else renderList();
     }
+
+    function page() { return $('page-petition'); }
+
+    const NEW_BTN = '<button type="button" class="pt-new-btn" data-new>✍️ 寫新簽呈</button>';
 
     function renderList(message) {
         const box = $('pt-list');
         if (!box) return;
         if (message) { box.innerHTML = '<p class="acf-empty">' + esc(message) + '</p>'; return; }
         if (!state.loaded) { box.innerHTML = '<p class="acf-empty">讀取中…</p>'; return; }
-        const items = state.lists[state.tab] || [];
-        if (!items.length) { box.innerHTML = '<p class="acf-empty">' + (EMPTY[state.tab] || '') + '</p>'; return; }
-        box.innerHTML = items.map(itemHtml).join('');
+        const items = listOf(state.tab);
+        const tab = TABS.find((t) => t[0] === state.tab);
+        if (!items.length) {
+            const none = !state.lists.mine.length && !state.lists.todo.length && !state.lists.related.length;
+            box.innerHTML = '<div class="pt-empty">' + (none ? '你還沒有任何簽呈。' : EMPTY[state.tab] || '') +
+                (state.tab === 'todo' || state.tab === 'related' ? '' : '<br>' + NEW_BTN) + '</div>';
+            return;
+        }
+        const head = tab ? (tab[2] === '我送出的' ? '我送出的簽呈・' + tab[1] : tab[1]) : '';
+        box.innerHTML = (tab ? '<p class="pt-list-head">' + head + '<small>' + items.length + ' 份・點一下看內容' +
+            (state.tab === 'todo' ? '並簽核' : state.tab === 'rejected' ? '並修改重送' : '') + '</small></p>' : '') +
+            items.map(itemHtml).join('');
         bindSignaturePads(box);
     }
 
@@ -591,25 +721,68 @@
             ['決行', '總經理']
         ];
         return '<ol class="pt-steps">' + steps.map(([label, name], i) => {
-            let cls;
+            let cls, mark = String(i + 1);
             if (p.stage === 'rejected') cls = i < rejectedAt ? 'is-done' : i === rejectedAt ? 'is-rejected' : '';
             else cls = i < idx ? 'is-done' : i === idx ? 'is-current' : '';
-            return '<li class="' + cls + '"><b>' + label + '</b><span>' + esc(name || '—') + '</span></li>';
+            if (cls === 'is-done') mark = '✓';
+            else if (cls === 'is-rejected') mark = '✕';
+            return '<li class="' + cls + '"><i>' + mark + '</i><b>' + label + '</b><span>' + esc(name || '—') + '</span></li>';
         }).join('') + '</ol>';
+    }
+
+    function fmtDay(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        return (d.getFullYear() !== new Date().getFullYear() ? d.getFullYear() + '/' : '') + (d.getMonth() + 1) + '/' + d.getDate();
+    }
+
+    function waited(iso) {
+        const ms = Date.now() - new Date(iso).getTime();
+        if (!Number.isFinite(ms) || ms < 0) return '';
+        const h = Math.floor(ms / 3600000);
+        if (h < 1) return '剛送到';
+        if (h < 24) return '已等 ' + h + ' 小時';
+        return '已等 ' + Math.floor(h / 24) + ' 天';
+    }
+
+    function holderText(p) {
+        if (p.stage === 'manager') return '部門主管 ' + p.managerName;
+        if (p.stage === 'director') return '審核 ' + p.directorName;
+        if (p.stage === 'office') return '總經理室 ' + p.officeName;
+        if (p.stage === 'gm') return '總經理（紙本決行中，由總經理室 ' + p.officeName + ' 上傳）';
+        return '';
+    }
+
+    function nowHtml(p) {
+        if (p.myTurn) {
+            const what = p.stage === 'gm' ? '請上傳總經理決行後的簽呈' : p.stage === 'office' ? '輪到你會辦' : '輪到你電子簽名';
+            return '<span class="pt-row-now pt-row-now--turn">👉 ' + what + ' <em>（' + esc(waited(p.updatedAt || p.createdAt)) + '）</em></span>';
+        }
+        if (p.stage === 'rejected') {
+            const reason = String(p.rejectReason || '').replace(/\s+/g, ' ');
+            return '<span class="pt-row-now pt-row-now--rejected">↩️ 被' + esc(rejectedByText(p)) + ' 退回' +
+                (reason ? '：' + esc(reason.length > 60 ? reason.slice(0, 60) + '…' : reason) : '') + '</span>';
+        }
+        if (p.stage === 'done') return '<span class="pt-row-now pt-row-now--done">✅ 全部簽核完成' + (p.doneAt ? '（' + esc(fmtDay(p.doneAt)) + '）' : '') + '</span>';
+        return '<span class="pt-row-now">⏳ 目前在 <b>' + esc(holderText(p)) + '</b> 手上 <em>（' + esc(waited(p.updatedAt || p.createdAt)) + '）</em></span>';
     }
 
     function itemHtml(p) {
         const [cls, label] = STATUS[p.stage] || ['wait', p.stageLabel];
         const open = state.openId === p.id;
-        return '<div class="acf-item pt-item' + (p.stage === 'done' ? ' is-done' : '') + (open ? ' is-open' : '') + '">' +
-            '<button type="button" class="acf-row" data-open="' + p.id + '" aria-expanded="' + open + '">' +
-            '<span class="acf-row-addr">' + esc(p.title) + '</span>' +
-            '<span class="acf-row-side"><span class="acf-badge pt-badge--' + cls + '">' + label + '</span>' +
-            (p.myTurn ? '<span class="pt-turn">' +
-                (p.stage === 'gm' ? '請上傳決行版' : p.stage === 'office' ? '輪到你會辦' : '輪到你電子簽名') +
-                '</span>' : '') + '</span>' +
-            '<span class="acf-row-meta">' + esc(p.userName) + (p.team ? '（' + esc(p.team) + '）' : '') + '・' + esc(fmtTime(p.createdAt)) +
-            (p.round > 1 ? '・第 ' + p.round + ' 次送出' : '') + '</span>' +
+        const showWho = !p.isMine || state.tab === 'todo' || state.tab === 'related';
+        const more = open ? '▲ 收合' : p.myTurn ? '▼ 點開簽核' : p.isMine && p.stage === 'rejected' ? '▼ 點開修改重送' : '▼ 看內容';
+        return '<div class="acf-item pt-item pt-item--' + (p.myTurn ? 'turn' : cls) + (p.stage === 'done' ? ' is-done' : '') + (open ? ' is-open' : '') + '">' +
+            '<button type="button" class="pt-row" data-open="' + p.id + '" aria-expanded="' + open + '">' +
+            '<span class="pt-row-top"><span class="acf-badge pt-badge--' + cls + '">' + label + '</span>' +
+            (p.myTurn ? '<span class="pt-turn">輪到你</span>' : '') +
+            (p.round > 1 ? '<span class="acf-badge pt-badge--wait">第 ' + p.round + ' 次送出</span>' : '') +
+            '<span class="pt-row-date">' + esc(fmtDay(p.createdAt)) + ' 送出</span></span>' +
+            '<span class="pt-row-title">' + esc(p.title) + '</span>' +
+            nowHtml(p) +
+            (showWho ? '<span class="pt-row-meta">承辦人：' + esc(p.userName) + (p.team ? '（' + esc(p.team) + '）' : '') + '</span>' : '') +
+            '<span class="pt-row-more">' + more + '</span>' +
             '</button>' + stepsHtml(p) +
             (open ? detailHtml(p) : '') + '</div>';
     }
@@ -790,10 +963,12 @@
     function detailHtml(p) {
         const d = state.details[p.id];
         if (!d) return '<div class="acf-detail"><p class="acf-empty">讀取中…</p></div>';
+        const jump = d.myTurn ? '👇 直接到簽核區' : d.isMine && d.stage === 'rejected' ? '👇 直接到修改重送' : '';
         return '<div class="acf-detail">' +
             (d.stage === 'rejected'
                 ? '<div class="pt-rejected"><b>❌ 被' + esc(rejectedByText(d)) + ' 退回</b><p>' + esc(d.rejectReason) + '</p></div>'
                 : '') +
+            (jump ? '<button type="button" class="pt-jump" data-jump>' + jump + '</button>' : '') +
             (d.stage === 'done' ? '<div class="pt-donebox">✅ 全部簽核完成（' + esc(fmtTime(d.doneAt)) + '）</div>' : '') +
             templateHtml(d) +
             (d.note ? '<dl class="acf-kv"><div class="wide"><dt>內部補充說明</dt><dd>' + esc(d.note) + '</dd></div></dl>' : '') +
@@ -891,11 +1066,11 @@
         if (!state.loaded) renderPane();
         try {
             applyLists(await fn({ action: 'list', token: token() }));
-            if (!state.tab) state.tab = state.lists.todo.length ? 'todo' : state.lists.mine.length ? 'mine' : 'new';
+            if (!state.tab) state.tab = defaultTab();
             const all = state.lists.mine.concat(state.lists.todo, state.lists.related);
             if (state.openId && !all.some((p) => p.id === state.openId)) state.openId = null;
-            if (state.openId && state.tab !== 'new' && !(state.lists[state.tab] || []).some((p) => p.id === state.openId)) {
-                const home = ['todo', 'mine', 'related'].find((k) => state.lists[k].some((p) => p.id === state.openId));
+            if (state.openId && state.tab !== 'new' && !listOf(state.tab).some((p) => p.id === state.openId)) {
+                const home = LIST_KEYS.find((k) => listOf(k).some((p) => p.id === state.openId));
                 if (home) state.tab = home;
             }
             renderPane();
@@ -1074,10 +1249,8 @@
             const clear = e.target.closest('[data-clear-sign]');
             if (clear) {
                 clearSignature(clear.dataset.clearSign, clear.closest('form, .acf-detail') || page);
+                return;
             }
-        });
-
-        $('pt-tabs')?.addEventListener('click', (e) => {
             if (e.target.closest('[data-refresh]')) {
                 state.details = {};
                 state.approvers = null;
@@ -1086,9 +1259,22 @@
                 if (state.tab === 'new') ensureApprovers();
                 return;
             }
+            if (e.target.closest('[data-new]')) {
+                if (state.tab !== 'new') state.backTab = state.tab;
+                state.tab = 'new';
+                renderPane();
+                page.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+            if (e.target.closest('[data-back]')) {
+                state.tab = state.backTab && state.backTab !== 'new' ? state.backTab : defaultTab();
+                renderPane();
+                return;
+            }
             const tab = e.target.closest('[data-tab]');
             if (!tab) return;
             state.tab = tab.dataset.tab;
+            state.openId = null;
             renderPane();
         });
 
@@ -1096,6 +1282,8 @@
         list?.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-act]');
             if (btn) { act(btn.dataset.act, btn); return; }
+            const jump = e.target.closest('[data-jump]');
+            if (jump) { jump.closest('.acf-detail')?.querySelector('.pt-act')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
             const row = e.target.closest('[data-open]');
             if (!row) return;
             const id = Number(row.dataset.open);
@@ -1124,6 +1312,8 @@
         });
         form.addEventListener('click', (e) => {
             if (e.target.closest('#pt-preview')) { previewForm(form); return; }
+            if (e.target.closest('#pt-ai-run')) { aiOrganize(form); return; }
+            if (e.target.closest('#pt-ai-undo')) { aiUndo(form); return; }
             if (e.target.closest('#pt-draft-clear')) {
                 if (!window.confirm('確定清空目前填寫的內容與草稿？')) return;
                 form.reset();

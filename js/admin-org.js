@@ -36,7 +36,7 @@
                 ]
             },
             {
-                name: '中區行政組', lead: '戴佳妤',
+                name: '中區行政組', lead: '黃怡婷',
                 people: [
                     P('在職', '魏汕洝', '台中', '115年01月', '租賃管理部', '林盈家'),
                     P('在職', '郭沛琳', '台中', '113年10月', '租賃管理部', '戴佳妤'),
@@ -46,7 +46,7 @@
                     P('在職', '林怡軒', '台中', '115年08月', '中二處', '呂佳融'),
                     P('在職', '呂佳融', '台中', '115年09月', '中三處', '林怡軒'),
                     P('在職', '何虹邑', '台中', '114年12月', '中五處', '王思涵'),
-                    P('在職', '曾意庭', '台中', '115年10月', '中六處'),
+                    P('在職', '曾意庭', '台中', '115年10月', '中四處'),
                     P('在職', '方靖雯', '彰化', '115年06月', '彰一處', '戴佳妤')
                 ]
             },
@@ -84,21 +84,81 @@
         return { now, open, plan: now + open, intern: people.filter(isIntern).length };
     }
 
-    function row(p) {
+    /** 排序：部別（由北到南）→ 營業處（租賃管理部、各處依編號、駐府、工讀生）→ 報到年月（早到晚，待補最後） */
+    const DEPT_ORDER = ['大台北', '台北', '新北', '基隆', '宜蘭', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '花蓮', '台東'];
+    const CN_NUM = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+    const deptRank = (d) => {
+        const i = DEPT_ORDER.indexOf(String(d || '').trim());
+        return i < 0 ? 99 : i;
+    };
+    const officeRank = (o) => {
+        const s = String(o || '').trim();
+        if (s === '租賃管理部') return 0;
+        if (s === '駐府人員') return 800;
+        if (s === '工讀生') return 900;
+        const m = s.match(/^[^\s]{1,3}?([一二三四五六七八九十])處/);
+        return m ? 100 + CN_NUM[m[1]] : s ? 500 : 950;
+    };
+    const joinedRank = (j) => {
+        const m = String(j || '').match(/(\d+)\s*年\s*(\d+)/);
+        return m ? Number(m[1]) * 100 + Number(m[2]) : Infinity;
+    };
+    function sortedPeople(people) {
+        return (people || [])
+            .map((p, i) => ({ p, i }))
+            .sort((a, b) =>
+                deptRank(a.p.dept) - deptRank(b.p.dept) ||
+                String(a.p.dept || '').localeCompare(String(b.p.dept || ''), 'zh-Hant') ||
+                officeRank(a.p.office) - officeRank(b.p.office) ||
+                String(a.p.office || '').localeCompare(String(b.p.office || ''), 'zh-Hant') ||
+                joinedRank(a.p.joined) - joinedRank(b.p.joined) ||
+                a.i - b.i
+            );
+    }
+
+    const view = { data: null, updatedAt: null, canEdit: false, edit: null, busy: false, msg: '' };
+
+    function row(p, gi, i) {
         const open = isOpen(p);
         const intern = isIntern(p);
-        return `<tr class="${open ? 'is-open' : intern ? 'is-intern' : ''}">
+        const editing = view.edit && view.edit.g === gi && view.edit.i === i;
+        return `<tr class="${open ? 'is-open' : intern ? 'is-intern' : ''}${view.canEdit ? ' is-editable' : ''}${editing ? ' is-editing' : ''}"${view.canEdit ? ` data-org-row data-g="${gi}" data-i="${i}" title="點一下修改"` : ''}>
             <td class="ado2-st">${esc(p.status || '在職')}</td>
             <td class="ado2-name">${esc(p.name || (open ? '' : '—'))}</td>
             <td>${esc(p.dept)}</td>
             <td>${esc(p.joined)}</td>
             <td>${esc(p.office)}</td>
             <td>${esc(p.deputy)}</td>
-        </tr>`;
+        </tr>${editing ? editRow(p) : ''}`;
     }
 
-    function group(g) {
+    function editRow(p) {
+        const isNew = view.edit.i === -1;
+        const status = view.edit.status || p.status || '在職';
+        const field = (k, label, ph) => `<label><span>${label}</span><input type="text" data-f="${k}" value="${esc(p[k])}" maxlength="40"${ph ? ` placeholder="${ph}"` : ''} /></label>`;
+        const options = (isNew ? ['待補', '在職'] : ['在職', '離職', '待補']).map((s) => `<option${s === status ? ' selected' : ''}>${s}</option>`).join('');
+        return `<tr class="ado2-edit"><td colspan="6"><div class="ado2-form" data-org-form>
+            <label><span>狀態</span><select data-f="status">${options}</select></label>
+            ${status === '離職' ? `<label class="ado2-leave"><span>離職日 <em>*</em></span><input type="date" data-f="leaveDate" value="${esc(view.edit.leaveDate || '')}" /></label>` : ''}
+            ${status === '在職' ? field('name', '姓名／職稱') : ''}
+            ${field('dept', '部別', '例如 台中')}
+            ${status === '在職' ? field('joined', '報到年月', '例如 115年10月') : ''}
+            ${field('office', '營業處', '例如 中一處')}
+            ${status === '在職' ? field('deputy', '代理人') : ''}
+            ${status === '離職' ? '<p class="ado2-form-hint">儲存後會在後台記錄離職日，這一列轉成「待補」，保留部別與營業處。</p>' : ''}
+            <div class="ado2-form-btns">
+                <button type="button" class="ado2-btn ado2-btn--main" data-org-act="save"${view.busy ? ' disabled' : ''}>${view.busy ? '儲存中…' : '儲存'}</button>
+                <button type="button" class="ado2-btn" data-org-act="cancel">取消</button>
+                ${!isNew && isOpen(p) ? '<button type="button" class="ado2-btn ado2-btn--del" data-org-act="delete">刪除這個待補</button>' : ''}
+                ${view.msg ? `<span class="ado2-form-msg">${esc(view.msg)}</span>` : ''}
+            </div>
+        </div></td></tr>`;
+    }
+
+    function group(g, gi) {
         const s = stats(g);
+        const isNewHere = view.edit && view.edit.g === gi && view.edit.i === -1;
+        const body = sortedPeople(g.people).map(({ p, i }) => row(p, gi, i)).join('');
         return `<section class="ado2-group">
             <header class="ado2-group-head">${esc(g.name)}｜${esc(g.lead || '待補')}</header>
             <div class="ado2-stats">
@@ -107,8 +167,9 @@
             </div>
             <div class="ado2-table-wrap"><table class="ado2-table">
                 <thead><tr><th>狀態</th><th>姓名／職稱</th><th>部別</th><th>報到年月</th><th>營業處</th><th>代理人</th></tr></thead>
-                <tbody>${(g.people || []).map(row).join('') || '<tr><td colspan="6" class="ado2-empty">尚無人員</td></tr>'}</tbody>
+                <tbody>${body || (isNewHere ? '' : '<tr><td colspan="6" class="ado2-empty">尚無人員</td></tr>')}${isNewHere ? editRow(view.edit.draft) : ''}</tbody>
             </table></div>
+            ${view.canEdit && !isNewHere ? `<button type="button" class="ado2-add" data-org-act="add" data-g="${gi}">＋ 新增待補</button>` : ''}
         </section>`;
     }
 
@@ -120,6 +181,7 @@
         }).join('');
         return `<div class="ado2-title">${esc(d.title || DEFAULT.title)}</div>
             <div class="ado2-leads">${leads}</div>
+            ${view.canEdit ? '<p class="ado2-edit-tip">✏️ 你可以修改組織圖：點人員那一列就能改；離職會記離職日並轉成待補。</p>' : ''}
             <div class="ado2-groups">${d.groups.map(group).join('')}</div>
             ${d.note ? `<p class="ado2-note">${esc(d.note)}</p>` : ''}`;
     }
@@ -127,8 +189,121 @@
     function render(data) {
         const root = document.getElementById('admin-org');
         if (!root) return;
+        if (data !== undefined) view.data = data;
         root.classList.add('ado2');
-        root.innerHTML = html(data);
+        root.innerHTML = html(view.data);
+        if (!root.dataset.bound) {
+            root.dataset.bound = '1';
+            root.addEventListener('click', onClick);
+            root.addEventListener('change', onChange);
+        }
+    }
+
+    /** 把表單目前的值收進 view.edit，重畫時不會遺失 */
+    function collect() {
+        const form = document.querySelector('#admin-org [data-org-form]');
+        if (!form || !view.edit) return;
+        form.querySelectorAll('[data-f]').forEach((el) => {
+            const k = el.dataset.f;
+            if (k === 'status') view.edit.status = el.value;
+            else if (k === 'leaveDate') view.edit.leaveDate = el.value;
+            else view.edit.draft[k] = el.value.trim();
+        });
+    }
+
+    function onChange(e) {
+        if (e.target.matches('[data-org-form] [data-f="status"]')) {
+            collect();
+            render();
+        }
+    }
+
+    function onClick(e) {
+        const act = e.target.closest('[data-org-act]');
+        if (act) {
+            const a = act.dataset.orgAct;
+            if (!view.data) return;
+            if (a === 'add') {
+                view.edit = { g: +act.dataset.g, i: -1, status: '待補', draft: { status: '待補', name: '', dept: '', joined: '', office: '', deputy: '' } };
+                view.msg = '';
+                render();
+            } else if (a === 'cancel') {
+                view.edit = null;
+                render();
+            } else if (a === 'save') save();
+            else if (a === 'delete') remove();
+            return;
+        }
+        if (e.target.closest('[data-org-form]')) return;
+        const tr = e.target.closest('[data-org-row]');
+        if (!tr || !view.canEdit || !view.data) return;
+        const g = +tr.dataset.g;
+        const i = +tr.dataset.i;
+        if (view.edit && view.edit.g === g && view.edit.i === i) view.edit = null;
+        else {
+            const p = view.data.groups[g].people[i];
+            view.edit = { g, i, status: p.status || '在職', draft: { ...p } };
+        }
+        view.msg = '';
+        render();
+    }
+
+    function fail(msg) {
+        view.msg = msg;
+        render();
+    }
+
+    async function commit(next, leave) {
+        const auth = window.skyfunAuth;
+        view.busy = true;
+        view.msg = '';
+        render();
+        try {
+            const res = await auth.rpc('admin_org_user_save', { p_token: auth.getToken(), p_data: next, p_updated_at: view.updatedAt, p_leave: leave || null });
+            view.busy = false;
+            if (!res?.ok) return fail(res?.error || '儲存失敗');
+            view.updatedAt = res.updatedAt;
+            view.edit = null;
+            render(next);
+        } catch (err) {
+            view.busy = false;
+            fail(err?.message || '儲存失敗，請稍後再試');
+        }
+    }
+
+    function save() {
+        if (view.busy || !view.edit) return;
+        collect();
+        const { g, i, status, draft } = view.edit;
+        const next = JSON.parse(JSON.stringify(view.data));
+        const people = next.groups[g].people;
+        const old = i >= 0 ? people[i] : null;
+        let leave = null;
+        let rowData;
+        if (status === '離職') {
+            if (!view.edit.leaveDate) return fail('請填離職日');
+            leave = { name: old.name, group: next.groups[g].name, dept: draft.dept, office: draft.office, joined: old.joined, date: view.edit.leaveDate };
+            rowData = { status: '待補', name: '', dept: draft.dept, joined: '', office: draft.office, deputy: '' };
+        } else if (status === '待補') {
+            if (!draft.office) return fail('請填營業處');
+            rowData = { status: '待補', name: '', dept: draft.dept, joined: '', office: draft.office, deputy: '' };
+        } else {
+            if (!draft.name) return fail('請填姓名');
+            rowData = { status: '在職', name: draft.name, dept: draft.dept, joined: draft.joined, office: draft.office, deputy: draft.deputy };
+        }
+        if (old && old.status !== '待補' && status === '待補') return fail('在職人員離開請選「離職」並填離職日');
+        if (i >= 0) people[i] = rowData;
+        else people.push(rowData);
+        commit(next, leave);
+    }
+
+    function remove() {
+        if (view.busy || !view.edit || view.edit.i < 0) return;
+        const p = view.data.groups[view.edit.g].people[view.edit.i];
+        if (!isOpen(p) || !confirm(`刪除「${p.office || ''}」這個待補職缺？`)) return;
+        const next = JSON.parse(JSON.stringify(view.data));
+        next.groups[view.edit.g].people.splice(view.edit.i, 1);
+        commit(next, null);
     }
 
     let loaded = false;
@@ -139,14 +314,17 @@
         loaded = true;
         try {
             const res = await auth.rpc('admin_org_get', { p_token: token });
-            if (res?.ok && res.data) render(res.data);
+            if (res?.ok && res.data) {
+                view.updatedAt = res.updatedAt || null;
+                view.canEdit = !!res.canEdit;
+                render(res.data);
+            }
         } catch {
             loaded = false;
         }
     }
 
-    window.AdminOrg = { DEFAULT, html, stats, isOpen, isIntern };
-
+    window.AdminOrg = { DEFAULT, html, stats, isOpen, isIntern, sortedPeople };
     const start = () => {
         render(null);
         load();

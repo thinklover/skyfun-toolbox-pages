@@ -9,7 +9,7 @@
     { key: 'obj', label: '物審', points: 1 },
     { key: 'tenant', label: '房客', points: 1 },
     { key: 'pre', label: '預審', points: 1 },
-    { key: 'rev', label: '複審', points: 1, pointsText: '10/12起2點' },
+    { key: 'rev', label: '複審', points: 1, pointsText: '2點' },
     { key: 'p4', label: '四期產編', points: 1 },
     { key: 'p5', label: '五期產編', points: 2 },
     { key: 'repair', label: '修繕', points: 1 },
@@ -41,24 +41,31 @@
     { key: 'term', label: '解約' },
     { key: 'lvr', label: '實價登錄' }
   ];
-  /** 教育訓練項目：執行要點、清冊只有訓練、沒有實務件數 */
-  const TRAINING_NODES = [{ key: 'guide', label: '執行要點', general: true }, ...SKILL_NODES, { key: 'roster', label: '清冊', general: true }];
-  /** 秘書通識課程：執行要點 30%、其餘 7 項各 10%；專案課程各自獨立 100 分 */
-  const GENERAL_COURSE = [
-    { key: 'guide', weight: 30 },
-    { key: 'obj', weight: 10 },
-    { key: 'tenant', weight: 10 },
-    { key: 'pre', weight: 10 },
-    { key: 'rev', weight: 10 },
-    { key: 'p4', weight: 10 },
-    { key: 'p5', weight: 10 },
-    { key: 'term', weight: 10 }
+  /** 行政教育訓練五週課表；不是技能節點的項目（general）只有訓練、沒有實務件數 */
+  const TRAINING_EXTRA = { guide: '執行要點', weekly: '週報', repair: '修繕', bonus: '媒合費獎金管理', hr: '人員到職與離職資料輸入', guild: '送公會資料準備', roster: '清冊' };
+  const TRAINING_WEEKS = [
+    ['guide', 'obj', 'tenant'],
+    ['pre', 'rev'],
+    ['p4', 'p5', 'weekly'],
+    ['term', 'repair'],
+    ['bonus', 'hr', 'guild']
   ];
-  const PROJECT_COURSE = ['lvr', 'roster'];
+  /** 專案課程排在五週之後，每科各自 100 分，不併入訓練總分 */
+  const TRAINING_PROJECTS = ['lvr', 'roster'];
+  const trainingNode = (key, extra) => {
+    const sk = SKILL_NODES.find((n) => n.key === key);
+    return sk ? { ...sk, ...extra } : { key, label: TRAINING_EXTRA[key], general: true, ...extra };
+  };
+  const TRAINING_NODES = [
+    ...TRAINING_WEEKS.flatMap((keys, i) => keys.map((key) => trainingNode(key, { week: i + 1 }))),
+    ...TRAINING_PROJECTS.map((key) => trainingNode(key, { project: true }))
+  ];
   /** 有教學影片＋線上考試的課程 */
   const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev'];
-  /** 實作用的模擬公司系統環境還在建置，完成前實作一律未完成 */
-  const PRACTICE_READY = false;
+  /** 已開放模擬系統實作的課程；其他課程的模擬環境還在建置，實作一律顯示準備中 */
+  const PRACTICE_COURSES = ['obj'];
+  /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */
+  const TRAINING_TESTERS = ['簡為倢', '邱奕棋'];
 
   /**
    * 教育訓練通過判定
@@ -73,28 +80,31 @@
       return { ready: true, done: ok, progress: rate || 0, steps: [{ key: 'exam', label: '考試全部滿分', ok }] };
     }
     if (!VIDEO_COURSES.includes(key)) return { ready: false, done: false, progress: 0, steps: [] };
+    const practiceReady = PRACTICE_COURSES.includes(key);
     const steps = [
       { key: 'video', label: '看完影片', ok: !!s.videoDone },
       { key: 'exam', label: '考試滿分', ok: !!s.examPassed },
-      { key: 'practice', label: '實作', ok: PRACTICE_READY && !!s.practiceDone, pending: !PRACTICE_READY }
+      { key: 'practice', label: '實作', ok: practiceReady && !!s.practiceDone, pending: !practiceReady }
     ];
     const n = steps.filter((x) => x.ok).length;
     return { ready: true, done: n === steps.length, progress: n / steps.length, steps };
   }
 
   /**
-   * 各課程分數＝通過條件完成比例 ×100（執行要點依考試進度）
+   * 各項分數＝通過條件完成比例 ×100（執行要點依考試進度）；總分＝所有項目平均
    * @param stateOf (key) => trainingState(...)
    */
   function courseScores(stateOf) {
     const labelOf = new Map(TRAINING_NODES.map((n) => [n.key, n.label]));
     const nodeScore = (key) => Math.round((stateOf(key)?.progress || 0) * 100);
-    const general = GENERAL_COURSE.map((c) => ({ key: c.key, label: labelOf.get(c.key), weight: c.weight, score: nodeScore(c.key) }));
-    return {
-      general,
-      generalScore: general.reduce((s, c) => s + c.score * c.weight, 0) / 100,
-      projects: PROJECT_COURSE.map((key) => ({ key, label: labelOf.get(key), score: nodeScore(key) }))
-    };
+    const avg = (list) => (list.length ? list.reduce((s, c) => s + c.score, 0) / list.length : 0);
+    const weeks = TRAINING_WEEKS.map((keys, i) => {
+      const items = keys.map((key) => ({ key, label: labelOf.get(key), score: nodeScore(key) }));
+      return { week: i + 1, items, score: avg(items) };
+    });
+    const all = weeks.flatMap((w) => w.items);
+    const projects = TRAINING_PROJECTS.map((key) => ({ key, label: labelOf.get(key), score: nodeScore(key) }));
+    return { weeks, general: all, generalScore: avg(all), projects };
   }
   const STAGE_1 = 250;
   const STAGE_2 = 350;
@@ -390,6 +400,7 @@
         people.get(name).kind = s.kind;
       }
     }
+    for (const name of TRAINING_TESTERS) person(name);
 
     const sheet = sheetTotals(start, end);
     if (sheet) for (const name of Object.keys(sheet.totals)) if (!skipResigned(name)) person(name);
@@ -435,12 +446,21 @@
   /**
    * 行政人員每月進度：只列人力明細在職者；正職依月累計排名（同分同名次），工讀生另表。
    * @param result compute() 結果
-   * @param opts { staff, checks:[{name,checked,correct}] }
+   * @param opts { staff, checks:[{name,checked,correct,date}], asOf?: 只算到這天（週報用；不套表單校正） }
    */
   function monthlyReport(result, opts) {
     const byName = new Map(result.people.map((p) => [p.name, p]));
+    const asOf = opts.asOf && opts.asOf < result.end ? opts.asOf : '';
+    const pointsOf = (p) => {
+      if (!p) return 0;
+      if (!asOf) return p.month.total;
+      let s = 0;
+      for (const [d, t] of p.days) if (d <= asOf) s += t.total;
+      return s;
+    };
     const checks = new Map();
     for (const c of opts.checks || []) {
+      if (asOf && c.date > asOf) continue;
       const t = checks.get(c.name) || { checked: 0, correct: 0 };
       t.checked += Number(c.checked) || 0;
       t.correct += Number(c.correct) || 0;
@@ -449,7 +469,7 @@
     const rows = (opts.staff || [])
       .filter((s) => s.status === '在職')
       .map((s) => {
-        const points = byName.get(s.name)?.month.total || 0;
+        const points = pointsOf(byName.get(s.name));
         const ck = checks.get(s.name) || { checked: 0, correct: 0 };
         const stage = stageOf(points);
         return {
@@ -672,6 +692,46 @@
   function kpiRegionOfCity(city) {
     const s = String(city || '').replace(/臺/g, '台').slice(0, 2);
     return KPI_REGIONS.includes(s) ? s : '';
+  }
+
+  /** 北／中／南區 → 區內的 KPI 地區（例：中區＝台中、彰化、南投） */
+  function kpiRegionsOfAreas(areas) {
+    const want = new Set(areas || []);
+    const cities = TAKEUP_AREAS.filter((a) => want.has(a.name)).flatMap((a) => a.regions.flatMap(([, list]) => list));
+    const hit = new Set(cities.map(kpiRegionOfCity).filter(Boolean));
+    return KPI_REGIONS.filter((g) => hit.has(g));
+  }
+
+  /** 清冊／審件作業良率：（總件數 − 錯誤件數）÷ 總件數 */
+  const kpiErrRate = (x) => (x && x.total ? Math.max(0, (x.total - x.err) / x.total) : null);
+
+  /**
+   * 清冊／審件作業良率的件數（各地區KPI指標、組長週報共用）：清冊＝表單04＋07，審件＝起租已生效案件，
+   * 錯誤＝該公會期數的清冊／案件意見（沒填縣市的案件意見依媒合編號推地區）。
+   * @returns { roster, audit：{ 全區|地區: { total, err } }, errors：意見加上 area }
+   */
+  function kpiQuality(r04, r07, cases, opinions) {
+    const regions = ['全區', ...KPI_REGIONS];
+    const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
+    const roster = blank();
+    const audit = blank();
+    for (const d of [r04, r07]) {
+      for (const [region, , , n] of d?.rows || []) {
+        if (roster[region]) roster[region].total += n;
+        roster['全區'].total += n;
+      }
+    }
+    for (const [region, , n] of cases?.rows || []) {
+      audit['全區'].total += n;
+      if (audit[region]) audit[region].total += n;
+    }
+    const errors = (opinions || []).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
+    for (const o of errors) {
+      const bucket = o.kind === 'roster' ? roster : audit;
+      bucket['全區'].err += 1;
+      if (o.area && bucket[o.area]) bucket[o.area].err += 1;
+    }
+    return { roster, audit, errors };
   }
 
   /** 人力明細的地區 → KPI 地區（大台北的行政算在台北） */
@@ -1101,7 +1161,11 @@
         doers: it.doers
       };
     });
-    const training = TRAINING_NODES.map((tn) => (tn.general ? { key: tn.key, label: tn.label, general: true } : skills.find((s) => s.key === tn.key)));
+    const training = TRAINING_NODES.map((tn) =>
+      tn.general
+        ? { key: tn.key, label: tn.label, general: true, week: tn.week, project: tn.project }
+        : { ...skills.find((s) => s.key === tn.key), week: tn.week, project: tn.project }
+    );
 
     return {
       name,
@@ -1287,6 +1351,127 @@
     };
   }
 
+  /**
+   * 房客審核者地區：房審沒有地址，依房客管理查到的縣市分區；列出每位審核人的房審落在哪些地區。
+   * @param opts { start, end, staff, tenantCities: Map(房客 targetId → 縣市) }
+   */
+  function tenantReviewerReport(auditRows, opts) {
+    const tenantCities = opts.tenantCities || new Map();
+    const staffNames = new Set((opts.staff || []).map((s) => s.name));
+    const staff = (opts.staff || []).map((s) => ({ ...s, status: '在職' }));
+    const res = compute(auditRows, { start: opts.start, end: opts.end, staff, manual: [], expenses: [], terminations: [] });
+    const rows = [];
+    for (const p of res.people) {
+      const recs = p.records.filter((r) => r.item === 'tenant');
+      if (!recs.length) continue;
+      const regions = new Map();
+      let unknown = 0;
+      for (const r of recs) {
+        const region = TAKEUP_REGION_OF_CITY.get(tenantCities.get(String(r.targetId)) || '');
+        if (!region) unknown += 1;
+        else regions.set(region, (regions.get(region) || 0) + 1);
+      }
+      const list = [...regions.entries()].sort((a, b) => b[1] - a[1] || regionRank(a[0]) - regionRank(b[0]));
+      rows.push({ name: p.name, isStaff: staffNames.has(p.name), total: recs.length, regions: list, main: list[0]?.[0] || '', unknown });
+    }
+    rows.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'zh-Hant'));
+    return { rows, total: rows.reduce((s, r) => s + r.total, 0), unknown: rows.reduce((s, r) => s + r.unknown, 0) };
+  }
+
+  /** 行政每週進度：北中南三區，正職在職行政每週的累積點數（業績月第一天起）與當週抽查良率 */
+  const PROGRESS_AREAS = ['北區', '中區', '南區'];
+  function weeklyProgress(result, opts) {
+    const byName = new Map(result.people.map((p) => [p.name, p]));
+    const weeks = opts.weeks || [];
+    const asOf = opts.asOf || result.end;
+    const rows = (opts.staff || [])
+      .filter((s) => s.status === '在職' && s.kind !== '工讀生')
+      .map((s) => {
+        const p = byName.get(s.name);
+        const cells = weeks.map((w) => {
+          if (w.start > asOf) return null;
+          const end = w.end < asOf ? w.end : asOf;
+          let points = 0;
+          if (p) for (const [d, t] of p.days) if (d <= end) points += t.total;
+          let checked = 0;
+          let correct = 0;
+          for (const c of opts.checks || []) {
+            if (c.name !== s.name || c.date < w.start || c.date > end) continue;
+            checked += Number(c.checked) || 0;
+            correct += Number(c.correct) || 0;
+          }
+          return { points, checked, correct, rate: checked ? correct / checked : null };
+        });
+        const last = cells.filter(Boolean).pop();
+        const points = last ? last.points : 0;
+        return {
+          name: s.name,
+          area: areaOfRegion(s.region) || '其他',
+          region: s.region || '',
+          hire: rocYearMonth(s.hireDate),
+          project: s.project || '',
+          points,
+          stageLabel: stageLabel(stageOf(points)),
+          weeks: cells
+        };
+      });
+    const byPoints = (a, b) => b.points - a.points || a.name.localeCompare(b.name, 'zh-Hant');
+    const names = [...PROGRESS_AREAS, ...new Set(rows.map((r) => r.area).filter((a) => !PROGRESS_AREAS.includes(a)))];
+    const areas = names
+      .map((name) => ({ name, rows: rows.filter((r) => r.area === name).sort((a, b) => regionRank(a.region) - regionRank(b.region) || byPoints(a, b)) }))
+      .filter((a) => a.rows.length);
+    return { weeks, asOf, areas, total: rows.length };
+  }
+
+  /** 系統作業效率：七個作業節點的完成次數、行政占比、耗時中位數與時間分布（耗時排除 0 秒） */
+  const EFFICIENCY_NODES = DURATION_NODES.filter((n) => n.key !== 'px');
+  function efficiencyReport(auditRows, opts) {
+    const admin = new Set((opts.staff || []).flatMap((s) => [s.name, s.leader]).filter(Boolean));
+    const seen = new Set();
+    const nodes = new Map(EFFICIENCY_NODES.map((n) => [n.key, { key: n.key, label: n.label, count: 0, secs: [] }]));
+    const out = { start: opts.start, end: opts.end, total: 0, local: 0, other: 0, zero: 0, under10: 0, timed: 0, lastTime: '' };
+    for (const r of auditRows) {
+      if (r.date < opts.start || r.date > opts.end) continue;
+      if (r.id != null) {
+        const k = `${r.type}|${r.id}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+      }
+      const n = nodes.get(durationNode(r));
+      if (!n) continue;
+      out.total += 1;
+      n.count += 1;
+      if (admin.has(String(r.auditor || '').trim())) out.local += 1;
+      else out.other += 1;
+      if (r.time && r.time > out.lastTime) out.lastTime = r.time;
+      const sec = r.duration == null || r.duration === '' ? NaN : Number(r.duration);
+      if (!Number.isFinite(sec) || sec < 0) continue;
+      if (sec === 0) {
+        out.zero += 1;
+        continue;
+      }
+      if (sec < 10) out.under10 += 1;
+      n.secs.push(sec);
+    }
+    out.nodes = [...nodes.values()].map((n) => {
+      const t = n.secs.length;
+      const share = (f) => (t ? n.secs.filter(f).length / t : null);
+      return {
+        key: n.key,
+        label: n.label,
+        count: n.count,
+        timed: t,
+        median: median(n.secs),
+        under5: share((s) => s < 300),
+        mid: share((s) => s >= 300 && s < 1800),
+        over30: share((s) => s >= 1800)
+      };
+    });
+    out.timed = out.nodes.reduce((s, n) => s + n.timed, 0);
+    out.localRate = out.total ? out.local / out.total : null;
+    return out;
+  }
+
   function formatDuration(sec) {
     if (sec == null || !Number.isFinite(sec)) return '';
     const s = Math.round(sec);
@@ -1302,9 +1487,11 @@
     AUTO_ITEMS,
     SKILL_NODES,
     TRAINING_NODES,
-    GENERAL_COURSE,
-    PROJECT_COURSE,
+    TRAINING_WEEKS,
+    TRAINING_PROJECTS,
     VIDEO_COURSES,
+    PRACTICE_COURSES,
+    TRAINING_TESTERS,
     trainingState,
     courseScores,
     DURATION_NODES,
@@ -1320,7 +1507,10 @@
     KPI_REGIONS,
     kpiRegionOfCaseNo,
     kpiRegionOfCity,
+    kpiErrRate,
+    kpiQuality,
     kpiRegionOfStaff,
+    kpiRegionsOfAreas,
     kpiStageReport,
     cityRank,
     regionRank,
@@ -1332,6 +1522,12 @@
     weeksOf,
     takeupWeeks,
     takeupReport,
+    tenantReviewerReport,
+    PROGRESS_AREAS,
+    weeklyProgress,
+    EFFICIENCY_NODES,
+    efficiencyReport,
+    areaOfRegion,
     weeklyReport,
     estimateBonus,
     eligibleAt,

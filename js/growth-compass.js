@@ -220,12 +220,18 @@
     if (state.exam) return;
     state.exam = { loading: true, map: new Map() };
     try {
-      const [res, course] = await Promise.all([rpc('guide_exam_overview'), rpc('course_exam_overview').catch(() => null)]);
+      const [res, course, sim] = await Promise.all([
+        rpc('guide_exam_overview'),
+        rpc('course_exam_overview').catch(() => null),
+        rpc('sim_obj_overview').catch(() => null)
+      ]);
       state.exam = {
         total: Number(res.total) || 0,
         map: new Map((res.items || []).map((x) => [x.name, x])),
         course: new Map((course?.items || []).map((x) => [`${x.course}|${x.name}`, x])),
-        video: new Map((course?.videos || []).map((x) => [`${x.course}|${x.name}`, x]))
+        video: new Map((course?.videos || []).map((x) => [`${x.course}|${x.name}`, x])),
+        simTarget: Number(sim?.target) || 3,
+        sim: new Map((sim?.items || []).map((x) => [x.name, Number(x.passes) || 0]))
       };
     } catch (e) {
       state.exam = { error: e.message, map: new Map() };
@@ -239,7 +245,7 @@
     { key: 'speed', label: '速度', hint: '通識節點審核耗時各自在同仁中的名次換算，實價登錄不計' },
     { key: 'quality', label: '品質', hint: '組長抽查良率：80% 以下 0 分、100% 滿分' },
     { key: 'conduct', label: '紀律', hint: '沒有客訴與懲處就是滿分' },
-    { key: 'learn', label: '學習', hint: '秘書通識課程總分：執行要點 30%（依考試進度）＋其餘 7 項各 10%（看完影片、考試滿分、實作完成各占 1／3；不計入評等）' }
+    { key: 'learn', label: '學習', hint: '行政教育訓練（五週 13 項）平均分數：執行要點依考試進度，有影片的課程看完影片、考試滿分、實作完成各占 1／3（不計入評等）' }
   ];
   /** 歷年經手幾件以上算「已上手」 */
   const PRACTICE_MIN = 5;
@@ -262,6 +268,7 @@
     const stateOf = (key) => Core.trainingState(key, {
       videoDone: !!ex?.video?.get(`${key}|${name}`)?.completedAt,
       examPassed: !!ex?.course?.get(`${key}|${name}`)?.passed,
+      practiceDone: key === 'obj' && (ex?.sim?.get(name) || 0) >= ex?.simTarget,
       guideRate: examRate
     });
     const done = new Set(nodes.filter((n) => stateOf(n.key).done).map((n) => n.key));

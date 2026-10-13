@@ -164,14 +164,17 @@
     const Core = window.AdminPointsCore;
     const cx = window.CourseExam;
     const gx = window.GuideExam?.progressOf(pf.name);
+    const sim = window.SimPractice;
     const untrained = Core?.trainingState && cx?.statusOf(Core.VIDEO_COURSES[0], pf.name)?.loaded
       ? (pf.training || []).filter((t) => {
           const c = cx.has(t.key) ? cx.statusOf(t.key, pf.name) : null;
-          const st = Core.trainingState(t.key, { videoDone: c?.video?.done, examPassed: c?.passed, guideRate: gx?.loaded && gx.total ? gx.passed / gx.total : null });
-          return st.steps.some((x) => !x.ok && !x.pending);
+          const p = sim?.statusOf(t.key, pf.name);
+          const st = Core.trainingState(t.key, { videoDone: c?.video?.done, examPassed: c?.passed, practiceDone: p?.done, guideRate: gx?.loaded && gx.total ? gx.passed / gx.total : null });
+          // 實作進度還沒讀到前不當成未完成
+          return st.steps.some((x) => !x.ok && !x.pending && (x.key !== 'practice' || p?.loaded));
         }).map((t) => t.label)
       : [];
-    if (untrained.length) add('教育訓練', `影片或考試還沒完成的教育訓練：${untrained.slice(0, 4).join('、')}${untrained.length > 4 ? ` 等 ${untrained.length} 項` : ''}，到點數表教育訓練看完影片、考完試`);
+    if (untrained.length) add('教育訓練', `影片、考試或實作還沒完成的教育訓練：${untrained.slice(0, 4).join('、')}${untrained.length > 4 ? ` 等 ${untrained.length} 項` : ''}，到點數表教育訓練看完影片、考完試、完成模擬系統實作`);
 
     const targets = [];
     if (areas.has('點數產出') && pt.avg && pt.total < pt.avg) targets.push(`兩週內月累積追到行政平均 ${Math.ceil(pt.avg)} 點`);
