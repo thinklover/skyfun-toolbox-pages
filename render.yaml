@@ -1,0 +1,22 @@
+# 簽呈 AI 一鍵整理（獨立 Render 服務；此分支只放 AI 服務，不會觸發工具箱正式站部署）
+services:
+  - type: web
+    name: skyfun-petition-ai
+    runtime: node
+    plan: starter
+    region: singapore
+    rootDir: services/petition-ai
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22.13.0"
+      - key: CURSOR_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        value: https://xpbownhiedurytlyqszu.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYm93bmhpZWR1cnl0bHlxc3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNzM1NTYsImV4cCI6MjEwMTg0OTU1Nn0.UsrQ042IYFNwPn31LfkpYGAZP6Gg4blf2O0JSMUvk5Q
+      - key: CURSOR_MODEL
+        value: claude-haiku-5-5
