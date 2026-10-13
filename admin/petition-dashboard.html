@@ -5,54 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>簽呈簽核後台 — 星鴻工具箱</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
   <script src="../js/supabase-config.js"></script>
   <style>
-    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-    input, select, textarea { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.45rem 0.7rem; color: #f8fafc; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th, td { padding: 0.55rem 0.5rem; text-align: left; border-bottom: 1px solid #334155; vertical-align: top; }
-    th { color: #94a3b8; font-weight: 700; white-space: nowrap; }
+    table { font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; vertical-align: top; }
     td.nw { white-space: nowrap; }
-    tr.row { cursor: pointer; }
-    tr.row:hover td { background: rgba(45, 212, 191, 0.07); }
-    tr.row.is-open td { background: rgba(45, 212, 191, 0.12); }
-    .muted { color: #64748b; }
-    .badge { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 700; }
-    .b-wait { background: #0c4a6e; color: #7dd3fc; }
-    .b-done { background: #064e3b; color: #6ee7b7; }
-    .b-rejected { background: #7f1d1d; color: #fca5a5; }
-    .chip { font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 999px; border: 1px solid #475569; color: #cbd5e1; background: #0f172a; font-weight: 700; }
-    .chip.is-active { background: #0f766e; border-color: #14b8a6; color: #fff; }
-    .detail { background: #0f172a; border-top: 2px solid #2dd4bf; }
+    .badge { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 800; }
+    .b-wait { background: #dbeafe; color: #1d4ed8; }
+    .b-done { background: #d1fae5; color: #065f46; }
+    .b-rejected { background: #fee2e2; color: #b91c1c; }
+    .chip { font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 999px; border: 1px solid #cbd5e1; color: #334155; background: #fff; font-weight: 800; cursor: pointer; }
+    .chip.is-active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .detail { background: #f8fafc; border-top: 2px solid #6366f1; }
     .kv { display: grid; grid-template-columns: 1fr; gap: 0.5rem 1.25rem; }
     @media (min-width: 768px) { .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .kv .wide { grid-column: 1 / -1; }
-    .kv dt { font-size: 0.72rem; color: #94a3b8; }
-    .kv dd { font-size: 0.88rem; color: #f1f5f9; white-space: pre-wrap; word-break: break-word; margin: 0.1rem 0 0; }
-    .act { font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 0.5rem; font-weight: 700; }
-    .warn { color: #fbbf24; }
+    .kv dt { font-size: 0.72rem; color: #64748b; font-weight: 700; }
+    .kv dd { font-size: 0.88rem; color: #0f172a; white-space: pre-wrap; word-break: break-word; margin: 0.1rem 0 0; }
+    .act { font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 0.5rem; font-weight: 800; }
     .approver-head, .approver-row { display: grid; grid-template-columns: minmax(12rem, 1fr) 6rem 6rem 8rem; align-items: center; gap: 0.5rem; }
-    .approver-head { position: sticky; top: 0; z-index: 1; padding: 0.45rem 0.65rem; background: #334155; color: #cbd5e1; font-size: 0.75rem; font-weight: 800; }
-    .approver-row { padding: 0.5rem 0.65rem; border-bottom: 1px solid #334155; }
-    .approver-row:hover { background: rgba(45, 212, 191, 0.06); }
+    .approver-head { position: sticky; top: 0; z-index: 1; padding: 0.45rem 0.65rem; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 800; }
+    .approver-row { padding: 0.5rem 0.65rem; border-bottom: 1px solid #e2e8f0; }
+    .approver-row:hover { background: #eef2ff; }
     .approver-check { display: flex; justify-content: center; }
-    .approver-check input { width: 1.15rem; height: 1.15rem; accent-color: #14b8a6; }
+    .approver-check input { width: 1.15rem; height: 1.15rem; accent-color: #4f46e5; }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
   <header>
-    <h1 class="text-2xl font-black text-teal-300">簽呈簽核後台</h1>
-    <p class="text-slate-400 text-sm mt-1">承辦人電子簽 → 部門主管電子簽 → 經理／協理電子簽 → 總經理室會辦 → 總經理紙本決行 · <a class="text-teal-300 underline" href="../index.html?page=petition">回工具箱</a></p>
+    <div class="topbar">
+      <h1>簽呈簽核後台</h1>
+      <a class="back" href="../index.html?page=petition">← 回工具箱</a>
+    </div>
+    <p class="lead">承辦人電子簽 → 部門主管電子簽 → 經理／協理電子簽 → 總經理室會辦 → 總經理紙本決行</p>
   </header>
 
-  <section class="card p-4 space-y-3" id="login-panel">
-    <label class="block text-sm text-slate-400">後台密碼（Supabase admin_secret）</label>
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">後台密碼（Supabase admin_secret）</label>
     <div class="flex flex-wrap gap-2">
       <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
-      <button type="button" id="btn-login" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-bold">連線</button>
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
     </div>
-    <p id="login-msg" class="text-sm text-rose-300 hidden"></p>
+    <p id="login-msg" class="text-sm err hidden"></p>
   </section>
 
   <section class="card p-4 hidden space-y-1" id="info-panel">
@@ -63,10 +58,10 @@
   <section class="card p-4 hidden space-y-3" id="approver-panel">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
-        <h2 class="text-lg font-black text-teal-300">可選的主管、審核與總經理室會辦人員</h2>
+        <h2 class="section-h">可選的主管、審核與總經理室會辦人員</h2>
         <p class="text-sm text-slate-400">勾選後，承辦人送簽時只會看到這些人；同一帳號可具備多種資格，但同一份簽呈的主管、審核與會辦需由不同人處理。</p>
       </div>
-      <button type="button" id="btn-approver-save" class="act bg-teal-600 text-white">儲存勾選名單</button>
+      <button type="button" id="btn-approver-save" class="btn btn-main">儲存勾選名單</button>
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <input type="search" id="approver-q" placeholder="搜尋姓名／帳號／處別" class="flex-1 min-w-[12rem]" />
@@ -81,7 +76,7 @@
 
   <section class="card p-4 hidden space-y-3" id="main-panel">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="text-lg font-black text-teal-300">簽呈列表</h2>
+      <h2 class="section-h">簽呈列表</h2>
       <p class="text-sm text-slate-400" id="count">—</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
@@ -96,7 +91,7 @@
         <button type="button" class="chip" data-stage="rejected">已退回</button>
       </div>
       <input type="search" id="q" placeholder="搜尋主旨／承辦人／部門／處理人" class="flex-1 min-w-[12rem]" />
-      <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
+      <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
     </div>
     <p id="msg" class="text-sm text-slate-400"></p>
     <div class="overflow-x-auto">

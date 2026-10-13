@@ -7,62 +7,58 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
   <script src="../js/supabase-config.js"></script>
   <style>
-    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-    input, select, textarea { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.45rem 0.7rem; color: #f8fafc; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th, td { padding: 0.55rem 0.5rem; text-align: left; border-bottom: 1px solid #334155; vertical-align: top; }
-    th { color: #94a3b8; font-weight: 700; white-space: nowrap; }
+    table { font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; vertical-align: top; }
     td.nw { white-space: nowrap; }
-    tr.row { cursor: pointer; }
-    tr.row:hover td { background: rgba(45, 212, 191, 0.07); }
-    tr.row.is-open td { background: rgba(45, 212, 191, 0.12); }
-    .muted { color: #64748b; }
-    .badge { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 700; }
-    .b-pending { background: #78350f; color: #fcd34d; }
-    .b-done { background: #064e3b; color: #6ee7b7; }
-    .b-rejected { background: #7f1d1d; color: #fca5a5; }
-    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 0.65rem; padding: 0.6rem 0.75rem; }
+    .badge { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 800; }
+    .b-pending { background: #fef3c7; color: #92400e; }
+    .b-done { background: #d1fae5; color: #065f46; }
+    .b-rejected { background: #fee2e2; color: #b91c1c; }
+    .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.65rem; padding: 0.6rem 0.75rem; }
     .stat[data-status] { cursor: pointer; }
-    .stat.is-active { border-color: #2dd4bf; box-shadow: 0 0 0 1px #2dd4bf inset; }
-    .stat b { display: block; font-size: 1.5rem; color: #f8fafc; line-height: 1.2; }
-    .stat span { font-size: 0.75rem; color: #94a3b8; }
-    .stat small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 0.1rem; }
-    .detail { background: #0f172a; border-top: 2px solid #2dd4bf; }
+    .stat.is-active { border-color: #4f46e5; box-shadow: 0 0 0 1px #4f46e5 inset; }
+    .stat b { display: block; font-size: 1.35rem; color: #1e1b4b; line-height: 1.2; }
+    .stat span { font-size: 0.75rem; color: #64748b; }
+    .stat small { display: block; font-size: 0.7rem; color: #94a3b8; margin-top: 0.1rem; }
+    .detail { background: #f8fafc; border-top: 2px solid #6366f1; }
     .kv { display: grid; grid-template-columns: 1fr; gap: 0.5rem 1.25rem; }
     @media (min-width: 768px) { .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .kv .wide { grid-column: 1 / -1; }
-    .kv dt { font-size: 0.72rem; color: #94a3b8; }
-    .kv dd { font-size: 0.88rem; color: #f1f5f9; white-space: pre-wrap; word-break: break-word; margin: 0.1rem 0 0; }
-    .act { font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 0.5rem; font-weight: 700; }
-    .flt label { display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.2rem; }
+    .kv dt { font-size: 0.72rem; color: #64748b; font-weight: 700; }
+    .kv dd { font-size: 0.88rem; color: #0f172a; white-space: pre-wrap; word-break: break-word; margin: 0.1rem 0 0; }
+    .act { font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 0.5rem; font-weight: 800; }
+    .flt label { display: block; font-size: 0.72rem; color: #64748b; margin-bottom: 0.2rem; font-weight: 700; }
     .flt select, .flt input { width: 100%; font-size: 0.85rem; }
-    .chip { font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 999px; border: 1px solid #475569; color: #cbd5e1; background: #0f172a; font-weight: 700; }
-    .chip.is-active { background: #0f766e; border-color: #14b8a6; color: #fff; }
-    .chart-card { background: #0f172a; border: 1px solid #334155; border-radius: 0.85rem; padding: 0.85rem 0.95rem; min-width: 0; }
-    .chart-card h3 { font-size: 0.92rem; font-weight: 800; color: #f1f5f9; }
+    .chip { font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 999px; border: 1px solid #cbd5e1; color: #334155; background: #fff; font-weight: 800; cursor: pointer; }
+    .chip.is-active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .chart-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.85rem; padding: 0.85rem 0.95rem; min-width: 0; }
+    .chart-card h3 { font-size: 0.92rem; font-weight: 800; color: #1e1b4b; }
     .chart-card .hint { font-size: 0.7rem; color: #64748b; margin: 0.1rem 0 0.5rem; }
     .ch { position: relative; }
     .ch-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 0.85rem; }
-    .insight { background: linear-gradient(90deg, rgba(20, 184, 166, 0.14), rgba(56, 189, 248, 0.08)); border: 1px solid #115e59; border-radius: 0.85rem; padding: 0.75rem 0.95rem; font-size: 0.92rem; line-height: 1.7; color: #e2e8f0; }
-    .insight strong { color: #5eead4; }
+    .insight { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 0.85rem; padding: 0.75rem 0.95rem; font-size: 0.92rem; line-height: 1.7; color: #1e1b4b; }
+    .insight strong { color: #4338ca; }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
   <header>
-    <h1 class="text-2xl font-black text-teal-300">註銷物件申請後台</h1>
-    <p class="text-slate-400 text-sm mt-1">行政專區「星鴻註銷物件申請」送出的資料 · <a class="text-teal-300 underline" href="../index.html">回工具箱</a></p>
+    <div class="topbar">
+      <h1>註銷物件申請後台</h1>
+      <a class="back" href="../index.html">← 回工具箱</a>
+    </div>
+    <p class="lead">行政專區「星鴻註銷物件申請」送出的資料</p>
   </header>
 
-  <section class="card p-4 space-y-3" id="login-panel">
-    <label class="block text-sm text-slate-400">後台密碼（Supabase admin_secret）</label>
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">後台密碼（Supabase admin_secret）</label>
     <div class="flex flex-wrap gap-2">
       <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
-      <button type="button" id="btn-login" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-bold">連線</button>
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
     </div>
-    <p id="login-msg" class="text-sm text-rose-300 hidden"></p>
+    <p id="login-msg" class="text-sm err hidden"></p>
   </section>
 
   <section class="card p-4 hidden space-y-4" id="filter-panel">
@@ -102,16 +98,16 @@
         <label for="q">關鍵字（地址／申請人／業務／承接業者）</label>
         <input type="search" id="q" placeholder="輸入關鍵字" />
       </div>
-      <button type="button" id="btn-clear" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">清除條件</button>
-      <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
-      <button type="button" id="btn-csv" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">匯出 CSV（篩選結果）</button>
+      <button type="button" id="btn-clear" class="btn btn-ghost">清除條件</button>
+      <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+      <button type="button" id="btn-csv" class="btn btn-ghost">匯出 CSV（篩選結果）</button>
     </div>
     <p id="msg" class="text-sm text-slate-400"></p>
   </section>
 
   <section class="card p-4 hidden space-y-4" id="overview-panel">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="text-lg font-black text-teal-300">圖表總覽</h2>
+      <h2 class="section-h">圖表總覽</h2>
       <p class="text-xs text-slate-500">圖表依上方篩選條件即時更新；點圖表上的長條或區塊可直接加入篩選</p>
     </div>
     <div class="insight" id="insight"></div>
@@ -146,7 +142,7 @@
 
   <section class="card p-4 hidden space-y-3" id="main-panel">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="text-lg font-black text-teal-300">申請明細</h2>
+      <h2 class="section-h">申請明細</h2>
       <p class="text-sm text-slate-400" id="count">—</p>
     </div>
     <div class="overflow-x-auto">
@@ -161,8 +157,8 @@
 
   <section class="card p-4 hidden space-y-3" id="line-panel">
     <div class="flex flex-wrap items-center gap-3">
-      <h2 class="text-lg font-black text-teal-300">LINE 通知對象</h2>
-      <button type="button" id="btn-line-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
+      <h2 class="section-h">LINE 通知對象</h2>
+      <button type="button" id="btn-line-refresh" class="btn btn-ghost">重新整理</button>
     </div>
     <p class="text-sm text-slate-400">勾選「收註銷通知」的人，在有人送出註銷申請時會收到 LINE。名單只會出現已在工具箱「行政專區 → 星鴻註銷物件申請 → 主管綁定 LINE」完成綁定的帳號。</p>
     <p id="line-msg" class="text-sm text-slate-400"></p>
@@ -466,8 +462,8 @@
 
       function renderCharts(list, f) {
         if (window.Chart) {
-          Chart.defaults.color = '#cbd5e1';
-          Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
+          Chart.defaults.color = '#475569';
+          Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.35)';
           Chart.defaults.font.family = 'system-ui, "Microsoft JhengHei", sans-serif';
         }
         const months = list.length ? trendMonths(list, f) : [];

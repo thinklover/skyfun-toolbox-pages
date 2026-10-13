@@ -8,81 +8,80 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js"></script>
   <script src="../js/skyfun-departments.js"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
   <style>
-    body { font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #0c1222; color: #e2e8f0; min-height: 100vh; }
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-    input, select { background: #0f172a; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.5rem 0.75rem; color: #f8fafc; width: 100%; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    th, td { padding: 0.65rem 0.5rem; text-align: left; border-bottom: 1px solid #334155; vertical-align: top; }
-    th { color: #94a3b8; font-weight: 700; }
-    .badge-pending { background: #78350f; color: #fcd34d; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; }
-    .badge-on { background: #064e3b; color: #6ee7b7; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; }
-    .badge-off { background: #4c0519; color: #fda4af; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; }
-    .badge-rejected { background: #7f1d1d; color: #fecaca; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; }
-    .badge-missing { background: #713f12; color: #fde68a; font-size: 0.68rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; margin-left: 0.25rem; }
-    .act-btn { border: 0; border-radius: 0.45rem; padding: 0.25rem 0.55rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-right: 0.25rem; margin-top: 0.25rem; }
+    input:not([type="checkbox"]):not([type="radio"]), select { width: 100%; }
+    table { font-size: 0.875rem; }
+    th, td { padding: 0.65rem 0.5rem; vertical-align: top; }
+    .badge-pending { background: #fef3c7; color: #92400e; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-on { background: #d1fae5; color: #065f46; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-off { background: #ffe4e6; color: #be123c; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-rejected { background: #fee2e2; color: #b91c1c; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-missing { background: #fef3c7; color: #92400e; font-size: 0.68rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; margin-left: 0.25rem; font-weight: 800; }
+    .act-btn { border: 0; border-radius: 0.45rem; padding: 0.25rem 0.55rem; font-size: 0.75rem; font-weight: 800; cursor: pointer; margin-right: 0.25rem; margin-top: 0.25rem; }
     .act-ok { background: #15803d; color: #fff; }
     .act-warn { background: #b45309; color: #fff; }
     .act-danger { background: #b91c1c; color: #fff; }
-    .act-save { background: #0f766e; color: #fff; }
-    .badge-double { background: #fef3c7; color: #b45309; border: 1px solid #fbbf24; font-size: 0.68rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; margin-left: 0.25rem; font-weight: 700; }
-    .qa-double-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: #cbd5e1; margin-top: 0.35rem; white-space: nowrap; }
+    .act-save { background: #4f46e5; color: #fff; }
+    .badge-double { background: #fef3c7; color: #b45309; border: 1px solid #fbbf24; font-size: 0.68rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; margin-left: 0.25rem; font-weight: 800; }
+    .qa-double-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: #334155; margin-top: 0.35rem; white-space: nowrap; }
     .qa-double-toggle input { width: auto; }
     .team-cell { min-width: 11rem; }
     .team-cell select { font-size: 0.75rem; padding: 0.35rem 0.45rem; margin-bottom: 0.25rem; }
-    .row-missing td { background: rgba(120, 53, 15, 0.12); }
+    .row-missing td { background: #fffbeb; }
     .team-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); gap: 0.3rem; }
     .team-stat {
-      border: 1px solid #334155; border-radius: 0.45rem; padding: 0.28rem 0.25rem;
-      background: #0f172a; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      border: 1px solid #e2e8f0; border-radius: 0.45rem; padding: 0.28rem 0.25rem;
+      background: #f8fafc; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
       font: inherit; color: inherit; width: 100%;
     }
-    .team-stat:hover:not(.is-zero) { border-color: #64748b; }
-    .team-stat-name { font-size: 0.58rem; color: #94a3b8; line-height: 1.15; word-break: break-all; }
-    .team-stat-num { font-size: 0.88rem; font-weight: 800; color: #f8fafc; margin-top: 0.08rem; line-height: 1.1; }
+    .team-stat:hover:not(.is-zero) { border-color: #a5b4fc; }
+    .team-stat-name { font-size: 0.58rem; color: #64748b; line-height: 1.15; word-break: break-all; }
+    .team-stat-num { font-size: 0.88rem; font-weight: 800; color: #1e1b4b; margin-top: 0.08rem; line-height: 1.1; }
     .team-stat.is-zero { cursor: default; opacity: 0.55; }
-    .team-stat.is-zero .team-stat-num { color: #475569; font-weight: 600; }
-    .team-stat.is-hot { border-color: #fbbf24; background: rgba(120, 53, 15, 0.22); }
-    .team-stat.is-hot .team-stat-num { color: #fcd34d; }
-    .team-stat.is-missing { border-color: #f87171; background: rgba(127, 29, 29, 0.18); }
-    .team-stat.is-active { border-color: #2dd4bf; background: rgba(15, 118, 110, 0.28); box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.35); }
-    .team-stat.is-active .team-stat-num { color: #5eead4; }
-    .team-detail {
-      border: 1px solid #334155; border-radius: 0.65rem; background: #0f172a; padding: 0.55rem 0.65rem;
-    }
+    .team-stat.is-zero .team-stat-num { color: #94a3b8; font-weight: 600; }
+    .team-stat.is-hot { border-color: #fbbf24; background: #fffbeb; }
+    .team-stat.is-hot .team-stat-num { color: #b45309; }
+    .team-stat.is-missing { border-color: #f87171; background: #fef2f2; }
+    .team-stat.is-active { border-color: #4f46e5; background: #eef2ff; box-shadow: 0 0 0 1px #c7d2fe; }
+    .team-stat.is-active .team-stat-num { color: #4338ca; }
+    .team-detail { border: 1px solid #e2e8f0; border-radius: 0.65rem; background: #f8fafc; padding: 0.55rem 0.65rem; }
     .team-detail-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.35rem; margin-bottom: 0.45rem; }
-    .team-detail-title { font-size: 0.78rem; font-weight: 700; color: #99f6e4; }
-    .team-detail-clear { border: 0; background: transparent; color: #94a3b8; font-size: 0.72rem; cursor: pointer; text-decoration: underline; }
+    .team-detail-title { font-size: 0.78rem; font-weight: 800; color: #3730a3; }
+    .team-detail-clear { border: 0; background: transparent; color: #64748b; font-size: 0.72rem; cursor: pointer; text-decoration: underline; }
     .team-detail-list { display: flex; flex-wrap: wrap; gap: 0.35rem; max-height: 8.5rem; overflow-y: auto; }
     .team-detail-item {
-      font-size: 0.72rem; border: 1px solid #334155; border-radius: 0.45rem; padding: 0.28rem 0.45rem;
-      background: #1e293b; color: #e2e8f0; white-space: nowrap;
+      font-size: 0.72rem; border: 1px solid #e2e8f0; border-radius: 0.45rem; padding: 0.28rem 0.45rem;
+      background: #fff; color: #334155; white-space: nowrap;
     }
-    .team-detail-item .name { font-weight: 700; color: #f8fafc; }
-    .team-detail-item .user { color: #94a3b8; margin-left: 0.25rem; }
+    .team-detail-item .name { font-weight: 800; color: #0f172a; }
+    .team-detail-item .user { color: #64748b; margin-left: 0.25rem; }
     .team-detail-item .st { margin-left: 0.35rem; }
-    .row-team-highlight td { background: rgba(15, 118, 110, 0.12); }
+    .row-team-highlight td { background: #eef2ff; }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
   <header>
-    <h1 class="text-2xl font-black text-teal-300">帳號核准後台</h1>
-    <p class="text-slate-400 text-sm mt-1">可補填舊帳號處別 · 與 Render 完整版共用 Supabase 帳號 · <a class="text-teal-300 underline" href="../index.html">回工具箱</a></p>
+    <div class="topbar">
+      <h1>帳號核准後台</h1>
+      <a class="back" href="../index.html">← 回工具箱</a>
+    </div>
+    <p class="lead">可補填舊帳號處別 · 與 Render 完整版共用 Supabase 帳號</p>
   </header>
 
-  <section class="card p-4 space-y-3" id="login-panel">
-    <label class="block text-sm text-slate-400">後台密碼（Supabase admin_secret）</label>
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">後台密碼（Supabase admin_secret）</label>
     <div class="flex flex-wrap gap-2">
       <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
-      <button type="button" id="btn-login" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-bold">連線</button>
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
     </div>
-    <p id="login-msg" class="text-sm text-rose-300 hidden"></p>
+    <p id="login-msg" class="text-sm err hidden"></p>
   </section>
 
   <section class="card p-4 hidden space-y-3" id="main-panel">
     <div id="team-stats-panel" class="space-y-2 pb-1 border-b border-slate-700">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="text-sm font-bold text-teal-200">各處申請帳號總數</h2>
+        <h2 class="section-h">各處申請帳號總數</h2>
         <p class="text-xs text-slate-500" id="team-stats-total">—</p>
       </div>
       <div class="team-stats" id="team-stats-grid"></div>
@@ -109,7 +108,7 @@
         <input type="checkbox" id="filter-missing-team" class="w-auto" />
         只顯示缺處別
       </label>
-      <button type="button" id="btn-refresh" class="text-sm px-3 py-1.5 rounded-lg border border-slate-600">重新整理</button>
+      <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
       <p class="text-sm text-slate-400" id="count">—</p>
     </div>
     <p id="msg" class="text-sm text-slate-400"></p>
