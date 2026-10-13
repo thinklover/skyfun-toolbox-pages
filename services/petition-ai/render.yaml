@@ -3,7 +3,7 @@ services:
   - type: web
     name: skyfun-petition-ai
     runtime: node
-    plan: starter
+    plan: free
     region: singapore
     rootDir: services/petition-ai
     buildCommand: npm install --omit=dev
