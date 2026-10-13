@@ -35,6 +35,13 @@ function supabaseConfig() {
   let key = process.env.SUPABASE_ANON_KEY || '';
   if (!url || !key) {
     try {
+      const pub = JSON.parse(fs.readFileSync(path.join(here, 'supabase-public.json'), 'utf8'));
+      url = url || pub.url || '';
+      key = key || pub.anonKey || '';
+    } catch { /* 改讀工具箱前端設定 */ }
+  }
+  if (!url || !key) {
+    try {
       const src = fs.readFileSync(path.join(here, '..', '..', 'js', 'supabase-config.js'), 'utf8');
       url = url || (src.match(/url\s*:\s*['"]([^'"]+)['"]/) || [])[1] || '';
       key = key || (src.match(/anonKey\s*:\s*['"]([^'"]+)['"]/) || [])[1] || '';
