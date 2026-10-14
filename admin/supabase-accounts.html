@@ -104,6 +104,10 @@
           <option value="disabled">已停用</option>
         </select>
       </div>
+      <div class="flex-1 min-w-[14rem] max-w-md">
+        <label class="block text-xs text-slate-400 mb-1" for="search">搜尋帳號</label>
+        <input type="search" id="search" placeholder="帳號／姓名／處別" autocomplete="off" />
+      </div>
       <label class="flex items-center gap-2 text-sm text-slate-300 pb-2">
         <input type="checkbox" id="filter-missing-team" class="w-auto" />
         只顯示缺處別
@@ -297,12 +301,19 @@
         if (selectedTeamFilter) {
           list = list.filter((u) => userTeamKey(u) === selectedTeamFilter);
         }
+        const q = document.getElementById('search').value.trim().toLowerCase();
+        if (q) {
+          list = list.filter((u) => [u.username, u.name, u.team].some((v) => String(v || '').toLowerCase().includes(q)));
+        }
         const suffix = [
           missingOnly ? '缺處別' : '',
-          selectedTeamFilter ? selectedTeamFilter : ''
+          selectedTeamFilter ? selectedTeamFilter : '',
+          q ? '搜尋「' + q + '」' : ''
         ].filter(Boolean).join(' · ');
+        const status = document.getElementById('filter');
         document.getElementById('count').textContent =
-          `共 ${list.length} 筆` + (suffix ? `（${suffix}）` : '');
+          `共 ${list.length} 筆` + (suffix ? `（${suffix}）` : '') +
+          (q && !list.length && status.value ? `；目前只查「${status.selectedOptions[0].text}」，篩選狀態改成「全部」可查所有帳號` : '');
         document.getElementById('rows').innerHTML = list.map((u) => {
           const missing = !String(u.team || '').trim();
           const teamHit = selectedTeamFilter && userTeamKey(u) === selectedTeamFilter;
@@ -434,6 +445,7 @@
 
       document.getElementById('filter').addEventListener('change', () => loadList().catch(() => {}));
       document.getElementById('filter-missing-team').addEventListener('change', () => renderRows(allUsers));
+      document.getElementById('search').addEventListener('input', () => renderRows(allUsers));
 
       document.getElementById('team-stats-grid').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-team]');
