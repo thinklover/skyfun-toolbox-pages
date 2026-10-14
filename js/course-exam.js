@@ -216,7 +216,7 @@
         ? `<p class="gx-ok">🎉 ${esc(d.title)}考試已滿分通過！</p>`
         : items.length
           ? `<p class="gx-warn">上次沒有全對，重考一樣是這 ${total} 題（順序重排），全部答對才算通過。</p>`
-          : '<p class="gx-muted">建議先看完右邊的教學影片再開始考試。</p>';
+          : '<p class="gx-muted">建議先看完「教材影片」再開始考試。</p>';
     const hist = items.length
       ? `<div class="gx-hist"><h6>我的考試紀錄</h6><table class="gx-table"><thead><tr><th>考試時間</th><th>次別</th><th>答對</th><th>分數</th><th>結果</th><th>用時</th></tr></thead><tbody>${items
           .map((it) => {
@@ -229,7 +229,7 @@
     el.innerHTML = `<div class="gx-card">
         ${ring(best, done, pr ? (items.length ? `共考 ${items.filter((x) => x.status === 'submitted').length} 次` : '還沒考過') : '')}
         <div class="gx-rules">
-          <p><b>${esc(d.title)}線上考試</b>（題目出自${isMeeting(d) ? '' : '右邊的'}${esc(d.video)}，共 ${total} 題）</p>
+          <p><b>${esc(d.title)}線上考試</b>（題目出自${esc(d.video)}，共 ${total} 題）</p>
           <ul>
             <li>共 <b>${total} 題</b>單選題，限時 <b>${d.durationMin} 分鐘</b>，時間到自動交卷。</li>
             <li><b>全部答對（100 分）才算通過</b>；沒全對就用同一份題目重考，次數不限。</li>

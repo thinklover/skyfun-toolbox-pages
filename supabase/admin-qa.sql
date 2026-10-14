@@ -113,22 +113,29 @@ set search_path = public
 as $$
 declare
   v_local date;
-  v_y int;
-  v_m int;
-  v_d int;
+  v_first date;
+  v_start date;
 begin
   v_local := (coalesce(p_at, now()) at time zone 'Asia/Taipei')::date;
-  v_y := extract(year from v_local)::int;
-  v_m := extract(month from v_local)::int;
-  v_d := extract(day from v_local)::int;
-  if v_d >= 29 then
-    return make_timestamptz(v_y, v_m, 29, 0, 0, 0, 'Asia/Taipei');
+  v_first := date_trunc('month', v_local::timestamp)::date;
+  -- 業績月：上月 29 日起；該月沒有 29 日（平年 2 月）就順延到 3/1（同 admin-points-core perfMonthRange）
+  if v_local >= v_first + 28 then
+    v_start := v_first + 28;
+  else
+    v_start := (v_first - interval '1 month')::date + 28;
   end if;
-  if v_m = 1 then
-    return make_timestamptz(v_y - 1, 12, 29, 0, 0, 0, 'Asia/Taipei');
-  end if;
-  return make_timestamptz(v_y, v_m - 1, 29, 0, 0, 0, 'Asia/Taipei');
+  return v_start::timestamp at time zone 'Asia/Taipei';
 end;
+$$;
+
+-- 業績月結束（不含）＝下一個業績月的起始
+create or replace function public.admin_qa_period_until(p_at timestamptz default now())
+returns timestamptz
+language sql
+stable
+set search_path = public
+as $$
+  select ((date_trunc('month', ((public.admin_qa_period_start(p_at) at time zone 'Asia/Taipei')::date + 4)::timestamp)::date + 28)::timestamp at time zone 'Asia/Taipei');
 $$;
 
 create or replace function public.admin_qa_period_end(p_at timestamptz default now())
@@ -137,7 +144,7 @@ language sql
 stable
 set search_path = public
 as $$
-  select public.admin_qa_period_start(p_at) + interval '1 month' - interval '1 day';
+  select public.admin_qa_period_until(p_at) - interval '1 day';
 $$;
 
 create or replace function public.admin_qa_user_points(p_user_id uuid, p_type text)
@@ -153,7 +160,7 @@ as $$
     and event_type = p_type
     and status = 'approved'
     and coalesce(reviewed_at, created_at) >= public.admin_qa_period_start()
-    and coalesce(reviewed_at, created_at) < public.admin_qa_period_start() + interval '1 month';
+    and coalesce(reviewed_at, created_at) < public.admin_qa_period_until();
 $$;
 
 create or replace function public.admin_qa_is_double_points(p_user_id uuid)
@@ -637,7 +644,7 @@ begin
     return json_build_object('ok', false, 'error', '請先登入');
   end if;
   v_start := public.admin_qa_period_start();
-  v_end := (public.admin_qa_period_end())::date;
+  v_end := (public.admin_qa_period_end() at time zone 'Asia/Taipei')::date;
   v_ask := admin_qa_user_points(v_uid, 'ask');
   v_ans := admin_qa_user_points(v_uid, 'answer');
   return json_build_object(
@@ -971,6 +978,7 @@ as $$
 declare
   v_uid uuid;
   v_start timestamptz;
+  v_until timestamptz;
   v_end date;
 begin
   v_uid := admin_qa_user_id(p_token);
@@ -978,7 +986,8 @@ begin
     return json_build_object('ok', false, 'error', '請先登入');
   end if;
   v_start := public.admin_qa_period_start();
-  v_end := (public.admin_qa_period_end())::date;
+  v_until := public.admin_qa_period_until();
+  v_end := (public.admin_qa_period_end() at time zone 'Asia/Taipei')::date;
   return json_build_object(
     'ok', true,
     'periodFrom', to_char(v_start at time zone 'Asia/Taipei', 'YYYY/MM/DD'),
@@ -999,7 +1008,7 @@ begin
         left join public.toolbox_accounts a on a.id = e.user_id
         where e.status = 'approved'
           and coalesce(e.reviewed_at, e.created_at) >= v_start
-          and coalesce(e.reviewed_at, e.created_at) < v_start + interval '1 month'
+          and coalesce(e.reviewed_at, e.created_at) < v_until
         group by e.user_id, e.user_name
         order by sum(e.points) desc, e.user_name
         limit 3

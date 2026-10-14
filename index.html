@@ -1236,6 +1236,38 @@
         .acf-done { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; font-weight: 800; color: #0f172a; cursor: pointer; }
         .acf-done input { width: 1.15rem; height: 1.15rem; accent-color: #059669; cursor: pointer; }
         .acf-done-by { font-size: 0.74rem; color: #64748b; margin: 0.25rem 0 0 1.65rem; }
+        .acf-done-by--flat { margin-left: 0; }
+        .acf-ai-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; margin-top: 0.35rem; }
+        .acf-ai-btn { border: none; border-radius: 0.5rem; padding: 0.35rem 0.85rem; font-size: 0.8rem; font-weight: 800; color: #fff; background: linear-gradient(90deg, #7c3aed, #4f46e5); cursor: pointer; }
+        .acf-ai-btn:hover { filter: brightness(1.08); }
+        .acf-ai-btn:disabled { opacity: 0.65; cursor: wait; }
+        .acf-ai-undo { border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 0.5rem; padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+        .acf-ai-msg { font-size: 0.76rem; font-weight: 700; color: #64748b; }
+        .acf-ai-msg.is-ok { color: #047857; }
+        .acf-ai-msg.is-warn { color: #b45309; }
+        .acf-ai-msg.is-err { color: #dc2626; }
+        .acf-item.is-rejected { background: #fffafa; }
+        .acf-decide-btn { border: none; border-radius: 0.55rem; padding: 0.45rem 1rem; font-size: 0.88rem; font-weight: 900; color: #fff; cursor: pointer; }
+        .acf-decide-btn--approve { background: #059669; }
+        .acf-decide-btn--approve:hover { background: #047857; }
+        .acf-decide-btn--reject { background: #dc2626; }
+        .acf-decide-btn--reject:hover { background: #b91c1c; }
+        .acf-decide-btn:disabled { opacity: 0.6; cursor: wait; }
+        .acf-box--approved { border-color: #a7f3d0; background: #ecfdf5; }
+        .acf-box--approved .acf-box-title { color: #065f46; }
+        .acf-box--approved .acf-reject-reason { color: #064e3b; }
+        .acf-line-miss { color: #b45309; font-weight: 700; }
+        .acf-reject-btn { border: 1px solid #fecaca; background: #fff; color: #b91c1c; border-radius: 0.5rem; padding: 0.3rem 0.8rem; font-size: 0.8rem; font-weight: 800; cursor: pointer; }
+        .acf-reject-btn:hover { background: #fef2f2; }
+        .acf-reject-btn:disabled { opacity: 0.6; cursor: wait; }
+        .acf-reject-btn--muted { border-color: #cbd5e1; color: #475569; }
+        .acf-reject-btn--muted:hover { background: #f1f5f9; }
+        .acf-reject-form { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.45rem; }
+        .acf-reject-form textarea { width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.45rem 0.55rem; font: inherit; font-size: 0.84rem; resize: vertical; }
+        .acf-reject-btns { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+        .acf-box--rejected { border-color: #fecaca; background: #fef2f2; }
+        .acf-box--rejected .acf-box-title { color: #991b1b; }
+        .acf-reject-reason { margin: 0 0 0.3rem; font-size: 0.86rem; color: #7f1d1d; white-space: pre-wrap; word-break: break-word; }
         .acf-detail-msg { font-size: 0.78rem; font-weight: 700; margin: 0.4rem 0 0; }
         .acf-detail-msg.is-err { color: #dc2626; }
         .acf-detail-msg.is-ok { color: #047857; }
@@ -2009,6 +2041,11 @@
         .nb-calc-fields { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
         .nb-calc-fields > div { flex: 1 1 12rem; max-width: 16rem; }
         .nb-calc-output { display: block; min-height: 2.6rem; line-height: 1.5; background: #f0fdf4; border-style: dashed; font-weight: 800; color: #065f46; }
+        .nb-calc-input[readonly] { background: #f0fdf4; font-weight: 800; color: #065f46; cursor: default; }
+        .nb-calc-src { margin: 0.55rem 0 0; padding: 0.45rem 0.7rem; border-radius: 0.55rem; font-size: 0.85rem; font-weight: 700; line-height: 1.55; }
+        .nb-calc-src.is-ok { background: #ecfdf5; color: #047857; }
+        .nb-calc-src.is-info { background: #eff6ff; color: #1d4ed8; }
+        .nb-calc-src.is-miss { background: #fff7ed; color: #9a3412; }
         .nb-calc-warn {
             margin: 0.55rem 0 0.75rem;
             padding: 0.5rem 0.7rem;
@@ -4356,8 +4393,8 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261013-1">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261013-1">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261014-34">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261014-4">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -4387,14 +4424,14 @@
             </blockquote>
             <p id="toolbox-auth-mode-hint" class="lite-auth-hint">輸入帳號與密碼即可進入。第一次登入請先註冊。</p>
             <label for="toolbox-auth-username">帳號</label>
-            <input id="toolbox-auth-username" type="text" maxlength="40" autocomplete="username" placeholder="請與公司系統相同" />
+            <input id="toolbox-auth-username" type="text" maxlength="40" autocomplete="username" placeholder="請與公司系統相同（身分證字號）" />
             <label for="toolbox-auth-password">密碼</label>
-            <input id="toolbox-auth-password" type="password" maxlength="72" autocomplete="current-password" placeholder="請與公司系統相同" />
+            <input id="toolbox-auth-password" type="password" maxlength="72" autocomplete="current-password" placeholder="請與公司系統相同（身分證字號）" />
             <div id="toolbox-auth-register-extra" class="hidden">
                 <label for="toolbox-auth-password2">確認密碼</label>
-                <input id="toolbox-auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再輸入一次" />
+                <input id="toolbox-auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再輸入一次身分證字號" />
                 <label for="toolbox-auth-displayname">姓名</label>
-                <input id="toolbox-auth-displayname" type="text" maxlength="30" autocomplete="nickname" placeholder="請輸入姓名" required />
+                <input id="toolbox-auth-displayname" type="text" maxlength="30" autocomplete="name" placeholder="請輸入本名（與身分證相同）" required />
                 <label for="toolbox-auth-team">處別</label>
                 <select id="toolbox-auth-team" required>
                     <option value="">請選擇處別</option>
@@ -4976,7 +5013,7 @@
                 <span class="apt-entry-icon" aria-hidden="true">📊</span>
                 <span class="apt-entry-text">
                     <strong>行政績效中心</strong>
-                    <small>點數產出、審件品質、客訴紀律、教育訓練與每月評等，個人明細含🧭成長羅盤</small>
+                    <small>點數產出、審件品質、客訴紀律、教育訓練與每月評等，個人績效含🧭成長羅盤</small>
                 </span>
                 <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                 <span class="adz-hero-board">
@@ -5147,7 +5184,12 @@
                         <label class="acf-field acf-field--wide">
                             <span class="acf-label">業務備註</span>
                             <textarea name="note" rows="4" required maxlength="2000"></textarea>
-                            <span class="acf-hint">請詳細說明原因，前因後果如何導致物件需要註銷，中間是否有關懷還是無法挽留（至少 50 字）</span>
+                            <span class="acf-ai-bar">
+                                <button type="button" class="acf-ai-btn" id="acf-ai">✨ AI 條列＋潤飾</button>
+                                <button type="button" class="acf-ai-undo" id="acf-ai-undo" hidden>↶ 復原原文</button>
+                                <span class="acf-ai-msg" id="acf-ai-msg" role="status" aria-live="polite"></span>
+                            </span>
+                            <span class="acf-hint">請詳細說明原因，前因後果如何導致物件需要註銷，中間是否有關懷還是無法挽留（至少 50 字）。可以先用口語隨意寫，再按「AI 條列＋潤飾」；AI 只會整理你寫的內容、不會新增事實，送出前請確認。</span>
                             <span class="acf-count" id="acf-note-count" aria-live="polite"></span>
                         </label>
                         <label class="acf-field">
@@ -5331,8 +5373,8 @@
                 <div class="apt-summary" id="apt-summary"></div>
                 <div class="apt-tabs" id="apt-tabs" role="tablist">
                     <button type="button" class="apt-tab is-active" data-tab="month">點數月累計</button>
-                    <button type="button" class="apt-tab" data-tab="person">個人明細</button>
-                    <button type="button" class="apt-tab" data-tab="weekly">組長週報</button>
+                    <button type="button" class="apt-tab" data-tab="person">個人績效</button>
+                    <button type="button" class="apt-tab" data-tab="weekly">組長週月報</button>
                     <button type="button" class="apt-tab" data-tab="duration">耗時</button>
                     <button type="button" class="apt-tab" data-tab="spot" hidden>小組長抽查</button>
                     <span class="apt-op-btns">
@@ -9927,71 +9969,102 @@
         </div>
 
         <!-- 專區頁面：新人 -->
-        <div id="page-newbie" class="hidden max-w-4xl mx-auto space-y-4">
+        <div id="page-newbie" class="hidden max-w-6xl mx-auto space-y-5">
             <button onclick="showPage('home')" class="mb-2 btn btn-sm tone-slate-soft">← 返回首頁</button>
 
-            <div class="nb-page-shell">
-                <header class="nb-page-header nb-page-header--hub">
-                    <p class="nb-page-eyebrow">星鴻社宅工具箱</p>
-                    <h2>🚀 新人專區</h2>
-                    <p>先選工作專線；路線圖、速查與工具都在專線裡。</p>
-                </header>
-
-                <div class="nb-hub-tiles">
-                    <button type="button" class="nb-hub-tile nb-hub-tile--biz" onclick="showPage('newbie-business')">
-                        <span class="nb-hub-tile-icon">💼</span>
-                        <span class="nb-hub-tile-title">業務新人</span>
-                        <span class="nb-hub-tile-desc">開發房東 · 場勘收資料 · 送審</span>
-                        <span class="nb-hub-tile-go">進入專線 →</span>
-                    </button>
-                    <button type="button" class="nb-hub-tile nb-hub-tile--rm" onclick="showPage('newbie-rentmgr')">
-                        <span class="nb-hub-tile-icon">🏢</span>
-                        <span class="nb-hub-tile-title">租管師新人</span>
-                        <span class="nb-hub-tile-desc">新案維運 · 續約 · 催收解約</span>
-                        <span class="nb-hub-tile-go">進入專線 →</span>
-                    </button>
-                    <button type="button" class="nb-hub-tile nb-hub-tile--quest" onclick="showPage('newbie-quest')">
-                        <span class="nb-hub-tile-icon">🎮</span>
-                        <span class="nb-hub-tile-title">業績任務板</span>
-                        <span class="nb-hub-tile-desc">電開／591／場勘打卡 · XP 與每日任務</span>
-                        <span class="nb-hub-tile-go">開始打卡 →</span>
-                    </button>
-                    <button type="button" class="nb-hub-tile nb-hub-tile--subsidy" onclick="showPage('newbie-subsidy')">
-                        <span class="nb-hub-tile-icon">💰</span>
-                        <span class="nb-hub-tile-title">財補專區</span>
-                        <span class="nb-hub-tile-desc">報名表 · 月份試算 · 打卡上傳 · 簽呈 · 線上考試 · 獎金辦法</span>
-                        <span class="nb-hub-tile-go">查看辦法 →</span>
-                    </button>
+            <header class="adz-head">
+                <div>
+                    <h2 class="adz-title">🚀 新人專區</h2>
+                    <p class="adz-sub">先選工作專線；路線圖、詞典、進件速查與工具都在專線裡</p>
                 </div>
+            </header>
 
-                <div class="nb-hub-tools">
-                    <p class="nb-hub-tools-label">站內捷徑</p>
-                    <div class="nb-hub-tools-grid">
-                        <button type="button" class="nb-hub-tool" onclick="showPage('newbie-glossary')">📖 詞典</button>
-                        <button type="button" class="nb-hub-tool" onclick="showPage('newbie-screening')">✅ 進件資格速查</button>
-                        <button type="button" class="nb-hub-tool" onclick="showPage('newbie-playbook')">🧠 開發心法</button>
-                        <button type="button" class="nb-hub-tool" id="nb-hub-open-qa">💬 問答</button>
-                    </div>
-                </div>
+            <button type="button" class="apt-entry adz-hero adz-hero--subsidy" onclick="showPage('newbie-subsidy')">
+                <span class="apt-entry-icon" aria-hidden="true">💰</span>
+                <span class="apt-entry-text">
+                    <strong>財補專區</strong>
+                    <small>財務補助報名、每月試算、打卡上傳、簽呈與線上考試，獎金辦法一次看懂</small>
+                </span>
+                <span class="apt-entry-arrow" aria-hidden="true">進入財補 →</span>
+                <span class="adz-hero-board">
+                    <span class="adz-top-label">財補專區內容</span>
+                    <span class="adz-top">
+                        <span class="adz-top-item"><i>📝</i><b>報名表</b></span>
+                        <span class="adz-top-item"><i>🧮</i><b>月份試算</b></span>
+                        <span class="adz-top-item"><i>📸</i><b>打卡上傳</b></span>
+                        <span class="adz-top-item"><i>✍️</i><b>簽呈</b></span>
+                        <span class="adz-top-item"><i>💯</i><b>線上考試</b></span>
+                        <span class="adz-top-item"><i>🎁</i><b>獎金辦法</b></span>
+                    </span>
+                </span>
+            </button>
 
-                <div class="nb-hub-tools">
-                    <p class="nb-hub-tools-label">教學 SOP</p>
-                    <div class="nb-hub-tools-grid">
-                        <button type="button" class="nb-hub-tool" onclick="showPage('newbie-transcript')">📑 調閱一類謄本</button>
-                    </div>
-                </div>
+            <div class="adz-quick">
+                <button type="button" class="apt-entry adz-hero adz-hero--biz" onclick="showPage('newbie-business')">
+                    <span class="apt-entry-icon" aria-hidden="true">💼</span>
+                    <span class="apt-entry-text">
+                        <strong>業務新人</strong>
+                        <small>電開、591、場勘委租到送審，照路線圖一步一步做</small>
+                    </span>
+                    <span class="apt-entry-arrow" aria-hidden="true">進入專線 →</span>
+                    <span class="adz-hero-board">
+                        <span class="adz-top-label">工作流程</span>
+                        <span class="adz-top">
+                            <span class="adz-top-item"><i>📞</i><span>STEP 1</span><b>開發房東</b></span>
+                            <span class="adz-top-item"><i>🏠</i><span>STEP 2</span><b>場勘收資料</b></span>
+                            <span class="adz-top-item"><i>📤</i><span>STEP 3</span><b>送審</b></span>
+                        </span>
+                    </span>
+                </button>
 
-                <details class="nb-policy-details">
-                    <summary>📌 政策提醒（點開）</summary>
-                    <ul>
+                <button type="button" class="apt-entry adz-hero adz-hero--rm" onclick="showPage('newbie-rentmgr')">
+                    <span class="apt-entry-icon" aria-hidden="true">🏢</span>
+                    <span class="apt-entry-text">
+                        <strong>租管師新人</strong>
+                        <small>新案維運、續約、催收解約，日常管理照路線圖處理</small>
+                    </span>
+                    <span class="apt-entry-arrow" aria-hidden="true">進入專線 →</span>
+                    <span class="adz-hero-board">
+                        <span class="adz-top-label">工作流程</span>
+                        <span class="adz-top">
+                            <span class="adz-top-item"><i>🧰</i><span>STEP 1</span><b>新案維運</b></span>
+                            <span class="adz-top-item"><i>🔁</i><span>STEP 2</span><b>續約</b></span>
+                            <span class="adz-top-item"><i>⚖️</i><span>STEP 3</span><b>催收解約</b></span>
+                        </span>
+                    </span>
+                </button>
+            </div>
+
+            <div class="adz-folds nb-folds">
+                <button type="button" class="af-fold adz-go-card" id="nb-card-quest" onclick="showPage('newbie-quest')">
+                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🎮</i>業績任務板</span><span class="af-summary-hint">電開／591／場勘打卡 · XP 與每日任務</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
+                </button>
+                <button type="button" class="af-fold adz-go-card" id="nb-card-glossary" onclick="showPage('newbie-glossary')">
+                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">📖</i>詞典</span><span class="af-summary-hint">社宅、包租代管常用名詞</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
+                </button>
+                <button type="button" class="af-fold adz-go-card" id="nb-card-screening" onclick="showPage('newbie-screening')">
+                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">✅</i>進件資格速查</span><span class="af-summary-hint">物件、房客能不能進件，先跑一輪</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
+                </button>
+                <button type="button" class="af-fold adz-go-card" id="nb-card-playbook" onclick="showPage('newbie-playbook')">
+                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🧠</i>開發心法</span><span class="af-summary-hint">開發房東的話術與心態</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
+                </button>
+                <button type="button" class="af-fold adz-go-card" id="nb-hub-open-qa">
+                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">💬</i>問答</span><span class="af-summary-hint">有疑問直接問</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
+                </button>
+                <button type="button" class="af-fold adz-go-card" id="nb-card-transcript" onclick="showPage('newbie-transcript')">
+                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">📑</i>調閱一類謄本</span><span class="af-summary-hint">教學 SOP · 圖解步驟</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
+                </button>
+                <details class="admin-tools-card admin-tools-card--compact af-fold" id="nb-card-policy">
+                    <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">📌</i>政策提醒</span><span class="af-summary-hint">期別 · 租補 · 稅務</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                    <ul class="nb-policy-list">
                         <li><strong>第三至五期</strong>（住都1140030759）：第三、四、五期可併行；第五期租約最長 3 年。</li>
                         <li><strong>300 億租補</strong>與社宅包租代管不同；2026 年起新案加強租賃標的合法性查核。</li>
                         <li>房屋稅、地價稅依各縣市公告；實際以稅捐機關及公司 SOP 為準。</li>
                     </ul>
                 </details>
-
-                <p class="nb-hub-foot">建議：任務板打卡 → 進專線跟路線圖 → 有疑問問主管</p>
             </div>
+
+            <p class="nb-hub-note">建議順序：進專線跟著路線圖做 → 不懂的查詞典、速查 → 還有疑問問主管</p>
         </div>
 
         <!-- 新人專區：調閱一類謄本 SOP -->
@@ -10118,7 +10191,8 @@
                             <output id="nb-subsidy-start" class="nb-calc-input nb-calc-output" aria-labelledby="nb-subsidy-start-label">—</output>
                         </div>
                     </div>
-                    <p class="nb-calc-warn">⚠️ 請輸入與<strong>系統登錄的結訓日</strong>相同的日期；財補開始日期自動帶入結訓日的下週一。</p>
+                    <p id="nb-subsidy-src" class="nb-calc-src" hidden></p>
+                    <p class="nb-calc-warn">⚠️ 結訓日會依帳號的姓名＋處別，自動從<strong>新人總覽</strong>帶入；找不到時請手動輸入與系統登錄相同的日期。財補開始日期自動帶入結訓日的下週一。</p>
                     <div id="nb-subsidy-result" class="nb-calc-result" aria-live="polite"></div>
                     <p class="nb-calc-foot">區間依每月結績日切分：結績日當天起算下一個月。財補開始日期至第一個結績日前一天為第 1 個月。</p>
                 </section>
@@ -10292,11 +10366,48 @@
                 try { localStorage.setItem(STORE_KEY, e.target.value); } catch (_) {}
                 render();
             });
+            function showSource(text, tone) {
+                const el = document.getElementById('nb-subsidy-src');
+                if (!el) return;
+                el.textContent = text;
+                el.className = 'nb-calc-src' + (tone ? ' is-' + tone : '');
+                el.hidden = !text;
+            }
+
+            function applyRoster(r) {
+                const input = document.getElementById('nb-subsidy-hire');
+                if (!input || !r || !r.ok) return;
+                if (r.found && r.trainEnd) {
+                    input.value = r.trainEnd;
+                    input.readOnly = true;
+                    try { localStorage.setItem(STORE_KEY, r.trainEnd); } catch (_) {}
+                    showSource('✅ 已從「新人總覽」帶入結訓日（' + (r.matchedBy === 'name_dept' ? '姓名＋處別' : '姓名') + '對照）。日期有誤請洽行政更正新人總覽。', 'ok');
+                    render();
+                } else if (r.found) {
+                    const status = String(r.status || '').replace(/^[^\u4e00-\u9fff]+/, '') || '尚未結訓';
+                    showSource('ℹ️ 新人總覽顯示你目前「' + status + '」，還沒有結訓日；結訓後會自動帶入。', 'info');
+                } else {
+                    showSource('新人總覽找不到你的資料（依帳號姓名＋處別對照），請先手動輸入結訓日；若帳號處別不對，請洽行政。', 'miss');
+                }
+            }
+
+            function loadRoster() {
+                let tries = 0;
+                const run = function () {
+                    const auth = window.skyfunAuth;
+                    const tk = auth && auth.getToken ? auth.getToken() : '';
+                    if (!tk) { if (++tries < 120) setTimeout(run, 500); return; }
+                    auth.rpc('subsidy_my_train_end', { p_token: tk }).then(applyRoster).catch(function () {});
+                };
+                run();
+            }
+
             function init() {
                 const input = document.getElementById('nb-subsidy-hire');
                 if (!input) return;
                 try { const saved = localStorage.getItem(STORE_KEY); if (saved) input.value = saved; } catch (_) {}
                 render();
+                loadRoster();
             }
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
             window.nbSubsidyRender = render;
@@ -11115,18 +11226,19 @@
         <script src="./js/rentmgr-flow-guide.js"></script>
         <script src="./js/newbie-tools.js"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
-        <script src="./js/admin-points-core.js?v=20261013-1"></script>
-        <script src="./js/admin-points-charts.js?v=20261011-3"></script>
-        <script src="./js/admin-training-content.js?v=20261011-13"></script>
+        <script src="./js/reveal.js?v=20261014-1"></script>
+        <script src="./js/admin-points-core.js?v=20261014-7"></script>
+        <script src="./js/admin-points-charts.js?v=20261014-3"></script>
+        <script src="./js/admin-training-content.js?v=20261014-2"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
         <script src="./js/guide-exam.js?v=20261011-5"></script>
         <script src="./js/course-exam-data.js?v=20261011-5"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261012-1"></script>
-        <script src="./js/course-exam.js?v=20261012-5"></script>
+        <script src="./js/course-exam.js?v=20261014-1"></script>
         <script src="./js/sim-practice.js?v=20261012-1"></script>
-        <script src="./js/improve-plan.js?v=20261012-1"></script>
-        <script src="./js/growth-compass.js?v=20261012-1"></script>
-        <script src="./js/admin-points.js?v=20261013-2"></script>
+        <script src="./js/improve-plan.js?v=20261014-2"></script>
+        <script src="./js/growth-compass.js?v=20261014-2"></script>
+        <script src="./js/admin-points.js?v=20261014-40"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
@@ -11139,17 +11251,17 @@
         <script src="./js/equip-depreciation.js?v=20261005-1"></script>
         <script src="./js/skyfun-job-titles.js"></script>
         <script src="./js/skyfun-departments.js"></script>
-        <script src="./js/toolbox-auth.js?v=20261011-5"></script>
+        <script src="./js/toolbox-auth.js?v=20261014-2"></script>
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20260930-2"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
         <script src="./js/subsidy-petition.js?v=20261001-3"></script>
-        <script src="./js/admin-cancel-form.js?v=20261011-5"></script>
+        <script src="./js/admin-cancel-form.js?v=20261014-4"></script>
         <script src="./js/admin-calendar-sheet.js?v=20261011-1"></script>
         <script src="./js/admin-calendar.js?v=20261011-5"></script>
-        <script src="./js/admin-org.js?v=20261012-9"></script>
+        <script src="./js/admin-org.js?v=20261014-2"></script>
         <script src="./js/admin-meeting.js?v=20261012-3"></script>
-    <script src="./js/petition.js?v=20261013-3"></script>
+    <script src="./js/petition.js?v=20261014-1"></script>
         <script src="./js/receipt-endorsement-form.js?v=20261001-1"></script>
 <script src="./js/lite-hide-api.js?v=20261001-1"></script>
 <script src="./js/site-file-search-index.js?v=20261013-1"></script>

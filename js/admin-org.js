@@ -16,17 +16,17 @@
             {
                 name: '北區行政組', lead: '侯思廷',
                 people: [
-                    P('在職', '詹佳芸', '大台北', '115年08月', '租賃管理部', '劉婷昱'),
-                    P('在職', '劉邦禹', '大台北', '115年03月', '租賃管理部', '侯思廷'),
-                    P('在職', '韋宓妤', '大台北', '114年06月', '租賃管理部', '詹佳芸'),
-                    P('在職', '鄭宇峻', '大台北', '115年04月', '北一處', '温巧萱'),
-                    P('在職', '温巧萱', '大台北', '112年10月', '北一處', '鄭宇峻'),
-                    P('待補', '', '大台北', '', '北一處'),
-                    P('在職', '高慈惠', '大台北', '115年09月', '北二處', '韋宓妤'),
-                    P('在職', '彭心緣', '大台北', '115年08月', '工讀生'),
-                    P('在職', '梁凌佳', '大台北', '114年06月', '工讀生'),
-                    P('在職', '賴加琳', '大台北', '114年07月', '工讀生'),
-                    P('在職', '劉婷昱', '大台北', '115年08月', '北三處 北四處', '高慈惠'),
+                    P('在職', '詹佳芸', '新北', '115年08月', '租賃管理部', '劉婷昱'),
+                    P('在職', '劉邦禹', '新北', '115年03月', '租賃管理部', '侯思廷'),
+                    P('在職', '韋宓妤', '新北', '114年06月', '租賃管理部', '詹佳芸'),
+                    P('在職', '鄭宇峻', '台北', '115年04月', '北一處', '温巧萱'),
+                    P('在職', '温巧萱', '台北', '112年10月', '北一處', '鄭宇峻'),
+                    P('待補', '', '台北', '', '北一處'),
+                    P('在職', '高慈惠', '新北', '115年09月', '北二處', '韋宓妤'),
+                    P('在職', '彭心緣', '新北', '115年08月', '工讀生'),
+                    P('在職', '梁凌佳', '新北', '114年06月', '工讀生'),
+                    P('在職', '賴加琳', '新北', '114年07月', '工讀生'),
+                    P('在職', '劉婷昱', '新北', '115年08月', '北三處 北四處', '高慈惠'),
                     P('在職', '吳羽涵', '宜蘭', '115年07月', '宜一處', '侯思廷'),
                     P('在職', '蔡宜秀', '桃園', '111年12月', '桃一處', '簡旻鈺'),
                     P('在職', '簡旻鈺', '桃園', '115年08月', '桃一處', '蔡宜秀'),
@@ -84,7 +84,7 @@
         return { now, open, plan: now + open, intern: people.filter(isIntern).length };
     }
 
-    /** 排序：部別（由北到南）→ 營業處（租賃管理部、各處依編號、駐府、工讀生）→ 報到年月（早到晚，待補最後） */
+    /** 排序：部別（由北到南）→ 營業處（租賃管理部、各處依編號、駐府、工讀生）→ 到職日（早到晚，待補最後） */
     const DEPT_ORDER = ['大台北', '台北', '新北', '基隆', '宜蘭', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '花蓮', '台東'];
     const CN_NUM = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
     const deptRank = (d) => {
@@ -100,8 +100,31 @@
         return m ? 100 + CN_NUM[m[1]] : s ? 500 : 950;
     };
     const joinedRank = (j) => {
-        const m = String(j || '').match(/(\d+)\s*年\s*(\d+)/);
-        return m ? Number(m[1]) * 100 + Number(m[2]) : Infinity;
+        const m = String(j || '').match(/(\d+)\s*年\s*(\d+)(?:\s*月\s*(\d+))?/);
+        return m ? Number(m[1]) * 10000 + Number(m[2]) * 100 + Number(m[3] || 0) : Infinity;
+    };
+
+    /** 到職日存民國年字串「115年10月01日」；舊資料只有「113年10月」 */
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const joinedParts = (j) => {
+        const m = String(j || '').match(/(\d+)\s*年\s*(\d+)\s*月?(?:\s*(\d+)\s*日?)?/);
+        return m ? { y: Number(m[1]), m: Number(m[2]), d: m[3] ? Number(m[3]) : 0 } : null;
+    };
+    const joinedMonth = (j) => {
+        const p = joinedParts(j);
+        return p ? `${p.y}年${pad2(p.m)}月` : String(j || '');
+    };
+    const joinedFull = (j) => {
+        const p = joinedParts(j);
+        return p ? `${p.y}年${pad2(p.m)}月${p.d ? `${pad2(p.d)}日` : ''}` : String(j || '');
+    };
+    const joinedIso = (j) => {
+        const p = joinedParts(j);
+        return p && p.d ? `${p.y + 1911}-${pad2(p.m)}-${pad2(p.d)}` : '';
+    };
+    const isoToJoined = (iso) => {
+        const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return m ? `${Number(m[1]) - 1911}年${m[2]}月${m[3]}日` : '';
     };
     function sortedPeople(people) {
         return (people || [])
@@ -126,10 +149,16 @@
             <td class="ado2-st">${esc(p.status || '在職')}</td>
             <td class="ado2-name">${esc(p.name || (open ? '' : '—'))}</td>
             <td>${esc(p.dept)}</td>
-            <td>${esc(p.joined)}</td>
+            <td${p.joined ? ` title="到職日 ${esc(joinedFull(p.joined))}"` : ''}>${esc(joinedMonth(p.joined))}</td>
             <td>${esc(p.office)}</td>
             <td>${esc(p.deputy)}</td>
         </tr>${editing ? editRow(p) : ''}`;
+    }
+
+    function joinedField(joined) {
+        const iso = joinedIso(joined);
+        const hint = joined && !iso ? `<small class="ado2-joined-hint">目前只記到月份（${esc(joinedFull(joined))}），請補上日期</small>` : '';
+        return `<label><span>到職日</span><input type="date" data-f="joinedDate" value="${iso}" />${hint}</label>`;
     }
 
     function editRow(p) {
@@ -142,7 +171,7 @@
             ${status === '離職' ? `<label class="ado2-leave"><span>離職日 <em>*</em></span><input type="date" data-f="leaveDate" value="${esc(view.edit.leaveDate || '')}" /></label>` : ''}
             ${status === '在職' ? field('name', '姓名／職稱') : ''}
             ${field('dept', '部別', '例如 台中')}
-            ${status === '在職' ? field('joined', '報到年月', '例如 115年10月') : ''}
+            ${status === '在職' ? joinedField(p.joined) : ''}
             ${field('office', '營業處', '例如 中一處')}
             ${status === '在職' ? field('deputy', '代理人') : ''}
             ${status === '離職' ? '<p class="ado2-form-hint">儲存後會在後台記錄離職日，這一列轉成「待補」，保留部別與營業處。</p>' : ''}
@@ -166,7 +195,7 @@
                 <small>工讀生 ${s.intern} 人（另計）</small>
             </div>
             <div class="ado2-table-wrap"><table class="ado2-table">
-                <thead><tr><th>狀態</th><th>姓名／職稱</th><th>部別</th><th>報到年月</th><th>營業處</th><th>代理人</th></tr></thead>
+                <thead><tr><th>狀態</th><th>姓名／職稱</th><th>部別</th><th>到職日</th><th>營業處</th><th>代理人</th></tr></thead>
                 <tbody>${body || (isNewHere ? '' : '<tr><td colspan="6" class="ado2-empty">尚無人員</td></tr>')}${isNewHere ? editRow(view.edit.draft) : ''}</tbody>
             </table></div>
             ${view.canEdit && !isNewHere ? `<button type="button" class="ado2-add" data-org-act="add" data-g="${gi}">＋ 新增待補</button>` : ''}
@@ -207,6 +236,9 @@
             const k = el.dataset.f;
             if (k === 'status') view.edit.status = el.value;
             else if (k === 'leaveDate') view.edit.leaveDate = el.value;
+            else if (k === 'joinedDate') {
+                if (el.value) view.edit.draft.joined = isoToJoined(el.value);
+            }
             else view.edit.draft[k] = el.value.trim();
         });
     }

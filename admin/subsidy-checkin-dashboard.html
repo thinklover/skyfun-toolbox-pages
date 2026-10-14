@@ -70,7 +70,7 @@
     <div class="overflow-x-auto">
       <table>
         <thead>
-          <tr><th>姓名</th><th>帳號</th><th>處別</th><th>已上傳／應上傳（至今天）</th><th></th><th>最後上傳</th><th></th></tr>
+          <tr><th>姓名</th><th>帳號</th><th>處別</th><th>結訓日</th><th>已上傳／應上傳（至今天）</th><th></th><th>最後上傳</th><th></th></tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
@@ -101,6 +101,8 @@
       let secret = '';
       let entries = [];
       let petitions = [];
+      let trainEnds = new Map();
+      let trainSync = null;
       let openUser = null;
       let busy = false;
 
@@ -139,6 +141,40 @@
         try { data = await res.json(); } catch { /* non-JSON */ }
         if (!data?.ok) throw new Error(data?.error || data?.message || ('連線失敗（' + res.status + '）'));
         return data;
+      }
+
+      async function loadTrainEnds() {
+        const c = window.SKYFUN_SUPABASE || {};
+        const url = String(c.url || '').trim().replace(/\/$/, '');
+        const key = String(c.anonKey || '').trim();
+        try {
+          const res = await fetch(url + '/rest/v1/rpc/subsidy_train_end_admin', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + key, apikey: key, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_secret: secret })
+          });
+          const data = await res.json();
+          if (!data?.ok) throw new Error(data?.error || ('連線失敗（' + res.status + '）'));
+          trainEnds = new Map((data.list || []).map((x) => [x.userId, x]));
+          trainSync = { at: data.syncedAt, error: data.syncError };
+        } catch (e) {
+          trainEnds = new Map();
+          trainSync = { error: '結訓日讀取失敗：' + e.message };
+        }
+      }
+
+      function trainEndCell(userId) {
+        const t = trainEnds.get(userId);
+        if (!t) return '<span class="muted">新人總覽查無</span>';
+        if (!t.trainEnd) return '<span class="muted">' + esc(String(t.status || '').replace(/^[^\u4e00-\u9fff]+/, '') || '尚未結訓') + '</span>';
+        const tip = '新人總覽：' + (t.dept || '未填處別') + (t.matchedBy === 'name_dept' ? '（姓名＋處別對照）' : '（只比對姓名）');
+        return '<span title="' + esc(tip) + '">' + esc(t.trainEnd.replace(/-/g, '/')) + (t.matchedBy === 'name_dept' ? '' : ' <span class="muted">*</span>') + '</span>';
+      }
+
+      function trainSyncNote() {
+        if (!trainSync) return '';
+        const at = trainSync.at ? '結訓日來自新人總覽，最後同步 ' + fmt(trainSync.at) + '（每天早上 6 點自動同步）；* 表示只比對姓名' : '';
+        return [at, trainSync.error].filter(Boolean).join('　');
       }
 
       function people() {
@@ -223,13 +259,14 @@
           const open = openUser === p.userId;
           return '<tr class="row' + (open ? ' is-open' : '') + '">' +
             '<td>' + esc(p.userName) + '</td><td>' + esc(p.username) + '</td><td>' + esc(p.team || '—') + '</td>' +
+            '<td>' + trainEndCell(p.userId) + '</td>' +
             '<td>' + done + ' / ' + due.length + ' 天</td>' +
             '<td><div class="bar"><i style="width:' + pct + '%"></i></div></td>' +
             '<td>' + fmt(p.last) + '</td>' +
             '<td class="text-right space-x-1"><button type="button" class="btn" data-view="' + esc(p.userId) + '">' + (open ? '收起' : '預覽') + '</button>' +
             '<button type="button" class="btn btn-main" data-xlsx="' + esc(p.userId) + '">⬇ Excel</button></td></tr>' +
-            (open ? '<tr><td colspan="7" class="detail">' + calendarHtml(p) + '</td></tr>' : '');
-        }).join('') || '<tr><td colspan="7" class="muted">這四個月還沒有人上傳打卡紀錄</td></tr>';
+            (open ? '<tr><td colspan="8" class="detail">' + calendarHtml(p) + '</td></tr>' : '');
+        }).join('') || '<tr><td colspan="8" class="muted">這四個月還沒有人上傳打卡紀錄</td></tr>';
       }
 
       async function loadList() {
@@ -239,11 +276,12 @@
           const r = range();
           const [res, pres] = await Promise.all([
             call({ action: 'admin_list', secret, from: r.from, to: r.to }),
-            call({ action: 'petition_admin_list', secret, from: r.from, to: r.to })
+            call({ action: 'petition_admin_list', secret, from: r.from, to: r.to }),
+            loadTrainEnds()
           ]);
           entries = res.entries || [];
           petitions = pres.petitions || [];
-          $('msg').textContent = '';
+          $('msg').textContent = trainSyncNote();
           renderRows();
           renderPetitions();
         } catch (e) {
@@ -341,5 +379,6 @@
       if (saved) { $('admin-secret').value = saved; login(); }
     })();
   </script>
+<script src="../js/reveal.js?v=20261014-1"></script>
 </body>
 </html>

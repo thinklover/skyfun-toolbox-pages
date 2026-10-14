@@ -171,10 +171,10 @@
         <button type="button" id="btn-points-search" class="btn btn-main">查詢</button>
       </div>
       <div class="points-quick">
-        <button type="button" class="points-preset is-active" data-preset="all">全部</button>
-        <button type="button" class="points-preset" data-preset="month">本月</button>
-        <button type="button" class="points-preset" data-preset="last-month">上月</button>
+        <button type="button" class="points-preset is-active" data-preset="month">本業績月</button>
+        <button type="button" class="points-preset" data-preset="last-month">上業績月</button>
         <button type="button" class="points-preset" data-preset="today">今天</button>
+        <button type="button" class="points-preset" data-preset="all">全部</button>
       </div>
       <div class="points-summary" id="points-summary"></div>
       <p class="text-xs text-slate-500" id="points-range">—</p>
@@ -667,17 +667,18 @@
           toEl.value = today;
           return;
         }
-        if (preset === 'month') {
-          fromEl.value = fmtDateInput(new Date(now.getFullYear(), now.getMonth(), 1));
-          toEl.value = fmtDateInput(now);
-          return;
+        if (preset === 'month' || preset === 'last-month') {
+          const r = perfMonthRange(now, preset === 'month' ? 0 : -1);
+          fromEl.value = fmtDateInput(r.start);
+          toEl.value = fmtDateInput(r.end);
         }
-        if (preset === 'last-month') {
-          const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const end = new Date(now.getFullYear(), now.getMonth(), 0);
-          fromEl.value = fmtDateInput(start);
-          toEl.value = fmtDateInput(end);
-        }
+      }
+
+      /** 業績月：上月 29 日～本月 28 日，同前台排行榜（平年 2 月沒有 29 日就從 3/1 起） */
+      function perfMonthRange(at, offset) {
+        let y = at.getFullYear();
+        let m = at.getMonth() + (at.getDate() >= 29 ? 1 : 0) + (offset || 0);
+        return { start: new Date(y, m - 1, 29), end: new Date(y, m, 28) };
       }
 
       function pct(part, total) {
@@ -1068,6 +1069,7 @@
           });
         });
       });
+      applyPointsPreset('month');
 
       document.getElementById('tab-pending').addEventListener('click', function (e) {
         const qualityEl = e.target.closest('.review-quality');
@@ -1125,5 +1127,6 @@
       if (saved) document.getElementById('admin-secret').value = saved;
     })();
   </script>
+<script src="../js/reveal.js?v=20261014-1"></script>
 </body>
 </html>

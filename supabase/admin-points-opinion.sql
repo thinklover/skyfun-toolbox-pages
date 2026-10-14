@@ -18,6 +18,25 @@ create table if not exists public.admin_points_opinion (
   check (kind <> 'roster' or (roster_period <> '' and measure <> ''))
 );
 alter table public.admin_points_opinion add column if not exists region text not null default '';
+alter table public.admin_points_opinion add column if not exists category text not null default '';
+-- 清冊意見選的那一件（表單04／09 的一筆），同一媒合編號有多件時用來分辨
+alter table public.admin_points_opinion add column if not exists roster_item text not null default '';
+
+-- 缺失類別（同公會月報的「審件缺失」「清冊缺失」，前端 Core.OPINION_CATEGORIES 要一致）
+create or replace function public.admin_points_opinion_cats(p_kind text)
+returns text[]
+language sql
+immutable
+as $$
+  select case p_kind
+    when 'case' then array['資料缺漏、重複(未檢附)', '未附原租約、不完整', '房東/客資料誤繕、過期、缺漏', '編號誤繕、未填(物編客編媒編)',
+      '金額/費用誤繕', '日期未填、誤繕', '未蓋章/未簽章(含章糊)', '表單勾選有誤(未勾、勾錯)', '擺放順序有誤',
+      '消防三寶(熱水器滅火器偵煙器)', '其他']
+    when 'roster' then array['資料缺漏、重複(未檢附)', '有檢附資料未KEY經控表', '房東/客資料誤繕', '編號誤繕、未填(物編客編媒編)',
+      '金額/費用誤繕', '日期未填、誤繕', '未蓋章/未簽章(含章糊)', '表單勾選有誤(未勾、勾錯)', '擺放順序有誤', '其他']
+    else array[]::text[]
+  end;
+$$;
 create index if not exists admin_points_opinion_date_idx on public.admin_points_opinion (work_date);
 create index if not exists admin_points_opinion_guild_idx on public.admin_points_opinion (guild_period);
 alter table public.admin_points_opinion enable row level security;
@@ -52,7 +71,14 @@ as $$
       select json_agg(json_build_object(
         'id', c.id, 'date', c.work_date, 'name', c.staff_name, 'checked', c.checked,
         'correct', c.correct, 'note', c.note, 'createdBy', c.created_by,
-        'spotKey', c.spot_key, 'spotNode', c.spot_node
+        'spotKey', c.spot_key, 'spotNode', c.spot_node, 'checkedAt', c.created_at,
+        'auditTime', (
+          select it->>'time'
+          from public.admin_points_spot_draw d, jsonb_array_elements(d.items) it
+          where c.spot_key <> '' and it->>'key' = c.spot_key and coalesce(it->>'node', '') = coalesce(c.spot_node, '')
+          order by d.created_at desc
+          limit 1
+        )
       ) order by c.work_date, c.id)
       from public.admin_points_check c
       where c.work_date between p_start and p_end
@@ -69,7 +95,8 @@ as $$
       select json_agg(json_build_object(
         'id', o.id, 'kind', o.kind, 'date', o.work_date, 'name', o.staff_name,
         'guildPeriod', o.guild_period, 'caseNo', o.case_no, 'rosterPeriod', o.roster_period, 'region', o.region,
-        'opinionDate', o.opinion_date, 'content', o.content, 'measure', o.measure, 'createdAt', o.created_at
+        'opinionDate', o.opinion_date, 'content', o.content, 'measure', o.measure, 'createdAt', o.created_at,
+        'category', o.category, 'rosterItem', o.roster_item
       ) order by o.work_date, o.id)
       from public.admin_points_opinion o
       where o.work_date between p_start and p_end
@@ -85,7 +112,8 @@ as $$
 $$;
 revoke all on function public.admin_points_payload(date, date) from public, anon, authenticated;
 
--- p_data：{guildPeriod, region, caseNo, rosterPeriod, opinionDate, content, measure}
+-- p_data：{guildPeriod, region, caseNo, rosterPeriod, rosterItem, opinionDate, category, content, measure}
+-- 清冊意見也存媒合編號（舊版前端沒送，先不強制）
 create or replace function public.admin_points_opinion_save(p_token text, p_kind text, p_data jsonb)
 returns json
 language plpgsql
@@ -99,9 +127,11 @@ declare
   v_period text := left(trim(coalesce(d->>'guildPeriod', '')), 20);
   v_case text := left(trim(coalesce(d->>'caseNo', '')), 60);
   v_roster text := left(trim(coalesce(d->>'rosterPeriod', '')), 20);
+  v_item text := left(trim(coalesce(d->>'rosterItem', '')), 300);
   v_region text := trim(coalesce(d->>'region', ''));
   v_content text := left(trim(coalesce(d->>'content', '')), 2000);
   v_measure text := left(trim(coalesce(d->>'measure', '')), 2000);
+  v_cat text := trim(coalesce(d->>'category', ''));
   v_date date;
   v_id bigint;
 begin
@@ -122,12 +152,18 @@ begin
   exception when others then
     return json_build_object('ok', false, 'error', '意見時間格式不正確');
   end;
+  if v_date is null then return json_build_object('ok', false, 'error', '請填意見時間'); end if;
+  -- 舊版表單沒有缺失類別欄，空白先放行（正式站更新後可改為必填）
+  if v_cat <> '' and not (v_cat = any (public.admin_points_opinion_cats(p_kind))) then
+    return json_build_object('ok', false, 'error', '缺失類別不正確');
+  end if;
   insert into public.admin_points_opinion (kind, work_date, staff_name, user_id, guild_period, region, case_no, roster_period,
-    opinion_date, content, measure)
+    opinion_date, content, measure, category, roster_item)
   values (p_kind, (now() at time zone 'Asia/Taipei')::date, v_name, v_uid, v_period, v_region,
-    case when p_kind = 'case' then v_case else '' end,
+    v_case,
     case when p_kind = 'roster' then v_roster else '' end,
-    v_date, v_content, case when p_kind = 'roster' then v_measure else '' end)
+    v_date, v_content, case when p_kind = 'roster' then v_measure else '' end, v_cat,
+    case when p_kind = 'roster' then v_item else '' end)
   returning id into v_id;
   return json_build_object('ok', true, 'id', v_id);
 end;
@@ -175,7 +211,8 @@ begin
   return json_build_object('ok', true, 'opinions', coalesce((
     select json_agg(json_build_object(
       'id', o.id, 'kind', o.kind, 'region', o.region, 'caseNo', o.case_no, 'rosterPeriod', o.roster_period,
-      'name', o.staff_name, 'date', o.work_date, 'opinionDate', o.opinion_date, 'content', o.content
+      'name', o.staff_name, 'date', o.work_date, 'opinionDate', o.opinion_date, 'content', o.content, 'category', o.category,
+      'rosterItem', o.roster_item
     ) order by o.kind, o.region, o.id)
     from public.admin_points_opinion o
     where o.guild_period = trim(coalesce(p_guild_period, ''))
@@ -194,7 +231,7 @@ as $$
 begin
   if public.admin_qa_user_id(p_token) is null then return json_build_object('ok', false, 'error', '請先登入工具箱'); end if;
   return json_build_object('ok', true, 'opinions', coalesce((
-    select json_agg(json_build_object('kind', o.kind, 'region', o.region, 'caseNo', o.case_no) order by o.id)
+    select json_agg(json_build_object('kind', o.kind, 'region', o.region, 'caseNo', o.case_no, 'category', o.category) order by o.id)
     from public.admin_points_opinion o
     where o.guild_period = trim(coalesce(p_guild_period, ''))
   ), '[]'::json));
@@ -217,7 +254,8 @@ begin
     select json_agg(json_build_object(
       'id', o.id, 'kind', o.kind, 'date', o.work_date, 'name', o.staff_name,
       'guildPeriod', o.guild_period, 'caseNo', o.case_no, 'rosterPeriod', o.roster_period, 'region', o.region,
-      'opinionDate', o.opinion_date, 'content', o.content, 'measure', o.measure, 'createdAt', o.created_at
+      'opinionDate', o.opinion_date, 'content', o.content, 'measure', o.measure, 'createdAt', o.created_at,
+      'category', o.category, 'rosterItem', o.roster_item
     ) order by o.work_date desc, o.id desc)
     from (select * from public.admin_points_opinion order by work_date desc, id desc limit 5000) o
   ), '[]'::json));
@@ -225,6 +263,30 @@ end;
 $$;
 revoke all on function public.admin_points_opinion_all(text) from public;
 grant execute on function public.admin_points_opinion_all(text) to anon, authenticated;
+
+-- 後台「公會意見」：改缺失類別（空字串＝未分類）
+create or replace function public.admin_points_opinion_set_category(p_secret text, p_id bigint, p_category text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_kind text;
+  v_cat text := trim(coalesce(p_category, ''));
+begin
+  if not public.toolbox_check_admin(p_secret) then return json_build_object('ok', false, 'error', '後台密碼錯誤'); end if;
+  select kind into v_kind from public.admin_points_opinion where id = p_id;
+  if v_kind is null then return json_build_object('ok', false, 'error', '找不到這筆意見'); end if;
+  if v_cat <> '' and not (v_cat = any (public.admin_points_opinion_cats(v_kind))) then
+    return json_build_object('ok', false, 'error', '缺失類別不正確');
+  end if;
+  update public.admin_points_opinion set category = v_cat where id = p_id;
+  return json_build_object('ok', true);
+end;
+$$;
+revoke all on function public.admin_points_opinion_set_category(text, bigint, text) from public;
+grant execute on function public.admin_points_opinion_set_category(text, bigint, text) to anon, authenticated;
 
 revoke all on function public.admin_points_kpi_opinions(text, text) from public;
 grant execute on function public.admin_points_kpi_opinions(text, text) to anon, authenticated;

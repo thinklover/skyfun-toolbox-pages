@@ -59,6 +59,8 @@ begin
   end if;
   if v_focus = '' then return json_build_object('ok', false, 'error', '請填寫要改善的項目'); end if;
   if v_actions = '' then return json_build_object('ok', false, 'error', '請填寫具體做法'); end if;
+  if char_length(trim(coalesce(p_data->>'focus', ''))) > 300 then return json_build_object('ok', false, 'error', '要改善的項目請在 300 字內'); end if;
+  if char_length(trim(coalesce(p_data->>'actions', ''))) > 300 then return json_build_object('ok', false, 'error', '具體做法請在 300 字內'); end if;
 
   if p_id is null then
     insert into public.admin_points_plans (staff_name, perf_year, perf_month, grade, score, focus, actions, target, review, user_id, user_name)

@@ -449,6 +449,7 @@
 .ado2-form input, .ado2-form select { width: 100%; min-width: 0; padding: 0.32rem 0.45rem; border: 1px solid #ddd5c5; border-radius: 0.45rem; background: #fff; font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--og-ink); }
 .ado2-form input:focus, .ado2-form select:focus { outline: none; border-color: var(--og-gold); box-shadow: 0 0 0 3px rgba(195, 161, 101, 0.2); }
 .ado2-form .ado2-leave input { border-color: var(--og-gold); background: #fdf8ec; }
+.ado2-joined-hint { font-size: 0.7rem; font-weight: 600; color: #b4532a; }
 .ado2-form-hint { grid-column: 1 / -1; margin: 0; font-size: 0.72rem; font-weight: 600; color: #8a6a35; }
 .ado2-form-btns { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
 .ado2-btn { padding: 0.32rem 0.9rem; border: 1px solid #ddd5c5; border-radius: 999px; background: #fff; font: inherit; font-size: 0.78rem; font-weight: 700; color: #3f4753; cursor: pointer; }
@@ -466,16 +467,16 @@
 
 /* ===== 行政專區配色：明亮清爽（白底為主、淺色漸層主卡＋清楚的強調色）。績效靛藍、問答薄荷綠；紅只用在待簽核 ===== */
 .adz-top-label { display: none; }
-#page-administration {
+:is(#page-administration, #page-newbie) {
     --az-ink: #1e293b; --az-sub: #64748b; --az-line: #e8ecf4; --az-soft: #f8faff; --az-muted: #f1f4fa;
     --az-accent: #6366f1; --az-accent-soft: #eef0ff; --az-accent-line: #c7cbfb;
 }
-#page-administration .adz-title { font-size: 1.7rem; letter-spacing: 0.03em; color: var(--az-ink); }
-#page-administration .adz-sub { color: var(--az-sub); }
-#page-administration .adz-quick { gap: 1rem; }
+:is(#page-administration, #page-newbie) .adz-title { font-size: 1.7rem; letter-spacing: 0.03em; color: var(--az-ink); }
+:is(#page-administration, #page-newbie) .adz-sub { color: var(--az-sub); }
+:is(#page-administration, #page-newbie) .adz-quick { gap: 1rem; }
 
 /* 主卡 */
-#page-administration .adz-hero {
+:is(#page-administration, #page-newbie) .adz-hero {
     position: relative; overflow: hidden; isolation: isolate;
     flex-wrap: wrap; align-items: flex-start; align-content: space-between; gap: 1rem 1.1rem;
     min-height: 13.5rem; padding: 1.5rem 1.6rem 1.4rem;
@@ -483,104 +484,150 @@
     box-shadow: 0 16px 36px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.05);
     transition: transform 0.18s, box-shadow 0.18s;
 }
-#page-administration .adz-hero--points {
+:is(#page-administration, #page-newbie) .adz-hero--points {
     --hero-ink: #1e1b4b; --hero-sub: #5b5f86; --hero-accent: #6366f1; --hero-line: #dfe1ff;
     --hero-shadow: rgba(99, 102, 241, 0.45); --hero-num: #d97706;
     background: linear-gradient(135deg, #ffffff 0%, #f1f0ff 45%, #e6edff 100%);
 }
-#page-administration .adz-hero--qa {
+:is(#page-administration, #page-newbie) .adz-hero--qa {
     --hero-ink: #064e3b; --hero-sub: #4f7a6c; --hero-accent: #10a37f; --hero-line: #cdf1e3;
     --hero-shadow: rgba(16, 163, 127, 0.4); --hero-num: #d97706;
     background: linear-gradient(135deg, #ffffff 0%, #eafbf4 45%, #e2f5fb 100%);
 }
-#page-administration .adz-hero::before {
+:is(#page-administration, #page-newbie) .adz-hero::before {
     content: ''; position: absolute; z-index: -1; width: 20rem; height: 20rem; right: -7rem; top: -9rem; border-radius: 50%;
     background: radial-gradient(circle, var(--hero-glow, rgba(255, 255, 255, 0.9)), rgba(255, 255, 255, 0) 70%);
 }
-#page-administration .adz-hero--points::before { --hero-glow: rgba(165, 180, 252, 0.45); }
-#page-administration .adz-hero--qa::before { --hero-glow: rgba(110, 231, 183, 0.4); }
-#page-administration .adz-hero::after {
+:is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(165, 180, 252, 0.45); }
+:is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(110, 231, 183, 0.4); }
+:is(#page-administration, #page-newbie) .adz-hero::after {
     content: ''; position: absolute; z-index: -1; inset: 0;
     background-image: radial-gradient(rgba(99, 102, 241, 0.09) 1px, transparent 1px); background-size: 16px 16px;
     -webkit-mask-image: linear-gradient(115deg, transparent 45%, #000 100%); mask-image: linear-gradient(115deg, transparent 45%, #000 100%);
 }
-#page-administration .adz-hero--qa::after { background-image: radial-gradient(rgba(16, 163, 127, 0.1) 1px, transparent 1px); }
-#page-administration .adz-hero:hover {
+:is(#page-administration, #page-newbie) .adz-hero--qa::after { background-image: radial-gradient(rgba(16, 163, 127, 0.1) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero:hover {
     transform: translateY(-2px); border-color: var(--hero-line);
     box-shadow: 0 22px 44px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.06);
 }
-#page-administration .adz-hero.is-open { box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.22), 0 16px 36px -22px var(--hero-shadow); }
-#page-administration .adz-hero .apt-entry-icon {
+:is(#page-administration, #page-newbie) .adz-hero.is-open { box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.22), 0 16px 36px -22px var(--hero-shadow); }
+:is(#page-administration, #page-newbie) .adz-hero .apt-entry-icon {
     display: inline-grid; place-items: center; flex-shrink: 0; width: 3.4rem; height: 3.4rem; border-radius: 16px; font-size: 1.7rem;
     background: #fff; box-shadow: inset 0 0 0 1px var(--hero-line), 0 6px 14px -8px var(--hero-shadow);
 }
-#page-administration .adz-hero .apt-entry-text { gap: 0.3rem; }
-#page-administration .adz-hero .apt-entry-text strong { color: var(--hero-ink); font-size: 1.45rem; letter-spacing: 0.03em; }
-#page-administration .adz-hero .apt-entry-text small { color: var(--hero-sub); font-size: 0.86rem; line-height: 1.55; }
-#page-administration .adz-hero-board { flex: 0 0 100%; display: block; min-width: 0; }
-#page-administration .adz-hero .adz-top-label {
+:is(#page-administration, #page-newbie) .adz-hero .apt-entry-text { gap: 0.3rem; }
+:is(#page-administration, #page-newbie) .adz-hero .apt-entry-text strong { color: var(--hero-ink); font-size: 1.45rem; letter-spacing: 0.03em; }
+:is(#page-administration, #page-newbie) .adz-hero .apt-entry-text small { color: var(--hero-sub); font-size: 0.86rem; line-height: 1.55; }
+:is(#page-administration, #page-newbie) .adz-hero-board { flex: 0 0 100%; display: block; min-width: 0; }
+:is(#page-administration, #page-newbie) .adz-hero .adz-top-label {
     display: block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; color: var(--hero-accent);
 }
-#page-administration .adz-hero .adz-top { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin-top: 0.45rem; }
-#page-administration .adz-hero .adz-top-item {
+:is(#page-administration, #page-newbie) .adz-hero .adz-top { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin-top: 0.45rem; }
+:is(#page-administration, #page-newbie) .adz-hero .adz-top-item {
     display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.05rem 0.5rem;
     padding: 0.55rem 0.7rem; border-radius: 14px; white-space: normal; color: var(--hero-ink);
     background: #fff; border: 1px solid var(--hero-line); box-shadow: 0 2px 6px -3px rgba(15, 23, 42, 0.08);
 }
-#page-administration .adz-hero .adz-top-item:first-child { background: linear-gradient(135deg, #fffdf5, #fff7e0); border-color: #fcd98a; }
-#page-administration .adz-hero .adz-top-item > i { grid-row: 1 / 3; font-style: normal; font-size: 1.55rem; line-height: 1; }
-#page-administration .adz-hero .adz-top-item > span { font-size: 0.84rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#page-administration .adz-hero .adz-top-item > b { font-size: 1.25rem; font-weight: 900; line-height: 1.1; color: var(--hero-num); }
-#page-administration .adz-hero .adz-top-item > b small { margin-left: 0.15rem; font-size: 0.68rem; font-weight: 700; color: var(--hero-sub); }
-#page-administration .adz-hero .adz-top-empty { font-size: 0.8rem; color: var(--hero-sub); }
-#page-administration .adz-hero .apt-entry-arrow {
+:is(#page-administration, #page-newbie) .adz-hero .adz-top-item:first-child { background: linear-gradient(135deg, #fffdf5, #fff7e0); border-color: #fcd98a; }
+:is(#page-administration, #page-newbie) .adz-hero .adz-top-item > i { grid-row: 1 / 3; font-style: normal; font-size: 1.55rem; line-height: 1; }
+:is(#page-administration, #page-newbie) .adz-hero .adz-top-item > span { font-size: 0.84rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:is(#page-administration, #page-newbie) .adz-hero .adz-top-item > b { font-size: 1.25rem; font-weight: 900; line-height: 1.1; color: var(--hero-num); }
+:is(#page-administration, #page-newbie) .adz-hero .adz-top-item > b small { margin-left: 0.15rem; font-size: 0.68rem; font-weight: 700; color: var(--hero-sub); }
+:is(#page-administration, #page-newbie) .adz-hero .adz-top-empty { font-size: 0.8rem; color: var(--hero-sub); }
+:is(#page-administration, #page-newbie) .adz-hero .apt-entry-arrow {
     flex-shrink: 0; padding: 0.42rem 1rem; border-radius: 999px; font-size: 0.8rem; font-weight: 800; white-space: nowrap;
     background: var(--hero-accent); color: #fff; box-shadow: 0 6px 14px -6px var(--hero-shadow); transition: transform 0.15s;
 }
-#page-administration .adz-hero:hover .apt-entry-arrow { transform: translateX(2px); color: #fff; background: var(--hero-accent); }
+:is(#page-administration, #page-newbie) .adz-hero:hover .apt-entry-arrow { transform: translateX(2px); color: #fff; background: var(--hero-accent); }
 @media (max-width: 639px) {
-    #page-administration .adz-hero { min-height: 0; padding: 1.2rem 1.1rem; gap: 0.8rem; }
-    #page-administration .adz-hero .apt-entry-icon { width: 2.8rem; height: 2.8rem; font-size: 1.4rem; }
-    #page-administration .adz-hero .apt-entry-text strong { font-size: 1.25rem; }
-    #page-administration .adz-hero .adz-top-item { padding: 0.45rem 0.5rem; gap: 0 0.35rem; }
-    #page-administration .adz-hero .adz-top-item > i { font-size: 1.2rem; }
+    :is(#page-administration, #page-newbie) .adz-hero { min-height: 0; padding: 1.2rem 1.1rem; gap: 0.8rem; }
+    :is(#page-administration, #page-newbie) .adz-hero .apt-entry-icon { width: 2.8rem; height: 2.8rem; font-size: 1.4rem; }
+    :is(#page-administration, #page-newbie) .adz-hero .apt-entry-text strong { font-size: 1.25rem; }
+    :is(#page-administration, #page-newbie) .adz-hero .adz-top-item { padding: 0.45rem 0.5rem; gap: 0 0.35rem; }
+    :is(#page-administration, #page-newbie) .adz-hero .adz-top-item > i { font-size: 1.2rem; }
 }
 
 /* 次要卡：白底、明亮的圖示方塊 */
-#page-administration .adz-folds { gap: 1rem; }
-#page-administration .adz-folds > .af-fold {
+:is(#page-administration, #page-newbie) .adz-folds { gap: 1rem; }
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold {
     --tone: #6366f1; --tone-soft: #eef0ff; --ico-bg: linear-gradient(135deg, #f5f3ff, #e4e1ff); --ico-ring: #d4cffd;
     --f-ink: var(--tone); --f-bg: #fff; --f-line: var(--az-line);
     padding: 1.05rem 1.15rem; background: #fff; border: 1px solid var(--az-line); border-radius: 18px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.04);
     transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
 }
-#page-administration .adz-folds > #admin-forms-zone { --tone: #d97706; --tone-soft: #fff7e6; --ico-bg: linear-gradient(135deg, #fffaeb, #ffe8b3); --ico-ring: #fcd98a; }
-#page-administration .adz-folds > #cancel-obj-zone { --tone: #e11d48; --tone-soft: #fff1f3; --ico-bg: linear-gradient(135deg, #fff1f3, #ffd6de); --ico-ring: #fdb4c2; }
-#page-administration .adz-folds > #admin-meeting-zone { --tone: #0891b2; --tone-soft: #ecfeff; --ico-bg: linear-gradient(135deg, #ecfeff, #c9f1f8); --ico-ring: #a5e3ef; }
-#page-administration .adz-folds > #adz-petition-card { --tone: #7c3aed; --tone-soft: #f5f0ff; --ico-bg: linear-gradient(135deg, #f7f3ff, #e6dcff); --ico-ring: #d3c4fd; }
-#page-administration .adz-folds > .af-fold:not([open]):hover {
+:is(#page-administration, #page-newbie) .adz-folds > #admin-forms-zone { --tone: #d97706; --tone-soft: #fff7e6; --ico-bg: linear-gradient(135deg, #fffaeb, #ffe8b3); --ico-ring: #fcd98a; }
+:is(#page-administration, #page-newbie) .adz-folds > #cancel-obj-zone { --tone: #e11d48; --tone-soft: #fff1f3; --ico-bg: linear-gradient(135deg, #fff1f3, #ffd6de); --ico-ring: #fdb4c2; }
+:is(#page-administration, #page-newbie) .adz-folds > #admin-meeting-zone { --tone: #0891b2; --tone-soft: #ecfeff; --ico-bg: linear-gradient(135deg, #ecfeff, #c9f1f8); --ico-ring: #a5e3ef; }
+:is(#page-administration, #page-newbie) .adz-folds > #adz-petition-card { --tone: #7c3aed; --tone-soft: #f5f0ff; --ico-bg: linear-gradient(135deg, #f7f3ff, #e6dcff); --ico-ring: #d3c4fd; }
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold:not([open]):hover {
     border-color: var(--ico-ring); transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(15, 23, 42, 0.18);
 }
-#page-administration .adz-folds > .af-fold .af-title { display: flex; align-items: center; gap: 0.7rem; font-size: 1.05rem; color: var(--az-ink); }
-#page-administration .adz-ico {
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold .af-title { display: flex; align-items: center; gap: 0.7rem; font-size: 1.05rem; color: var(--az-ink); }
+:is(#page-administration, #page-newbie) .adz-ico {
     display: inline-grid; place-items: center; flex-shrink: 0; width: 2.6rem; height: 2.6rem; border-radius: 13px;
     font-style: normal; font-size: 1.25rem; background: var(--ico-bg); box-shadow: inset 0 0 0 1px var(--ico-ring);
 }
-#page-administration .adz-folds > .af-fold .af-summary-hint {
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold .af-summary-hint {
     background: none; border: 0; padding: 0 0 0 3.3rem; color: var(--az-sub); font-weight: 600;
 }
-#page-administration .adz-folds > .af-fold .af-chevron {
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold .af-chevron {
     background: var(--az-muted); color: var(--az-ink); box-shadow: none; filter: none;
 }
-#page-administration .adz-folds > .af-fold .af-summary:hover .af-chevron,
-#page-administration .adz-folds > .af-fold[open] .af-chevron,
-#page-administration .adz-folds > .af-fold[open] .af-summary:hover .af-chevron {
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold .af-summary:hover .af-chevron,
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold[open] .af-chevron,
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold[open] .af-summary:hover .af-chevron {
     background: var(--tone-soft); color: var(--tone); box-shadow: inset 0 0 0 1px var(--ico-ring); filter: none;
 }
-#page-administration .adz-folds > .af-fold[open] { border-top: 4px solid var(--tone); }
-#page-administration .adz-folds > .af-fold[open] > .af-summary { border-bottom: 1px solid var(--az-line); }
-#page-administration .pt-entry-badge { background: #ef4444; }
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold[open] { border-top: 4px solid var(--tone); }
+:is(#page-administration, #page-newbie) .adz-folds > .af-fold[open] > .af-summary { border-bottom: 1px solid var(--az-line); }
+:is(#page-administration, #page-newbie) .pt-entry-badge { background: #ef4444; }
+
+/* 新人專區：沿用行政專區版型；業務琥珀、租管師玫瑰 */
+#page-newbie .adz-hero--biz {
+    --hero-ink: #78350f; --hero-sub: #8a6a4a; --hero-accent: #d97706; --hero-line: #fde3a7;
+    --hero-shadow: rgba(217, 119, 6, 0.42); --hero-num: #78350f;
+    background: linear-gradient(135deg, #ffffff 0%, #fff8e8 45%, #ffeed4 100%);
+}
+#page-newbie .adz-hero--rm {
+    --hero-ink: #881337; --hero-sub: #8b5a68; --hero-accent: #e11d48; --hero-line: #fdd3dc;
+    --hero-shadow: rgba(225, 29, 72, 0.38); --hero-num: #881337;
+    background: linear-gradient(135deg, #ffffff 0%, #fff1f4 45%, #ffe4ea 100%);
+}
+#page-newbie .adz-hero--subsidy {
+    --hero-ink: #064e3b; --hero-sub: #4f7a6c; --hero-accent: #059669; --hero-line: #c6efdc;
+    --hero-shadow: rgba(5, 150, 105, 0.4); --hero-num: #064e3b;
+    min-height: 0;
+    background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 45%, #d9f7ea 100%);
+}
+#page-newbie .adz-hero--subsidy::before { --hero-glow: rgba(110, 231, 183, 0.45); }
+#page-newbie .adz-hero--subsidy::after { background-image: radial-gradient(rgba(5, 150, 105, 0.1) 1px, transparent 1px); }
+#page-newbie .adz-hero--subsidy .adz-top { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+#page-newbie .adz-hero--subsidy .adz-top-item > i { grid-row: auto; }
+#page-newbie .adz-hero--biz::before { --hero-glow: rgba(252, 211, 77, 0.45); }
+#page-newbie .adz-hero--rm::before { --hero-glow: rgba(253, 164, 175, 0.42); }
+#page-newbie .adz-hero--biz::after { background-image: radial-gradient(rgba(217, 119, 6, 0.1) 1px, transparent 1px); }
+#page-newbie .adz-hero--rm::after { background-image: radial-gradient(rgba(225, 29, 72, 0.09) 1px, transparent 1px); }
+#page-newbie .adz-hero .adz-top-item:first-child { background: #fff; border-color: var(--hero-line); }
+#page-newbie .adz-hero .adz-top-item > span { font-size: 0.7rem; letter-spacing: 0.08em; color: var(--hero-accent); }
+#page-newbie .adz-hero .adz-top-item > b { font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 639px) {
+    #page-newbie .adz-hero .adz-top { gap: 0.4rem; }
+    #page-newbie .adz-hero .adz-top-item { grid-template-columns: minmax(0, 1fr); text-align: center; }
+    #page-newbie .adz-hero .adz-top-item > i { display: none; }
+    #page-newbie .adz-hero .adz-top-item > b { font-size: 0.9rem; white-space: normal; }
+    #page-newbie .adz-hero--subsidy .adz-top { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+#page-newbie .adz-folds > #nb-card-subsidy { --tone: #059669; --tone-soft: #ecfdf5; --ico-bg: linear-gradient(135deg, #effdf6, #c9f4df); --ico-ring: #a7e9c8; }
+#page-newbie .adz-folds > #nb-card-quest { --tone: #7c3aed; --tone-soft: #f5f0ff; --ico-bg: linear-gradient(135deg, #f7f3ff, #e6dcff); --ico-ring: #d3c4fd; }
+#page-newbie .adz-folds > #nb-card-glossary { --tone: #2563eb; --tone-soft: #eff5ff; --ico-bg: linear-gradient(135deg, #f0f6ff, #d6e5ff); --ico-ring: #bcd3fd; }
+#page-newbie .adz-folds > #nb-card-screening { --tone: #16a34a; --tone-soft: #effcf3; --ico-bg: linear-gradient(135deg, #f0fdf4, #cdf3da); --ico-ring: #b0e8c3; }
+#page-newbie .adz-folds > #nb-card-playbook { --tone: #ea580c; --tone-soft: #fff4ec; --ico-bg: linear-gradient(135deg, #fff7ed, #ffdcc2); --ico-ring: #fdc59c; }
+#page-newbie .adz-folds > #nb-hub-open-qa { --tone: #0d9488; --tone-soft: #ecfdfa; --ico-bg: linear-gradient(135deg, #effdfa, #c8f2ea); --ico-ring: #a5e6da; }
+#page-newbie .adz-folds > #nb-card-transcript { --tone: #0891b2; --tone-soft: #ecfeff; --ico-bg: linear-gradient(135deg, #ecfeff, #c9f1f8); --ico-ring: #a5e3ef; }
+#page-newbie .adz-folds > #nb-card-policy { --tone: #e11d48; --tone-soft: #fff1f3; --ico-bg: linear-gradient(135deg, #fff1f3, #ffd6de); --ico-ring: #fdb4c2; }
+#page-newbie .nb-policy-list { margin: 0; padding-left: 1.2rem; list-style: disc; font-size: 0.92rem; line-height: 1.75; color: #334155; }
+#page-newbie .nb-hub-note { margin: 0; text-align: center; font-size: 0.8rem; font-weight: 600; color: #64748b; }
 
 /* 行事曆：類別用明亮的淺色塊＋清楚的字色；今天、選取用靛藍 */
 #page-administration .adz-cal {

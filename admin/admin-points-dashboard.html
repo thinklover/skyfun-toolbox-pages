@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261013-1"></script>
+  <script src="../js/admin-points-core.js?v=20261014-7"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -144,6 +144,26 @@
     .seg { padding: 0.3rem 0.8rem; border-radius: 999px; border: 1px solid #cbd5e1; background: #fff; font-size: 0.8rem; font-weight: 800; color: #334155; }
     .seg.is-on { background: #4f46e5; border-color: #4f46e5; color: #fff; }
     .seg small { margin-left: 0.25rem; font-weight: 700; opacity: 0.75; }
+    .ck-filter { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.8rem; background: #f8fafc; }
+    .ck-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+    .ck-filter-label { min-width: 2.5rem; font-size: 0.76rem; font-weight: 900; color: #64748b; }
+    .seg.seg-ok.is-on { background: #16a34a; border-color: #16a34a; }
+    .seg.seg-bad.is-on { background: #dc2626; border-color: #dc2626; }
+    .ck-region { padding: 0.28rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #fff; font-size: 0.8rem; font-weight: 800; color: #334155; }
+    .ck-table tr.ck-row-bad td { background: #fef2f2; }
+    .ck-table tr.ck-row-bad td:first-child { box-shadow: inset 4px 0 0 #dc2626; }
+    .ck-table tr.ck-row-ok td:first-child { box-shadow: inset 4px 0 0 #22c55e; }
+    .ck-badge { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.76rem; font-weight: 900; white-space: nowrap; }
+    .ck-badge--ok { background: #dcfce7; color: #15803d; }
+    .ck-badge--bad { background: #dc2626; color: #fff; }
+    .ck-rate-ok { color: #15803d; }
+    .ck-rate-bad { color: #dc2626; }
+    .ck-table td.ck-audit { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .ck-table td.ck-audit small { display: block; color: #64748b; font-size: 0.78rem; }
+    .ck-table td.ck-note { min-width: 18rem; max-width: 36rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.55; }
+    .ck-why { color: #b91c1c; font-weight: 800; }
+    .ck-okword { color: #15803d; font-weight: 800; }
+    .ck-sep { color: #cbd5e1; }
     .op-sum { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; }
     .op-sum b { font-size: 0.92rem; color: #1e1b4b; }
     .op-sum .badge { font-weight: 800; }
@@ -301,7 +321,7 @@
       <div class="page-head"><h2>主管月報／週報</h2><p>一鍵產生和「管理部週報」「業務管理部月會報告」同樣版面的簡報，先預覽再下載 PPT</p></div>
       <details class="help"><summary>簡報內容與資料來源</summary>
         <p><b>週報</b>：封面、一《管理部｜年度KPI》上下半年、行政人員每月進度、二 北／中／南區行政量能承接率。<b>月報</b>：封面、年度KPI上下半年、附件1-1 各地區KPI、附件1-2 北中南區承接率週變化、二 行政個人效能、三 系統作業效率月報、四 新媒合包租率月報。投影片內文字級至少 11pt，所以人員進度依人數分成數頁、承接率依週數把一區拆成數頁。</p>
-        <p class="mt-2">每一頁的數字和左邊同名報表相同：年度KPI取「管理部KPI月報」（第一階段以上達成率、行政承接率自動帶入本月與各週實績；清冊／審件良率自動帶入本月與上個月實績），其餘來自星鴻審核紀錄、補助審核、表單04／07、媒合管理與本後台的抽查。週別從業績月第一天起算，每週到星期五為止；週報只算到選定那週的最後一天。業務相關指標（續約率、包租新件率、續轉包率、新媒合包租率）目前沒有自動資料，年度KPI請在「管理部KPI月報」頁填寫。</p>
+        <p class="mt-2">每一頁的數字和左邊同名報表相同：年度KPI取「管理部KPI月報」（第一階段以上達成率、行政承接率自動帶入本月與各週實績；清冊／審件良率自動帶入本月與上個月實績），其餘來自星鴻審核紀錄、補助審核、表單04／09、媒合管理與本後台的抽查。週別從業績月第一天起算，每週到星期五為止；週報只算到選定那週的最後一天。業務相關指標（續約率、包租新件率、續轉包率、新媒合包租率）目前沒有自動資料，年度KPI請在「管理部KPI月報」頁填寫。</p>
       </details>
       <div class="row">
         <div class="field"><label>報告類型</label><select id="b-type"><option value="week">週報</option><option value="month">月報</option></select></div>
@@ -449,9 +469,9 @@
     <div id="tab-kpi" class="space-y-4 hidden">
       <div class="page-head"><h2>各地區KPI指標</h2><p>第一階段以上達成率、行政承接率、清冊／審件作業良率，分地區與全區</p></div>
       <details class="help"><summary>資料來源與算法</summary>
-        <p><b>第一階段以上達成率</b>（目標 80%）：同月份業績月（前月 29 日～當月 28 日）在職正職行政中，月累計點數達 250 點以上的人數 ÷ 正職行政人數，依人力明細的地區分（大台北的行政算在台北），點數和「點數月累計」相同。週報為業績月第一天累計到該週最後一天。</p>
+        <p><b>第一階段以上達成率</b>（目標 80%）：同月份業績月（前月 29 日～當月 28 日）在職正職行政中，月累計點數達 250 點以上的人數 ÷ 正職行政人數，依人力明細的地區分（部別寫「大台北」的算在台北），點數和「點數月累計」相同。週報為業績月第一天累計到該週最後一天。</p>
         <p class="mt-2"><b>行政承接率</b>（目標 80%）：和「各地區行政承接率」相同算法（行政審核件數 ÷ 總件數，房審依房客縣市），改依案件縣市分到這 12 區；全區含其他縣市。週報為該週的件數。</p>
-        <p class="mt-2"><b>清冊／審件作業良率</b>（目標 90%）：正確率＝（總件數－錯誤件數）÷ 總件數。清冊總件數＝星鴻「表單製作」表單04＋表單07（期別二、表單狀態已歸檔）的筆數，每個縣市抓 4 期、4-1 期、5 期；台北的 4 期、4-1 期抓星華，嘉義的 4 期、4-1 期抓星華嘉義，新竹含竹市竹縣、嘉義 5 期含嘉市嘉縣。審件總件數＝「媒合管理」起租日在當月、狀態已生效的案件，依登記縣市分區。錯誤件數＝行政填寫的清冊意見／案件意見中，公會期數等於這個月的筆數，依填寫的縣市分區（案件意見沒填縣市時依媒合編號判斷）。全區含其他縣市與分不到地區的件數。星鴻資料快取 6 小時，按「重新抓取」會重讀最新資料。</p>
+        <p class="mt-2"><b>清冊／審件作業良率</b>（目標 90%）：正確率＝（總件數－錯誤件數）÷ 總件數。清冊總件數＝星鴻「表單製作」表單04＋表單09（期別二、表單狀態已歸檔）的筆數，每個縣市抓 4 期、4-1 期、5 期；台北的 4 期、4-1 期抓星華，嘉義的 4 期、4-1 期抓星華嘉義，新竹含竹市竹縣、嘉義 5 期含嘉市嘉縣。審件總件數＝「媒合管理」起租日在當月、狀態已生效的案件，依登記縣市分區。錯誤件數＝行政填寫的清冊意見／案件意見中，公會期數等於這個月的筆數，依填寫的縣市分區（案件意見沒填縣市時依媒合編號判斷）。全區含其他縣市與分不到地區的件數。星鴻資料快取 6 小時，按「重新抓取」會重讀最新資料。</p>
         <p class="mt-2">週別從業績月第一天起算，每週到星期五為止（和地區承接率相同）。清冊／審件作業良率依公會期數按月計算，只在月報顯示。</p>
       </details>
       <div class="toolbar">
@@ -506,12 +526,12 @@
       </table></div>
       <h3 class="list-title">行政填寫的案件意見<span class="muted" id="op-case-count"></span></h3>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>公會意見內容</th><th></th></tr></thead>
+        <thead><tr><th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th></th></tr></thead>
         <tbody id="op-case-list"></tbody>
       </table></div>
       <h3 class="list-title">行政填寫的清冊意見<span class="muted" id="op-roster-count"></span></h3>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>清冊期數</th><th>意見時間</th><th>公會意見內容</th><th>行政檢討對策</th><th></th></tr></thead>
+        <thead><tr><th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>清冊期數／媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th></th></tr></thead>
         <tbody id="op-roster-list"></tbody>
       </table></div>
     </div>
@@ -530,6 +550,7 @@
         <div class="field"><label>分類方式</label>
           <select id="op-group">
             <option value="guild">公會期數</option>
+            <option value="category">缺失類別</option>
             <option value="region">縣市</option>
             <option value="name">行政</option>
             <option value="leader">組別（組長）</option>
@@ -546,6 +567,22 @@
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="op-stats"></div>
       <div id="op-groups" class="space-y-2"><p class="muted">讀取中…</p></div>
+
+      <section class="card p-4 space-y-3" id="gm-box">
+        <h3 class="list-title">📈 公會良率月報（匯入）<span class="muted" id="gm-count"></span></h3>
+        <p class="muted text-sm">前台「本月品質良率」點「公會審件良率／公會清冊良率」會出現每月折線圖（本期 vs 同期），用的就是這裡的數字。公會期數 115/09 起系統會自動算（表單04/09、案件、行政填的公會意見），這裡有填的月份以填的為準。<br>
+          做法：從公會月報 Excel 把整張表（要包含「11501、11502…」那一列標題，以及「本期」「同期」兩段）複製後貼在下面，按「解析」確認數字，再按「儲存」。繳件數＝審件與清冊的總件數、退件數＝審件錯誤件數、下意見數＝清冊錯誤件數；良率、累計、全年等欄會自動略過。同一個月重貼會覆蓋。</p>
+        <div class="toolbar">
+          <div class="field"><label>這份月報的地區</label><select id="gm-region"></select></div>
+          <div class="push pb-1">
+            <button type="button" class="btn btn-ghost btn-sm" id="gm-parse">解析</button>
+            <button type="button" class="btn btn-main btn-sm" id="gm-save" disabled>儲存</button>
+          </div>
+        </div>
+        <textarea id="gm-paste" rows="6" placeholder="從 Excel 複製整張表，貼在這裡（Ctrl+V）"></textarea>
+        <div id="gm-preview"></div>
+        <div id="gm-list"><p class="muted">讀取中…</p></div>
+      </section>
     </div>
 
     <div id="tab-check" class="space-y-4 hidden">
@@ -567,8 +604,9 @@
         <button type="button" class="btn btn-main" id="btn-add-check">新增</button>
       </div></div>
       <h3 class="list-title">本業績月紀錄<span class="muted" id="check-count"></span></h3>
-      <div class="overflow-x-auto"><table>
-        <thead><tr><th>日期</th><th>人員</th><th>抽查</th><th>正確</th><th>良率</th><th>備註</th><th>登錄者</th><th></th></tr></thead>
+      <div class="ck-filter" id="check-filter"></div>
+      <div class="overflow-x-auto"><table class="ck-table">
+        <thead><tr><th>日期</th><th>審核通過時間</th><th>結果</th><th>人員</th><th>地區</th><th>抽查</th><th>正確</th><th>良率</th><th>備註</th><th>登錄者</th><th></th></tr></thead>
         <tbody id="check-list"></tbody>
       </table></div>
     </div>
@@ -576,7 +614,7 @@
     <div id="tab-incident" class="space-y-4 hidden">
       <div class="page-head"><h2>客訴／懲處</h2><p>計入「客訴紀律」分數</p></div>
       <details class="help"><summary>怎麼扣分？</summary>
-        <p>每件客訴扣「客訴紀律」15 分、小過扣 40、大過扣 80。客訴件數在組長週報依週加總；本月懲處取業績月內最重者（大過＞小過）。</p>
+        <p>每件客訴扣「客訴紀律」15 分、小過扣 40、大過扣 80。客訴件數在組長週月報依週加總；本月懲處取業績月內最重者（大過＞小過）。</p>
       </details>
       <div class="form-card"><b>新增一筆</b><div class="row">
         <div class="field"><label>日期</label><input type="date" id="i-date" /></div>
@@ -695,7 +733,7 @@
     <div id="tab-plan" class="space-y-4 hidden">
       <div class="page-head"><h2>改善計畫</h2><p>評等 D 的同仁每兩週要寫一次，這裡看誰該寫、誰逾期</p></div>
       <details class="help"><summary>規則</summary>
-        <p>評等 D 的同仁要在工具箱「個人明細」自己寫改善計畫，每 14 天一次，從上一次送出起算。這頁依上方業績月計算每個人目前的評等。點表格中的人可以看他寫過的計畫。</p>
+        <p>評等 D 的同仁要在工具箱「個人績效」自己寫改善計畫，每 14 天一次，從上一次送出起算。這頁依上方業績月計算每個人目前的評等。點表格中的人可以看他寫過的計畫。</p>
       </details>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="p-stats"></div>
       <div class="toolbar">
@@ -774,7 +812,7 @@
       <div class="page-head"><h2>組織圖</h2><p>工具箱「行政專區」行事曆下方的「全台行政組織與人力配置」</p></div>
       <details class="help"><summary>怎麼改？</summary>
         <p>直接改格子，改完按最下面「儲存組織圖」才會生效（工具箱重新整理就看得到）。狀態選「待補」是黃色待補列；營業處填「工讀生」算工讀生（另計）；現有、待補、規劃人數會自動算。主管姓名填「待補」會顯示成虛線待補框。這裡只管組織圖顯示，點數表、抽查用的組長仍以「人力明細」為準。</p>
-        <p>邱奕棋、黃怡婷、簡為倢、李芷琳、侯思廷登入工具箱後，可以直接在行政專區的組織圖點人員修改、新增或刪除待補；改成離職要填離職日，會記在下面「離職紀錄」。工具箱上顯示時會依部別→營業處→報到年月自動排序。前台有人改過後，這裡要重新整理再改，以免蓋掉。</p>
+        <p>邱奕棋、黃怡婷、簡為倢、李芷琳、侯思廷登入工具箱後，可以直接在行政專區的組織圖點人員修改、新增或刪除待補；改成離職要填離職日，會記在下面「離職紀錄」。工具箱上顯示時會依部別→營業處→到職日自動排序；到職日請填「115年10月01日」這種格式，工具箱表格只顯示到月份，點開才看得到日期。前台有人改過後，這裡要重新整理再改，以免蓋掉。</p>
       </details>
       <div id="org-editor" class="space-y-3"><p class="muted">讀取中…</p></div>
       <div class="row">
@@ -890,6 +928,11 @@
           : '<span class="pill pill-warn" title="報表、評等、從星鴻帶入都需要先登入工具箱，登入後按重新整理">未登入工具箱 · <a href="../index.html" target="_blank" rel="noopener">去登入</a></span>';
       }
 
+      /** 報表、評等用：拿掉不列入統計的人（駐府人員）；人力明細維護仍用 data */
+      function statData() {
+        return Core.stripExcluded(data || {});
+      }
+
       async function load() {
         const r = range();
         [data] = await Promise.all([rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end }), loadLine()]);
@@ -917,23 +960,25 @@
         const key = monthKey(r);
         if (!force && calcCache.has(key)) return calcCache.get(key);
         if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料（報表與評等都需要）');
-        const [audit, expenses, term, src] = await Promise.all([
+        const [audit, expenses, term, raw] = await Promise.all([
           fetchWorker('/admin-points/audit-log', '審核時間紀錄', r),
           fetchWorker('/admin-points/expenses', '補助審核', r),
           fetchWorker('/admin-points/terminations', '解約', r).catch((e) => ({ fields: [], rows: [], error: e.message })),
           key === monthKey(range()) ? data : rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end })
         ]);
-        const auditRows = Core.rowsFromPayload(audit);
-        const expenseRows = Core.rowsFromPayload(expenses);
+        const src = Core.stripExcluded(raw);
+        const auditRows = Core.dropExcludedRows(Core.rowsFromPayload(audit), src.excluded);
+        const expenseRows = Core.dropExcludedRows(Core.rowsFromPayload(expenses), src.excluded);
         const staff = src.staff || [];
         const result = Core.compute(auditRows, {
           start: r.start,
           end: r.end,
           staff,
+          exclude: src.excluded,
           manual: src.manual || [],
           opinions: src.opinions || [],
           expenses: expenseRows,
-          terminations: Core.rowsFromPayload(term)
+          terminations: Core.dropExcludedRows(Core.rowsFromPayload(term), src.excluded)
         });
         const dur = Core.durationReport(auditRows, { start: r.start, end: r.end, staff });
         const today = Core.isoDate(new Date());
@@ -1023,7 +1068,7 @@
         try {
           if (force) await load();
           const calc = await monthCalc(force);
-          report = { range: calc.range, rep: Core.monthlyReport(calc.result, { staff: data.staff || [], checks: data.checks || [] }) };
+          report = { range: calc.range, rep: Core.monthlyReport(calc.result, { staff: statData().staff || [], checks: statData().checks || [] }) };
           renderReport();
           $('btn-report-xlsx').disabled = false;
           $('btn-report-print').disabled = false;
@@ -1228,7 +1273,7 @@
           takeup.data = Core.takeupReport(calc.auditRows, {
             start: calc.range.start,
             end: calc.range.end,
-            staff: data.staff || [],
+            staff: statData().staff || [],
             expenses: calc.expenseRows,
             tenantCities: tc.map
           });
@@ -1330,7 +1375,7 @@
         { key: 'audit', label: '審件作業良率', target: 0.9, monthly: true, rate: kpiErrRate, text: (x) => `錯${x.err}／總${x.total}`, empty: '無件數' }
       ];
       const KPI_PERIODS = ['4期', '4-1期', '5期'];
-      const KPI_PARTS = { roster04: '表單04', roster07: '表單07', cases: '起租已生效案件' };
+      const KPI_PARTS = { roster04: '表單04', roster09: '表單09', cases: '起租已生效案件' };
       const kpi = { cache: new Map(), cur: null, busy: false, view: 'month' };
 
       function kpiMonths() {
@@ -1394,10 +1439,10 @@
         }
       }
 
-      function kpiBuild(m, r04, r07, cases, opinions, perf) {
-        const { roster, audit, errors } = Core.kpiQuality(r04, r07, cases, opinions);
+      function kpiBuild(m, r04, r09, cases, opinions, perf) {
+        const { roster, audit, errors } = Core.kpiQuality(r04, r09, cases, opinions);
         const companies = new Map();
-        for (const [form, d] of [['04', r04], ['07', r07]]) {
+        for (const [form, d] of [['04', r04], ['09', r09]]) {
           for (const [region, company, period, n] of d.rows || []) {
             const key = `${region}|${company}`;
             const c = companies.get(key) || { region, company, n: {} };
@@ -1406,8 +1451,8 @@
           }
         }
         const caseCities = (cases.rows || []).map(([region, city, n]) => ({ region, city, n }));
-        const fetched = [r04, r07, cases].map((d) => d.fetchedAt).filter(Boolean).sort()[0];
-        return { m, roster, audit, perf, companies: [...companies.values()], caseCities, errors, fetchedAt: fetched, cached: [r04, r07, cases].some((d) => d.cached) };
+        const fetched = [r04, r09, cases].map((d) => d.fetchedAt).filter(Boolean).sort()[0];
+        return { m, roster, audit, perf, companies: [...companies.values()], caseCities, errors, fetchedAt: fetched, cached: [r04, r09, cases].some((d) => d.cached) };
       }
 
       /** col：'all' 整月，數字為週序號；回傳 null 表示沒有資料 */
@@ -1432,7 +1477,7 @@
       }
       function kpiInfo(k) {
         const perf = k.perf.range ? `業績月 ${slashDate(k.perf.range.start)}–${slashDate(k.perf.range.end)}` : k.perf.missing;
-        return `清冊：表單04＋表單07（4期、4-1期、5期｜期別二、已歸檔）　｜　審件：媒合管理起租日 ${k.m.guild} 已生效　｜　錯誤件數：公會期數 ${k.m.guild} 的清冊／案件意見　｜　第一階段以上達成率、行政承接率：${perf}`;
+        return `清冊：表單04＋表單09（4期、4-1期、5期｜期別二、已歸檔）　｜　審件：媒合管理起租日 ${k.m.guild} 已生效　｜　錯誤件數：公會期數 ${k.m.guild} 的清冊／案件意見　｜　第一階段以上達成率、行政承接率：${perf}`;
       }
       function kpiNote(k) {
         const noArea = k.errors.filter((o) => !o.area).length;
@@ -1444,7 +1489,7 @@
         const tn = k.perf.tenant;
         if (tn?.error) parts.push(`房客地區暫時查不到（${tn.error}），房審只算在全區`);
         else if (tn?.unplaced) parts.push(`承接率有 ${tn.unplaced} 件房審查不到縣市，只算在全區${tn.pending ? `（還有 ${tn.pending} 位房客的地區在查詢中，稍後按「重新抓取」會補上）` : ''}`);
-        parts.push('第一階段以上達成率依人力明細地區，大台北的行政算在台北；新北、基隆、南投目前沒有行政');
+        parts.push('第一階段以上達成率依人力明細地區（舊資料部別寫「大台北」的算在台北）');
         return parts.join('；');
       }
 
@@ -1490,12 +1535,12 @@
         $('kpi-errors').innerHTML = errs.length
           ? `<div class="overflow-x-auto"><table><thead><tr><th>類別</th><th>縣市</th><th>媒合編號／清冊期數</th><th>行政</th><th>填寫日</th><th>公會意見內容</th></tr></thead><tbody>${errs.map((o) => `<tr>
               <td>${o.kind === 'roster' ? '清冊' : '審件'}</td><td>${esc(o.area || '—')}${o.area && !o.region ? ' <span class="muted">(依編號)</span>' : ''}</td>
-              <td>${esc(o.kind === 'roster' ? o.rosterPeriod : o.caseNo)}</td><td>${esc(o.name)}</td><td>${esc(o.date)}</td>
+              <td>${esc(o.kind === 'roster' ? [o.rosterPeriod, o.caseNo].filter(Boolean).join('・') : o.caseNo)}</td><td>${esc(o.name)}</td><td>${esc(o.date)}</td>
               <td style="white-space:pre-wrap;min-width:14rem">${esc(o.content)}</td></tr>`).join('')}</tbody></table></div>`
           : `<p class="muted">公會期數 ${esc(k.m.guild)} 還沒有行政填寫的清冊／案件意見，錯誤件數都是 0。</p>`;
 
-        const head = ['04', '07'].flatMap((f) => KPI_PERIODS.map((p) => `<th>表單${f}<br>${p}</th>`)).join('');
-        const keys = ['04', '07'].flatMap((f) => KPI_PERIODS.map((p) => `${f}-${p}`));
+        const head = ['04', '09'].flatMap((f) => KPI_PERIODS.map((p) => `<th>表單${f}<br>${p}</th>`)).join('');
+        const keys = ['04', '09'].flatMap((f) => KPI_PERIODS.map((p) => `${f}-${p}`));
         const sum = (list) => keys.map((key) => list.reduce((s, c) => s + (c.n[key] || 0), 0));
         const compRows = k.companies.map((c) => {
           const v = keys.map((key) => c.n[key]);
@@ -1518,14 +1563,14 @@
         const liteKey = `${m.key}|lite`;
         if (lite && !force && kpi.cache.has(liteKey)) return kpi.cache.get(liteKey);
         if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
-        const [r04, r07, cases, op, perf] = await Promise.all([
+        const [r04, r09, cases, op, perf] = await Promise.all([
           fetchKpiPart(m, 'roster04', force),
-          fetchKpiPart(m, 'roster07', force),
+          fetchKpiPart(m, 'roster09', force),
           fetchKpiPart(m, 'cases', force),
           rpc('admin_points_kpi_opinions', { p_guild_period: m.guild }),
           lite ? { missing: '未計算' } : kpiPerf(m, force)
         ]);
-        const k = kpiBuild(m, r04, r07, cases, op.opinions, perf);
+        const k = kpiBuild(m, r04, r09, cases, op.opinions, perf);
         kpi.cache.set(lite ? liteKey : m.key, k);
         return k;
       }
@@ -1541,7 +1586,7 @@
         }
         kpi.busy = true;
         for (const id of ['btn-kpi', 'btn-kpi-xlsx', 'btn-kpi-print']) $(id).disabled = true;
-        $('kpi-sheet').innerHTML = `<p class="muted">讀取星鴻表單04、表單07、媒合管理與審核紀錄中…第一次約 10～30 秒</p>`;
+        $('kpi-sheet').innerHTML = `<p class="muted">讀取星鴻表單04、表單09、媒合管理與審核紀錄中…第一次約 10～30 秒</p>`;
         $('kpi-errors').innerHTML = '';
         $('kpi-sources').innerHTML = '';
         try {
@@ -1669,12 +1714,12 @@
           }
 
           const detail = [['類別', '縣市', '媒合編號／清冊期數', '行政', '填寫日', '公會意見內容']].concat(
-            k.errors.map((o) => [o.kind === 'roster' ? '清冊' : '審件', o.area || '', o.kind === 'roster' ? o.rosterPeriod : o.caseNo, o.name, o.date, o.content])
+            k.errors.map((o) => [o.kind === 'roster' ? '清冊' : '審件', o.area || '', o.kind === 'roster' ? [o.rosterPeriod, o.caseNo].filter(Boolean).join('・') : o.caseNo, o.name, o.date, o.content])
           );
           const ws2 = XLSX.utils.aoa_to_sheet(detail);
           ws2['!cols'] = [{ wch: 6 }, { wch: 6 }, { wch: 22 }, { wch: 10 }, { wch: 11 }, { wch: 60 }];
           XLSX.utils.book_append_sheet(wb, ws2, '錯誤件數明細');
-          const keys = ['04', '07'].flatMap((f) => KPI_PERIODS.map((p) => `${f}-${p}`));
+          const keys = ['04', '09'].flatMap((f) => KPI_PERIODS.map((p) => `${f}-${p}`));
           const src = [['地區', '公司', ...keys.map((x) => `表單${x}`), '合計']].concat(
             k.companies.map((c) => [c.region, c.company, ...keys.map((x) => c.n[x] ?? ''), keys.reduce((s, x) => s + (c.n[x] || 0), 0)]),
             [[]],
@@ -1713,33 +1758,85 @@
           $(`op-${kind}-list`).innerHTML = rows.length
             ? rows.map((o) => `<tr>
                 <td>${esc(o.date)}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
-                <td>${esc(kind === 'case' ? o.caseNo : o.rosterPeriod)}</td><td>${esc(o.opinionDate || '')}</td>
+                <td>${esc(kind === 'case' ? o.caseNo : [o.rosterPeriod, o.caseNo].filter(Boolean).join('・'))}${o.rosterItem ? `<div class="muted" style="font-size:.75rem">${esc(o.rosterItem)}</div>` : ''}</td><td>${esc(o.opinionDate || '')}</td>
+                <td>${o.category ? esc(o.category) : '<span class="muted">未分類</span>'}</td>
                 <td style="white-space:pre-wrap;min-width:12rem">${esc(o.content)}</td>
                 ${kind === 'roster' ? `<td style="white-space:pre-wrap;min-width:12rem;background:#fefce8">${esc(o.measure)}</td>` : ''}
                 <td><button type="button" class="btn btn-del" data-del-opinion="${o.id}">刪除</button></td>
               </tr>`).join('')
-            : `<tr><td colspan="${kind === 'case' ? 8 : 9}" class="muted">本業績月尚無行政填寫的${kind === 'case' ? '案件' : '清冊'}意見</td></tr>`;
+            : `<tr><td colspan="${kind === 'case' ? 9 : 10}" class="muted">本業績月尚無行政填寫的${kind === 'case' ? '案件' : '清冊'}意見</td></tr>`;
         });
       }
 
       function renderManualNames() {
         const leader = $('m-leader').value;
         const cur = $('m-name').value;
-        const members = leader ? (data.staff || []).filter((s) => s.status === '在職' && s.leader === leader) : [];
+        const members = leader ? (statData().staff || []).filter((s) => s.status === '在職' && s.leader === leader) : [];
         $('m-name').innerHTML = `<option value="">${leader ? '請選擇' : '請先選組長'}</option>` +
           members.map((s) => `<option${s.name === cur ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
       }
 
+      const checkView = { result: 'all', area: '', region: '' };
+      const CK_AREAS = ['北區', '中區', '南區', '東部及離島'];
+
+      function checkRegionOf(name) {
+        const s = (data.staff || []).find((x) => x.name === name);
+        const region = String(s?.region || '').trim();
+        return { region: region || '未分區', area: Core.areaOfRegion(region) || '未分區' };
+      }
+
+      /** 備註「… | 未通過：原因」：把未通過那段標紅 */
+      function checkNoteHtml(note) {
+        return String(note || '')
+          .split(' | ')
+          .map((seg) => {
+            if (/^未通過/.test(seg)) return `<b class="ck-why">${esc(seg)}</b>`;
+            if (seg === '通過') return '<span class="ck-okword">通過</span>';
+            return esc(seg);
+          })
+          .join('<span class="ck-sep"> | </span>');
+      }
+
       function renderChecks() {
-        const rows = (data.checks || []).slice().reverse();
-        $('check-count').textContent = rows.length ? `${rows.length} 筆` : '';
+        const all = (data.checks || []).slice().reverse().map((c) => ({ ...c, pass: Number(c.correct) >= Number(c.checked), ...checkRegionOf(c.name) }));
+        const inArea = all.filter((c) => !checkView.area || c.area === checkView.area);
+        if (checkView.region && !inArea.some((c) => c.region === checkView.region)) checkView.region = '';
+        const inRegion = inArea.filter((c) => !checkView.region || c.region === checkView.region);
+        const rows = inRegion.filter((c) => checkView.result === 'all' || (checkView.result === 'pass' ? c.pass : !c.pass));
+        const passN = inRegion.filter((c) => c.pass).length;
+        const seg = (attr, val, cur, label, n, cls) =>
+          `<button type="button" class="seg${cur === val ? ' is-on' : ''}${cls ? ` ${cls}` : ''}" data-ck-${attr}="${esc(val)}">${label}${n != null ? `<small>${n}</small>` : ''}</button>`;
+        const areas = CK_AREAS.filter((a) => all.some((c) => c.area === a)).concat(all.some((c) => c.area === '未分區') ? ['未分區'] : []);
+        const regions = [...new Set(inArea.map((c) => c.region))].sort((a, b) => Core.regionRank(a) - Core.regionRank(b));
+        $('check-filter').innerHTML = `
+          <div class="ck-filter-row"><span class="ck-filter-label">結果</span>
+            ${seg('result', 'all', checkView.result, '全部', inRegion.length)}
+            ${seg('result', 'pass', checkView.result, '✅ 通過', passN, 'seg-ok')}
+            ${seg('result', 'fail', checkView.result, '❌ 未通過', inRegion.length - passN, 'seg-bad')}
+          </div>
+          <div class="ck-filter-row"><span class="ck-filter-label">地區</span>
+            ${seg('area', '', checkView.area, '全部', all.length)}
+            ${areas.map((a) => seg('area', a, checkView.area, a, all.filter((c) => c.area === a).length)).join('')}
+            ${regions.length > 1 ? `<select id="ck-region" class="ck-region"><option value="">${checkView.area ? `${esc(checkView.area)}全部` : '全部地區'}</option>${regions
+              .map((g) => `<option value="${esc(g)}"${checkView.region === g ? ' selected' : ''}>${esc(g)}（${inArea.filter((c) => c.region === g).length}）</option>`)
+              .join('')}</select>` : ''}
+          </div>`;
+        $('check-count').textContent = all.length ? `${rows.length === all.length ? '' : `${rows.length}／`}${all.length} 筆` : '';
         $('check-list').innerHTML = rows.length
-          ? rows.map((c) => `<tr>
-              <td>${esc(c.date)}</td><td>${esc(c.name)}</td><td>${c.checked}</td><td>${c.correct}</td>
-              <td>${pct(c.correct / c.checked)}</td><td>${esc(c.note)}</td><td class="muted">${esc(c.createdBy)}</td>
+          ? rows.map((c) => `<tr class="${c.pass ? 'ck-row-ok' : 'ck-row-bad'}">
+              <td>${esc(c.date)}</td>
+              <td class="ck-audit">${checkAuditTimeHtml(c.auditTime)}</td>
+              <td>${c.pass ? '<span class="ck-badge ck-badge--ok">✅ 通過</span>' : '<span class="ck-badge ck-badge--bad">❌ 未通過</span>'}</td>
+              <td><b>${esc(c.name)}</b></td><td class="muted">${esc(c.region)}</td><td>${c.checked}</td><td>${c.correct}</td>
+              <td><b class="${c.pass ? 'ck-rate-ok' : 'ck-rate-bad'}">${pct(c.correct / c.checked)}</b></td><td class="ck-note">${checkNoteHtml(c.note)}</td><td class="muted">${esc(c.createdBy)}</td>
               <td><button type="button" class="btn btn-del" data-del-check="${c.id}">刪除</button></td>
             </tr>`).join('')
-          : '<tr><td colspan="8" class="muted">本業績月尚無抽查紀錄</td></tr>';
+          : `<tr><td colspan="11" class="muted">${all.length ? '沒有符合篩選的紀錄' : '本業績月尚無抽查紀錄'}</td></tr>`;
+      }
+      function checkAuditTimeHtml(t) {
+        const m = String(t || '').trim().match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:\s+(\d{1,2}:\d{2}))?/);
+        if (!m) return '<span class="muted">—</span>';
+        return `${m[1]}/${m[2].padStart(2, '0')}/${m[3].padStart(2, '0')}${m[4] ? `<small>${esc(m[4])}</small>` : ''}`;
       }
 
       function renderIncidents() {
@@ -1834,6 +1931,22 @@
         } finally {
           btn.disabled = false;
         }
+      });
+
+      $('check-filter').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-ck-result], [data-ck-area]');
+        if (!b) return;
+        if (b.dataset.ckResult != null) checkView.result = b.dataset.ckResult;
+        else {
+          checkView.area = b.dataset.ckArea;
+          checkView.region = '';
+        }
+        renderChecks();
+      });
+      $('check-filter').addEventListener('change', (e) => {
+        if (e.target.id !== 'ck-region') return;
+        checkView.region = e.target.value;
+        renderChecks();
       });
 
       $('check-list').addEventListener('click', async (e) => {
@@ -1956,7 +2069,7 @@
       }
       function trainNames() {
         const leader = $('t-leader').value;
-        const names = (data.staff || [])
+        const names = (statData().staff || [])
           .filter((s) => s.status === '在職' && (!leader || s.leader === leader))
           .sort((a, b) => (a.leader || '').localeCompare(b.leader || '', 'zh-Hant') || a.name.localeCompare(b.name, 'zh-Hant'))
           .map((s) => s.name);
@@ -2577,7 +2690,7 @@
           if (!byName.has(it.name)) byName.set(it.name, []);
           byName.get(it.name).push(it);
         }
-        return (data.staff || [])
+        return (statData().staff || [])
           .filter((s) => s.status === '在職' && s.kind !== '工讀生' && (!leader || s.leader === leader))
           .map((s) => {
             const pf = plan.calc?.profiles.get(s.name) || null;
@@ -2981,8 +3094,8 @@
           const calc = await monthCalc(force);
           wprog.range = calc.range;
           wprog.data = Core.weeklyProgress(calc.result, {
-            staff: data.staff || [],
-            checks: data.checks || [],
+            staff: statData().staff || [],
+            checks: statData().checks || [],
             weeks: Core.takeupWeeks(calc.range),
             asOf: minIso(calc.range.end, todayIso())
           });
@@ -3207,7 +3320,7 @@
         const calcs = [];
         for (const r of perfRangesBetween(minIso(p.cs, p.ps), p.ce > p.pe ? p.ce : p.pe)) calcs.push(await monthCalc(force, r));
         const rows = calcs.flatMap((c) => c.auditRows);
-        const staff = data.staff || [];
+        const staff = statData().staff || [];
         const pm = Core.perfMonthOf(new Date(p.ce + 'T00:00:00'));
         const monthStart = Core.perfMonthRange(pm.year, pm.month).start;
         const mk = (start, end) => Core.efficiencyReport(rows, { start, end, staff });
@@ -3315,7 +3428,7 @@
           const tc = await tenantCities(calc.range, force);
           tarea.range = calc.range;
           tarea.tc = tc;
-          tarea.data = Core.tenantReviewerReport(calc.auditRows, { start: calc.range.start, end: calc.range.end, staff: data.staff || [], tenantCities: tc.map });
+          tarea.data = Core.tenantReviewerReport(calc.auditRows, { start: calc.range.start, end: calc.range.end, staff: statData().staff || [], tenantCities: tc.map });
           renderTarea();
           $('btn-tarea-xlsx').disabled = false;
         } catch (err) {
@@ -3447,11 +3560,11 @@
             asOf = minIso(w.end, today);
           }
           const calc = await monthCalc(false);
-          msg('讀取表單04／07、媒合管理與房客地區中…第一次約 10～30 秒');
+          msg('讀取表單04／09、媒合管理與房客地區中…第一次約 10～30 秒');
           const pm = r.month === 1 ? kpiM(roc - 1, 12) : kpiM(roc, r.month - 1);
           const [k, kPrev, annual, tc] = await Promise.all([kpiLoad(kpiM(roc, r.month), false), kpiLoad(pm, false, true), annualGet(r.year, false), tenantCities(r, false)]);
-          const takeupData = Core.takeupReport(calc.auditRows, { start: r.start, end: asOf, staff: data.staff || [], expenses: calc.expenseRows, tenantCities: tc.map });
-          const rep = Core.monthlyReport(calc.result, { staff: data.staff || [], checks: data.checks || [], asOf });
+          const takeupData = Core.takeupReport(calc.auditRows, { start: r.start, end: asOf, staff: statData().staff || [], expenses: calc.expenseRows, tenantCities: tc.map });
+          const rep = Core.monthlyReport(calc.result, { staff: statData().staff || [], checks: statData().checks || [], asOf });
           const head = reportHead(r, asOf);
           const shown = weeks.filter((w) => w.start <= asOf).length;
           const d = {
@@ -3569,7 +3682,7 @@
       /* ---------- 組織圖 ---------- */
 
       const org = { loaded: false, data: null, leaves: [] };
-      const ORG_COLS = [['status', '狀態'], ['name', '姓名／職稱', '6rem'], ['dept', '部別', '5rem'], ['joined', '報到年月', '6rem'], ['office', '營業處', '7rem'], ['deputy', '代理人', '5rem']];
+      const ORG_COLS = [['status', '狀態'], ['name', '姓名／職稱', '6rem'], ['dept', '部別', '5rem'], ['joined', '到職日', '7rem'], ['office', '營業處', '7rem'], ['deputy', '代理人', '5rem']];
       const orgBlank = () => ({ status: '在職', name: '', dept: '', joined: '', office: '', deputy: '' });
 
       function orgCollect() {
@@ -3687,6 +3800,7 @@
       const OP_KIND = { case: '案件意見', roster: '清冊意見' };
       const OP_GROUP = {
         guild: { label: '公會期數', key: (o) => o.guildPeriod || '未填期數', sort: (a, b) => b.localeCompare(a) },
+        category: { label: '缺失類別', key: (o) => o.category || '未分類', sort: (a, b) => opCatRank(a) - opCatRank(b) || a.localeCompare(b, 'zh-Hant') },
         region: { label: '縣市', key: (o) => o.region || '未填縣市', sort: (a, b) => opRegionRank(a) - opRegionRank(b) },
         name: { label: '行政', key: (o) => o.name || '—', sort: (a, b) => a.localeCompare(b, 'zh-Hant') },
         leader: { label: '組別', key: (o) => opLeader(o.name), sort: (a, b) => (a === '未對應組長') - (b === '未對應組長') || a.localeCompare(b, 'zh-Hant') }
@@ -3695,11 +3809,21 @@
         const i = Core.KPI_REGIONS.indexOf(r);
         return i < 0 ? 99 : i;
       };
+      const OP_CATS_ALL = [...new Set([...Core.OPINION_CATEGORIES.case, ...Core.OPINION_CATEGORIES.roster])];
+      const opCatRank = (c) => {
+        const i = OP_CATS_ALL.indexOf(c);
+        return c === '其他' ? 98 : i < 0 ? 99 : i;
+      };
+      const opCatSelect = (o) => `<select class="op-cat" data-op-cat="${o.id}" aria-label="缺失類別">
+          <option value=""${o.category ? '' : ' selected'}>（未分類）</option>
+          ${(Core.OPINION_CATEGORIES[o.kind] || []).map((c) => `<option${c === o.category ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+        </select>`;
       function opLeader(name) {
         const s = (data.staff || []).find((x) => x.name === name);
         return s && s.leader ? `${s.leader} 組` : '未對應組長';
       }
-      const opRef = (o) => (o.kind === 'case' ? o.caseNo : o.rosterPeriod) || '';
+      const opRef = (o) => (o.kind === 'case' ? o.caseNo : [o.rosterPeriod, o.caseNo].filter(Boolean).join('・')) || '';
+      const opItem = (o) => (o.rosterItem ? `<div class="muted" style="font-size:.75rem;white-space:normal;min-width:10rem">${esc(o.rosterItem)}</div>` : '');
 
       async function loadOpinions() {
         if (op.busy) return;
@@ -3769,7 +3893,7 @@
         });
         const showKind = op.kind === 'all';
         const showMeasure = op.kind !== 'case';
-        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>公會意見內容</th>${showMeasure ? '<th>行政檢討對策</th>' : ''}<th></th></tr>`;
+        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${showMeasure ? '<th>行政檢討對策</th>' : ''}<th></th></tr>`;
         $('op-groups').innerHTML = [...map.keys()].sort(grp.sort).map((k, gi) => {
           const list = map.get(k);
           const c = list.filter((o) => o.kind === 'case').length;
@@ -3778,7 +3902,8 @@
           const body = list.map((o) => `<tr>
               ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
               <td>${esc(o.date)}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
-              <td>${esc(opRef(o))}</td><td>${esc(o.opinionDate || '')}</td>
+              <td>${esc(opRef(o))}${opItem(o)}</td><td>${esc(o.opinionDate || '')}</td>
+              <td>${opCatSelect(o)}</td>
               <td style="white-space:pre-wrap;min-width:14rem">${esc(o.content)}</td>
               ${showMeasure ? `<td style="white-space:pre-wrap;min-width:12rem;${o.kind === 'roster' ? 'background:#fefce8' : ''}">${esc(o.kind === 'roster' ? o.measure : '')}</td>` : ''}
               <td><button type="button" class="btn btn-del" data-op-del="${o.id}">刪除</button></td>
@@ -3801,6 +3926,24 @@
       ['op-group', 'op-f-guild', 'op-f-region', 'op-f-name'].forEach((id) => $(id).addEventListener('change', renderOpinionTab));
       $('op-f-q').addEventListener('input', renderOpinionTab);
       $('op-reload').addEventListener('click', loadOpinions);
+      $('op-groups').addEventListener('change', async (e) => {
+        const sel = e.target.closest('[data-op-cat]');
+        if (!sel) return;
+        const o = op.all.find((x) => String(x.id) === sel.dataset.opCat);
+        const before = o?.category || '';
+        sel.disabled = true;
+        try {
+          await rpc('admin_points_opinion_set_category', { p_id: Number(sel.dataset.opCat), p_category: sel.value });
+          if (o) o.category = sel.value;
+          say('已更新缺失類別', true);
+          if ($('op-group').value === 'category') renderOpinionTab();
+        } catch (err) {
+          sel.value = before;
+          say(err.message);
+        } finally {
+          sel.disabled = false;
+        }
+      });
       $('op-groups').addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-op-del]');
         if (!btn || !confirm('確定刪除這筆意見？這位行政會少 1 點。')) return;
@@ -3819,17 +3962,166 @@
         try {
           await loadXlsx();
           const grp = OP_GROUP[$('op-group').value] || OP_GROUP.guild;
-          const aoa = [[grp.label, '類別', '填寫日', '行政', '組別', '公會期數', '縣市', '媒合編號／清冊期數', '意見時間', '公會意見內容', '行政檢討對策']].concat(
+          const aoa = [[grp.label, '類別', '填寫日', '行政', '組別', '公會期數', '縣市', '媒合編號／清冊期數', '意見時間', '缺失類別', '公會意見內容', '行政檢討對策']].concat(
             rows.slice().sort((a, b) => grp.sort(grp.key(a), grp.key(b))).map((o) => [
               grp.key(o), OP_KIND[o.kind] || o.kind, o.date || '', o.name || '', opLeader(o.name), o.guildPeriod || '', o.region || '',
-              opRef(o), o.opinionDate || '', o.content || '', o.kind === 'roster' ? o.measure || '' : ''
+              opRef(o) + (o.rosterItem ? `（${o.rosterItem}）` : ''), o.opinionDate || '', o.category || '', o.content || '', o.kind === 'roster' ? o.measure || '' : ''
             ])
           );
           const ws = XLSX.utils.aoa_to_sheet(aoa);
-          ws['!cols'] = [{ wch: 12 }, { wch: 9 }, { wch: 11 }, { wch: 9 }, { wch: 10 }, { wch: 9 }, { wch: 6 }, { wch: 20 }, { wch: 11 }, { wch: 60 }, { wch: 40 }];
+          ws['!cols'] = [{ wch: 12 }, { wch: 9 }, { wch: 11 }, { wch: 9 }, { wch: 10 }, { wch: 9 }, { wch: 6 }, { wch: 20 }, { wch: 11 }, { wch: 22 }, { wch: 60 }, { wch: 40 }];
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, '公會意見');
           XLSX.writeFile(wb, `公會意見_依${grp.label}.xlsx`);
+        } catch (err) {
+          say(err.message);
+        }
+      });
+
+      /* ---------- 公會良率月報（匯入）：公會月報 Excel 貼上 → 每月審件／清冊件數 ---------- */
+
+      const gm = { loaded: false, busy: false, rows: [], parsed: [] };
+      $('gm-region').innerHTML = ['全區', ...Core.KPI_REGIONS].map((r) => `<option>${r}</option>`).join('');
+      const gmRate = (total, err) => (total && err != null ? `${(Math.max(0, (total - err) / total) * 100).toFixed(1)}%` : '—');
+
+      /** 標題列是「11501、11502…」（民國年＋月）；「同期」那段的年份減 1 */
+      function gmParse(text) {
+        const out = new Map();
+        const num = (s) => {
+          const v = String(s || '').replace(/[,\s]/g, '');
+          return /^\d+$/.test(v) ? Number(v) : null;
+        };
+        let cols = null;
+        let section = 'cur';
+        for (const line of String(text || '').split(/\r?\n/)) {
+          const cells = line.split('\t').map((c) => c.replace(/^"|"$/g, '').trim());
+          const hdr = cells
+            .map((c, i) => {
+              const m = c.match(/^(1\d{2})(\d{2})$/);
+              return m && +m[2] >= 1 && +m[2] <= 12 ? { idx: i, year: +m[1], month: +m[2] } : null;
+            })
+            .filter(Boolean);
+          if (hdr.length >= 3) {
+            cols = hdr;
+            section = 'cur';
+            continue;
+          }
+          if (!cols) continue;
+          const label = cells.slice(0, cols[0].idx).join(' ');
+          if (/同期/.test(label)) section = 'prev';
+          else if (/本期/.test(label)) section = 'cur';
+          const field = /繳件數/.test(label) ? 'total' : /退件數/.test(label) ? 'auditErr' : /下意見數/.test(label) ? 'rosterErr' : '';
+          if (!field) continue;
+          for (const c of cols) {
+            const v = num(cells[c.idx]);
+            if (v == null) continue;
+            const period = `${c.year - (section === 'prev' ? 1 : 0)}/${String(c.month).padStart(2, '0')}`;
+            const r = out.get(period) || { period, auditTotal: null, auditErr: null, rosterTotal: null, rosterErr: null };
+            if (field === 'total') {
+              r.auditTotal = v;
+              r.rosterTotal = v;
+            } else r[field] = v;
+            out.set(period, r);
+          }
+        }
+        return [...out.values()].sort((a, b) => a.period.localeCompare(b.period));
+      }
+
+      function gmRenderPreview() {
+        const region = $('gm-region').value;
+        const ok = gm.parsed.filter((r) => r.auditTotal != null && (r.auditErr != null || r.rosterErr != null));
+        const skip = gm.parsed.length - ok.length;
+        $('gm-save').disabled = !ok.length;
+        $('gm-save').textContent = ok.length ? `儲存 ${ok.length} 個月（${region}）` : '儲存';
+        if (!gm.parsed.length) {
+          $('gm-preview').innerHTML = $('gm-paste').value.trim() ? '<p class="muted">看不懂這份資料：請確認有包含「11501、11502…」那一列標題，以及「繳件數」「退件數」「下意見數」列</p>' : '';
+          return;
+        }
+        const has = new Set(gm.rows.filter((r) => r.region === region).map((r) => r.period));
+        $('gm-preview').innerHTML = `<p class="text-sm font-bold">解析結果（${esc(region)}）：${ok.length} 個月可以儲存${skip ? `，${skip} 個月沒有繳件數會略過` : ''}</p>
+          <div class="overflow-x-auto"><table>
+            <thead><tr><th>公會期數</th><th>繳件數</th><th>退件數</th><th>審件良率</th><th>下意見數</th><th>清冊良率</th><th>狀態</th></tr></thead>
+            <tbody>${gm.parsed.map((r) => {
+              const valid = ok.includes(r);
+              return `<tr${valid ? '' : ' class="muted"'}><td>${esc(r.period)}</td><td>${r.auditTotal ?? '—'}</td><td>${r.auditErr ?? '—'}</td><td>${gmRate(r.auditTotal, r.auditErr)}</td>
+                <td>${r.rosterErr ?? '—'}</td><td>${gmRate(r.rosterTotal, r.rosterErr)}</td>
+                <td>${valid ? (has.has(r.period) ? '<span class="badge" style="background:#fef3c7;color:#92400e">覆蓋</span>' : '<span class="badge" style="background:#dcfce7;color:#166534">新增</span>') : '沒有繳件數，略過'}</td></tr>`;
+            }).join('')}</tbody>
+          </table></div>`;
+      }
+
+      function gmRenderList() {
+        $('gm-count').textContent = gm.rows.length ? `${gm.rows.length} 筆` : '';
+        if (!gm.rows.length) {
+          $('gm-list').innerHTML = '<p class="muted">還沒有匯入任何月份</p>';
+          return;
+        }
+        $('gm-list').innerHTML = `<h4 class="list-title">已匯入的月份</h4>
+          <div class="overflow-x-auto"><table>
+            <thead><tr><th>公會期數</th><th>地區</th><th>繳件數（審件）</th><th>退件數</th><th>審件良率</th><th>繳件數（清冊）</th><th>下意見數</th><th>清冊良率</th><th>更新</th><th></th></tr></thead>
+            <tbody>${gm.rows.map((r) => `<tr>
+              <td><b>${esc(r.period)}</b></td><td>${esc(r.region)}</td>
+              <td>${r.auditTotal ?? '—'}</td><td>${r.auditErr ?? '—'}</td><td>${gmRate(r.auditTotal, r.auditErr)}</td>
+              <td>${r.rosterTotal ?? '—'}</td><td>${r.rosterErr ?? '—'}</td><td>${gmRate(r.rosterTotal, r.rosterErr)}</td>
+              <td class="muted">${esc(String(r.updatedAt || '').slice(0, 16).replace('T', ' '))}</td>
+              <td><button type="button" class="btn btn-del" data-gm-del="${esc(r.period)}|${esc(r.region)}">刪除</button></td>
+            </tr>`).join('')}</tbody>
+          </table></div>`;
+      }
+
+      async function loadGm() {
+        if (gm.busy) return;
+        gm.busy = true;
+        try {
+          const res = await rpc('admin_points_guild_monthly_list', {});
+          gm.rows = res.rows || [];
+          gm.loaded = true;
+          gmRenderList();
+          gmRenderPreview();
+        } catch (err) {
+          $('gm-list').innerHTML = `<p class="muted">讀取失敗：${esc(err.message)}</p>`;
+        } finally {
+          gm.busy = false;
+        }
+      }
+
+      $('gm-parse').addEventListener('click', () => {
+        gm.parsed = gmParse($('gm-paste').value);
+        gmRenderPreview();
+      });
+      $('gm-paste').addEventListener('paste', () => setTimeout(() => {
+        gm.parsed = gmParse($('gm-paste').value);
+        gmRenderPreview();
+      }, 0));
+      $('gm-region').addEventListener('change', gmRenderPreview);
+      $('gm-save').addEventListener('click', async () => {
+        const region = $('gm-region').value;
+        const rows = gm.parsed
+          .filter((r) => r.auditTotal != null && (r.auditErr != null || r.rosterErr != null))
+          .map((r) => ({ ...r, region }));
+        if (!rows.length) return;
+        $('gm-save').disabled = true;
+        try {
+          const res = await rpc('admin_points_guild_monthly_save', { p_rows: rows, p_by: '後台' });
+          say(`已儲存 ${res.saved} 個月（${region}）`, true);
+          gm.parsed = [];
+          $('gm-paste').value = '';
+          await loadGm();
+        } catch (err) {
+          say(err.message);
+          $('gm-save').disabled = false;
+        }
+      });
+      $('gm-list').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-gm-del]');
+        if (!btn) return;
+        const [period, region] = btn.dataset.gmDel.split('|');
+        if (!confirm(`確定刪除 ${period}（${region}）的公會月報數字？刪除後該月改用系統計算（115/09 以前會沒有資料）。`)) return;
+        try {
+          await rpc('admin_points_guild_monthly_delete', { p_period: period, p_region: region });
+          gm.rows = gm.rows.filter((r) => !(r.period === period && r.region === region));
+          gmRenderList();
+          say('已刪除', true);
         } catch (err) {
           say(err.message);
         }
@@ -3859,7 +4151,10 @@
         if (tab === 'plan') showPlan();
         if (tab === 'check' && !spotRule.loaded) loadSpotRule();
         if (tab === 'org' && !org.loaded) loadOrg();
-        if (tab === 'opinion') op.loaded ? renderOpinionTab() : loadOpinions();
+        if (tab === 'opinion') {
+          op.loaded ? renderOpinionTab() : loadOpinions();
+          if (!gm.loaded) loadGm();
+        }
       }
 
       $('nav').addEventListener('click', (e) => {
@@ -3947,5 +4242,6 @@
       }
     })();
   </script>
+<script src="../js/reveal.js?v=20261014-1"></script>
 </body>
 </html>

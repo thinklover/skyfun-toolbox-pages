@@ -42,7 +42,7 @@ begin
     limit 20
   ) x;
 
-  v_msg := format(E'🔔 星鴻註銷物件申請：還有 %s 件未完成\n\n%s%s\n\n請到工具箱「行政專區 → 星鴻註銷物件申請」處理，完成後記得勾選完成。',
+  v_msg := format(E'🔔 星鴻註銷物件申請：還有 %s 件未審核\n\n%s%s\n\n請到工具箱「行政專區 → 星鴻註銷物件申請」審核，按「同意解編」或「不同意解編」，系統會 LINE 通知送件的行政。',
     v_pending, v_lines, case when v_pending > 20 then format(E'\n…另有 %s 件', v_pending - 20) else '' end);
 
   select array_agg(distinct b.line_user_id) into v_to

@@ -150,22 +150,24 @@
     const key = keyOf(r);
     if (state.cache.has(key)) return state.cache.get(key);
     const job = (async () => {
-      const [audit, expenses, term, data] = await Promise.all([
+      const [audit, expenses, term, raw] = await Promise.all([
         fetchWorker('/admin-points/audit-log', '審核時間紀錄', r),
         fetchWorker('/admin-points/expenses', '補助審核', r),
         fetchWorker('/admin-points/terminations', '解約', r).catch((e) => ({ fields: [], rows: [], error: e.message })),
         rpc('admin_points_view', { p_start: r.start, p_end: r.end })
       ]);
-      const auditRows = Core.rowsFromPayload(audit);
+      const data = Core.stripExcluded(raw);
+      const auditRows = Core.dropExcludedRows(Core.rowsFromPayload(audit), data.excluded);
       const staff = data.staff || [];
       const result = Core.compute(auditRows, {
         start: r.start,
         end: r.end,
         staff,
+        exclude: data.excluded,
         manual: data.manual || [],
         opinions: data.opinions || [],
-        expenses: Core.rowsFromPayload(expenses),
-        terminations: Core.rowsFromPayload(term)
+        expenses: Core.dropExcludedRows(Core.rowsFromPayload(expenses), data.excluded),
+        terminations: Core.dropExcludedRows(Core.rowsFromPayload(term), data.excluded)
       });
       const dur = Core.durationReport(auditRows, { start: r.start, end: r.end, staff });
       const today = Core.isoDate(new Date());
@@ -182,7 +184,7 @@
     }
   }
   function peers(staff) {
-    return staff.filter((s) => s.status === '在職' && s.kind !== '工讀生');
+    return staff.filter((s) => Core.isOnDuty(s) && s.kind !== '工讀生');
   }
   function profileOf(calc, name) {
     if (calc.profiles.has(name)) return calc.profiles.get(name);

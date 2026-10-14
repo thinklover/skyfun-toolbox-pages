@@ -42,10 +42,10 @@
     { key: 'lvr', label: '實價登錄' }
   ];
   /** 行政教育訓練五週課表；不是技能節點的項目（general）只有訓練、沒有實務件數 */
-  const TRAINING_EXTRA = { guide: '執行要點', weekly: '週報', repair: '修繕', bonus: '媒合費獎金管理', hr: '人員到職與離職資料輸入', guild: '送公會資料準備', roster: '清冊' };
+  const TRAINING_EXTRA = { guide: '執行要點', contract: '製作合約', weekly: '週報', repair: '修繕', bonus: '媒合費獎金管理', hr: '人員到職與離職資料輸入', guild: '送公會資料準備', roster: '清冊' };
   const TRAINING_WEEKS = [
     ['guide', 'obj', 'tenant'],
-    ['pre', 'rev'],
+    ['pre', 'rev', 'contract'],
     ['p4', 'p5', 'weekly'],
     ['term', 'repair'],
     ['bonus', 'hr', 'guild']
@@ -66,6 +66,7 @@
   const PRACTICE_COURSES = ['obj'];
   /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */
   const TRAINING_TESTERS = ['簡為倢', '邱奕棋'];
+  const isOnDuty = (s) => s.status === '在職' && !TRAINING_TESTERS.includes(s.name);
 
   /**
    * 教育訓練通過判定
@@ -270,16 +271,49 @@
     return t;
   }
 
+  /** 不列入任何統計的人：人力明細營業處為「駐府人員」（人力明細本身保留，後台仍可維護） */
+  const EXCLUDED_OFFICES = ['駐府人員'];
+
+  function isExcludedStaff(s) {
+    return EXCLUDED_OFFICES.includes(String(s?.office || '').trim());
+  }
+
+  function excludedNames(staff, extra) {
+    return new Set([...(extra || []), ...(staff || []).filter(isExcludedStaff).map((s) => s.name)]);
+  }
+
+  /** admin_points_view 回傳值拿掉不列入統計的人；excluded 留著給審核紀錄過濾 */
+  function stripExcluded(sb) {
+    if (!sb) return sb;
+    const names = excludedNames(sb.staff, sb.excluded);
+    const out = { ...sb, excluded: [...names] };
+    if (!names.size) return out;
+    out.staff = (sb.staff || []).filter((s) => !names.has(s.name));
+    for (const k of ['incidents', 'checks', 'manual', 'opinions', 'training']) {
+      if (Array.isArray(sb[k])) out[k] = sb[k].filter((x) => !names.has(x.name));
+    }
+    return out;
+  }
+
+  /** 審核紀錄、補助審核、解約：拿掉不列入統計的人（依 auditor） */
+  function dropExcludedRows(rows, excluded) {
+    const names = excluded instanceof Set ? excluded : new Set(excluded || []);
+    return names.size ? (rows || []).filter((r) => !names.has(r.auditor)) : rows || [];
+  }
+
   /**
    * @param auditRows  rowsFromPayload 結果
    * @param opts { start, end, staff:[{name,status,kind}], manual:[{date,name,item,qty,points}],
-   *               expenses: 補助審核 rowsFromPayload 結果（已生效五類費用，date 為審核日期） }
+   *               expenses: 補助審核 rowsFromPayload 結果（已生效五類費用，date 為審核日期）,
+   *               exclude: 不列入統計的姓名（staff 裡的駐府人員也會自動排除） }
    */
   function compute(auditRows, opts) {
     const start = opts.start;
     const end = opts.end;
-    const staffList = opts.staff || [];
-    const active = new Map(staffList.filter((s) => s.status === '在職').map((s) => [s.name, s]));
+    const excluded = excludedNames(opts.staff, opts.exclude);
+    const staffList = (opts.staff || []).filter((s) => !excluded.has(s.name));
+    auditRows = dropExcludedRows(auditRows, excluded);
+    const active = new Map(staffList.filter(isOnDuty).map((s) => [s.name, s]));
     const inactive = new Set(staffList.filter((s) => s.status !== '在職').map((s) => s.name));
     const rosterReady = active.size > 0;
 
@@ -317,7 +351,7 @@
       scored.push({ ...r, item: c.item, points: itemPoints(c.item, r.date) });
     }
 
-    const expenses = (opts.expenses || [])
+    const expenses = dropExcludedRows(opts.expenses, excluded)
       .filter((r) => r.date >= start && r.date <= end)
       .slice()
       .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id));
@@ -329,7 +363,7 @@
       scored.push({ ...r, item: 'repair', points: ITEM_POINTS.repair, status: `${r.type}（已生效）`, time: '' });
     }
 
-    const terminations = (opts.terminations || [])
+    const terminations = dropExcludedRows(opts.terminations, excluded)
       .filter((r) => r.date >= start && r.date <= end && r.auditor)
       .slice()
       .sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : a.id - b.id));
@@ -379,7 +413,7 @@
     }
 
     for (const m of [...(opts.manual || []), ...opinionManual(opts.opinions)]) {
-      if (m.date < start || m.date > end || RETIRED_MANUAL_ITEMS.has(m.item) || skipResigned(m.name)) continue;
+      if (excluded.has(m.name) || m.date < start || m.date > end || RETIRED_MANUAL_ITEMS.has(m.item) || skipResigned(m.name)) continue;
       const p = person(m.name);
       const pts = Number(m.points) || 0;
       const qty = Number(m.qty) || 1;
@@ -405,7 +439,7 @@
     const sheet = sheetTotals(start, end);
     if (sheet) for (const name of Object.keys(sheet.totals)) if (!skipResigned(name)) person(name);
 
-    const list = [...people.values()];
+    const list = [...people.values()].filter((p) => !excluded.has(p.name));
     for (const p of list) {
       finish(p.month);
       for (const t of p.days.values()) finish(t);
@@ -467,7 +501,7 @@
       checks.set(c.name, t);
     }
     const rows = (opts.staff || [])
-      .filter((s) => s.status === '在職')
+      .filter(isOnDuty)
       .map((s) => {
         const points = pointsOf(byName.get(s.name));
         const ck = checks.get(s.name) || { checked: 0, correct: 0 };
@@ -505,7 +539,7 @@
     };
   }
 
-  const REGION_ORDER = ['大台北', '宜蘭', '桃園', '新竹', '台中', '彰化', '嘉義', '台南', '高雄'];
+  const REGION_ORDER = ['大台北', '台北', '新北', '基隆', '宜蘭', '桃園', '新竹', '台中', '彰化', '嘉義', '台南', '高雄'];
   function regionRank(r) {
     const i = REGION_ORDER.indexOf(r);
     return i < 0 ? 99 : i;
@@ -572,7 +606,7 @@
     const weekIncidents = (opts.incidents || []).filter((c) => inWeek(c.date));
     const monthIncidents = opts.incidents || [];
     const rows = (opts.staff || [])
-      .filter((s) => s.status === '在職' && s.kind !== '工讀生' && (!opts.leader || s.leader === opts.leader))
+      .filter((s) => isOnDuty(s) && s.kind !== '工讀生' && (!opts.leader || s.leader === opts.leader))
       .map((s) => {
         const p = byName.get(s.name);
         let weekPoints = 0;
@@ -702,20 +736,33 @@
     return KPI_REGIONS.filter((g) => hit.has(g));
   }
 
+  /** 公會意見的缺失類別（同公會月報；資料庫 admin_points_opinion_cats 要一致） */
+  const OPINION_CATEGORIES = {
+    case: [
+      '資料缺漏、重複(未檢附)', '未附原租約、不完整', '房東/客資料誤繕、過期、缺漏', '編號誤繕、未填(物編客編媒編)',
+      '金額/費用誤繕', '日期未填、誤繕', '未蓋章/未簽章(含章糊)', '表單勾選有誤(未勾、勾錯)', '擺放順序有誤',
+      '消防三寶(熱水器滅火器偵煙器)', '其他'
+    ],
+    roster: [
+      '資料缺漏、重複(未檢附)', '有檢附資料未KEY經控表', '房東/客資料誤繕', '編號誤繕、未填(物編客編媒編)',
+      '金額/費用誤繕', '日期未填、誤繕', '未蓋章/未簽章(含章糊)', '表單勾選有誤(未勾、勾錯)', '擺放順序有誤', '其他'
+    ]
+  };
+
   /** 清冊／審件作業良率：（總件數 − 錯誤件數）÷ 總件數 */
   const kpiErrRate = (x) => (x && x.total ? Math.max(0, (x.total - x.err) / x.total) : null);
 
   /**
-   * 清冊／審件作業良率的件數（各地區KPI指標、組長週報共用）：清冊＝表單04＋07，審件＝起租已生效案件，
+   * 清冊／審件作業良率的件數（各地區KPI指標、組長週報共用）：清冊＝表單04＋09，審件＝起租已生效案件，
    * 錯誤＝該公會期數的清冊／案件意見（沒填縣市的案件意見依媒合編號推地區）。
    * @returns { roster, audit：{ 全區|地區: { total, err } }, errors：意見加上 area }
    */
-  function kpiQuality(r04, r07, cases, opinions) {
+  function kpiQuality(r04, r09, cases, opinions) {
     const regions = ['全區', ...KPI_REGIONS];
     const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
     const roster = blank();
     const audit = blank();
-    for (const d of [r04, r07]) {
+    for (const d of [r04, r09]) {
       for (const [region, , , n] of d?.rows || []) {
         if (roster[region]) roster[region].total += n;
         roster['全區'].total += n;
@@ -734,7 +781,7 @@
     return { roster, audit, errors };
   }
 
-  /** 人力明細的地區 → KPI 地區（大台北的行政算在台北） */
+  /** 人力明細的地區 → KPI 地區（舊資料寫「大台北」的算在台北） */
   function kpiRegionOfStaff(region) {
     const s = String(region || '').trim();
     if (s === '大台北') return '台北';
@@ -805,7 +852,7 @@
    */
   function durationReport(auditRows, opts) {
     const staffList = opts.staff || [];
-    const active = new Set(staffList.filter((s) => s.status === '在職').map((s) => s.name));
+    const active = new Set(staffList.filter(isOnDuty).map((s) => s.name));
     const inactive = new Set(staffList.filter((s) => s.status !== '在職').map((s) => s.name));
     const rosterReady = active.size > 0;
     const people = new Map();
@@ -940,7 +987,7 @@
   function personProfile(result, dur, opts) {
     const name = opts.name;
     const staffList = opts.staff || [];
-    const active = staffList.filter((s) => s.status === '在職');
+    const active = staffList.filter(isOnDuty);
     const peerNames = active.length
       ? active.filter((s) => s.kind !== '工讀生').map((s) => s.name)
       : result.people.filter((p) => p.group === '行政').map((p) => p.name);
@@ -1209,6 +1256,9 @@
     { name: '東部及離島', regions: [['花蓮', ['花蓮縣']], ['台東', ['台東縣']], ['澎湖', ['澎湖縣']], ['金門', ['金門縣']], ['連江', ['連江縣']]] }
   ];
   const TAKEUP_REGION_OF_CITY = new Map(TAKEUP_AREAS.flatMap((a) => a.regions.flatMap(([r, cities]) => cities.map((c) => [c, r]))));
+  /** 人力明細部別分成台北／新北／基隆時，歸到承接率的「大台北」 */
+  const STAFF_REGION_GROUP = { 台北: '大台北', 新北: '大台北', 基隆: '大台北' };
+  const takeupRegionOfStaff = (region) => STAFF_REGION_GROUP[region] || region;
 
   /** 個人明細誰能看誰：預設只看自己；以下名單可看全部或整區（依人力明細的部別） */
   const VIEW_ALL = new Set(['簡為倢', '邱奕棋', '黃怡婷']);
@@ -1218,7 +1268,8 @@
   ]);
 
   function areaOfRegion(region) {
-    return TAKEUP_AREAS.find((a) => a.regions.some(([r]) => r === region))?.name || '';
+    const r0 = takeupRegionOfStaff(region);
+    return TAKEUP_AREAS.find((a) => a.regions.some(([r]) => r === r0))?.name || '';
   }
 
   function isSupervisor(name) {
@@ -1248,7 +1299,7 @@
     return VIEW_ALL.has(me) || VIEW_AREA.has(me);
   }
 
-  /** 各組長管的區（北中南）、部別與縣市：依組員（在職、非工讀生）的部別推算 */
+  /** 各組長管的區（北中南）：依組員（在職、非工讀生）的部別推算；部別與縣市再補上該區 KPI 地區（例：中區沒有南投組員也算南投） */
   function leaderScopes(staff) {
     const areaOf = new Map(TAKEUP_AREAS.flatMap((a) => a.regions.map(([r, cities]) => [r, { area: a.name, cities }])));
     const areaRank = (a) => {
@@ -1265,10 +1316,19 @@
     }
     return [...map.values()]
       .map((g) => {
-        const regions = [...g.regions].sort((a, b) => regionRank(a) - regionRank(b));
-        const known = regions.map((r) => areaOf.get(r)).filter(Boolean);
+        const staffRegions = [...g.regions];
+        const known = staffRegions.map((r) => areaOf.get(takeupRegionOfStaff(r))).filter(Boolean);
         const areas = [...new Set(known.map((k) => k.area))].sort((a, b) => areaRank(a) - areaRank(b));
-        return { leader: g.leader, members: g.members, regions, areas, cities: [...new Set(known.flatMap((k) => k.cities))] };
+        const kpiRegions = kpiRegionsOfAreas(areas);
+        const regions = [...new Set([...staffRegions, ...kpiRegions])].sort((a, b) => regionRank(a) - regionRank(b));
+        const staffCities = new Set(known.flatMap((k) => k.cities));
+        const cities = TAKEUP_AREAS.filter((a) => areas.includes(a.name))
+          .flatMap((a) => a.regions.flatMap(([, list]) => list))
+          .filter((c) => staffCities.has(c) || kpiRegions.includes(kpiRegionOfCity(c)))
+          .map((c, i) => [c, KPI_REGIONS.indexOf(kpiRegionOfCity(c)), i])
+          .sort((a, b) => (a[1] < 0 ? 99 : a[1]) - (b[1] < 0 ? 99 : b[1]) || a[2] - b[2])
+          .map(([c]) => c);
+        return { leader: g.leader, members: g.members, regions, areas, cities };
       })
       .sort((a, b) => areaRank(a.areas[0]) - areaRank(b.areas[0]) || a.leader.localeCompare(b.leader, 'zh-Hant'));
   }
@@ -1385,7 +1445,7 @@
     const weeks = opts.weeks || [];
     const asOf = opts.asOf || result.end;
     const rows = (opts.staff || [])
-      .filter((s) => s.status === '在職' && s.kind !== '工讀生')
+      .filter((s) => isOnDuty(s) && s.kind !== '工讀生')
       .map((s) => {
         const p = byName.get(s.name);
         const cells = weeks.map((w) => {
@@ -1492,6 +1552,7 @@
     VIDEO_COURSES,
     PRACTICE_COURSES,
     TRAINING_TESTERS,
+    isOnDuty,
     trainingState,
     courseScores,
     DURATION_NODES,
@@ -1509,6 +1570,7 @@
     kpiRegionOfCity,
     kpiErrRate,
     kpiQuality,
+    OPINION_CATEGORIES,
     kpiRegionOfStaff,
     kpiRegionsOfAreas,
     kpiStageReport,
@@ -1549,6 +1611,9 @@
     beforeFirstPerf,
     stageOf,
     sheetTotals,
+    isExcludedStaff,
+    stripExcluded,
+    dropExcludedRows,
     compute,
     isoDate
   };

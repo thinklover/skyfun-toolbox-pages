@@ -10,8 +10,12 @@
   const CYCLE_DAYS = 14;
   const DAY_MS = 86400000;
 
+  const TEXT_LIMIT = 300;
+  const AI_FIELDS = { focus: '本期要改善的項目', actions: '具體做法' };
+  const aiUrl = () => String(window.SKYFUN_PETITION_AI_URL || 'https://skyfun-petition-ai.onrender.com').replace(/\/$/, '') + '/api/improve-plan/polish';
+
   const cache = new Map();
-  const ui = { name: '', mode: 'closed', editing: null, draft: null, msg: '', busy: false };
+  const ui = { name: '', mode: 'closed', editing: null, draft: null, msg: '', busy: false, ai: {} };
   let ctx = null;
 
   const $ = (id) => document.getElementById(id);
@@ -98,24 +102,10 @@
       </div>`;
   }
 
-  /** 業績月結束前剩幾個工作天（週一～週五，含今天） */
-  function workDaysLeft(end) {
-    if (!end) return 0;
-    const last = new Date(`${end}T00:00:00`);
-    let n = 0;
-    for (let d = startOfDay(new Date()); d <= last; d = new Date(d.getTime() + DAY_MS)) {
-      if (d.getDay() !== 0 && d.getDay() !== 6) n += 1;
-    }
-    return n;
-  }
-
-  /** 依個人分析（personProfile）整理：落後了什麼、建議做法、建議目標 */
+  /** 依個人分析（personProfile）整理落後了什麼；做法要行政自己寫，不提供建議文字 */
   function advice() {
     const pf = ctx.pf;
     if (!pf) return null;
-    const fmtDur = window.AdminPointsCore?.formatDuration || ((s) => `${Math.round(s / 60)} 分`);
-    const days = workDaysLeft(ctx.end);
-    const pt = pf.points || {};
     const areas = new Set(pf.weak.map((w) => w.area));
     const gaps = pf.weak.slice(0, 6).map((w) => ({ level: w.level, area: w.area, text: w.text }));
     const dims = (pf.dims || [])
@@ -128,66 +118,10 @@
         gaps.push({ level: 'bad', area: d.label, text: `${d.label}分數 ${Math.round(d.score)}／100，是拉低整體評等的主因` });
       }
     }
-
-    const tips = [];
-    const add = (area, text) => tips.push({ area, text });
-    if (areas.has('點數產出')) {
-      if (pt.avg && pt.total < pt.avg) {
-        const gap = Math.ceil(pt.avg - pt.total);
-        add('點數產出', days
-          ? `本月 ${pt.total} 點，行政平均 ${pt.avg.toFixed(0)} 點，還差 ${gap} 點；剩 ${days} 個工作天，每天要比現在多做約 ${Math.ceil(gap / days)} 點`
-          : `本月 ${pt.total} 點，比行政平均 ${pt.avg.toFixed(0)} 點少 ${gap} 點`);
-      }
-      if (pt.toNext && days) add('點數產出', `距${pt.nextLabel}還差 ${pt.toNext} 點，剩 ${days} 個工作天，平均每天要 ${Math.ceil(pt.toNext / days)} 點`);
-      if (pt.avgDays && pt.days < pt.avgDays * 0.85) add('點數產出', '每個上班日都要有產出：開工先清待審清單，不要整天掛零');
-      add('點數產出', '每天早上先排好今天要清的件數（物審、房客、預審、複審），中午、下班前各對一次進度');
-      const lowItems = (pf.items || []).filter((it) => it.doers >= 2 && it.doersAvg && it.mine < it.doersAvg * 0.85 && it.key !== 'manual' && it.key !== 'qa');
-      if (lowItems.length) add('點數產出', `${lowItems.slice(0, 3).map((it) => it.label).join('、')}件數偏少：跟組長確認分案量，或請教做得多的同仁流程`);
-    }
-    if (areas.has('審核速度')) {
-      const slow = (pf.nodes || []).filter((n) => n.count >= 3 && n.diff != null && n.diff > 0).sort((a, b) => b.diff - a.diff);
-      if (slow.length) {
-        const n = slow[0];
-        add('審核速度', `${n.label}平均 ${fmtDur(n.avg)}，全體 ${fmtDur(n.base)}：觀摩做得快的同仁，整理自己的檢查順序`);
-      }
-      if (pf.speed?.long >= 2) add('審核速度', '案件打開就一次審完再送出，不要開著放；要等資料就先退回或標記，避免超過 1 小時的紀錄');
-      add('審核速度', '同一個問題卡超過 10 分鐘就問組長，不要自己耗著');
-    }
-    if (areas.has('審件品質')) {
-      add('審件品質', '抽查錯的案件逐一跟組長確認錯在哪，整理成自己的檢核清單，送出前照清單檢查一次');
-      add('審件品質', '不確定的規定回到執行要點找對應條文，並完成執行要點線上考試');
-    }
-    if (areas.has('客訴紀律')) {
-      add('客訴紀律', '跟組長一起檢討客訴案件的原因與回覆方式');
-      add('客訴紀律', '回覆民眾前先確認資料與規定，重要案件請組長先看過再回');
-    }
-    const Core = window.AdminPointsCore;
-    const cx = window.CourseExam;
-    const gx = window.GuideExam?.progressOf(pf.name);
-    const sim = window.SimPractice;
-    const untrained = Core?.trainingState && cx?.statusOf(Core.VIDEO_COURSES[0], pf.name)?.loaded
-      ? (pf.training || []).filter((t) => {
-          const c = cx.has(t.key) ? cx.statusOf(t.key, pf.name) : null;
-          const p = sim?.statusOf(t.key, pf.name);
-          const st = Core.trainingState(t.key, { videoDone: c?.video?.done, examPassed: c?.passed, practiceDone: p?.done, guideRate: gx?.loaded && gx.total ? gx.passed / gx.total : null });
-          // 實作進度還沒讀到前不當成未完成
-          return st.steps.some((x) => !x.ok && !x.pending && (x.key !== 'practice' || p?.loaded));
-        }).map((t) => t.label)
-      : [];
-    if (untrained.length) add('教育訓練', `影片、考試或實作還沒完成的教育訓練：${untrained.slice(0, 4).join('、')}${untrained.length > 4 ? ` 等 ${untrained.length} 項` : ''}，到點數表教育訓練看完影片、考完試、完成模擬系統實作`);
-
-    const targets = [];
-    if (areas.has('點數產出') && pt.avg && pt.total < pt.avg) targets.push(`兩週內月累積追到行政平均 ${Math.ceil(pt.avg)} 點`);
-    else if (areas.has('點數產出') && pt.toNext) targets.push(`本業績月達到${pt.nextLabel}（${pt.total + pt.toNext} 點）`);
-    const slowTop = (pf.nodes || []).filter((n) => n.count >= 3 && n.diff != null && n.diff > 0).sort((a, b) => b.diff - a.diff)[0];
-    if (areas.has('審核速度') && slowTop) targets.push(`兩週內${slowTop.label}平均耗時降到 ${fmtDur(slowTop.base)} 以下`);
-    if (areas.has('審件品質')) targets.push('下次抽查良率達 95% 以上');
-    if (areas.has('客訴紀律')) targets.push('兩週內零客訴');
-
-    return { gaps, dims, tips, target: targets.join('；') };
+    return { gaps, dims };
   }
 
-  function adviceHtml(readonly) {
+  function adviceHtml() {
     const a = advice();
     if (!a) return '';
     const icon = (lv) => (lv === 'bad' ? '🔴' : '🟠');
@@ -197,30 +131,34 @@
     const gaps = a.gaps.length
       ? `<ul class="ipl-gaps">${a.gaps.map((g) => `<li>${icon(g.level)} <b>${esc(g.area)}</b>　${esc(g.text)}</li>`).join('')}</ul>`
       : '<p class="ipl-none">目前沒有明顯落後的項目。</p>';
-    const tips = a.tips.length
-      ? `<ul class="ipl-tips">${a.tips
-          .map((t) => (readonly
-            ? `<li><span class="ipl-tip"><em>${esc(t.area)}</em>${esc(t.text)}</span></li>`
-            : `<li><button type="button" class="ipl-tip" data-ipl-tip="${esc(t.text)}"><em>${esc(t.area)}</em>${esc(t.text)}<i>＋ 加入</i></button></li>`))
-          .join('')}</ul>`
-      : '';
-    const target = !a.target ? '' : readonly
-      ? `<p class="ipl-target-text">建議目標：${esc(a.target)}</p>`
-      : `<button type="button" class="ipl-chip ipl-chip--target" data-ipl-target="${esc(a.target)}">＋ 建議目標：${esc(a.target)}</button>`;
-    return `<div class="ipl-guide">
+    return `<div class="ipl-guide ipl-guide--single">
         <div class="ipl-guide-col">
-          <div class="ipl-guide-title">📉 落後了什麼<small>各面向分數（滿分 100）</small></div>
+          <div class="ipl-guide-title">📉 落後了什麼<small>各面向分數（滿分 100）；改善項目與做法請自己寫</small></div>
           ${dims}${gaps}
-        </div>
-        <div class="ipl-guide-col">
-          <div class="ipl-guide-title">💡 建議做法<small>${readonly ? '系統依本月資料產生' : '點一下就加入「具體做法」'}</small></div>
-          ${tips}${target}
         </div>
       </div>`;
   }
 
+  function countHtml(name, len) {
+    const tone = len > TEXT_LIMIT ? ' is-over' : len >= TEXT_LIMIT - 30 ? ' is-near' : '';
+    return `<small class="ipl-count${tone}" data-ipl-count="${name}">${len}／${TEXT_LIMIT}</small>`;
+  }
+
   function field(name, label, rows, value, hint, req) {
-    return `<label class="ipl-f"><span>${label}${req ? ' <em>*</em>' : ''}</span><textarea name="${name}" rows="${rows}" maxlength="${name === 'focus' || name === 'target' ? 1000 : 2000}" placeholder="${esc(hint)}">${esc(value || '')}</textarea></label>`;
+    const text = String(value || '');
+    if (!AI_FIELDS[name]) {
+      return `<label class="ipl-f"><span>${label}${req ? ' <em>*</em>' : ''}</span><textarea name="${name}" rows="${rows}" maxlength="${name === 'target' ? 1000 : 2000}" placeholder="${esc(hint)}">${esc(text)}</textarea></label>`;
+    }
+    const st = ui.ai[name] || {};
+    const undo = st.original != null && !st.busy
+      ? `<button type="button" class="ipl-ai-undo" data-ipl-ai-undo="${name}">↩ 還原</button>`
+      : '';
+    return `<div class="ipl-f" data-ipl-field="${name}">
+        <span class="ipl-f-head"><label for="ipl-f-${name}">${label}${req ? ' <em>*</em>' : ''}</label>
+          <span class="ipl-ai"><button type="button" class="ipl-ai-btn" data-ipl-ai="${name}"${st.busy ? ' disabled' : ''}>${st.busy ? '✨ 潤飾中…' : '✨ AI 潤飾'}</button>${undo}</span></span>
+        <textarea id="ipl-f-${name}" name="${name}" rows="${rows}" maxlength="${TEXT_LIMIT}" placeholder="${esc(hint)}">${esc(text)}</textarea>
+        <span class="ipl-f-foot"><small class="ipl-ai-msg${st.tone ? ` is-${st.tone}` : ''}">${esc(st.msg || '')}</small>${countHtml(name, text.length)}</span>
+      </div>`;
   }
 
   function formHtml() {
@@ -228,11 +166,10 @@
     const editing = ui.editing ? items.find((x) => x.id === ui.editing) : null;
     const d = ui.draft || editing || {};
     const prev = editing ? null : items[0];
-    const weak = ctx.weak ? ctx.weak.split('、') : [];
     return `<form class="ipl-form" novalidate>
         <div class="ipl-form-title">${editing ? '✏️ 修改改善計畫' : '✍️ 填寫改善計畫'}<small>本次評等 ${esc(ctx.grade)}${ctx.score ? `（${Math.round(Number(ctx.score))} 分）` : ''}；送出後處長、組長都看得到</small></div>
         ${adviceHtml()}
-        ${weak.length ? `<p class="ipl-suggest">把落後項目加入「本期要改善的項目」：${weak.map((w) => `<button type="button" class="ipl-chip" data-ipl-chip="${esc(w)}">＋ ${esc(w)}</button>`).join('')}</p>` : ''}
+        <p class="ipl-handwrite">✍️ 「本期要改善的項目」與「具體做法」請用自己的話寫（各 ${TEXT_LIMIT} 字內），寫完可以按「✨ AI 潤飾」修飾文字。</p>
         <div class="ipl-grid">
           ${field('focus', '本期要改善的項目', 2, d.focus, '例如：審核速度（物審平均比全體慢 20%）', true)}
           ${field('actions', '具體做法', 3, d.actions, '每天／每週要做什麼，例如：每天上午先清物審待辦、遇到卡關 10 分鐘內找組長', true)}
@@ -256,7 +193,7 @@
       const who = ctx.self ? '你' : esc(ctx.name);
       const how = ctx.self
         ? '按上方「填寫改善計畫」開始寫，送出後處長、組長都看得到。'
-        : `改善計畫要由 ${esc(ctx.name)} 本人登入工具箱，在自己的「個人明細」填寫；寫好後會出現在這裡。`;
+        : `改善計畫要由 ${esc(ctx.name)} 本人登入工具箱，在自己的「個人績效」填寫；寫好後會出現在這裡。`;
       return `<div class="ipl-empty-box">
           <p><b>${who}還沒有改善計畫紀錄。</b>${how}</p>
           <p>每次要寫：① 本期要改善的項目　② 具體做法　③ 目標與完成日　④ 上次計畫執行結果。評等 D 每兩週要再寫一次。</p>
@@ -291,7 +228,7 @@
     }
     panel.className = 'ipl-panel';
     const writing = ui.mode === 'form' && ctx.self;
-    panel.innerHTML = `${writing ? formHtml() : required() || !ctx.self ? adviceHtml(true) : ''}
+    panel.innerHTML = `${writing ? formHtml() : required() || !ctx.self ? adviceHtml() : ''}
       <div class="ipl-hist-title">改善計畫紀錄<small>${esc(ctx.name)} · 每兩週一次，最新的在最上面</small></div>
       ${historyHtml()}`;
   }
@@ -307,6 +244,10 @@
     const d = ui.draft;
     if (!String(d.focus).trim()) return fail('請填寫要改善的項目');
     if (!String(d.actions).trim()) return fail('請填寫具體做法');
+    for (const [k, label] of Object.entries(AI_FIELDS)) {
+      if (String(d[k]).trim().length > TEXT_LIMIT) return fail(`「${label}」超過 ${TEXT_LIMIT} 字，請精簡`);
+    }
+    if (Object.values(ui.ai).some((s) => s.busy)) return fail('AI 潤飾中，請等它完成再送出');
     ui.busy = true;
     ui.msg = '';
     paint();
@@ -320,6 +261,7 @@
       ui.editing = null;
       ui.mode = 'list';
       ui.busy = false;
+      ui.ai = {};
       await load(ctx.name, true);
     } catch (e) {
       ui.busy = false;
@@ -330,6 +272,63 @@
   function fail(msg) {
     ui.msg = msg;
     paint();
+  }
+
+  /** 只重畫單一欄位，避免打斷另一欄正在輸入的內容 */
+  function paintField(name) {
+    const el = document.querySelector(`#apt-plan-panel [data-ipl-field="${name}"]`);
+    if (!el) return;
+    const rows = el.querySelector('textarea')?.rows || 3;
+    const hint = el.querySelector('textarea')?.placeholder || '';
+    const tmp = document.createElement('template');
+    tmp.innerHTML = field(name, AI_FIELDS[name], rows, ui.draft?.[name] ?? '', hint, true).trim();
+    el.replaceWith(tmp.content.firstChild);
+  }
+
+  function setAi(name, patch) {
+    ui.ai[name] = { ...(ui.ai[name] || {}), ...patch };
+    paintField(name);
+  }
+
+  async function aiPolish(name) {
+    const form = $('apt-plan-panel')?.querySelector('.ipl-form');
+    if (!form || ui.ai[name]?.busy) return;
+    saveDraft(form);
+    const text = String(ui.draft[name] || '').trim();
+    if (!token()) return setAi(name, { msg: '請先登入工具箱', tone: 'err' });
+    if (text.replace(/\s+/g, '').length < 5) {
+      setAi(name, { msg: '請先用自己的話寫幾句，再按 AI 潤飾', tone: 'err' });
+      $('apt-plan-panel')?.querySelector(`textarea[name="${name}"]`)?.focus();
+      return;
+    }
+    if (text.length > TEXT_LIMIT) return setAi(name, { msg: `超過 ${TEXT_LIMIT} 字，請先精簡`, tone: 'err' });
+    setAi(name, { busy: true, msg: '大約 5～20 秒；AI 服務在休息時第一次要等 30～60 秒…', tone: '' });
+    try {
+      const res = await fetch(aiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token(), field: name, text }),
+        signal: AbortSignal.timeout(150000)
+      });
+      let data = null;
+      try { data = await res.json(); } catch { /* 非 JSON */ }
+      if (!data?.ok) throw new Error(data?.error || `AI 暫時無法使用（${res.status}）`);
+      if (ui.mode !== 'form') return;
+      const st = ui.ai[name] || {};
+      ui.draft = { ...(ui.draft || {}), [name]: data.text };
+      setAi(name, { busy: false, original: st.original ?? text, msg: '✅ 已潤飾，請確認內容跟你的意思一樣再送出', tone: 'ok' });
+    } catch (e) {
+      const msg = e.name === 'TimeoutError' ? 'AI 潤飾逾時，請再按一次' : e.message === 'Failed to fetch' ? '連不上 AI 服務，請稍後再試' : e.message;
+      setAi(name, { busy: false, msg, tone: 'err' });
+    }
+  }
+
+  function aiUndo(name) {
+    const st = ui.ai[name];
+    if (st?.original == null) return;
+    ui.draft = { ...(ui.draft || {}), [name]: st.original };
+    ui.ai[name] = { msg: '已還原成你原本寫的內容', tone: '' };
+    paintField(name);
   }
 
   async function remove(id, btn) {
@@ -359,6 +358,7 @@
     if (act === 'write') {
       ui.mode = 'form';
       ui.editing = null;
+      ui.ai = {};
       ui.msg = '';
       paint();
       $('apt-plan-panel')?.querySelector('textarea')?.focus();
@@ -374,39 +374,19 @@
       ui.mode = 'list';
       ui.editing = null;
       ui.draft = null;
+      ui.ai = {};
       ui.msg = '';
       paint();
       return;
     }
-    const chip = e.target.closest('[data-ipl-chip]');
-    if (chip) {
-      const ta = $('apt-plan-panel')?.querySelector('textarea[name="focus"]');
-      if (ta && !ta.value.includes(chip.dataset.iplChip)) {
-        ta.value = ta.value.trim() ? `${ta.value.trim()}、${chip.dataset.iplChip}` : chip.dataset.iplChip;
-        saveDraft(ta.form);
-      }
+    const aiBtn = e.target.closest('[data-ipl-ai]');
+    if (aiBtn) {
+      aiPolish(aiBtn.dataset.iplAi);
       return;
     }
-    const tip = e.target.closest('[data-ipl-tip]');
-    if (tip) {
-      const ta = $('apt-plan-panel')?.querySelector('textarea[name="actions"]');
-      const line = `・${tip.dataset.iplTip}`;
-      if (ta && !ta.value.includes(tip.dataset.iplTip)) {
-        ta.value = ta.value.trim() ? `${ta.value.trim()}\n${line}` : line;
-        saveDraft(ta.form);
-      }
-      tip.classList.add('is-added');
-      const mark = tip.querySelector('i');
-      if (mark) mark.textContent = '✓ 已加入';
-      return;
-    }
-    const target = e.target.closest('[data-ipl-target]');
-    if (target) {
-      const ta = $('apt-plan-panel')?.querySelector('textarea[name="target"]');
-      if (ta && !ta.value.includes(target.dataset.iplTarget)) {
-        ta.value = ta.value.trim() ? `${ta.value.trim()}；${target.dataset.iplTarget}` : target.dataset.iplTarget;
-        saveDraft(ta.form);
-      }
+    const undo = e.target.closest('[data-ipl-ai-undo]');
+    if (undo) {
+      aiUndo(undo.dataset.iplAiUndo);
       return;
     }
     const edit = e.target.closest('[data-ipl-edit]');
@@ -414,6 +394,7 @@
       ui.mode = 'form';
       ui.editing = Number(edit.dataset.iplEdit);
       ui.draft = null;
+      ui.ai = {};
       ui.msg = '';
       paint();
       $('apt-plan-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -425,7 +406,13 @@
 
   function onInput(e) {
     const form = e.target.closest?.('.ipl-form');
-    if (form) saveDraft(form);
+    if (!form) return;
+    saveDraft(form);
+    const name = e.target.name;
+    if (AI_FIELDS[name]) {
+      const count = form.querySelector(`[data-ipl-count="${name}"]`);
+      if (count) count.outerHTML = countHtml(name, e.target.value.length);
+    }
   }
 
   function onSubmit(e) {
@@ -456,6 +443,7 @@
       ui.mode = 'closed';
       ui.editing = null;
       ui.draft = null;
+      ui.ai = {};
       ui.msg = '';
     }
     ctx = next;

@@ -4,11 +4,11 @@
     const IMAGE_MAX = 2400;
     const PDF_MAX_BYTES = 10 * 1024 * 1024;
     const STATUS = {
-        pending: ['pending', '未完成'],
-        done: ['done', '已完成'],
-        rejected: ['rejected', '退回']
+        pending: ['pending', '未審核'],
+        done: ['done', '同意解編'],
+        rejected: ['rejected', '不同意解編']
     };
-    const FILTERS = [['', '全部', 'all'], ['pending', '未完成', 'pending'], ['done', '已完成', 'done']];
+    const FILTERS = [['', '全部', 'all'], ['pending', '未審核', 'pending'], ['done', '同意解編', 'done'], ['rejected', '不同意解編', 'rejected']];
 
     const $ = (id) => document.getElementById(id);
     const auth = () => window.skyfunAuth;
@@ -20,6 +20,7 @@
         filter: '',
         query: '',
         openId: null,
+        rejecting: null,
         files: {},
         busy: false,
         loaded: false
@@ -139,6 +140,66 @@
         el.classList.toggle('is-ok', n >= NOTE_MIN);
     }
 
+    const aiNoteUrl = () => String(window.SKYFUN_PETITION_AI_URL || 'https://skyfun-petition-ai.onrender.com').replace(/\/$/, '') + '/api/cancel-note/polish';
+    const ai = { original: null, busy: false };
+
+    function aiMsg(text, kind) {
+        const el = $('acf-ai-msg');
+        if (!el) return;
+        el.textContent = text;
+        el.className = 'acf-ai-msg' + (kind ? ' is-' + kind : '');
+    }
+
+    function aiReset() {
+        ai.original = null;
+        const undo = $('acf-ai-undo');
+        if (undo) undo.hidden = true;
+        aiMsg('');
+    }
+
+    async function aiBullets(form) {
+        const note = form.elements.note;
+        const text = note.value.trim();
+        if (ai.busy) return;
+        if (!token()) { aiMsg('請先登入工具箱', 'err'); return; }
+        if (noteLength(text) < 5) { aiMsg('先用口語寫幾句原因，再按 AI 整理', 'err'); note.focus(); return; }
+        ai.busy = true;
+        const btn = $('acf-ai');
+        if (btn) { btn.disabled = true; btn.textContent = '✨ AI 整理中…'; }
+        aiMsg('大約 5～20 秒；如果 AI 服務在休息，第一次要等 30～60 秒，請稍候…');
+        try {
+            const res = await fetch(aiNoteUrl(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token(), text }),
+                signal: AbortSignal.timeout(150000)
+            });
+            let data = null;
+            try { data = await res.json(); } catch { /* non-JSON */ }
+            if (!data?.ok) throw new Error(data?.error || ('AI 暫時無法使用（' + res.status + '）'));
+            if (ai.original == null) ai.original = note.value;
+            note.value = data.text;
+            note.dispatchEvent(new Event('input', { bubbles: true }));
+            const undo = $('acf-ai-undo');
+            if (undo) undo.hidden = false;
+            if (data.todo?.length) aiMsg('⚠️ 還沒寫到：' + data.todo.join('、') + '，請補充後再送出', 'warn');
+            else aiMsg('✅ 已整理並潤飾成條列式，請確認內容正確再送出', 'ok');
+        } catch (e) {
+            aiMsg(e.name === 'TimeoutError' ? 'AI 整理逾時，請再按一次' : e.message === 'Failed to fetch' ? '連不上 AI 服務，請稍後再試' : e.message, 'err');
+        } finally {
+            ai.busy = false;
+            if (btn) { btn.disabled = false; btn.textContent = '✨ AI 條列＋潤飾'; }
+        }
+    }
+
+    function aiUndo(form) {
+        if (ai.original == null) return;
+        form.elements.note.value = ai.original;
+        form.elements.note.dispatchEvent(new Event('input', { bubbles: true }));
+        aiReset();
+        aiMsg('已復原成原本的內容');
+    }
+
     function validate(form) {
         let first = null;
         form.querySelectorAll('[required]').forEach((el) => {
@@ -187,6 +248,7 @@
         try {
             const res = await rpc('object_cancel_submit', { p_token: token(), p_data: data });
             form.reset();
+            aiReset();
             showForm(false);
             flash('✅ 已送出，已加到下方列表。正在通知主管…');
             notifySupervisors(res.id);
@@ -249,7 +311,7 @@
               '<p class="acf-line-note">10 分鐘內有效（到 ' + esc(fmtTime(line.expiresAt)) + '）。在 LINE 傳出後，按下方「我傳好了」。</p>'
             : '';
         box.innerHTML =
-            '<p>綁定後，有人送出註銷申請時，LINE 會通知你（需管理員勾選為通知對象）。</p>' +
+            '<p>綁定後，你送出的註銷申請審核完（同意／不同意解編），LINE 會通知你結果；主管另可收到新申請通知（需管理員勾選為通知對象）。</p>' +
             '<ol>' +
             '<li>加官方帳號「星鴻萬能小幫手」好友：<a href="' + LINE_ADD_URL + '" target="_blank" rel="noopener">點我加好友 ↗</a></li>' +
             '<li>按下「取得驗證碼」</li>' +
@@ -335,6 +397,40 @@
     function detailHtml(item) {
         const kv = (k, v, wide) => '<div' + (wide ? ' class="wide"' : '') + '><dt>' + k + '</dt><dd>' + esc(v || '—') + '</dd></div>';
         const done = item.status === 'done';
+        const rejected = item.status === 'rejected';
+        let handle;
+        if (done || rejected) {
+            const line = item.decisionLineAt
+                ? '📨 已 LINE 通知送件人 ' + esc(item.userName || '') + '（' + esc(fmtTime(item.decisionLineAt)) + '）'
+                : '⚠️ LINE 沒有通知到送件人' + (item.decisionLineError ? '：' + esc(item.decisionLineError) : '');
+            handle = '<div class="acf-box ' + (done ? 'acf-box--approved' : 'acf-box--rejected') + '">' +
+                '<p class="acf-box-title">' + (done ? '✅ 同意解編' : '❌ 不同意解編') + '</p>' +
+                (item.adminNote ? '<p class="acf-reject-reason">' + (done ? '備註：' : '原因：') + esc(item.adminNote) + '</p>' : '') +
+                '<p class="acf-done-by acf-done-by--flat">由 ' + esc(item.doneByName || '—') + ' 於 ' + esc(fmtTime(item.handledAt)) + ' 審核</p>' +
+                '<p class="acf-done-by acf-done-by--flat' + (item.decisionLineAt ? '' : ' acf-line-miss') + '">' + line + '</p>' +
+                '<div class="acf-reject-btns"><button type="button" class="acf-reject-btn acf-reject-btn--muted" data-decide="reset" data-id="' + item.id + '">撤銷決定</button></div>' +
+                '</div>';
+        } else {
+            const kind = state.rejecting?.id === item.id ? state.rejecting.kind : '';
+            const form = kind
+                ? '<div class="acf-reject-form">' +
+                    '<textarea id="acf-reject-reason" rows="3" maxlength="1000" placeholder="' +
+                    (kind === 'reject' ? '請寫不同意的原因（必填），會一起 LINE 給送件人' : '備註（選填），會一起 LINE 給送件人') + '"></textarea>' +
+                    '<div class="acf-reject-btns">' +
+                    '<button type="button" class="acf-decide-btn acf-decide-btn--' + kind + '" data-decide="' + kind + '" data-id="' + item.id + '">確認' + (kind === 'reject' ? '不同意解編' : '同意解編') + '</button>' +
+                    '<button type="button" class="acf-reject-btn acf-reject-btn--muted" data-decide-cancel>取消</button>' +
+                    '</div></div>'
+                : '';
+            handle = '<div class="acf-box">' +
+                '<p class="acf-box-title">🗳️ 審核（決定後會 LINE 通知送件人' + (item.userName ? ' ' + esc(item.userName) : '') + '）</p>' +
+                (kind ? '' :
+                    '<div class="acf-reject-btns">' +
+                    '<button type="button" class="acf-decide-btn acf-decide-btn--approve" data-decide-open="approve" data-id="' + item.id + '">✅ 同意解編</button>' +
+                    '<button type="button" class="acf-decide-btn acf-decide-btn--reject" data-decide-open="reject" data-id="' + item.id + '">❌ 不同意解編</button>' +
+                    '</div>') +
+                form +
+                '</div>';
+        }
         return '<div class="acf-detail">' +
             '<dl class="acf-kv">' +
             kv('申請處所', item.dept) + kv('申請人', item.applicant) +
@@ -344,13 +440,9 @@
             kv('註銷物件地址', item.address, true) +
             kv('業務備註', item.note, true) +
             kv('承接業者', item.takerCompany) + kv('承接業者業務姓名', item.takerAgent) +
-            (item.adminNote ? kv('管理部回覆', item.adminNote, true) : '') +
             '</dl>' +
             '<div class="acf-box"><p class="acf-box-title">📄 簽呈</p>' + filesHtml(item) + '</div>' +
-            '<div class="acf-box">' +
-            '<label class="acf-done"><input type="checkbox" data-done="' + item.id + '"' + (done ? ' checked' : '') + '> 已完成</label>' +
-            (done ? '<p class="acf-done-by">由 ' + esc(item.doneByName || '—') + ' 於 ' + esc(fmtTime(item.handledAt)) + ' 勾選</p>' : '') +
-            '</div>' +
+            handle +
             '<p class="acf-detail-msg" id="acf-detail-msg" role="status" aria-live="polite"></p>' +
             '</div>';
     }
@@ -367,7 +459,7 @@
         box.innerHTML = state.items.map((it) => {
             const [cls, label] = STATUS[it.status] || STATUS.pending;
             const open = state.openId === it.id;
-            return '<div class="acf-item' + (it.status === 'done' ? ' is-done' : '') + (open ? ' is-open' : '') + '">' +
+            return '<div class="acf-item' + (it.status === 'done' ? ' is-done' : '') + (it.status === 'rejected' ? ' is-rejected' : '') + (open ? ' is-open' : '') + '">' +
                 '<button type="button" class="acf-row" data-open="' + it.id + '" aria-expanded="' + open + '">' +
                 '<span class="acf-row-addr">' + esc(it.address) + '</span>' +
                 '<span class="acf-row-side"><span class="acf-badge acf-badge--' + cls + '">' + label + '</span>' +
@@ -455,17 +547,26 @@
         }
     }
 
-    async function setDone(id, checkbox) {
-        const done = checkbox.checked;
-        const label = done ? '確定勾選「已完成」？' : '確定取消「已完成」？';
-        if (!window.confirm(label)) { checkbox.checked = !done; return; }
-        checkbox.disabled = true;
+    async function decide(id, kind, btn) {
+        let note = '';
+        if (kind === 'reset') {
+            if (!window.confirm('確定撤銷這筆的審核決定？會回到「未審核」，原因／備註會清掉（不會另外通知送件人）。')) return;
+        } else {
+            const box = $('acf-reject-reason');
+            note = (box?.value || '').trim();
+            if (kind === 'reject' && !note) { detailMsg('請先寫不同意的原因', 'err'); box?.focus(); return; }
+            if (!window.confirm('確定' + (kind === 'reject' ? '不同意解編' : '同意解編') + '？送出後會 LINE 通知送件人。')) return;
+        }
+        if (btn) btn.disabled = true;
         try {
-            await rpc('object_cancel_set_done', { p_token: token(), p_id: id, p_done: done });
+            const res = await rpc('object_cancel_decide', { p_token: token(), p_id: id, p_decision: kind, p_note: note });
+            state.rejecting = null;
             await loadList();
+            if (kind === 'reset') flash('已撤銷審核決定，回到未審核');
+            else if (res.lineRecipients) flash('✅ 已' + (kind === 'reject' ? '不同意解編' : '同意解編') + '，並已 LINE 通知送件人');
+            else flash('已' + (kind === 'reject' ? '不同意解編' : '同意解編') + '（LINE 沒有通知到：' + (res.lineError || '未知原因') + '）', 10000);
         } catch (e) {
-            checkbox.checked = !done;
-            checkbox.disabled = false;
+            if (btn) btn.disabled = false;
             detailMsg(e.message, 'err');
         }
     }
@@ -481,7 +582,9 @@
         form.addEventListener('change', clear);
         form.addEventListener('submit', (e) => { e.preventDefault(); submit(form); });
         $('acf-new')?.addEventListener('click', () => showForm(true));
-        $('acf-cancel')?.addEventListener('click', () => { form.reset(); showForm(false); });
+        $('acf-cancel')?.addEventListener('click', () => { form.reset(); aiReset(); showForm(false); });
+        $('acf-ai')?.addEventListener('click', () => aiBullets(form));
+        $('acf-ai-undo')?.addEventListener('click', () => aiUndo(form));
 
         $('acf-filters')?.addEventListener('click', (e) => {
             const chip = e.target.closest('[data-filter]');
@@ -501,18 +604,27 @@
             if (row) {
                 const id = Number(row.dataset.open);
                 state.openId = state.openId === id ? null : id;
+                state.rejecting = null;
                 renderList();
                 if (state.openId) loadFiles(state.openId);
                 return;
             }
             const del = e.target.closest('[data-del-file]');
-            if (del) deleteFile(Number(del.dataset.delFile));
+            if (del) { deleteFile(Number(del.dataset.delFile)); return; }
+            const open = e.target.closest('[data-decide-open]');
+            if (open) {
+                state.rejecting = { id: Number(open.dataset.id), kind: open.dataset.decideOpen };
+                renderList();
+                $('acf-reject-reason')?.focus();
+                return;
+            }
+            if (e.target.closest('[data-decide-cancel]')) { state.rejecting = null; renderList(); return; }
+            const act = e.target.closest('[data-decide]');
+            if (act) decide(Number(act.dataset.id), act.dataset.decide, act);
         });
         list?.addEventListener('change', (e) => {
             const up = e.target.closest('[data-upload]');
-            if (up) { upload(Number(up.dataset.upload), up); return; }
-            const done = e.target.closest('[data-done]');
-            if (done) setDone(Number(done.dataset.done), done);
+            if (up) upload(Number(up.dataset.upload), up);
         });
 
         $('acf-line-toggle')?.addEventListener('click', (e) => {

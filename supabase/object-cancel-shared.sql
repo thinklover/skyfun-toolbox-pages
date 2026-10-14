@@ -62,8 +62,10 @@ create or replace function public.object_cancel_list(p_token text, p_query text 
 returns json language plpgsql security definer set search_path to 'public' as $$
 begin
   if admin_qa_user_id(p_token) is null then return json_build_object('ok', false, 'error', '請先登入'); end if;
+  -- 帳號是身分證字號，只給後台
   return json_build_object('ok', true, 'counts', object_cancel_counts_json(),
-    'items', object_cancel_items_json(p_query, p_status, p_limit));
+    'items', (select coalesce(json_agg(e::jsonb - 'username' order by i), '[]'::json)
+              from json_array_elements(object_cancel_items_json(p_query, p_status, p_limit)) with ordinality t(e, i)));
 end; $$;
 
 create or replace function public.object_cancel_set_done(p_token text, p_id bigint, p_done boolean)

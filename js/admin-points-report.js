@@ -86,7 +86,7 @@
     const isMonth = o.type === 'month';
     const sb = o.cur.sb || {};
     const allStaff = sb.staff || [];
-    const staff = allStaff.filter((s) => s.status === '在職' && s.kind !== '工讀生');
+    const staff = allStaff.filter((s) => Core.isOnDuty(s) && s.kind !== '工讀生');
     const rows = uniqById([...(o.cur.auditRows || []), ...(o.before.auditRows || [])]);
     const durOf = (p) => Core.durationReport(rows, { start: p.start, end: p.end, staff: allStaff });
     const dCur = durOf(o.period);

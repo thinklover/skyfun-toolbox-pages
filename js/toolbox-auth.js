@@ -5,6 +5,33 @@
   'use strict';
 
   const STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
+  const ID_PLACEHOLDER = '請與公司系統相同（身分證字號）';
+  const ID_LETTER_CODES = [10, 11, 12, 13, 14, 15, 16, 17, 34, 18, 19, 20, 21, 22, 35, 23, 24, 25, 26, 27, 28, 29, 32, 30, 31, 33];
+
+  function normId(v) {
+    return String(v || '').replace(/\s/g, '').toUpperCase();
+  }
+
+  /** 身分證字號／新式居留證號（第二碼 1、2、8、9）含檢查碼 */
+  function twIdOk(v) {
+    const s = normId(v);
+    if (!/^[A-Z][1289]\d{8}$/.test(s)) return false;
+    const n = ID_LETTER_CODES[s.charCodeAt(0) - 65];
+    let sum = Math.floor(n / 10) + (n % 10) * 9;
+    for (let i = 1; i < 9; i++) sum += Number(s[i]) * (9 - i);
+    return (sum + Number(s[9])) % 10 === 0;
+  }
+
+  /** 中文本名 2–4 字；原住民等姓名可用「·」分段（與資料庫 toolbox_real_name_ok 相同） */
+  function realNameOk(v) {
+    const s = String(v || '').replace(/\s/g, '');
+    return /^[\u4e00-\u9fff]{2,4}$/.test(s) || /^[\u4e00-\u9fff]{1,10}([·‧・．][\u4e00-\u9fff]{1,10})+$/.test(s);
+  }
+
+  function maskId(v) {
+    const s = String(v || '');
+    return twIdOk(s) ? `${s.slice(0, 3)}****${s.slice(-3)}` : s;
+  }
 
   let client = null;
   let session = null;
@@ -157,14 +184,14 @@
       </blockquote>
       <p id="toolbox-auth-mode-hint" class="lite-auth-hint">輸入帳號與密碼即可進入。第一次登入請先註冊。</p>
       <label for="toolbox-auth-username">帳號</label>
-      <input id="toolbox-auth-username" type="text" maxlength="40" autocomplete="username" placeholder="請與公司系統相同" />
+      <input id="toolbox-auth-username" type="text" maxlength="40" autocomplete="username" placeholder="${ID_PLACEHOLDER}" />
       <label for="toolbox-auth-password">密碼</label>
-      <input id="toolbox-auth-password" type="password" maxlength="72" autocomplete="current-password" placeholder="請與公司系統相同" />
+      <input id="toolbox-auth-password" type="password" maxlength="72" autocomplete="current-password" placeholder="${ID_PLACEHOLDER}" />
       <div id="toolbox-auth-register-extra" class="hidden">
         <label for="toolbox-auth-password2">確認密碼</label>
-        <input id="toolbox-auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再輸入一次" />
+        <input id="toolbox-auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再輸入一次身分證字號" />
         <label for="toolbox-auth-displayname">姓名</label>
-        <input id="toolbox-auth-displayname" type="text" maxlength="30" autocomplete="nickname" placeholder="請輸入姓名" required />
+        <input id="toolbox-auth-displayname" type="text" maxlength="30" autocomplete="name" placeholder="請輸入本名（與身分證相同）" required />
         <label for="toolbox-auth-team">處別</label>
         <select id="toolbox-auth-team" required>${typeof window.buildSkyfunDepartmentSelectHtml === 'function' ? window.buildSkyfunDepartmentSelectHtml() : '<option value="">請選擇處別</option>'}</select>
       </div>
@@ -240,7 +267,7 @@
     if (hint) {
       hint.textContent =
         mode === 'register'
-          ? '送出後需管理員核准，核准後再用同一組帳密進入。'
+          ? '帳號、密碼都輸入身分證字號（與公司系統相同），姓名請填本名。送出後需管理員核准。'
           : '輸入帳號與密碼即可進入。第一次登入請先註冊。';
     }
     const tag = document.querySelector('.lite-auth-tag');
@@ -351,6 +378,158 @@
       if (btn) {
         btn.disabled = false;
         btn.textContent = '確認並進入';
+      }
+    }
+  }
+
+  /* ---------- 帳號實名：帳號、密碼要是身分證字號，姓名要是本名，不符合就不能使用 ---------- */
+
+  function identityIssues(user) {
+    const u = user || session?.supabaseUser;
+    return u?.needsIdentity ? (Array.isArray(u.identityIssues) ? u.identityIssues : []) : [];
+  }
+
+  function needsIdentity(user) {
+    return identityIssues(user).length > 0;
+  }
+
+  function ensureIdentityGate() {
+    let gate = $('toolbox-identity-gate');
+    if (gate) return gate;
+    gate = document.createElement('div');
+    gate.id = 'toolbox-identity-gate';
+    gate.className = 'hidden';
+    gate.setAttribute('role', 'dialog');
+    gate.setAttribute('aria-modal', 'true');
+    gate.innerHTML =
+      '<div class="toolbox-auth-card toolbox-auth-card--lite">' +
+      '<h2>請更新帳號資料</h2>' +
+      '<ul id="toolbox-identity-why" class="tig-why"></ul>' +
+      '<div id="toolbox-identity-id">' +
+      '<label for="toolbox-identity-no">帳號（身分證字號）</label>' +
+      `<input id="toolbox-identity-no" type="text" maxlength="12" autocomplete="username" placeholder="${ID_PLACEHOLDER}" />` +
+      '<label for="toolbox-identity-no2">密碼（身分證字號）</label>' +
+      `<input id="toolbox-identity-no2" type="password" maxlength="12" autocomplete="new-password" placeholder="${ID_PLACEHOLDER}" />` +
+      '</div>' +
+      '<label for="toolbox-identity-name">姓名（本名）</label>' +
+      '<input id="toolbox-identity-name" type="text" maxlength="30" autocomplete="name" placeholder="請輸入本名（與身分證相同）" />' +
+      '<button type="button" id="toolbox-identity-submit">更新並進入</button>' +
+      '<p id="toolbox-identity-msg" class="hidden"></p>' +
+      '<button type="button" id="toolbox-identity-logout" class="tig-logout">登出</button>' +
+      '</div>';
+    document.body.appendChild(gate);
+    $('toolbox-identity-submit')?.addEventListener('click', () => {
+      void submitIdentityGate();
+    });
+    ['toolbox-identity-no', 'toolbox-identity-no2', 'toolbox-identity-name'].forEach((id) => {
+      $(id)?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') void submitIdentityGate();
+      });
+    });
+    $('toolbox-identity-logout')?.addEventListener('click', () => {
+      logout().catch(() => {});
+    });
+    if (!document.getElementById('toolbox-identity-gate-style')) {
+      const st = document.createElement('style');
+      st.id = 'toolbox-identity-gate-style';
+      st.textContent = [
+        '#toolbox-identity-gate{position:fixed;inset:0;z-index:100003;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(2,6,23,.72);backdrop-filter:blur(4px)}',
+        '#toolbox-identity-gate.hidden,#toolbox-identity-gate .hidden{display:none!important}',
+        '#toolbox-identity-gate .toolbox-auth-card{max-width:23rem;width:100%;max-height:calc(100vh - 2rem);overflow:auto}',
+        '#toolbox-identity-gate h2{margin:0 0 .6rem;font-size:1.2rem;color:#0f172a}',
+        '#toolbox-identity-gate .tig-why{margin:0 0 .4rem;padding:.65rem .8rem .65rem 1.9rem;border-radius:.8rem;border:1px solid #fde68a;background:#fffbeb;color:#92400e;font-size:.85rem;line-height:1.55;text-align:left}',
+        '#toolbox-identity-gate .tig-why li{list-style:disc}',
+        '#toolbox-identity-gate .tig-why li + li{margin-top:.3rem}',
+        '#toolbox-identity-gate input{width:100%}',
+        '#toolbox-identity-submit{margin-top:1rem;width:100%;border:0;border-radius:.9rem;padding:.72rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#0f766e,#0d9488);cursor:pointer}',
+        '#toolbox-identity-submit:disabled{opacity:.6;cursor:wait}',
+        '#toolbox-identity-msg{margin-top:.65rem;font-size:.82rem;color:#0f766e}',
+        '#toolbox-identity-msg.is-error{color:#b91c1c}',
+        '#toolbox-identity-gate .tig-logout{display:block;margin:.8rem auto 0;border:0;background:transparent;color:#94a3b8;font-size:.78rem;text-decoration:underline;cursor:pointer}'
+      ].join('');
+      document.head.appendChild(st);
+    }
+    return gate;
+  }
+
+  function setIdentityGateMessage(msg, isError) {
+    const el = $('toolbox-identity-msg');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('is-error', !!isError);
+    el.classList.toggle('hidden', !msg);
+  }
+
+  function showIdentityGate() {
+    document.documentElement.classList.remove('toolbox-auth-cached');
+    document.body.classList.add('toolbox-auth-pending');
+    $('toolbox-auth-gate')?.classList.add('hidden');
+    hideTeamGate();
+    ready = false;
+    const gate = ensureIdentityGate();
+    const issues = identityIssues();
+    const needId = issues.includes('id');
+    const u = session?.supabaseUser || session?.user || {};
+    const why = [];
+    if (needId) why.push('工具箱的帳號、密碼要和公司系統相同，請改成你的身分證字號。之後登入帳號、密碼都輸入身分證字號。');
+    if (issues.includes('name')) why.push('姓名請填本名（與身分證相同），不能用英文名、暱稱或加處別。');
+    $('toolbox-identity-why').innerHTML = why.map((t) => `<li>${escHtml(t)}</li>`).join('');
+    $('toolbox-identity-id').classList.toggle('hidden', !needId);
+    const noInput = $('toolbox-identity-no');
+    if (noInput) noInput.value = twIdOk(u.username) ? normId(u.username) : '';
+    if ($('toolbox-identity-no2')) $('toolbox-identity-no2').value = '';
+    if ($('toolbox-identity-name')) $('toolbox-identity-name').value = realNameOk(u.name) ? u.name : '';
+    setIdentityGateMessage('');
+    gate.classList.remove('hidden');
+    (needId && !noInput?.value ? noInput : needId ? $('toolbox-identity-no2') : $('toolbox-identity-name'))?.focus();
+  }
+
+  function hideIdentityGate() {
+    $('toolbox-identity-gate')?.classList.add('hidden');
+  }
+
+  async function submitIdentityGate() {
+    const needId = identityIssues().includes('id');
+    const idNo = normId($('toolbox-identity-no')?.value);
+    const idNo2 = normId($('toolbox-identity-no2')?.value);
+    const name = String($('toolbox-identity-name')?.value || '').replace(/\s/g, '');
+    if (needId) {
+      if (!twIdOk(idNo)) {
+        setIdentityGateMessage('身分證字號格式不正確，請再確認', true);
+        return;
+      }
+      if (idNo !== idNo2) {
+        setIdentityGateMessage('密碼也請輸入同一組身分證字號', true);
+        return;
+      }
+    }
+    if (!realNameOk(name)) {
+      setIdentityGateMessage('姓名請填本名（與身分證相同）', true);
+      return;
+    }
+    const btn = $('toolbox-identity-submit');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '更新中…';
+    }
+    setIdentityGateMessage('');
+    try {
+      const data = await rpc('toolbox_update_identity', {
+        p_token: session?.supabaseToken || '',
+        p_id_no: needId ? idNo : '',
+        p_name: name
+      });
+      if (!data?.ok || !data.user) throw new Error(data?.error || '更新失敗');
+      applySupabaseSession(session.supabaseToken, data.user);
+      if ($('toolbox-auth-username')) $('toolbox-auth-username').value = data.user.username || '';
+      hideIdentityGate();
+      await finishAuthEntry();
+    } catch (e) {
+      setIdentityGateMessage(e.message || '更新失敗', true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '更新並進入';
       }
     }
   }
@@ -511,6 +690,10 @@
   }
 
   async function finishAuthEntry() {
+    if (needsIdentity()) {
+      showIdentityGate();
+      return;
+    }
     if (needsTeam()) {
       showTeamGate();
       return;
@@ -531,7 +714,7 @@
     const team = session.supabaseUser?.team || u.team || '';
     const parts = [u.name || uname || '使用者'];
     if (team) parts.push(team);
-    if (uname) parts.push(uname);
+    if (uname) parts.push(maskId(uname));
     label.textContent = parts.join(' · ');
     bar.classList.remove('hidden');
   }
@@ -613,6 +796,7 @@
     session = null;
     ready = false;
     hideTeamGate();
+    hideIdentityGate();
     Object.assign(lineGate, { checked: false, code: '', expiresAt: '', error: '' });
     $('toolbox-line-gate')?.classList.add('hidden');
     lockApp();
@@ -669,16 +853,20 @@
         return;
       }
       if (mode === 'register') {
-        if (password.length < 6) {
-          setGateMessage('密碼至少 6 個字', true);
+        if (!twIdOk(username)) {
+          setGateMessage('帳號請輸入身分證字號（與公司系統相同）', true);
           return;
         }
-        if (password !== password2) {
+        if (normId(password) !== normId(username)) {
+          setGateMessage('密碼請輸入身分證字號（與公司系統相同）', true);
+          return;
+        }
+        if (normId(password) !== normId(password2)) {
           setGateMessage('兩次密碼不一致', true);
           return;
         }
-        if (!displayName) {
-          setGateMessage('請輸入姓名', true);
+        if (!realNameOk(displayName)) {
+          setGateMessage('姓名請填本名（與身分證相同）', true);
           return;
         }
         if (!team) {
@@ -735,7 +923,8 @@
     if (data?.ok && data.user) {
       applySupabaseSession(token, data.user);
       updateUserBar();
-      if (needsTeam()) showTeamGate();
+      if (needsIdentity()) showIdentityGate();
+      else if (needsTeam()) showTeamGate();
       else if (!ready) {
         hideTeamGate();
         unlockApp();
@@ -745,6 +934,7 @@
     clearStored();
     session = null;
     hideTeamGate();
+    hideIdentityGate();
     lockApp();
     setMode('login');
     setGateMessage(data?.error || '登入已失效，請重新登入', true);
