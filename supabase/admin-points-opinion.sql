@@ -113,7 +113,6 @@ $$;
 revoke all on function public.admin_points_payload(date, date) from public, anon, authenticated;
 
 -- p_data：{guildPeriod, region, caseNo, rosterPeriod, rosterItem, opinionDate, category, content, measure}
--- 清冊意見也存媒合編號（舊版前端沒送，先不強制）
 create or replace function public.admin_points_opinion_save(p_token text, p_kind text, p_data jsonb)
 returns json
 language plpgsql
@@ -143,7 +142,7 @@ begin
   if v_region not in ('台北', '新北', '基隆', '宜蘭', '桃園', '新竹', '台中', '彰化', '南投', '嘉義', '台南', '高雄') then
     return json_build_object('ok', false, 'error', '請選縣市');
   end if;
-  if p_kind = 'case' and v_case = '' then return json_build_object('ok', false, 'error', '請填媒合編號'); end if;
+  if v_case = '' then return json_build_object('ok', false, 'error', '請填媒合編號'); end if;
   if p_kind = 'roster' and v_roster = '' then return json_build_object('ok', false, 'error', '請選清冊期數'); end if;
   if v_content = '' then return json_build_object('ok', false, 'error', '請填公會意見內容'); end if;
   if p_kind = 'roster' and v_measure = '' then return json_build_object('ok', false, 'error', '請填行政檢討對策'); end if;
@@ -153,8 +152,8 @@ begin
     return json_build_object('ok', false, 'error', '意見時間格式不正確');
   end;
   if v_date is null then return json_build_object('ok', false, 'error', '請填意見時間'); end if;
-  -- 舊版表單沒有缺失類別欄，空白先放行（正式站更新後可改為必填）
-  if v_cat <> '' and not (v_cat = any (public.admin_points_opinion_cats(p_kind))) then
+  if v_cat = '' then return json_build_object('ok', false, 'error', '請選缺失類別'); end if;
+  if not (v_cat = any (public.admin_points_opinion_cats(p_kind))) then
     return json_build_object('ok', false, 'error', '缺失類別不正確');
   end if;
   insert into public.admin_points_opinion (kind, work_date, staff_name, user_id, guild_period, region, case_no, roster_period,
