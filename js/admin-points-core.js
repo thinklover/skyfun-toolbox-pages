@@ -21,7 +21,8 @@
   const MANUAL_ITEMS = [
     { key: '行政QA', points: 1, maxPoints: 4 },
     { key: '案件意見修正', points: 1 },
-    { key: '清冊意見修正', points: 1 }
+    { key: '清冊意見修正', points: 1 },
+    { key: '其他', points: 1, noteRequired: true }
   ];
   /** 行政自己填的公會意見，每筆 1 點；跟組長補登的同名項目合在同一欄 */
   const OPINION_ITEMS = [
@@ -262,7 +263,7 @@
   function opinionManual(list) {
     const item = Object.fromEntries(OPINION_ITEMS.map((i) => [i.kind, i.key]));
     return (list || [])
-      .filter((o) => item[o.kind] && o.name && o.date)
+      .filter((o) => item[o.kind] && o.name && o.date && !o.noPoints)
       .map((o) => ({ date: o.date, name: o.name, item: item[o.kind], qty: 1, points: 1 }));
   }
 

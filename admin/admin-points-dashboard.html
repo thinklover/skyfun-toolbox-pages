@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261014-7"></script>
+  <script src="../js/admin-points-core.js?v=20261015-2"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -169,6 +169,13 @@
     .op-sum .badge { font-weight: 800; }
     .op-k-case { background: #e0e7ff; color: #3730a3; }
     .op-k-roster { background: #ccfbf1; color: #115e59; }
+    .op-k-nopts { background: #fee2e2; color: #b91c1c; }
+    .op-pt { padding: 0.22rem 0.6rem; border: 1.5px solid #86efac; border-radius: 999px; background: #f0fdf4; color: #15803d; font: inherit; font-size: 0.74rem; font-weight: 800; white-space: nowrap; cursor: pointer; }
+    .op-pt:hover { border-color: #f87171; background: #fef2f2; color: #b91c1c; }
+    .op-pt.is-no { border-color: #fca5a5; background: #fee2e2; color: #b91c1c; }
+    .op-pt.is-no:hover { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+    .op-pt-why { display: block; margin-top: 0.2rem; max-width: 10rem; font-size: 0.7rem; color: #b91c1c; white-space: normal; }
+    tr.op-nopts > td { background: #fef2f2; color: #94a3b8; }
     .op-sub { font-size: 0.72rem; font-weight: 700; color: #64748b; }
     tr.click { cursor: pointer; }
     tr.click:hover td { background: #eef2ff; }
@@ -516,7 +523,7 @@
         <div class="field"><label>項目</label><select id="m-item"></select></div>
         <div class="field"><label>件數</label><input type="number" id="m-qty" min="1" max="50" value="1" style="width:4.5rem" /></div>
         <div class="field"><label>點數</label><input type="number" id="m-points" min="1" max="150" value="1" style="width:4.5rem" /></div>
-        <div class="field flex-1 min-w-[10rem]"><label>備註（選填）</label><input type="text" id="m-note" maxlength="200" class="w-full" placeholder="例如案件地址" /></div>
+        <div class="field flex-1 min-w-[10rem]"><label id="m-note-label">備註（選填）</label><input type="text" id="m-note" maxlength="200" class="w-full" placeholder="例如案件地址" /></div>
         <button type="button" class="btn btn-main" id="btn-add-manual">新增</button>
       </div></div>
       <h3 class="list-title">本業績月紀錄<span class="muted" id="manual-count"></span></h3>
@@ -526,12 +533,12 @@
       </table></div>
       <h3 class="list-title">行政填寫的案件意見<span class="muted" id="op-case-count"></span></h3>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th></th></tr></thead>
+        <thead><tr><th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th></th></tr></thead>
         <tbody id="op-case-list"></tbody>
       </table></div>
       <h3 class="list-title">行政填寫的清冊意見<span class="muted" id="op-roster-count"></span></h3>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>清冊期數／媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th></th></tr></thead>
+        <thead><tr><th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>清冊期數／媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th></th></tr></thead>
         <tbody id="op-roster-list"></tbody>
       </table></div>
     </div>
@@ -559,13 +566,14 @@
         <div class="field"><label>公會期數</label><select id="op-f-guild"></select></div>
         <div class="field"><label>縣市</label><select id="op-f-region"></select></div>
         <div class="field"><label>行政</label><select id="op-f-name"></select></div>
+        <div class="field"><label>點數</label><select id="op-f-pts"><option value="">全部</option><option value="yes">給點</option><option value="no">不給點</option></select></div>
         <div class="field"><label>關鍵字</label><input type="search" id="op-f-q" placeholder="媒合編號、意見內容…" /></div>
         <div class="push pb-1">
           <button type="button" class="btn btn-ghost btn-sm" id="op-reload">重新讀取</button>
           <button type="button" class="btn btn-ghost btn-sm" id="op-xlsx">匯出 Excel</button>
         </div>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="op-stats"></div>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-2" id="op-stats"></div>
       <div id="op-groups" class="space-y-2"><p class="muted">讀取中…</p></div>
 
       <section class="card p-4 space-y-3" id="gm-box">
@@ -697,7 +705,7 @@
       <details class="help"><summary>怎麼運作？</summary>
         <p>題目：在「從公司系統加題」挑已核准的物件按「加入題庫」，會把物件、房東、安全檢核資料與附件複製一份到模擬系統（附件存在私有空間，只有作答中的同仁看得到），並算出這個案件可以埋哪些錯。<br>
         個資：房東（含代理人、共有人）的姓名、身分證字號、生日、電話、Email、戶籍／通訊地址、銀行帳號會換成同格式的假資料；身分證正反面、存摺封面、建物謄本、權狀、房屋稅單、稅籍證明改用假資料畫的模擬文件（謄本標示部、稅籍編號、坐落、持分照案件資料；稅單的現值與稅額是模擬數字），原件不會下載；代理人身分證、同意書、戶籍資料等其他房東個資附件以示意圖代替。物件地址維持原樣。已加入的題目要按「重新抓取」才會換成新的模擬文件。<br>
-        出題：同仁從工具箱點數表「教育訓練 › 物審 › 實作」進入，每題隨機挑一個案件、隨機改錯 0～3 處（約 2 成完全沒錯）。<br>
+        出題：同仁從工具箱點數表「教育訓練 › 物審 › 實作」進入，每題隨機挑一個案件、隨機改錯 3～5 處（約 2 成完全沒錯）。<br>
         評分：放行／退回判斷正確 40 分；找錯 60 分依錯誤數平分（沒有錯的案件判斷正確就給滿）；每誤標一處扣 5 分。判斷正確、錯誤全部找到、誤標不超過 1 處才算這題通過，通過 <b id="sim-target">3</b> 題算實作完成。<br>
         題庫要有足夠的案件，同一個人才不會一直遇到同一件；建議至少 10 件。停用的案件不會再出題，已作答的紀錄保留。</p>
       </details>
@@ -1750,19 +1758,29 @@
         renderOpinions();
       }
 
+      /** 意見填寫時間（台灣時間到分鐘）；舊資料沒有 createdAt 時只顯示填寫日 */
+      function opTime(o) {
+        const t = o.createdAt ? new Date(o.createdAt) : null;
+        if (!t || Number.isNaN(t.getTime())) return o.date || '';
+        const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+          .formatToParts(t).map((x) => [x.type, x.value]));
+        return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
+      }
+
       function renderOpinions() {
         const all = (data.opinions || []).slice().reverse();
         ['case', 'roster'].forEach((kind) => {
           const rows = all.filter((o) => o.kind === kind);
-          $(`op-${kind}-count`).textContent = rows.length ? `${rows.length} 筆，共 ${rows.length} 點` : '';
+          const pts = rows.filter((o) => !o.noPoints).length;
+          $(`op-${kind}-count`).textContent = rows.length ? `${rows.length} 筆，共 ${pts} 點${pts < rows.length ? `（${rows.length - pts} 筆不給點）` : ''}` : '';
           $(`op-${kind}-list`).innerHTML = rows.length
-            ? rows.map((o) => `<tr>
-                <td>${esc(o.date)}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
+            ? rows.map((o) => `<tr${o.noPoints ? ' class="op-nopts"' : ''}>
+                <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
                 <td>${esc(kind === 'case' ? o.caseNo : [o.rosterPeriod, o.caseNo].filter(Boolean).join('・'))}${o.rosterItem ? `<div class="muted" style="font-size:.75rem">${esc(o.rosterItem)}</div>` : ''}</td><td>${esc(o.opinionDate || '')}</td>
                 <td>${o.category ? esc(o.category) : '<span class="muted">未分類</span>'}</td>
                 <td style="white-space:pre-wrap;min-width:12rem">${esc(o.content)}</td>
                 ${kind === 'roster' ? `<td style="white-space:pre-wrap;min-width:12rem;background:#fefce8">${esc(o.measure)}</td>` : ''}
-                <td><button type="button" class="btn btn-del" data-del-opinion="${o.id}">刪除</button></td>
+                <td>${o.noPoints ? '<span class="badge op-k-nopts">不給點</span> ' : ''}<button type="button" class="btn btn-del" data-del-opinion="${o.id}">刪除</button></td>
               </tr>`).join('')
             : `<tr><td colspan="${kind === 'case' ? 9 : 10}" class="muted">本業績月尚無行政填寫的${kind === 'case' ? '案件' : '清冊'}意見</td></tr>`;
         });
@@ -1866,6 +1884,10 @@
         if (!$('m-name').value) return say('請選行政');
         const points = Number($('m-points').value);
         if (!Number.isInteger(points) || points < 1 || points > 150) return say('給予點數需為 1～150 的整數');
+        if (Core.MANUAL_ITEMS.find((i) => i.key === $('m-item').value)?.noteRequired && !$('m-note').value.trim()) {
+          $('m-note').focus();
+          return say('選「其他」請在備註寫明是什麼點數');
+        }
         btn.disabled = true;
         try {
           const res = await rpc('admin_points_admin_add_manual', {
@@ -3824,6 +3846,9 @@
       }
       const opRef = (o) => (o.kind === 'case' ? o.caseNo : [o.rosterPeriod, o.caseNo].filter(Boolean).join('・')) || '';
       const opItem = (o) => (o.rosterItem ? `<div class="muted" style="font-size:.75rem;white-space:normal;min-width:10rem">${esc(o.rosterItem)}</div>` : '');
+      const opPtsCell = (o) => (o.noPoints
+        ? `<button type="button" class="op-pt is-no" data-op-pt="${o.id}" title="點一下恢復給 1 點">✕ 不給點</button>${o.noPointsReason ? `<span class="op-pt-why">${esc(o.noPointsReason)}</span>` : ''}`
+        : `<button type="button" class="op-pt" data-op-pt="${o.id}" title="點一下改成不給點">✓ 給 1 點</button>`);
 
       async function loadOpinions() {
         if (op.busy) return;
@@ -3858,10 +3883,12 @@
         const g = $('op-f-guild').value;
         const r = $('op-f-region').value;
         const n = $('op-f-name').value;
+        const pt = $('op-f-pts').value;
         const q = $('op-f-q').value.trim().toLowerCase();
         return op.all.filter((o) =>
           (ignoreKind || op.kind === 'all' || o.kind === op.kind) &&
           (!g || o.guildPeriod === g) && (!r || o.region === r) && (!n || o.name === n) &&
+          (!pt || (pt === 'no') === !!o.noPoints) &&
           (!q || [opRef(o), o.content, o.measure, o.name].some((v) => String(v || '').toLowerCase().includes(q))));
       }
 
@@ -3878,7 +3905,8 @@
           ['符合條件', rows.length],
           ['案件意見', rows.filter((o) => o.kind === 'case').length],
           ['清冊意見', rows.filter((o) => o.kind === 'roster').length],
-          ['涉及行政', new Set(rows.map((o) => o.name)).size + ' 人']
+          ['涉及行政', new Set(rows.map((o) => o.name)).size + ' 人'],
+          ['不給點', rows.filter((o) => o.noPoints).length]
         ].map(([k, v]) => `<div class="stat"><b>${v}</b><span>${esc(k)}</span></div>`).join('');
         if (!rows.length) {
           $('op-groups').innerHTML = `<p class="muted">${op.all.length ? '沒有符合條件的意見' : '目前還沒有行政填寫的公會意見'}</p>`;
@@ -3893,24 +3921,26 @@
         });
         const showKind = op.kind === 'all';
         const showMeasure = op.kind !== 'case';
-        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫日</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${showMeasure ? '<th>行政檢討對策</th>' : ''}<th></th></tr>`;
+        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${showMeasure ? '<th>行政檢討對策</th>' : ''}<th>點數</th><th></th></tr>`;
         $('op-groups').innerHTML = [...map.keys()].sort(grp.sort).map((k, gi) => {
           const list = map.get(k);
           const c = list.filter((o) => o.kind === 'case').length;
           const r = list.length - c;
           const people = new Set(list.map((o) => o.name)).size;
-          const body = list.map((o) => `<tr>
+          const noPts = list.filter((o) => o.noPoints).length;
+          const body = list.map((o) => `<tr${o.noPoints ? ' class="op-nopts"' : ''}>
               ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
-              <td>${esc(o.date)}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
+              <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
               <td>${esc(opRef(o))}${opItem(o)}</td><td>${esc(o.opinionDate || '')}</td>
               <td>${opCatSelect(o)}</td>
               <td style="white-space:pre-wrap;min-width:14rem">${esc(o.content)}</td>
               ${showMeasure ? `<td style="white-space:pre-wrap;min-width:12rem;${o.kind === 'roster' ? 'background:#fefce8' : ''}">${esc(o.kind === 'roster' ? o.measure : '')}</td>` : ''}
+              <td>${opPtsCell(o)}</td>
               <td><button type="button" class="btn btn-del" data-op-del="${o.id}">刪除</button></td>
             </tr>`).join('');
           return `<details class="fold"${gi < 3 ? ' open' : ''}>
             <summary><span class="op-sum"><b>${esc(k)}</b>
-              <span class="badge op-k-case">案件 ${c}</span><span class="badge op-k-roster">清冊 ${r}</span>
+              <span class="badge op-k-case">案件 ${c}</span><span class="badge op-k-roster">清冊 ${r}</span>${noPts ? `<span class="badge op-k-nopts">不給點 ${noPts}</span>` : ''}
               <span class="op-sub">共 ${list.length} 筆 · ${grp === OP_GROUP.name ? opLeader(k) : `${people} 位行政`}</span></span></summary>
             <div class="fold-body"><div class="overflow-x-auto"><table><thead>${head}</thead><tbody>${body}</tbody></table></div></div>
           </details>`;
@@ -3923,7 +3953,7 @@
         op.kind = b.dataset.opKind;
         renderOpinionTab();
       });
-      ['op-group', 'op-f-guild', 'op-f-region', 'op-f-name'].forEach((id) => $(id).addEventListener('change', renderOpinionTab));
+      ['op-group', 'op-f-guild', 'op-f-region', 'op-f-name', 'op-f-pts'].forEach((id) => $(id).addEventListener('change', renderOpinionTab));
       $('op-f-q').addEventListener('input', renderOpinionTab);
       $('op-reload').addEventListener('click', loadOpinions);
       $('op-groups').addEventListener('change', async (e) => {
@@ -3945,8 +3975,33 @@
         }
       });
       $('op-groups').addEventListener('click', async (e) => {
+        const ptBtn = e.target.closest('[data-op-pt]');
+        if (ptBtn) {
+          const o = op.all.find((x) => String(x.id) === ptBtn.dataset.opPt);
+          if (!o) return;
+          const noPoints = !o.noPoints;
+          let reason = '';
+          if (noPoints) {
+            reason = prompt(`${o.name} 這筆${OP_KIND[o.kind] || '意見'}判定不給點？\n可以填原因（行政會看到，可空白）：`, '');
+            if (reason === null) return;
+          } else if (!confirm(`恢復給 ${o.name} 這筆意見 1 點？`)) return;
+          ptBtn.disabled = true;
+          try {
+            await rpc('admin_points_opinion_set_points', { p_id: Number(o.id), p_no_points: noPoints, p_reason: reason.trim() });
+            o.noPoints = noPoints;
+            o.noPointsReason = noPoints ? reason.trim().slice(0, 200) : '';
+            renderOpinionTab();
+            await afterEdit(noPoints ? '已改成不給點' : '已恢復給 1 點');
+          } catch (err) {
+            ptBtn.disabled = false;
+            say(err.message);
+          }
+          return;
+        }
         const btn = e.target.closest('[data-op-del]');
-        if (!btn || !confirm('確定刪除這筆意見？這位行政會少 1 點。')) return;
+        if (!btn) return;
+        const delOp = op.all.find((x) => String(x.id) === btn.dataset.opDel);
+        if (!confirm(delOp?.noPoints ? '確定刪除這筆意見？' : '確定刪除這筆意見？這位行政會少 1 點。')) return;
         try {
           await rpc('admin_points_opinion_admin_delete', { p_id: Number(btn.dataset.opDel) });
           op.all = op.all.filter((o) => String(o.id) !== btn.dataset.opDel);
@@ -3962,14 +4017,15 @@
         try {
           await loadXlsx();
           const grp = OP_GROUP[$('op-group').value] || OP_GROUP.guild;
-          const aoa = [[grp.label, '類別', '填寫日', '行政', '組別', '公會期數', '縣市', '媒合編號／清冊期數', '意見時間', '缺失類別', '公會意見內容', '行政檢討對策']].concat(
+          const aoa = [[grp.label, '類別', '填寫時間', '行政', '組別', '公會期數', '縣市', '媒合編號／清冊期數', '意見時間', '缺失類別', '公會意見內容', '行政檢討對策', '點數']].concat(
             rows.slice().sort((a, b) => grp.sort(grp.key(a), grp.key(b))).map((o) => [
-              grp.key(o), OP_KIND[o.kind] || o.kind, o.date || '', o.name || '', opLeader(o.name), o.guildPeriod || '', o.region || '',
-              opRef(o) + (o.rosterItem ? `（${o.rosterItem}）` : ''), o.opinionDate || '', o.category || '', o.content || '', o.kind === 'roster' ? o.measure || '' : ''
+              grp.key(o), OP_KIND[o.kind] || o.kind, opTime(o), o.name || '', opLeader(o.name), o.guildPeriod || '', o.region || '',
+              opRef(o) + (o.rosterItem ? `（${o.rosterItem}）` : ''), o.opinionDate || '', o.category || '', o.content || '', o.kind === 'roster' ? o.measure || '' : '',
+              o.noPoints ? `不給點${o.noPointsReason ? `：${o.noPointsReason}` : ''}` : 1
             ])
           );
           const ws = XLSX.utils.aoa_to_sheet(aoa);
-          ws['!cols'] = [{ wch: 12 }, { wch: 9 }, { wch: 11 }, { wch: 9 }, { wch: 10 }, { wch: 9 }, { wch: 6 }, { wch: 20 }, { wch: 11 }, { wch: 22 }, { wch: 60 }, { wch: 40 }];
+          ws['!cols'] = [{ wch: 12 }, { wch: 9 }, { wch: 11 }, { wch: 9 }, { wch: 10 }, { wch: 9 }, { wch: 6 }, { wch: 20 }, { wch: 11 }, { wch: 22 }, { wch: 60 }, { wch: 40 }, { wch: 18 }];
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, '公會意見');
           XLSX.writeFile(wb, `公會意見_依${grp.label}.xlsx`);
@@ -4223,10 +4279,12 @@
       $('admin-secret').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
 
       $('month').innerHTML = months().map((m) => `<option value="${m.year}-${m.month}">${m.year - 1911} 年 ${m.month} 月（${m.start.slice(5)}～${m.end.slice(5)}）</option>`).join('');
-      $('m-item').innerHTML = Core.MANUAL_ITEMS.map((i) => `<option value="${i.key}">${i.key}（建議 ${i.maxPoints ? `${i.points}～${i.maxPoints} 點` : `${i.points} 點／件`}）</option>`).join('');
+      $('m-item').innerHTML = Core.MANUAL_ITEMS.map((i) => `<option value="${i.key}">${i.key}（${i.noteRequired ? '點數自訂，備註必填' : `建議 ${i.maxPoints ? `${i.points}～${i.maxPoints} 點` : `${i.points} 點／件`}`}）</option>`).join('');
       const suggestPoints = () => {
         const item = Core.MANUAL_ITEMS.find((i) => i.key === $('m-item').value);
         $('m-points').value = (item?.points || 1) * (Number($('m-qty').value) || 1);
+        $('m-note-label').textContent = item?.noteRequired ? '備註（必填：寫明是什麼點數）' : '備註（選填）';
+        $('m-note').placeholder = item?.noteRequired ? '例如：協助教育訓練、支援他區審件' : '例如案件地址';
       };
       $('m-item').addEventListener('change', suggestPoints);
       $('m-qty').addEventListener('input', suggestPoints);

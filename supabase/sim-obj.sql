@@ -1,5 +1,5 @@
 -- 行政點數表 › 教育訓練 › 實作：物審模擬系統
--- 題目來源是公司系統已核准的物件（後台「從公司系統抓題目」存進 sim_obj_cases），出題時依候選錯誤隨機埋 0～3 個錯，
+-- 題目來源是公司系統已核准的物件（後台「從公司系統抓題目」存進 sim_obj_cases），出題時依候選錯誤隨機埋 3～5 個錯（約 2 成完全沒錯），
 -- 學員在模擬系統裡標錯並放行／退回，由 sim_obj_submit 在伺服器端評分。候選錯誤（＝答案）只存在資料庫，前端拿不到。
 -- 附件放在 R2 私有空間，由 skyfun-training-video Worker 的 /s/ 路徑讀取，觀看票共用 course_video_tickets（course = 'sim'）。
 -- 需先套用 admin-qa.sql（admin_qa_user_id、admin_qa_can_participate）、course-video.sql（course_video_tickets）。
@@ -118,12 +118,13 @@ begin
   return d;
 end; $$;
 
--- 開始作答：有進行中的題目就續作（p_new 為 true 時放棄它改出新題）；否則挑一個學員最少做過的案件，隨機埋 0～3 個錯
+-- 開始作答：有進行中的題目就續作（p_new 為 true 時放棄它改出新題）；否則挑一個學員最少做過的案件，
+-- 約 2 成完全沒錯，其餘埋 3～5 個錯（湊不到 3 個就當沒錯）
 create or replace function public.sim_obj_start(p_session text, p_new boolean default false)
 returns json language plpgsql security definer set search_path to 'public' as $$
 declare
   v_uid uuid; v_acc public.toolbox_accounts%rowtype; v_row public.sim_obj_attempts%rowtype; v_case public.sim_obj_cases%rowtype;
-  v_roll float8; v_n int; v_keys text[] := '{}'; v_errors jsonb := '[]'::jsonb; c record; v_ticket uuid;
+  v_roll float8; v_n int; v_keys text[] := '{}'; v_codes text[] := '{}'; v_errors jsonb := '[]'::jsonb; c record; v_ticket uuid;
 begin
   v_uid := sim_obj_session_user(p_session);
   if v_uid is null then return json_build_object('ok', false, 'error', '模擬系統連結已過期，請從工具箱重新進入'); end if;
@@ -148,14 +149,18 @@ begin
     if v_case.id is null then return json_build_object('ok', false, 'error', '模擬系統還沒有題目，請洽主管'); end if;
 
     v_roll := random();
-    v_n := case when v_roll < 0.2 then 0 when v_roll < 0.5 then 1 when v_roll < 0.8 then 2 else 3 end;
+    v_n := case when v_roll < 0.2 then 0 else 3 + floor(random() * 3)::int end;
     for c in select * from public.sim_obj_candidates where case_id = v_case.id order by random() loop
       exit when jsonb_array_length(v_errors) >= v_n;
       if c.keys && v_keys then continue; end if;
+      -- 缺身分證反面（L9）時，戶籍地址（L4）、父母姓名（L5）無從核對，不同時出
+      if (c.code = 'L9' and v_codes && array['L4', 'L5']) or (c.code in ('L4', 'L5') and 'L9' = any(v_codes)) then continue; end if;
       v_errors := v_errors || jsonb_build_array(jsonb_build_object('code', c.code, 'page', c.page, 'label', c.label,
         'video', c.video, 'keys', to_jsonb(c.keys), 'explain', c.explain, 'patch', c.patch));
       v_keys := v_keys || c.keys;
+      v_codes := v_codes || c.code;
     end loop;
+    if jsonb_array_length(v_errors) < 3 then v_errors := '[]'::jsonb; end if;
 
     update public.sim_obj_attempts set status = 'abandoned' where user_id = v_uid and status = 'in_progress';
     insert into public.sim_obj_attempts (user_id, user_name, case_id, case_title, errors)

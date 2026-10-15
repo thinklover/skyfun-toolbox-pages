@@ -1,6 +1,6 @@
 /**
  * 行政點數表 › 教育訓練 › 實作：物審模擬系統
- * 模擬系統是另一個網站，畫面跟公司系統的物件審核一樣；題目是公司系統已核准的物件、隨機埋 0～3 個錯，
+ * 模擬系統是另一個網站，畫面跟公司系統的物件審核一樣；題目是公司系統已核准的物件、約 2 成完全沒錯、其餘隨機埋 3～5 個錯，
  * 學員在上面標錯並放行／退回，伺服器評分。通過 sim_obj_pass_target() 題算實作完成。
  * 進入前先用工具箱登入換一張 12 小時的模擬系統通行證（sim_obj_session），工具箱登入 token 不會帶到模擬系統。
  * 由 admin-points.js 在課程頁放入 #sim-practice-root[data-course][data-name] 後呼叫 SimPractice.mount()。
@@ -108,7 +108,7 @@
     const done = passes >= target;
     return `<div class="cx-vstatus"><span class="cx-vbar"><i style="width:${pct}%;background:${done ? '#16a34a' : '#4f46e5'}"></i></span>
       <b>${done ? '✅ 實作完成' : `通過 ${passes}／${target} 題`}</b>
-      <small>每題都是公司系統已核准的真實案件，系統會隨機改錯 0～3 處；找出全部錯誤、放行／退回判斷正確、誤標不超過 1 處，這一題才算通過。</small></div>`;
+      <small>每題都是公司系統已核准的真實案件，系統會隨機改錯 3～5 處，或完全沒錯（約 2 成）；找出全部錯誤、放行／退回判斷正確、誤標不超過 1 處，這一題才算通過。</small></div>`;
   }
 
   function render(message) {

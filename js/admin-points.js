@@ -378,9 +378,9 @@
           <tbody>${manual.map((m) => `<tr><td>${esc(shortDate(m.date))}</td><td>${esc(m.item)}</td><td class="num">${m.qty}</td><td class="num">${m.points}</td><td>${esc(m.leader || m.createdBy || '')}</td><td class="apt-pd-left">${esc(m.note || '')}</td></tr>`).join('')}</tbody></table></div></details>`
       : '';
     const opinionBox = opinions.length
-      ? `<details class="apt-pd-group"><summary><b>自己填的公會意見</b>${opinions.length} 筆 · ${opinions.length} 點</summary>
-          <div class="apt-table-wrap"><table class="apt-table apt-pd-table"><thead><tr><th>填寫日</th><th>類別</th><th>公會期數</th><th>媒合編號／清冊期數</th><th>公會意見內容</th></tr></thead>
-          <tbody>${opinions.map((o) => `<tr><td>${esc(shortDate(o.date))}</td><td>${o.kind === 'case' ? '案件意見' : '清冊意見'}</td><td>${esc(o.guildPeriod)}</td><td>${esc(opinionRef(o))}</td><td class="apt-pd-left">${esc(o.content)}</td></tr>`).join('')}</tbody></table></div></details>`
+      ? `<details class="apt-pd-group"><summary><b>自己填的公會意見</b>${opinions.length} 筆 · ${opinionPts(opinions)} 點</summary>
+          <div class="apt-table-wrap"><table class="apt-table apt-pd-table"><thead><tr><th>填寫日</th><th>類別</th><th>公會期數</th><th>媒合編號／清冊期數</th><th>公會意見內容</th><th class="num">點數</th></tr></thead>
+          <tbody>${opinions.map((o) => `<tr${o.noPoints ? ' class="apt-op-nopts"' : ''}><td>${esc(shortDate(o.date))}</td><td>${o.kind === 'case' ? '案件意見' : '清冊意見'}</td><td>${esc(o.guildPeriod)}</td><td>${esc(opinionRef(o))}</td><td class="apt-pd-left">${esc(o.content)}</td><td class="num">${o.noPoints ? noPointsTag(o) : 1}</td></tr>`).join('')}</tbody></table></div></details>`
       : '';
     return `${head}<div class="apt-pd-groups">${groups}${manualBox}${opinionBox}</div>
       <p class="apt-pd-foot">點上面的項目可以展開每一件。<button type="button" class="apt-pd-more" data-person="${esc(p.name)}">看完整個人績效（每日、耗時、評等）→</button></p>`;
@@ -4099,6 +4099,9 @@
   const ROSTER_FORMS = { '04': '表單04 出租人補助', '09': '表單09 業者服務補助' };
   const rosterItemCache = new Map();
   const opinionRef = (o) => (o.kind === 'case' ? o.caseNo : [o.rosterPeriod, o.caseNo].filter(Boolean).join('・')) || '';
+  const opinionPts = (list) => list.filter((o) => !o.noPoints).length;
+  const noPointsTag = (o) =>
+    `<span class="apt-op-nopts-tag"${o.noPointsReason ? ` title="${esc(o.noPointsReason)}"` : ''}>不給點</span>${o.noPointsReason ? `<small class="apt-op-nopts-why">${esc(o.noPointsReason)}</small>` : ''}`;
   const normNo = (v) => String(v || '').replace(/\s+/g, '').replace(/臺/g, '台').toUpperCase();
   /** 表單04／09 一筆的摘要（存進意見、也用在選案件卡片） */
   function rosterItemText(it) {
@@ -4278,10 +4281,10 @@
   function opinionRows(kind) {
     const list = myOpinions(kind);
     const isCase = kind === 'case';
-    const head = `<th>填寫日</th><th>公會期數</th><th>縣市</th>${isCase ? '<th>媒合編號</th>' : '<th>清冊期數</th><th>媒合編號</th>'}<th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${isCase ? '' : '<th>行政檢討對策</th>'}<th></th>`;
+    const head = `<th>填寫日</th><th>公會期數</th><th>縣市</th>${isCase ? '<th>媒合編號</th>' : '<th>清冊期數</th><th>媒合編號</th>'}<th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${isCase ? '' : '<th>行政檢討對策</th>'}<th>點數</th><th></th>`;
     const rows = list
       .map(
-        (o) => `<tr>
+        (o) => `<tr${o.noPoints ? ' class="apt-op-nopts"' : ''}>
           <td>${esc(shortDate(o.date))}</td>
           <td>${esc(o.guildPeriod)}</td>
           <td>${o.region ? esc(o.region) : NIL}</td>
@@ -4292,15 +4295,16 @@
           <td>${o.category ? esc(o.category) : NIL}</td>
           <td class="apt-op-text">${esc(o.content)}</td>
           ${isCase ? '' : `<td class="apt-op-text apt-op-measure">${esc(o.measure)}</td>`}
+          <td class="num">${o.noPoints ? noPointsTag(o) : 1}</td>
           <td><button type="button" class="apt-op-del" data-op-del="${o.id}">刪除</button></td>
         </tr>`
       )
       .join('');
     const range = state.meta?.range;
-    return `<h4 class="apt-op-list-title">我在 ${range ? `${range.month} 月業績（${esc(range.start.slice(5))}～${esc(range.end.slice(5))}）` : '這個業績月'}填的${OPINION_FORMS[kind].title}<small>${list.length} 筆 · ${list.length} 點</small></h4>
+    return `<h4 class="apt-op-list-title">我在 ${range ? `${range.month} 月業績（${esc(range.start.slice(5))}～${esc(range.end.slice(5))}）` : '這個業績月'}填的${OPINION_FORMS[kind].title}<small>${list.length} 筆 · ${opinionPts(list)} 點</small></h4>
       <div class="apt-table-wrap"><table class="apt-table apt-op-table">
         <thead><tr>${head}</tr></thead>
-        <tbody>${rows || `<tr><td colspan="${isCase ? 8 : 10}" class="apt-empty">還沒有填寫</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="${isCase ? 9 : 11}" class="apt-empty">還沒有填寫</td></tr>`}</tbody>
       </table></div>`;
   }
 

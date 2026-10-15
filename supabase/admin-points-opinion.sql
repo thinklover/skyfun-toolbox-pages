@@ -21,6 +21,9 @@ alter table public.admin_points_opinion add column if not exists region text not
 alter table public.admin_points_opinion add column if not exists category text not null default '';
 -- 清冊意見選的那一件（表單04／09 的一筆），同一媒合編號有多件時用來分辨
 alter table public.admin_points_opinion add column if not exists roster_item text not null default '';
+-- 後台判定不給點：意見仍算公會錯誤件數，只是不給填寫的行政 1 點
+alter table public.admin_points_opinion add column if not exists no_points boolean not null default false;
+alter table public.admin_points_opinion add column if not exists no_points_reason text not null default '';
 
 -- 缺失類別（同公會月報的「審件缺失」「清冊缺失」，前端 Core.OPINION_CATEGORIES 要一致）
 create or replace function public.admin_points_opinion_cats(p_kind text)
@@ -96,7 +99,8 @@ as $$
         'id', o.id, 'kind', o.kind, 'date', o.work_date, 'name', o.staff_name,
         'guildPeriod', o.guild_period, 'caseNo', o.case_no, 'rosterPeriod', o.roster_period, 'region', o.region,
         'opinionDate', o.opinion_date, 'content', o.content, 'measure', o.measure, 'createdAt', o.created_at,
-        'category', o.category, 'rosterItem', o.roster_item
+        'category', o.category, 'rosterItem', o.roster_item,
+        'noPoints', o.no_points, 'noPointsReason', o.no_points_reason
       ) order by o.work_date, o.id)
       from public.admin_points_opinion o
       where o.work_date between p_start and p_end
@@ -254,7 +258,8 @@ begin
       'id', o.id, 'kind', o.kind, 'date', o.work_date, 'name', o.staff_name,
       'guildPeriod', o.guild_period, 'caseNo', o.case_no, 'rosterPeriod', o.roster_period, 'region', o.region,
       'opinionDate', o.opinion_date, 'content', o.content, 'measure', o.measure, 'createdAt', o.created_at,
-      'category', o.category, 'rosterItem', o.roster_item
+      'category', o.category, 'rosterItem', o.roster_item,
+      'noPoints', o.no_points, 'noPointsReason', o.no_points_reason
     ) order by o.work_date desc, o.id desc)
     from (select * from public.admin_points_opinion order by work_date desc, id desc limit 5000) o
   ), '[]'::json));
@@ -286,6 +291,28 @@ end;
 $$;
 revoke all on function public.admin_points_opinion_set_category(text, bigint, text) from public;
 grant execute on function public.admin_points_opinion_set_category(text, bigint, text) to anon, authenticated;
+
+-- 後台「公會意見」：判定不給點（p_no_points=false 恢復給點，原因一併清空）
+create or replace function public.admin_points_opinion_set_points(p_secret text, p_id bigint, p_no_points boolean, p_reason text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_no boolean := coalesce(p_no_points, false);
+begin
+  if not public.toolbox_check_admin(p_secret) then return json_build_object('ok', false, 'error', '後台密碼錯誤'); end if;
+  update public.admin_points_opinion
+    set no_points = v_no,
+        no_points_reason = case when v_no then left(trim(coalesce(p_reason, '')), 200) else '' end
+    where id = p_id;
+  if not found then return json_build_object('ok', false, 'error', '找不到這筆意見'); end if;
+  return json_build_object('ok', true);
+end;
+$$;
+revoke all on function public.admin_points_opinion_set_points(text, bigint, boolean, text) from public;
+grant execute on function public.admin_points_opinion_set_points(text, bigint, boolean, text) to anon, authenticated;
 
 revoke all on function public.admin_points_kpi_opinions(text, text) from public;
 grant execute on function public.admin_points_kpi_opinions(text, text) to anon, authenticated;

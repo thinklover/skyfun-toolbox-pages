@@ -103,6 +103,9 @@
 .apt-op-item-form--04 { background: #dbeafe; color: #1d4ed8; }
 .apt-op-item-form--09 { background: #dcfce7; color: #15803d; }
 .apt-op-item-note { display: block; margin-top: 0.15rem; font-size: 0.7rem; color: #94a3b8; white-space: normal; min-width: 10rem; }
+.apt-op-nopts > td { background: #fef2f2; color: #94a3b8; }
+.apt-op-nopts-tag { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; background: #fee2e2; color: #b91c1c; font-size: 0.72rem; font-weight: 800; white-space: nowrap; }
+.apt-op-nopts-why { display: block; margin-top: 0.15rem; max-width: 12rem; font-size: 0.7rem; color: #b91c1c; white-space: normal; text-align: left; }
 .apt-op-actions { display: flex; align-items: center; gap: 0.8rem; }
 .apt-op-save { border: none; background: #4338ca; color: #fff; font-weight: 800; font-size: 0.92rem; padding: 0.5rem 1.6rem; border-radius: 0.6rem; cursor: pointer; }
 .apt-op-save:hover { background: #3730a3; }
@@ -517,6 +520,7 @@
 .apt-train-col--material { padding: 0.8rem 0.9rem; border: 1px solid #e2e8f0; border-radius: 0.9rem; background: #f8faff; }
 .apt-train-col .gx-card { grid-template-columns: 1fr; justify-items: center; }
 .apt-train-col .gx-card.sim-card { justify-items: stretch; gap: 0.6rem; }
+.gx-card.sim-card { grid-template-columns: minmax(0, 1fr); justify-items: stretch; gap: 0.6rem; text-align: left; }
 .sim-card .cx-vstatus { margin-top: 0; }
 @media (max-width: 900px) {
   .apt-train-split { grid-template-columns: 1fr; }

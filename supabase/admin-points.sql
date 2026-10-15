@@ -24,7 +24,7 @@ create table if not exists public.admin_points_manual (
 
 alter table public.admin_points_manual drop constraint if exists admin_points_manual_item_check;
 alter table public.admin_points_manual add constraint admin_points_manual_item_check
-  check (item in ('行政QA', '代管解約', '案件意見修正', '清冊意見修正', '包租解約'));
+  check (item in ('行政QA', '代管解約', '案件意見修正', '清冊意見修正', '包租解約', '其他'));
 
 create index if not exists admin_points_manual_date_idx on public.admin_points_manual (work_date);
 
@@ -105,6 +105,7 @@ as $$
     when '案件意見修正' then 1
     when '清冊意見修正' then 1
     when '包租解約' then 3
+    when '其他' then 1
     else 0
   end;
 $$;
@@ -275,7 +276,6 @@ $$;
 
 drop function if exists public.admin_points_admin_add_manual(text, text, date, text, text, int, text);
 
-create or replace function public.admin_points_admin_add_manual(
 drop function if exists public.admin_points_admin_add_manual(text, text, date, text, text, int, text, int);
 
 -- 組長選手填項目、組內行政與給予點數（p_points 為這筆總點數；未給則依項目預設 × 件數）
@@ -308,6 +308,9 @@ begin
   end if;
   if v_unit = 0 then
     return json_build_object('ok', false, 'error', '項目無效');
+  end if;
+  if p_item = '其他' and trim(coalesce(p_note, '')) = '' then
+    return json_build_object('ok', false, 'error', '選「其他」請在備註寫明是什麼點數');
   end if;
   if p_date is null then
     return json_build_object('ok', false, 'error', '請選日期');
