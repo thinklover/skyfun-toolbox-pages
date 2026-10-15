@@ -21,8 +21,10 @@ set search_path = public
 as $$
 declare
   v_uid uuid;
-  v_user_limit constant integer := 10;
-  v_total_limit constant integer := 100;
+  -- 簽呈、註銷備註、改善計畫各自計次
+  v_bucket text := case when p_mode in ('cancel-note', 'plan-polish') then p_mode else 'petition' end;
+  v_user_limit integer := case when v_bucket = 'petition' then 10 else 20 end;
+  v_total_limit integer := case when v_bucket = 'petition' then 100 else 300 end;
   v_used integer;
   v_total integer;
 begin
@@ -31,11 +33,14 @@ begin
     return json_build_object('ok', false, 'error', '請先登入工具箱');
   end if;
   select count(*) into v_used from petition_ai_usage
-   where user_id = v_uid and created_at > now() - interval '1 day';
+   where user_id = v_uid and created_at > now() - interval '1 day'
+     and (case when mode in ('cancel-note', 'plan-polish') then mode else 'petition' end) = v_bucket;
   if v_used >= v_user_limit then
     return json_build_object('ok', false, 'error', '今天的 AI 整理次數已用完（每人 24 小時內 ' || v_user_limit || ' 次），請稍後再試');
   end if;
-  select count(*) into v_total from petition_ai_usage where created_at > now() - interval '1 day';
+  select count(*) into v_total from petition_ai_usage
+   where created_at > now() - interval '1 day'
+     and (case when mode in ('cancel-note', 'plan-polish') then mode else 'petition' end) = v_bucket;
   if v_total >= v_total_limit then
     return json_build_object('ok', false, 'error', '全公司今天的 AI 整理次數已達上限，請明天再試或自行填寫');
   end if;

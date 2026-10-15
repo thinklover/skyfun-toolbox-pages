@@ -131,6 +131,7 @@ function checkContent(title: string, content: ReturnType<typeof parseContent>) {
     return "請選擇簽呈主旨分類；選其他時請輸入分類";
   }
   if (!content.summary) return "請填寫案件摘要";
+  if (!content.timeline) return "請填寫時間歷程與證據狀態";
   if (!content.description) return "請填寫案件說明";
   if (!content.proposal) return "請填寫擬辦事項";
   return "";
@@ -372,7 +373,7 @@ async function handleApprovers(body: Row) {
   const uid = await userId(clean(body.token, 200));
   if (!uid) return fail("請先登入");
   const [{ data: accs, error }, { data: binds }, selected] = await Promise.all([
-    sb.from("toolbox_accounts").select("id, username, name, team").eq("status", "active").order("team").order("name"),
+    sb.from("toolbox_accounts").select("id, name, team").eq("status", "active").order("team").order("name"),
     sb.from("line_bindings").select("user_id"),
     approverIds(),
   ]);
@@ -381,12 +382,12 @@ async function handleApprovers(body: Row) {
   const managerSet = new Set(selected.managers);
   const directorSet = new Set(selected.directors);
   const officeSet = new Set(selected.offices);
+  // 帳號是身分證字號，不可傳給一般使用者
   const items = (accs || [])
     .filter((a) => (a.id !== uid || managerSet.has(a.id)) && (managerSet.has(a.id) || directorSet.has(a.id) || officeSet.has(a.id)))
     .map((a) => ({
       id: a.id,
-      name: a.name || a.username,
-      username: a.username,
+      name: a.name || "",
       team: a.team || "",
       lineBound: boundSet.has(a.id),
       manager: managerSet.has(a.id),

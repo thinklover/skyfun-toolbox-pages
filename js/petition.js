@@ -317,7 +317,7 @@
         const myTeam = auth()?.getUser?.()?.team || '';
         const eligible = state.approvers.filter((a) => a[role]);
         const list = eligible.filter((a) =>
-            a.id === cur || !q || (a.name + ' ' + a.team + ' ' + a.username).toLowerCase().includes(q));
+            a.id === cur || !q || (a.name + ' ' + a.team).toLowerCase().includes(q));
         const teams = new Map();
         list.forEach((a) => {
             const t = a.team || '未分處';
@@ -586,6 +586,7 @@
         const requiredContent = [
             ['title', '完整主旨內容'],
             ['summary', '案件摘要'],
+            ['timeline', '時間歷程與證據狀態'],
             ['description', '案件說明'],
             ['proposal', '擬辦事項']
         ];

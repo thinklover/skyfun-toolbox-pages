@@ -5227,9 +5227,7 @@
             <script>
                 (function () {
                     const card = document.getElementById('adz-petition-card');
-                    if (!card) return;
-                    if (window.SKYFUN_PREVIEW) card.parentElement.classList.add('adz-folds--two');
-                    else card.remove();
+                    if (card) card.parentElement.classList.add('adz-folds--two');
                 })();
             </script>
             </div>
@@ -11262,7 +11260,7 @@
         <script src="./js/admin-calendar.js?v=20261011-5"></script>
         <script src="./js/admin-org.js?v=20261014-2"></script>
         <script src="./js/admin-meeting.js?v=20261012-3"></script>
-    <script src="./js/petition.js?v=20261015-1"></script>
+    <script src="./js/petition.js?v=20261016-1"></script>
         <script src="./js/receipt-endorsement-form.js?v=20261001-1"></script>
 <script src="./js/lite-hide-api.js?v=20261001-1"></script>
 <script src="./js/site-file-search-index.js?v=20261013-1"></script>
@@ -13069,7 +13067,7 @@
             { page: 'practice-contacts', title: '租金補貼辦理單位', category: '房客專區', keywords: '窗口 通訊錄 300億 租金補貼 辦理單位 縣市 電話 傳真 臨櫃 pip' },
             { page: 'announcement', title: '簽呈公告專區', category: '首頁專區', keywords: '簽呈 公告 通知 公司' },
             { page: 'manager-bonus', title: '主管獎金專區', category: '簽呈公告專區', keywords: '主管 獎金 營業處 特定地區 津貼 考核 補貼 請款 協理 儲備處 經理 密碼' },
-            ...(window.SKYFUN_PREVIEW ? [{ page: 'petition', title: '簽呈簽核', category: '行政專區', keywords: '簽呈 簽核 送簽 簽名 上傳簽呈 承辦單位 第一線人員 主管 審核 經理 協理 會辦單位 總經理室 決行 總經理 退回 重送 LINE 通知' }] : []),
+            { page: 'petition', title: '簽呈簽核', category: '行政專區', keywords: '簽呈 簽核 送簽 簽名 上傳簽呈 承辦單位 第一線人員 主管 審核 經理 協理 會辦單位 總經理室 決行 總經理 退回 重送 LINE 通知' },
             { page: 'administration', title: '行政專區', category: '首頁專區', keywords: '行政 請款 天數 庶務 管理部 簽呈 點數表 成長羅盤 羅盤 行事曆 問答 QA 各式表單 表單 中心系統申請 離職 離職通報 系統資料修正 獎金補發 獎金收回 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件 註銷 註銷物件 註銷物件申請 物件註銷 承接業者 不續約' },
             { page: 'admin-qa', title: '行政問答 QA', category: '行政專區', keywords: '行政 問答 QA 提問 回答 點數 關鍵字 搜尋 小組長 檢核' },
             { page: 'admin-points', title: '行政績效中心', category: '行政專區', keywords: '行政 績效中心 行政點數表 點數 點數表 每日點數 績效 評等 審件 客訴 教育訓練 成長羅盤 羅盤 物審 房客 預審 複審 產編 修繕 保險費 公證費 補助審核 實價登錄 審核時間紀錄 第一階段 第二階段 250 350 組長 人力明細' },
@@ -13219,7 +13217,6 @@
         document.addEventListener('skyfun-auth-ready', () => updateAppChrome(lastActivePageName || 'home'));
 
         function showPage(pageName, opts = {}) {
-            if (pageName === 'petition' && !window.SKYFUN_PREVIEW) pageName = 'administration';
             const skipHistory = !!opts.skipHistory;
             const fromPage = lastActivePageName;
 
@@ -13283,7 +13280,7 @@
             }
             if (pageName === 'administration' && typeof window.adminPointsCardTop === 'function') window.adminPointsCardTop();
             if (pageName === 'admin-points' && typeof window.adminPointsInit === 'function') window.adminPointsInit();
-            if (pageName === 'administration' && window.SKYFUN_PREVIEW && typeof window.petitionBadge === 'function') window.petitionBadge();
+            if (pageName === 'administration' && typeof window.petitionBadge === 'function') window.petitionBadge();
             if (pageName === 'petition' && typeof window.petitionInit === 'function') window.petitionInit();
             if (pageName === 'rentmanager') {
                 if (typeof window.initReceiptEndorsementForm === 'function') window.initReceiptEndorsementForm();
