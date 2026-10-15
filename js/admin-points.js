@@ -23,10 +23,13 @@
     trainNode: 'guide',
     trainWeeksOpen: {},
     nonAdminOpen: false,
+    personErrOpen: false,
     year: null,
     yearCache: new Map(),
     week: '',
     leader: '',
+    area: '',
+    areaOffice: '',
     spot: null,
     durBy: 'all',
     durView: 'rank',
@@ -36,7 +39,9 @@
       rank: { key: 'avg', dir: 1 },
       region: { key: 'name', dir: 1 },
       detail: { key: 'time', dir: -1 },
-      weekly: { key: 'weekPoints', dir: -1 }
+      weekly: { key: 'weekPoints', dir: -1 },
+      areaOffice: { key: 'office', dir: 1 },
+      areaStaff: { key: 'weekPoints', dir: -1 }
     },
     auditRows: [],
     sb: null,
@@ -49,7 +54,10 @@
     courseOpen: {},
     trainShut: true,
     guildYear: null,
-    guildSys: new Map()
+    guildSys: new Map(),
+    guildOff: new Map(),
+    rosterOff: new Map(),
+    guildOffOpen: ''
   };
 
   function esc(s) {
@@ -181,6 +189,7 @@
       if (!state.person && state.result.people.some((p) => p.name === myName())) state.person = myName();
       setMsg(state.termNote, state.termNote ? 'warn' : '');
       render();
+      loadOpenOpinions();
     } catch (err) {
       setMsg(String(err.message || err), 'err');
     } finally {
@@ -2026,19 +2035,24 @@
     } catch (err) {
       state.prev = { key, error: String(err.message || err) };
     }
-    if (state.tab === 'weekly') render();
+    if (isWeeklyTab()) render();
+  }
+
+  /** 組長週月報、區主管週月報共用同一批資料（上月點數、KPI、應繳件數） */
+  function isWeeklyTab() {
+    return state.tab === 'weekly' || state.tab === 'area';
   }
 
   function money(n) {
     return n ? n.toLocaleString('en-US') : '0';
   }
 
-  function renderWeekly() {
+  /** 週報共用：所選週、本週報表列（filter 傳給 weeklyReport 的 leader／names），需要時去抓上月點數 */
+  function weeklyData(filter) {
     const range = state.meta.range;
     const sb = state.sb || {};
     const weeks = Core.weeksOf(range);
     const week = weeks.find((w) => w.start === state.week) || weeks[0];
-    const leaders = leaderOrder(sb.staff);
     const prevKey = `${range.year}-${range.month}`;
     const pr = prevRange(range);
     const prevTotals = Core.beforeFirstPerf(pr.year, pr.month)
@@ -2053,25 +2067,30 @@
       week,
       perf: range,
       prevTotals,
-      leader: state.leader
+      ...filter
     });
     if (rep.rows.some((r) => r.bonusPending) && state.prev?.key !== prevKey) loadPrev(range);
     const prevErr = state.prev?.key === prevKey && state.prev.error;
-    const scopes = new Map(Core.leaderScopes(sb.staff || []).map((x) => [x.leader, x]));
-    const areaText = (l) => scopes.get(l)?.areas.join('・') || '';
-    const leaderOpts = ['', ...leaders]
-      .map((l) => `<option value="${esc(l)}"${l === state.leader ? ' selected' : ''}>${l ? `${esc(l)}${areaText(l) ? `（${esc(areaText(l))}）` : ''}` : '全部組長'}</option>`)
-      .join('');
-    const s = rep.summary;
-    const zone = (kind, html) => `<section class="apt-block apt-block--${kind}">${html}</section>`;
-    const leaseScope = state.leader ? scopes.get(state.leader) || { leader: state.leader, areas: [] } : null;
-    const leaseDetailOut = {};
-    const bonusCell = (r) => {
+    return { range, sb, week, rep, prevErr };
+  }
+
+  function bonusCellOf(prevErr) {
+    return (r) => {
       if (r.bonusPending) return prevErr ? '<span title="上月點數讀取失敗，未套用八折判斷">?</span>' : '計算中…';
       return money(r.bonus);
     };
+  }
+
+  const blockZone = (kind, html) => `<section class="apt-block apt-block--${kind}">${html}</section>`;
+
+  const WEEKLY_NOTE = () =>
+    `點欄位標題就用那一欄排序，再點一次反過來；# 是目前排序的名次（同值同名次）。本週點數、審件抽查／正確／良率、客訴件數依所選週（週一～週日）加總；月累積點數、月度級距、預估個人獎金、本月懲處依業績月。不含工讀生。到職未滿一個月（以週結束日判斷）為「新人首月排除」，不發獎金。預估獎金：達 ${Core.STAGE_1} 點 2,000、達 ${Core.STAGE_2} 點 5,000，上個業績月未達 ${Core.STAGE_1} 點打八折；達 ${Core.STAGE_1} 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。審件良率顏色：90% 以上綠、60%～未滿 90% 黃、未滿 60% 紅（同主管簡報）。`;
+
+  /** 組員點數表欄位（組長週月報、區主管週月報共用） */
+  function staffCols(prevErr) {
+    const bonusCell = bonusCellOf(prevErr);
     const penaltyLevel = { 無: 0, 小過: 1, 大過: 2 };
-    const cols = [
+    return [
       { key: 'name', label: '姓名', dir: 1, value: (r) => r.name, cell: (r) => `<td><button type="button" class="apt-name" data-person="${esc(r.name)}">${esc(r.name)}</button></td>` },
       { key: 'region', label: '部別', dir: 1, value: (r) => (r.region ? Core.regionRank(r.region) : null), cell: (r) => `<td>${esc(r.region)}</td>` },
       { key: 'office', label: '營業處', dir: 1, value: (r) => r.office || null, cell: (r) => `<td>${esc(r.office)}</td>` },
@@ -2108,7 +2127,10 @@
       },
       { key: 'eligible', label: '考核資格', dir: 1, value: (r) => r.eligibleLabel, cell: (r) => `<td>${r.eligibleLabel}</td>` }
     ];
-    const { sorted, ranks } = sortedRows('weekly', cols, rep.rows);
+  }
+
+  function staffTable(table, cols, list) {
+    const { sorted, ranks } = sortedRows(table, cols, list);
     const rows = sorted
       .map(
         (r, i) => `<tr class="${r.eligible ? '' : 'apt-row-muted'}">
@@ -2117,6 +2139,24 @@
         </tr>`
       )
       .join('');
+    return `<div class="apt-table-wrap"><table class="apt-table">
+        <thead><tr><th>#</th>${sortHead(table, cols)}</tr></thead>
+        <tbody>${rows || `<tr><td colspan="${cols.length + 1}" class="apt-empty">沒有符合的人員</td></tr>`}</tbody>
+      </table></div>`;
+  }
+
+  function renderWeekly() {
+    const { range, sb, week, rep, prevErr } = weeklyData({ leader: state.leader });
+    const leaders = leaderOrder(sb.staff);
+    const scopes = new Map(Core.leaderScopes(sb.staff || []).map((x) => [x.leader, x]));
+    const areaText = (l) => scopes.get(l)?.areas.join('・') || '';
+    const leaderOpts = ['', ...leaders]
+      .map((l) => `<option value="${esc(l)}"${l === state.leader ? ' selected' : ''}>${l ? `${esc(l)}${areaText(l) ? `（${esc(areaText(l))}）` : ''}` : '全部組長'}</option>`)
+      .join('');
+    const s = rep.summary;
+    const zone = blockZone;
+    const leaseScope = state.leader ? scopes.get(state.leader) || { leader: state.leader, areas: [] } : null;
+    const cols = staffCols(prevErr);
     return `<div class="apt-sub-bar">
         <label class="${state.leader ? 'apt-leader-picked' : ''}">組長 <select id="apt-leader">${leaderOpts}</select></label>
         <span class="apt-sub-note">本週總點數 <b>${s.weekPoints}</b> · 本週登錄人數 <b>${s.active}</b> · 本週審件良率 ${rateChip(s.rate) || '<b>-</b>'} · 本週客訴件數 <b>${s.complaints}</b></span>
@@ -2127,18 +2167,187 @@
       ${state.leaseFolded
         ? leaseFoldedStrip(range, leaseScope)
         : leaseScope
-          ? `<div class="apt-block-pair">${zone('lease', leaseSection(range, leaseScope, { detailOut: leaseDetailOut }))}${zone('due', leaseDueSection(range, leaseScope))}</div>${leaseDetailOut.html || ''}`
+          ? leasePair(range, leaseScope)
           : `<div class="apt-block-pair apt-block-pair--due-wide">${zone('lease', leaseSection(range, null))}${zone('due', leaseDueSection(range, null))}</div>`}
       ${zone('charts', leaderKpiSection(range, week, state.leader ? scopes.get(state.leader) || { leader: state.leader, cities: [] } : null))}
       <section class="apt-block apt-block--points">
       <h4 class="apt-sec-title">組員點數<small>本週點數、月累積與預估獎金</small></h4>
-      <div class="apt-table-wrap"><table class="apt-table">
-        <thead><tr><th>#</th>${sortHead('weekly', cols)}</tr></thead>
-        <tbody>${rows || `<tr><td colspan="${cols.length + 1}" class="apt-empty">沒有符合的人員</td></tr>`}</tbody>
-      </table></div>
-      <p class="apt-sub-note">點欄位標題就用那一欄排序，再點一次反過來；# 是目前排序的名次（同值同名次）。本週點數、審件抽查／正確／良率、客訴件數依所選週（週一～週日）加總；月累積點數、月度級距、預估個人獎金、本月懲處依業績月。不含工讀生。到職未滿一個月（以週結束日判斷）為「新人首月排除」，不發獎金。預估獎金：達 ${Core.STAGE_1} 點 2,000、達 ${Core.STAGE_2} 點 5,000，上個業績月未達 ${Core.STAGE_1} 點打八折；達 ${Core.STAGE_1} 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。審件良率顏色：90% 以上綠、60%～未滿 90% 黃、未滿 60% 紅（同主管簡報）。${prevErr ? `<br><span class="apt-bad">上月點數讀取失敗：${esc(prevErr)}</span>` : ''}</p>
+      ${staffTable('weekly', cols, rep.rows)}
+      <p class="apt-sub-note">${WEEKLY_NOTE()}${prevErr ? `<br><span class="apt-bad">上月點數讀取失敗：${esc(prevErr)}</span>` : ''}</p>
       </section>
       ${guideBoardSection(state.leader ? `${state.leader} 組` : '全部組別')}`;
+  }
+
+  function scrollerOf(el) {
+    for (let p = el?.parentElement; p; p = p.parentElement) {
+      const oy = getComputedStyle(p).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+
+  /** 點地區／營業處卡片：被點的卡片留在原位，明細從卡片下方展開、把後面的卡片往下推；收起時反過來 */
+  function toggleLeaseRegion(key) {
+    const closing = state.leaseRegion === key;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const tileOf = () =>
+      [...$('apt-body').querySelectorAll('.apt-lease-rg [data-lease-region]')].find((b) => b.dataset.leaseRegion === key)?.closest('.apt-lease-rg');
+    const ease = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+    const swap = () => {
+      const before = tileOf()?.getBoundingClientRect().top;
+      state.leaseRegion = closing ? '' : key;
+      render();
+      const tile = tileOf();
+      if (!tile || before == null) return;
+      const scroller = scrollerOf(tile);
+      const want = before < 0 ? 88 : before;
+      scroller.scrollTop += tile.getBoundingClientRect().top - want;
+      const panel = closing ? null : $('apt-body').querySelector('.apt-lease-inline');
+      if (!panel) return;
+      if (!reduce) {
+        panel.style.overflow = 'hidden';
+        const anim = panel.animate([{ height: '0px', opacity: 0 }, { height: `${panel.offsetHeight}px`, opacity: 1 }], { duration: 300, easing: ease });
+        const done = () => {
+          if (anim.playState !== 'finished') anim.cancel();
+          panel.style.overflow = '';
+        };
+        anim.finished.then(done, done);
+        setTimeout(done, 450);
+      }
+      if (tile.getBoundingClientRect().bottom > window.innerHeight - 160) {
+        scroller.scrollBy({ top: tile.getBoundingClientRect().top - 88, behavior: reduce ? 'auto' : 'smooth' });
+      }
+    };
+    const old = $('apt-body').querySelector('.apt-lease-inline');
+    const tileTop = tileOf()?.getBoundingClientRect().top ?? -1;
+    if (closing && old && !reduce && tileTop >= 0) {
+      old.style.overflow = 'hidden';
+      let swapped = false;
+      const once = () => {
+        if (!swapped) (swapped = true), swap();
+      };
+      old.animate([{ height: `${old.offsetHeight}px`, opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).finished.then(once, once);
+      setTimeout(once, 320);
+    } else swap();
+  }
+
+  /** 應繳件數＋清冊進度上下排：應繳件數固定整排寬，點開明細時卡片才不會跟著縮放移位 */
+  function leasePair(range, scope) {
+    return `<div class="apt-block-pair apt-block-pair--stack">${blockZone('lease', leaseSection(range, scope))}${blockZone('due', rosterProgressSection(range, scope))}</div>`;
+  }
+
+  /* ---------- 區主管週月報：同組長週月報，範圍改成區主管轄下的營業處（依人力明細行政的營業處） ---------- */
+
+  /** 給共用區塊（品質良率、應繳件數、KPI）用的範圍：KPI 地區直接指定，人員用名單 */
+  function areaScope(a) {
+    return { leader: a.manager, label: `${a.area}（${a.manager}）`, short: a.area, areas: [], kpiRegions: a.regions, names: a.names, cities: a.cities, members: a.members, offices: areaOffices(a) };
+  }
+
+  /** 區主管轄下的營業處：同應繳件數，這個月有應繳案件的代管營業處；應繳案件還沒讀到先用媒合管理的處別清單，再沒有用人力明細（一人兼兩處的拆開） */
+  function areaOffices(a, range) {
+    const lz = state.lease;
+    if (range && lz && !lz.loading && !lz.error && lz.key === `${range.year}-${range.month}` && lz.rows.some((r) => r.office)) {
+      const m = leaseMonth(range);
+      const rows = lz.rows.filter((r) => r.leaseStart >= m.start && r.leaseStart <= m.end && a.regions.includes(r.region));
+      return [...new Set(areaOwnRows(rows, a.manager).map((r) => leaseOfficeKey(r, a.manager)))].sort((x, y) => leaseOfficeRank(x) - leaseOfficeRank(y));
+    }
+    const opts = lz?.offices || [];
+    const list = opts.length ? opts.map(Core.officeName) : a.offices.flatMap((o) => o.split('・'));
+    return [...new Set(list)].filter((o) => o && Core.officeArea(o)?.manager === a.manager).sort((x, y) => Core.officeRank(x) - Core.officeRank(y));
+  }
+
+  function scopeRegions(scope) {
+    return scope.kpiRegions || Core.kpiRegionsOfAreas(scope.areas);
+  }
+
+  function scopeLabel(scope) {
+    return scope.label || (scope.areas || []).join('・') || `${scope.leader} 組`;
+  }
+
+  function currentArea(all) {
+    const cur = all.find((a) => a.manager === state.area) || null;
+    if (!cur) state.area = '';
+    return cur;
+  }
+
+  /** 目前區主管範圍內的行政（全部區主管＝四區合計，營業處對不到區的不算） */
+  function areaStaffNames() {
+    const all = Core.areaScopes(state.sb?.staff || []);
+    const cur = currentArea(all);
+    return new Set(cur ? cur.names : all.flatMap((a) => a.names));
+  }
+
+  /** 營業處依區主管分組（應繳件數右邊的繳交日用） */
+  function areaDueGroups() {
+    const byArea = new Map();
+    for (const m of Core.AREA_MANAGERS) byArea.set(m.area, [...new Set([...(byArea.get(m.area) || []), ...m.regions])]);
+    return [...byArea].map(([area, list]) => ({ area, list }));
+  }
+
+  /** 區主管卡片：點卡片選該區（選中的放大、其他縮小），再點一次回到全部 */
+  function areaBanner(cur, all, range) {
+    const officeChips = (list) =>
+      list.length ? `<span class="apt-area-offices">${list.map((o) => `<i>${esc(o)}</i>`).join('')}</span>` : '<span class="apt-area-offices"><em class="apt-area-none">這個月沒有應繳的營業處</em></span>';
+    const cols = all.map((a) => (!cur ? 'minmax(0, 1fr)' : a === cur ? 'minmax(0, 3fr)' : 'minmax(0, 0.9fr)')).join(' ');
+    return `<div class="apt-leader-list apt-area-cards${cur ? ' has-pick' : ''}" style="grid-template-columns:${cols}">
+        ${all
+          .map((a) => {
+            const on = a === cur;
+            const dim = cur && !on;
+            const offices = areaOffices(a, range);
+            return `<button type="button" class="apt-leader-chip apt-area-card apt-leader-chip--${AREA_TONE[a.area] || 'none'}${on ? ' is-picked' : dim ? ' is-dim' : ''}" data-pick-area="${on ? '' : esc(a.manager)}" aria-pressed="${on}" aria-label="${on ? '回到全部區主管' : `只看${esc(a.manager)}（${esc(a.area)}）`}">
+              <span class="apt-area-top">
+                <span class="apt-area-avatar" aria-hidden="true">${esc(a.manager.slice(0, 1))}</span>
+                <span class="apt-area-id"><b>${esc(a.manager)}</b>${areaPills([a.area])}</span>
+                <span class="apt-area-stat"><strong>${offices.length}</strong><small>代管營業處</small></span>
+              </span>
+              ${dim ? '' : officeChips(offices)}
+              ${dim
+                ? ''
+                : `<span class="apt-area-foot">
+                    <span class="apt-area-regions" title="KPI 地區：${a.regions.map(esc).join('・')}">📍 ${a.regions.map(esc).join('・') || '—'}</span>
+                    ${on ? '<span class="apt-area-back">✕ 看全部</span>' : ''}
+                  </span>`}
+            </button>`;
+          })
+          .join('')}
+      </div>`;
+  }
+
+  function renderArea() {
+    const sb = state.sb || {};
+    const all = Core.areaScopes(sb.staff || []);
+    const cur = currentArea(all);
+    const { range, week, rep, prevErr } = weeklyData({ names: areaStaffNames() });
+    const offices = Core.officeReport(rep.rows);
+    if (state.areaOffice && !offices.some((o) => o.office === state.areaOffice)) state.areaOffice = '';
+    const scope = cur ? areaScope(cur) : null;
+    const zone = blockZone;
+    const s = rep.summary;
+    const staffRows = state.areaOffice ? rep.rows.filter((r) => Core.officeName(r.office) === state.areaOffice) : rep.rows;
+    const staffTitle = state.areaOffice || (cur ? `${cur.area}（${cur.manager}）` : '全部營業處');
+    return `<div class="apt-sub-bar">
+        <span class="apt-sub-note">${cur ? `<b>${esc(cur.manager)}（${esc(cur.area)}）</b> · ` : ''}本週總點數 <b>${s.weekPoints}</b> · 本週登錄人數 <b>${s.active}</b> · 營業處 <b>${offices.length}</b> 處 · 本週審件良率 ${rateChip(s.rate) || '<b>-</b>'} · 本週客訴件數 <b>${s.complaints}</b></span>
+      </div>
+      ${zone('leader', `<h4 class="apt-sec-title">各區主管負責營業處<small>${cur ? '再點一次選中的卡片回到全部區主管' : '點卡片只看該區'}</small></h4>
+        ${areaBanner(cur, all, range)}`)}
+      ${zone('quality', leaderGauges(range, scope))}
+      ${state.leaseFolded
+        ? leaseFoldedStrip(range, scope)
+        : scope
+          ? leasePair(range, scope)
+          : `<div class="apt-block-pair apt-block-pair--due-wide">${zone('lease', leaseSection(range, null))}${zone('due', leaseDueSection(range, null, areaDueGroups()))}</div>`}
+      ${zone('charts', leaderKpiSection(range, week, scope))}
+      <section class="apt-block apt-block--points">
+      <h4 class="apt-sec-title">${esc(staffTitle)}｜行政點數<small>本週點數、月累積與預估獎金</small></h4>
+      ${offices.length > 1 ? `<div class="apt-office-filter" role="group" aria-label="只看某一處的行政">
+        <button type="button" class="apt-office-pill${state.areaOffice ? '' : ' is-on'}" data-pick-office="" aria-pressed="${!state.areaOffice}">全部營業處</button>
+        ${offices.map((o) => `<button type="button" class="apt-office-pill${o.office === state.areaOffice ? ' is-on' : ''}" data-pick-office="${esc(o.office)}" aria-pressed="${o.office === state.areaOffice}">${esc(o.office)}<small>${o.members} 人</small></button>`).join('')}
+      </div>` : ''}
+      ${staffTable('areaStaff', staffCols(prevErr), staffRows)}
+      <p class="apt-sub-note">${WEEKLY_NOTE()}${prevErr ? `<br><span class="apt-bad">上月點數讀取失敗：${esc(prevErr)}</span>` : ''}</p>
+      </section>
+      ${guideBoardSection(cur ? `${cur.area}（${cur.manager}）` : '全部營業處')}`;
   }
 
   /** 審件良率色塊：門檻同主管簡報（90% 以上綠、60% 以上黃、其餘紅） */
@@ -2202,7 +2411,7 @@
     });
     lk.quality = quality;
     lk.busy = false;
-    if (state.tab === 'weekly' || state.tab === 'person') render();
+    if (isWeeklyTab() || state.tab === 'person') render();
   }
 
   /** scope：選了組長＝該組管理縣市對到的 KPI 地區（加小計）；全部組長＝全區＋12 區 */
@@ -2210,15 +2419,17 @@
     const key = `${range.year}-${range.month}`;
     if (state.lkpi?.key !== key) loadLeaderKpi(range).catch((e) => console.warn('組長週報 KPI', e));
     const lk = state.lkpi;
-    const regions = scope ? Core.kpiRegionsOfAreas(scope.areas) : ['全區', ...Core.KPI_REGIONS];
-    const title = `<h4 class="apt-sec-title">${scope ? esc((scope.areas || []).join('・') || `${scope.leader} 組`) : '各地區'}｜第一階段達成率・行政承接率・清冊／審件作業良率</h4>`;
+    const regions = scope ? scopeRegions(scope) : ['全區', ...Core.KPI_REGIONS];
+    const title = `<h4 class="apt-sec-title">${scope ? esc(scopeLabel(scope)) : '各地區'}｜第一階段達成率・行政承接率・清冊／審件作業良率</h4>`;
     if (!regions.length) return `${title}<p class="apt-empty">這位組長的組員在人力明細沒有部別，對不到地區</p>`;
     const cols = scope && regions.length > 1 ? [...regions, '小計'] : regions;
     const partsOf = (g) => (g === '小計' ? regions : [g]);
     const short = (d) => d.slice(5).replace('-', '/');
 
     const stageEnd = week.end < range.end ? week.end : range.end;
-    const stage = state.result ? Core.kpiStageReport(state.result, { staff: state.sb?.staff || [], weeks: [{ start: range.start, end: stageEnd }] }) : null;
+    const areaNames = state.tab === 'area' ? areaStaffNames() : null;
+    const stageStaff = (state.sb?.staff || []).filter((s) => !areaNames || areaNames.has(s.name));
+    const stage = state.result ? Core.kpiStageReport(state.result, { staff: stageStaff, weeks: [{ start: range.start, end: stageEnd }] }) : null;
     const stageX = (g) => {
       if (!stage) return null;
       let hit = 0;
@@ -2276,7 +2487,7 @@
           .map((row) => `<tr><th class="apt-kpi-label">${row.label}<small>${esc(row.sub)}</small></th><td class="num">${Math.round(row.target * 100)}%</td>${cols.map((g) => cell(row, g)).join('')}</tr>`)
           .join('')}</tbody>
       </table></div>
-      <p class="apt-sub-note">和後台「各地區KPI指標」同一套算法，地區依組長負責的北／中／南區列出。第一階段以上達成率＝在職正職行政中，業績月第一天累計到本週日（或業績月最後一天）點數達 ${Core.STAGE_1} 點的人數 ÷ 人數（依人力明細部別分區）。承接率＝行政審核件數 ÷ 總件數（案件依物件／合約縣市、房審依房客縣市分區）。清冊／審件作業良率＝（總件數 − 公會意見錯誤件數）÷ 總件數，依公會期數按月計算，採上個月（同主管簡報月報）。顏色：達目標綠、差 10% 以內黃、其餘紅。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`;
+      <p class="apt-sub-note">和後台「各地區KPI指標」同一套算法，${areaNames ? '地區依區主管負責的北區／中區／南區／高雄列出' : '地區依組長負責的北／中／南區列出'}。第一階段以上達成率＝在職正職行政中，業績月第一天累計到本週日（或業績月最後一天）點數達 ${Core.STAGE_1} 點的人數 ÷ 人數（依人力明細部別分區${areaNames ? '，只算營業處的行政，不含租賃管理部' : ''}）。承接率＝行政審核件數 ÷ 總件數（案件依物件／合約縣市、房審依房客縣市分區）。清冊／審件作業良率＝（總件數 − 公會意見錯誤件數）÷ 總件數，依公會期數按月計算，採上個月（同主管簡報月報）。顏色：達目標綠、差 10% 以內黃、其餘紅。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`;
   }
 
   /* ---------- 品質儀表板：內部審件良率（本業績月抽查）、公會審件／清冊良率（公會意見，採上個月公會期數） ---------- */
@@ -2303,7 +2514,7 @@
   /** 90% 以上綠、80% 以上黃、其餘紅 */
   const gaugeColor = (rate) => (rate == null ? C_ALL : rate >= 0.9 ? '#16a34a' : rate >= 0.8 ? '#f59e0b' : '#dc2626');
 
-  /** o：{ names：內部良率的人員（null＝全部）, regions：公會良率的 KPI 地區, regionText } */
+  /** o：{ names：內部良率的人員（null＝全部）, regions：公會良率的 KPI 地區, regionText, noCityBoard：每月趨勢不列各縣市／各營業處良率 } */
   function qualityGauges(range, o) {
     const CH = window.AdminPointsCharts;
     if (state.lkpi?.key !== `${range.year}-${range.month}`) loadLeaderKpi(range).catch((e) => console.warn('品質儀表板', e));
@@ -2403,7 +2614,7 @@
     if (res?.ok) gy.rows = res.rows || [];
     else gy.error = res?.error || '公會月報讀取失敗';
     gy.sysErr = sys.find((d) => d?.error)?.error || '';
-    if (state.guildOpen && (state.tab === 'weekly' || state.tab === 'person')) render();
+    if (state.guildOpen && (isWeeklyTab() || state.tab === 'person')) render();
   }
 
   /** 某月件數：後台匯入的月報（範圍內每個地區都有填）為準，否則用系統算的 */
@@ -2536,9 +2747,610 @@
           </span>
         </div>
         <div class="apt-gcity-scale"><span></span><span class="apt-gcity-ticks">${[50, 60, 70, 80, 90, 100].map((t) => `<i style="left:${pos(t / 100)}%">${t}%</i>`).join('')}</span><span class="apt-gcity-keys"><em></em>目標 ${Math.round(k.goal * 100)}%　<b></b>同期</span><span></span></div>
-        ${row(total, 0)}
+        ${regions.length > 1 ? row(total, 0) : ''}
         ${cities.map((r, i) => row(r, i + 1)).join('')}
+        ${(kind === 'audit' ? guildOfficePanel : rosterOfficePanel)(sel, city ? [city] : regions, city || groupName.replace(/合計$/, ''))}
       </div>`;
+  }
+
+  /* ---------- 公會審件良率：各營業處（案件依複審人在人力明細的營業處；退件依媒合編號對回案件） ---------- */
+
+  const REV_STATUS = '複審中 → 複審通過';
+  /** 審核紀錄查詢區間：起租月最後一天往前、往後各約 4 個月（往後不超過今天；複審可能在起租後才做），Worker 每次最多 62 天 */
+  const REV_LOOKBACK = [[0, 61], [62, 123]];
+  const REV_LOOKAHEAD = [[1, 62], [63, 124]];
+  const STEP_LABEL = { '預審中 → 預審通過': '預審', '待產編 → 已生效': '產編', '已生效 → 已生效': '實價登錄' };
+  const OFF_NO_REV = '查不到複審紀錄';
+  const OFF_NOT_STAFF = '複審人不在人力明細';
+  const OFF_NO_CASE = '退件對不到起租案件';
+  /** 不在人力明細的複審人（主管等）所屬營業處，只用在審件良率分處，不影響點數與獎金 */
+  const REVIEWER_OFFICE = {
+    黃岳澤: '中一處',
+    蕭湘芩: '彰一處',
+    吳震: '中三處',
+    童翊桓: '中五處',
+    吳清蓮: '中四處',
+    賴重丞: '中二處',
+    蘇睿雅: '中六處',
+    陳智凱: '中四處'
+  };
+
+  const caseNoKey = (s) => String(s || '').normalize('NFKC').replace(/\s+/g, '').toUpperCase();
+  /** 地址比對：全形轉半形、去空白、臺→台，去掉郵遞區號與縣市（審核紀錄與媒合管理的寫法可能差在縣市） */
+  const addrKey = (s) =>
+    String(s || '')
+      .normalize('NFKC')
+      .replace(/\s+/g, '')
+      .replace(/臺/g, '台')
+      .replace(/^\d+/, '')
+      .replace(/^.{2}[市縣]/, '');
+
+  function guildPeriodMonth(period) {
+    const [ry, m] = period.split('/').map(Number);
+    const y = ry + 1911;
+    return { start: Core.isoDate(new Date(y, m - 1, 1)), end: Core.isoDate(new Date(y, m, 0)) };
+  }
+
+  /** 複審紀錄索引：合約 id、地址 → 最後一次複審通過的紀錄；查不到複審時，other 存最後一筆其他審核（預審、產編…）當參考 */
+  function revIndex(rows) {
+    const byId = new Map();
+    const byAddr = new Map();
+    const otherById = new Map();
+    const otherByAddr = new Map();
+    let first = '';
+    const put = (map, k, r) => {
+      if (!k) return;
+      const cur = map.get(k);
+      if (!cur || String(cur.time) < String(r.time)) map.set(k, r);
+    };
+    for (const r of rows) {
+      if (r.time && (!first || String(r.time) < first)) first = String(r.time);
+      if (r.type !== 'contract') continue;
+      const rev = String(r.status || '').replace(/\s+/g, ' ').trim() === REV_STATUS;
+      put(rev ? byId : otherById, String(r.targetId), r);
+      put(rev ? byAddr : otherByAddr, addrKey(r.name), r);
+    }
+    return { byId, byAddr, otherById, otherByAddr, first: first.slice(0, 10) };
+  }
+
+  /** 該公會期數（起租月）的已生效合約＋往前約 4 個月的審核紀錄，快取在 state.guildOff */
+  function loadGuildOffices(period) {
+    if (state.guildOff.has(period)) return;
+    const entry = { busy: true };
+    state.guildOff.set(period, entry);
+    const m = guildPeriodMonth(period);
+    const back = (n) => Core.isoDate(new Date(new Date(`${m.end}T00:00:00`).getTime() - n * 86400000));
+    const today = Core.isoDate(new Date());
+    const windows = [
+      ...REV_LOOKBACK.map(([a, b]) => ({ start: back(b), end: back(a) })),
+      ...REV_LOOKAHEAD.map(([a, b]) => ({ start: back(-a), end: back(-b) < today ? back(-b) : today })).filter((w) => w.start <= w.end)
+    ];
+    Promise.all([fetchWorker('/admin-points/lease-starts', '起租案件', m), ...windows.map((w) => fetchWorker('/admin-points/audit-log', '審核時間紀錄', w))])
+      .then(([lease, ...logs]) => {
+        entry.cases = Core.rowsFromPayload(lease);
+        entry.rev = revIndex(logs.flatMap((l) => Core.rowsFromPayload(l)));
+        entry.from = windows[REV_LOOKBACK.length - 1].start;
+        entry.to = windows[windows.length - 1].end;
+        entry.detail = new Map();
+      })
+      .catch((e) => {
+        entry.error = String(e.message || e);
+      })
+      .then(() => {
+        entry.busy = false;
+        if (!entry.error) loadGuildDetailReviewers(entry);
+        guildRerender();
+      });
+  }
+
+  /** 營業處／個人的公會良率資料分批讀到時，只在看得到的頁面重畫 */
+  function guildRerender() {
+    if (state.guildOpen || state.tab === 'person') render();
+  }
+
+  const LEASE_COMPANY = '公司';
+
+  /** 案件在區主管範圍內的營業處：這一區的處照原名；業務支援管理部等不是「○○處」的歸「公司」；別區的處、沒填的回空字串 */
+  function leaseOfficeKey(r, manager) {
+    const name = Core.officeName(r.office);
+    if (!name) return '';
+    if (!/處$/.test(name)) return LEASE_COMPANY;
+    return Core.officeArea(name)?.manager === manager ? name : '';
+  }
+
+  function leaseOfficeRank(o) {
+    return o === LEASE_COMPANY ? 1e9 : Core.officeRank(o);
+  }
+
+  /** 區主管：只算這一區的處和公司的案件 */
+  function areaOwnRows(rows, manager) {
+    return rows.filter((r) => leaseOfficeKey(r, manager));
+  }
+
+  /** 應繳案件依合約的「代管營業處」（媒合管理）分組；只列這一區、有應繳的營業處 */
+  function leaseOfficeGroups(rows, manager) {
+    if (rows.length && !rows.some((r) => r.office)) return { error: '應繳案件還沒有代管營業處資料，請按「重新抓取星鴻資料」' };
+    const own = areaOwnRows(rows, manager);
+    const by = new Map();
+    for (const row of own) {
+      const key = leaseOfficeKey(row, manager);
+      if (!by.has(key)) by.set(key, []);
+      by.get(key).push(row);
+    }
+    const groups = [...by].map(([key, list]) => ({ key, rows: list })).sort((a, b) => leaseOfficeRank(a.key) - leaseOfficeRank(b.key));
+    return { groups, rows: own };
+  }
+
+  /** 同地址（包租／轉租）的合約歸成一件 */
+  function caseGroups(cases) {
+    const groups = new Map();
+    for (const c of cases) {
+      const a = String(c.address || '').normalize('NFKC').replace(/\s+/g, '').replace(/臺/g, '台');
+      const k = a ? `${String(c.city || '').replace(/臺/g, '台')}|${a}` : `#${c.id}`;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(c);
+    }
+    return [...groups.values()];
+  }
+
+  function revOfCase(entry, c) {
+    const r = entry.rev.byId.get(String(c.id)) || entry.rev.byAddr.get(addrKey(c.address));
+    if (r) return r;
+    const d = entry.detail?.get(String(c.id));
+    return d?.auditor ? d : null;
+  }
+
+  /** 審核時間紀錄查不到複審的案件，改到媒合管理合約明細的審核紀錄抓「複審通過」的審核者（Worker 每次只查一部分，分批補完） */
+  async function loadGuildDetailReviewers(entry) {
+    let ids = caseGroups(entry.cases)
+      .filter((list) => !list.some((c) => revOfCase(entry, c)))
+      .flatMap((list) => list.map((c) => String(c.id)));
+    entry.detailTodo = ids.length;
+    entry.detailBusy = ids.length > 0;
+    while (ids.length) {
+      let data;
+      try {
+        const res = await fetch(`${RPA_BASE}/admin-points/contract-reviewers?ids=${ids.slice(0, 300).join(',')}`, { headers: { 'X-Skyfun-Session': token() } });
+        data = await res.json().catch(() => null);
+        if (!res.ok || !data?.ok) throw new Error(data?.error || `合約明細審核紀錄讀取失敗（HTTP ${res.status}）`);
+      } catch (e) {
+        entry.detailError = String(e.message || e);
+        break;
+      }
+      for (const [id, auditor, time] of data.rows || []) entry.detail.set(String(id), { auditor, time: String(time || '').replace(/-/g, '/'), fromDetail: true });
+      const rest = [...(data.pending || []).map(String), ...ids.slice(300)];
+      if (rest.length >= ids.length) break;
+      ids = rest;
+      guildRerender();
+    }
+    entry.detailBusy = false;
+    guildRerender();
+  }
+
+  /**
+   * 各營業處審件件數與退件：案件（同地址的包租／轉租只算一件，同 Worker）依複審人歸處；
+   * 公會案件意見依媒合編號找回案件，算在該案的營業處。
+   */
+  function guildOfficeRows(entry, regions, errors) {
+    const want = new Set(regions);
+    const everywhere = want.has('全區');
+    const staffBy = new Map((state.sb?.staff || []).map((s) => [s.name, s]));
+    const revOf = (c) => revOfCase(entry, c);
+    const buckets = new Map();
+    const bucket = (office, staffOffice) => {
+      if (!buckets.has(office)) buckets.set(office, { office, area: Core.officeArea(staffOffice || office), total: 0, err: 0, cases: [] });
+      return buckets.get(office);
+    };
+    const byNo = new Map();
+    for (const list of caseGroups(entry.cases)) {
+      const pick = list.find(revOf) || list[0];
+      const r = revOf(pick);
+      const s = r ? staffBy.get(r.auditor) || (REVIEWER_OFFICE[r.auditor] ? { office: REVIEWER_OFFICE[r.auditor] } : null) : null;
+      const office = !r ? OFF_NO_REV : !s ? OFF_NOT_STAFF : Core.officeName(s.office) || '人力明細沒有營業處';
+      const other = r
+        ? null
+        : list
+            .flatMap((c) => [entry.rev.otherById.get(String(c.id)), entry.rev.otherByAddr.get(addrKey(c.address))])
+            .filter(Boolean)
+            .sort((x, y) => String(y.time).localeCompare(String(x.time)))[0];
+      const hint = other ? `${STEP_LABEL[String(other.status || '').replace(/\s+/g, ' ').trim()] || '其他審核'}：${other.auditor || '—'}（${String(other.time).slice(5, 10)}）` : '';
+      const item = { no: pick.no || '', others: list.filter((c) => c !== pick).map((c) => c.no).filter(Boolean), city: pick.city || '', region: pick.region || '', auditor: r?.auditor || '', fromDetail: !!r?.fromDetail, hint, revAt: r ? String(r.time).slice(0, 10) : '', office, errs: [] };
+      for (const c of list) if (c.no) byNo.set(caseNoKey(c.no), item);
+      if (!everywhere && !want.has(item.region)) continue;
+      item.inScope = true;
+      const b = bucket(office, s?.office);
+      b.total += 1;
+      b.cases.push(item);
+    }
+    for (const o of errors || []) {
+      if (o.kind !== 'case' || (!everywhere && !want.has(o.area))) continue;
+      const item = byNo.get(caseNoKey(o.caseNo));
+      if (item?.inScope) {
+        item.errs.push(o.category || '未分類');
+        buckets.get(item.office).err += 1;
+      } else {
+        const b = bucket(OFF_NO_CASE);
+        b.err += 1;
+        b.cases.push({ no: o.caseNo || '', others: [], city: o.region || o.area || '', region: o.area || '', auditor: '', revAt: '', office: OFF_NO_CASE, errs: [o.category || '未分類'] });
+      }
+    }
+    const special = [OFF_NOT_STAFF, OFF_NO_REV, OFF_NO_CASE];
+    const rank = (o) => (special.includes(o) ? 2e6 + special.indexOf(o) : Core.officeRank(o));
+    return [...buckets.values()]
+      .map((b) => ({ ...b, rate: b.total ? Core.kpiErrRate(b) : null }))
+      .sort((a, b) => rank(a.office) - rank(b.office) || a.office.localeCompare(b.office, 'zh-Hant'));
+  }
+
+  function guildOfficePanel(sel, regions, label) {
+    const head = `<h5 class="apt-goff-title">🏢 ${esc(label)}｜各營業處審件良率<small>案件依「複審人」在人力明細的營業處；點營業處看逐件媒合編號與複審人</small></h5>`;
+    if (sel === 'year') return `<div class="apt-goff">${head}<p class="apt-sub-note">各營業處明細要看單月，請按右上角「單月」。</p></div>`;
+    if (sel < GUILD_SYS_START) return `<div class="apt-goff">${head}<p class="apt-sub-note">${esc(sel)} 是管報匯入的月報，只有總數，沒有逐件案件可以分營業處（${GUILD_SYS_START} 起才有）。</p></div>`;
+    loadGuildOffices(sel);
+    const entry = state.guildOff.get(sel);
+    if (!entry || entry.busy) return `<div class="apt-goff">${head}<p class="apt-sub-note apt-loading">讀取 ${esc(sel)} 起租案件與複審紀錄中…（第一次約需 10～20 秒）</p></div>`;
+    if (entry.error) {
+      return `<div class="apt-goff">${head}<p class="apt-bad">讀取失敗：${esc(entry.error)} <button type="button" class="apt-btn-lite" data-guild-off-retry="${esc(sel)}">重試</button></p></div>`;
+    }
+    const errors = state.guildSys.get(sel)?.data?.errors || [];
+    const rows = guildOfficeRows(entry, regions, errors);
+    const open = state.guildOffOpen;
+    const tone = (rate) => (rate == null ? 'na' : rate >= 0.9 ? 'g' : rate >= 0.8 ? 'y' : 'r');
+    const caseTable = (b) => `<tr class="apt-goff-cases"><td colspan="5">
+        <table class="apt-table apt-goff-case-table">
+          <thead><tr><th>媒合編號</th><th>縣市</th><th>複審人</th><th>複審日期</th><th>公會意見</th></tr></thead>
+          <tbody>${b.cases
+            .slice()
+            .sort((x, y) => y.errs.length - x.errs.length || x.no.localeCompare(y.no))
+            .map(
+              (c) => `<tr class="${c.errs.length ? 'is-err' : ''}">
+                <td>${esc(c.no) || NIL}${c.others.length ? `<small class="apt-lease-same" title="同地址的其他合約（包租／轉租），只算一件">＋${esc(c.others.join('、'))}</small>` : ''}</td>
+                <td>${esc(c.city) || NIL}</td>
+                <td>${c.auditor ? `${esc(c.auditor)}${c.fromDetail ? '<small title="審核時間紀錄沒有，這是從媒合管理合約明細的審核紀錄抓的複審通過審核者">（合約明細）</small>' : ''}` : (c.hint ? `<small class="apt-goff-hint" title="查不到複審紀錄，這是同一件最後一筆其他審核的審核人，僅供參考">無複審紀錄・${esc(c.hint)}</small>` : c.office === OFF_NO_REV ? '<small class="apt-goff-hint">審核紀錄裡沒有這件</small>' : NIL)}</td>
+                <td>${esc(c.revAt.replace(/\//g, '-')) || NIL}</td>
+                <td>${c.errs.length ? `<b class="apt-bad">退件 ${c.errs.length}</b> <small>${esc(c.errs.join('、'))}</small>` : '通過'}</td>
+              </tr>`
+            )
+            .join('')}</tbody>
+        </table>
+      </td></tr>`;
+    const body = rows
+      .map((b) => {
+        const on = open === b.office;
+        const area = b.area ? `<i class="apt-area apt-area--${AREA_TONE[b.area.area] || 'east'}">${esc(b.area.area)}</i> ${esc(b.area.manager)}` : '';
+        return `<tr class="${on ? 'is-picked' : ''}">
+            <td><button type="button" class="apt-name" data-guild-office="${esc(b.office)}" aria-expanded="${on}">${on ? '▾' : '▸'} ${esc(b.office)}</button></td>
+            <td>${area}</td>
+            <td class="num">${b.total}</td>
+            <td class="num">${b.err ? `<b class="apt-bad">${b.err}</b>` : 0}</td>
+            <td class="num">${b.rate == null ? NIL : `<span class="apt-gchip apt-gchip--${tone(b.rate)}">${(b.rate * 100).toFixed(1)}%</span>`}</td>
+          </tr>${on ? caseTable(b) : ''}`;
+      })
+      .join('');
+    const total = rows.reduce((s, b) => ({ total: s.total + b.total, err: s.err + b.err }), { total: 0, err: 0 });
+    const detailNote = entry.detailBusy
+      ? `<p class="apt-sub-note apt-loading">審核時間紀錄查不到複審的 ${entry.detailTodo} 張合約，正在到媒合管理合約明細補抓複審人（已抓 ${entry.detail.size} 張，第一次較久，之後有快取）…</p>`
+      : entry.detailError
+        ? `<p class="apt-bad">合約明細補抓複審人失敗：${esc(entry.detailError)} <button type="button" class="apt-btn-lite" data-guild-off-retry="${esc(sel)}">重試</button></p>`
+        : '';
+    return `<div class="apt-goff">${head}${detailNote}
+        <div class="apt-table-wrap"><table class="apt-table apt-goff-table">
+          <thead><tr><th>營業處</th><th>區主管</th><th class="num">案件數</th><th class="num">退件</th><th class="num">審件良率</th></tr></thead>
+          <tbody>${body || '<tr><td colspan="5" class="apt-empty">這個月沒有起租案件</td></tr>'}
+            <tr class="apt-sum-row"><th>合計</th><td></td><td class="num">${total.total}</td><td class="num">${total.err}</td><td class="num">${total.total ? `${(Core.kpiErrRate(total) * 100).toFixed(1)}%` : NIL}</td></tr>
+          </tbody>
+        </table></div>
+        <p class="apt-sub-note">案件＝公會期數 ${esc(sel)}（起租日在該月）的已生效合約，包租案件的包租、轉租兩張合約同地址只算一件；複審人取審核時間紀錄「複審中 → 複審通過」最後一次（查 ${esc(entry.from)}～${esc(entry.to)}），先用合約對，對不到再用地址對；${
+          entry.rev.first ? `星鴻審核時間紀錄最早只有 ${esc(entry.rev.first)} 起的資料，` : ''
+        }還是查不到的，改到媒合管理合約明細的審核紀錄抓「複審通過」的審核者（標「合約明細」）。仍抓不到的列在「${OFF_NO_REV}」，明細改列這件找得到的其他審核人供參考。退件＝公會案件意見，依媒合編號找回案件。合計會和上方系統計算的件數相同；上方若採管報匯入的月報，數字可能略有差異。</p>
+      </div>`;
+  }
+
+  /* ---------- 公會清冊良率：各營業處（清冊每一列依媒合編號找合約「複審通過」的審核者歸處；清冊意見依媒合編號） ---------- */
+
+  const OFF_REV_WAIT = '複審人查詢中';
+  const OFF_NO_ROW = '意見對不到清冊';
+
+  /** 該公會期數的表單04／09（每列媒合編號），複審人分批向 Worker 查，快取在 state.rosterOff */
+  function loadRosterOffices(period) {
+    if (state.rosterOff.has(period)) return;
+    const [year, month] = period.split('/').map(Number);
+    const g = { year, month, guild: period };
+    const entry = { busy: true, rev: new Map(), focus: [] };
+    state.rosterOff.set(period, entry);
+    Promise.all([fetchKpiPart(g, 'roster04'), fetchKpiPart(g, 'roster09'), guildSysPeriod(period)])
+      .then(([a, b]) => {
+        if (![a, b].every((d) => (d.rows || []).every((r) => Array.isArray(r[4])))) throw new Error('清冊資料沒有媒合編號，請重新整理（Ctrl＋F5）後再試');
+        entry.rows = [];
+        for (const [form, d] of [['04', a], ['09', b]]) {
+          for (const [region, company, per, , nos] of d.rows || []) for (const no of nos) entry.rows.push({ form, region, company, period: per, no: String(no || '').trim() });
+        }
+        entry.ids = { ...(a.ids || {}), ...(b.ids || {}) };
+      })
+      .catch((e) => {
+        entry.error = String(e.message || e);
+      })
+      .then(() => {
+        entry.busy = false;
+        if (!entry.error) loadRosterReviewers(entry, period);
+        guildRerender();
+      });
+  }
+
+  /** Worker 每次只查一部分合約（第一次要建媒合編號索引），正在看的地區先查 */
+  async function loadRosterReviewers(entry, period) {
+    const errNos = (state.guildSys.get(period)?.data?.errors || []).filter((o) => o.kind === 'roster').map((o) => String(o.caseNo || '').trim());
+    const all = [...new Set([...entry.rows.map((r) => r.no), ...errNos].filter(Boolean))];
+    const regionOf = new Map(entry.rows.map((r) => [r.no, r.region]));
+    entry.detailTodo = all.length;
+    entry.detailBusy = true;
+    for (let round = 0; round < 800; round++) {
+      const want = all.filter((no) => !entry.rev.has(no));
+      if (!want.length) break;
+      const focus = new Set(entry.focus);
+      if (!focus.has('全區')) want.sort((x, y) => Number(focus.has(regionOf.get(y))) - Number(focus.has(regionOf.get(x))));
+      const ids = {};
+      for (const no of want) if (entry.ids[no]) ids[no] = entry.ids[no];
+      let data;
+      try {
+        const res = await fetch(`${RPA_BASE}/admin-points/roster-reviewers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Skyfun-Session': token() },
+          body: JSON.stringify({ nos: want, ids })
+        });
+        data = await res.json().catch(() => null);
+        if (!res.ok || !data?.ok) throw new Error(data?.error || `清冊複審人讀取失敗（HTTP ${res.status}）`);
+      } catch (e) {
+        entry.detailError = String(e.message || e);
+        break;
+      }
+      const before = entry.rev.size;
+      for (const [no, auditor, time, flag] of data.rows || []) entry.rev.set(String(no), { auditor, time: String(time || '').replace(/-/g, '/'), flag });
+      if (entry.rev.size === before && data.indexDone) break;
+      guildRerender();
+    }
+    entry.detailBusy = false;
+    guildRerender();
+  }
+
+  /**
+   * 各營業處清冊件數與意見：清冊每一列（表單04、09 各算一件，同 KPI）依媒合編號的複審人歸處，
+   * 公會清冊意見依媒合編號找回清冊那一件。
+   */
+  function rosterOfficeRows(entry, regions, errors) {
+    const want = new Set(regions);
+    const everywhere = want.has('全區');
+    const staffBy = new Map((state.sb?.staff || []).map((s) => [s.name, s]));
+    const buckets = new Map();
+    const bucket = (office, staffOffice) => {
+      if (!buckets.has(office)) buckets.set(office, { office, area: Core.officeArea(staffOffice || office), total: 0, err: 0, cases: [] });
+      return buckets.get(office);
+    };
+    const whoOf = (no) => {
+      const r = no ? entry.rev.get(no) : null;
+      if (!r) return { office: no && entry.detailBusy ? OFF_REV_WAIT : OFF_NO_REV, r: null, s: null };
+      if (!r.auditor) return { office: OFF_NO_REV, r, s: null };
+      const s = staffBy.get(r.auditor) || (REVIEWER_OFFICE[r.auditor] ? { office: REVIEWER_OFFICE[r.auditor] } : null);
+      return { office: !s ? OFF_NOT_STAFF : Core.officeName(s.office) || '人力明細沒有營業處', r, s };
+    };
+    const itemOf = (no, w, extra) => ({
+      no,
+      forms: [],
+      region: '',
+      company: '',
+      auditor: w.r?.auditor || '',
+      revAt: w.r ? String(w.r.time).slice(0, 10) : '',
+      noContract: w.r?.flag === 'nc',
+      office: w.office,
+      errs: [],
+      n: 0,
+      ...extra
+    });
+    const items = new Map();
+    for (const row of entry.rows) {
+      if (!everywhere && !want.has(row.region)) continue;
+      const k = row.no ? caseNoKey(row.no) : `#${items.size}`;
+      let it = items.get(k);
+      if (!it) {
+        const w = whoOf(row.no);
+        it = itemOf(row.no, w, { region: row.region, company: row.company });
+        items.set(k, it);
+        bucket(w.office, w.s?.office).cases.push(it);
+      }
+      it.n += 1;
+      it.forms.push(row.form);
+      buckets.get(it.office).total += 1;
+    }
+    for (const o of errors || []) {
+      if (o.kind !== 'roster' || (!everywhere && !want.has(o.area))) continue;
+      const no = String(o.caseNo || '').trim();
+      const what = o.category || '未分類';
+      const it = items.get(caseNoKey(no));
+      if (it) {
+        it.errs.push(what);
+        buckets.get(it.office).err += 1;
+      } else {
+        const b = bucket(OFF_NO_ROW);
+        b.err += 1;
+        b.cases.push({ ...itemOf(no, whoOf(no), { region: o.area || o.region || '' }), office: OFF_NO_ROW, errs: [what] });
+      }
+    }
+    const special = [OFF_NOT_STAFF, OFF_NO_REV, OFF_REV_WAIT, OFF_NO_ROW];
+    const rank = (o) => (special.includes(o) ? 2e6 + special.indexOf(o) : Core.officeRank(o));
+    return [...buckets.values()]
+      .map((b) => ({ ...b, rate: b.total ? Core.kpiErrRate(b) : null }))
+      .sort((a, b) => rank(a.office) - rank(b.office) || a.office.localeCompare(b.office, 'zh-Hant'));
+  }
+
+  const formsText = (forms) =>
+    ['04', '09']
+      .map((f) => [f, forms.filter((x) => x === f).length])
+      .filter(([, n]) => n)
+      .map(([f, n]) => `表${f}${n > 1 ? `×${n}` : ''}`)
+      .join('、');
+
+  function rosterOfficePanel(sel, regions, label) {
+    const head = `<h5 class="apt-goff-title">🏢 ${esc(label)}｜各營業處清冊良率<small>清冊每一列依媒合編號找合約「複審通過」的審核者，算到他在人力明細的營業處；點營業處看逐件</small></h5>`;
+    if (sel === 'year') return `<div class="apt-goff">${head}<p class="apt-sub-note">各營業處明細要看單月，請按右上角「單月」。</p></div>`;
+    if (sel < GUILD_SYS_START) return `<div class="apt-goff">${head}<p class="apt-sub-note">${esc(sel)} 是管報匯入的月報，只有總數，沒有逐件清冊可以分營業處（${GUILD_SYS_START} 起才有）。</p></div>`;
+    loadRosterOffices(sel);
+    const entry = state.rosterOff.get(sel);
+    entry.focus = regions;
+    if (entry.busy) return `<div class="apt-goff">${head}<p class="apt-sub-note apt-loading">讀取 ${esc(sel)} 表單04／09 清冊中…</p></div>`;
+    if (entry.error) {
+      return `<div class="apt-goff">${head}<p class="apt-bad">讀取失敗：${esc(entry.error)} <button type="button" class="apt-btn-lite" data-roster-off-retry="${esc(sel)}">重試</button></p></div>`;
+    }
+    const errors = state.guildSys.get(sel)?.data?.errors || [];
+    const rows = rosterOfficeRows(entry, regions, errors);
+    const open = state.guildOffOpen;
+    const tone = (rate) => (rate == null ? 'na' : rate >= 0.95 ? 'g' : rate >= 0.85 ? 'y' : 'r');
+    const whoCell = (c) =>
+      c.auditor
+        ? esc(c.auditor)
+        : c.noContract
+          ? '<small class="apt-goff-hint">媒合管理查不到這個媒合編號</small>'
+          : entry.rev.has(c.no)
+            ? '<small class="apt-goff-hint">合約明細沒有複審通過紀錄</small>'
+            : entry.detailBusy && c.no
+              ? '<small class="apt-goff-hint">查詢中…</small>'
+              : NIL;
+    const caseTable = (b) => `<tr class="apt-goff-cases"><td colspan="5">
+        <table class="apt-table apt-goff-case-table">
+          <thead><tr><th>媒合編號</th><th>清冊</th><th>地區</th><th>複審人</th><th>複審日期</th><th>公會意見</th></tr></thead>
+          <tbody>${b.cases
+            .slice()
+            .sort((x, y) => y.errs.length - x.errs.length || x.no.localeCompare(y.no))
+            .slice(0, 400)
+            .map(
+              (c) => `<tr class="${c.errs.length ? 'is-err' : ''}">
+                <td>${esc(c.no) || NIL}</td>
+                <td>${c.forms.length ? esc(formsText(c.forms)) : '<small class="apt-goff-hint">不在本期清冊</small>'}</td>
+                <td>${esc(c.region) || NIL}${c.company ? `<small class="apt-lease-same">${esc(c.company)}</small>` : ''}</td>
+                <td>${whoCell(c)}</td>
+                <td>${esc(c.revAt.replace(/\//g, '-')) || NIL}</td>
+                <td>${c.errs.length ? `<b class="apt-bad">意見 ${c.errs.length}</b> <small>${esc(c.errs.join('、'))}</small>` : '無'}</td>
+              </tr>`
+            )
+            .join('')}${b.cases.length > 400 ? `<tr><td colspan="6" class="apt-empty">共 ${b.cases.length} 件，只列有意見的與前 400 件</td></tr>` : ''}</tbody>
+        </table>
+      </td></tr>`;
+    const body = rows
+      .map((b) => {
+        const on = open === b.office;
+        const area = b.area ? `<i class="apt-area apt-area--${AREA_TONE[b.area.area] || 'east'}">${esc(b.area.area)}</i> ${esc(b.area.manager)}` : '';
+        return `<tr class="${on ? 'is-picked' : ''}">
+            <td><button type="button" class="apt-name" data-guild-office="${esc(b.office)}" aria-expanded="${on}">${on ? '▾' : '▸'} ${esc(b.office)}</button></td>
+            <td>${area}</td>
+            <td class="num">${b.total}</td>
+            <td class="num">${b.err ? `<b class="apt-bad">${b.err}</b>` : 0}</td>
+            <td class="num">${b.rate == null ? NIL : `<span class="apt-gchip apt-gchip--${tone(b.rate)}">${(b.rate * 100).toFixed(1)}%</span>`}</td>
+          </tr>${on ? caseTable(b) : ''}`;
+      })
+      .join('');
+    const total = rows.reduce((s, b) => ({ total: s.total + b.total, err: s.err + b.err }), { total: 0, err: 0 });
+    const detailNote = entry.detailBusy
+      ? `<p class="apt-sub-note apt-loading">正在到媒合管理合約明細查清冊每件的複審人（已查 ${entry.rev.size}／${entry.detailTodo} 個媒合編號；第一次要查全部合約，可能要幾分鐘，之後有快取）…</p>`
+      : entry.detailError
+        ? `<p class="apt-bad">清冊複審人查詢失敗：${esc(entry.detailError)} <button type="button" class="apt-btn-lite" data-roster-off-retry="${esc(sel)}">重試</button></p>`
+        : '';
+    return `<div class="apt-goff">${head}${detailNote}
+        <div class="apt-table-wrap"><table class="apt-table apt-goff-table">
+          <thead><tr><th>營業處</th><th>區主管</th><th class="num">清冊件數</th><th class="num">公會意見</th><th class="num">清冊良率</th></tr></thead>
+          <tbody>${body || '<tr><td colspan="5" class="apt-empty">這個月沒有清冊</td></tr>'}
+            <tr class="apt-sum-row"><th>合計</th><td></td><td class="num">${total.total}</td><td class="num">${total.err}</td><td class="num">${total.total ? `${(Core.kpiErrRate(total) * 100).toFixed(1)}%` : NIL}</td></tr>
+          </tbody>
+        </table></div>
+        <p class="apt-sub-note">清冊件數＝公會期數 ${esc(sel)} 表單04＋表單09（同上方系統計算，表04、表09 各算一件）；每件依媒合編號找到合約，取合約明細審核紀錄最後一次「複審通過」的審核者，算到他在人力明細的營業處（不在人力明細的主管依對照表）。公會意見＝清冊意見，依媒合編號找回清冊那一件；對不到本期清冊的列在「${OFF_NO_ROW}」。顏色：95% 以上綠、85% 以上黃、其餘紅。</p>
+      </div>`;
+  }
+
+  /** 個人的公會審件／清冊：審件＝我複審的起租案件，清冊＝表單04／09 裡我複審的合約；意見依媒合編號算到我 */
+  function personGuildStats(name, period) {
+    if (!state.guildSys.has(period)) guildSysPeriod(period).then(guildRerender);
+    loadGuildOffices(period);
+    loadRosterOffices(period);
+    const errors = state.guildSys.get(period)?.data?.errors;
+    const pick = (entry, rowsOf) => {
+      if (!entry || entry.busy || !errors) return { loading: true };
+      if (entry.error) return { error: entry.error };
+      const mine = rowsOf(entry, ['全區'], errors)
+        .flatMap((b) => b.cases)
+        .filter((c) => c.auditor === name);
+      return { mine, busy: !!entry.detailBusy };
+    };
+    const audit = pick(state.guildOff.get(period), guildOfficeRows);
+    if (audit.mine) {
+      audit.total = audit.mine.filter((c) => c.office !== OFF_NO_CASE).length;
+      audit.err = audit.mine.reduce((s, c) => s + c.errs.length, 0);
+    }
+    const roster = pick(state.rosterOff.get(period), rosterOfficeRows);
+    if (roster.mine) {
+      roster.total = roster.mine.reduce((s, c) => s + c.n, 0);
+      roster.err = roster.mine.reduce((s, c) => s + c.errs.length, 0);
+    }
+    for (const x of [audit, roster]) if (x.mine) x.rate = x.total ? Core.kpiErrRate(x) : null;
+    return { audit, roster };
+  }
+
+  /** 個人績效的品質良率：內部審件（自己的抽查）＋公會審件／清冊（依複審人算到自己），下方列出被退件／下意見的案件 */
+  function personQuality(range, name, region) {
+    const CH = window.AdminPointsCharts;
+    if (state.lkpi?.key !== `${range.year}-${range.month}`) loadLeaderKpi(range).catch((e) => console.warn('品質儀表板', e));
+    const period = prevGuild(range).guild;
+    const card = (label, rate, goal, meta, note) => `<div class="apt-gauge">
+        <span class="apt-gauge-ring">${CH.donut({ value: rate == null ? null : rate * 100, text: rate == null ? '-' : rate >= 1 ? '100%' : `${(rate * 100).toFixed(1)}%`, sub: `目標 ${Math.round(goal * 100)}%`, color: rate == null ? C_ALL : rate >= goal ? '#16a34a' : rate >= goal - 0.1 ? '#f59e0b' : '#dc2626', marks: [goal * 100] })}</span>
+        <span class="apt-gauge-text">
+          <span class="apt-gauge-label">${label}</span>
+          <span class="apt-gauge-meta">${meta}</span>
+          <small>${note}</small>
+        </span>
+      </div>`;
+    const inQ = internalQuality([name]);
+    const internal = card('內部審件良率', inQ.rate, 0.9, inQ.checked ? `抽查 <b>${inQ.checked}</b> 件・正確 <b>${inQ.correct}</b> 件` : '本業績月還沒有抽查', '本業績月・組長抽查');
+    if (period < GUILD_SYS_START) {
+      const na = (label) => card(label, null, 0.9, `公會期數 ${GUILD_SYS_START} 起才有逐筆案件`, `公會期數 ${esc(period)}`);
+      return `<div class="apt-gauges">${internal}${na('我的公會審件良率')}${na('我的公會清冊良率')}</div>`;
+    }
+    const st = personGuildStats(name, period);
+    const areaRate = (kind) => {
+      const x = region ? guildQuality(state.lkpi, kind, [region]) : null;
+      return x?.total ? ` · ${esc(region)}地區整體 ${(x.rate * 100).toFixed(1)}%` : '';
+    };
+    const guildCard = (label, kind, x) => {
+      const k = GUILD_KIND[kind];
+      const meta = x.loading
+        ? '讀取中…'
+        : x.error
+          ? `<span class="apt-bad">讀取失敗：${esc(x.error)}</span>`
+          : x.total || x.err
+            ? `${k.errText} <b>${x.err}</b> 件／${kind === 'audit' ? '複審' : '清冊'} <b>${x.total}</b> 件`
+            : '這期沒有我複審的件數';
+      const note = `公會期數 ${esc(period)}${areaRate(kind)}${x.busy ? ' · 複審人還在查詢中，數字會再增加' : ''}`;
+      return card(label, x.rate ?? null, k.goal, meta, note);
+    };
+    const errRows = [
+      ...(st.audit.mine || []).filter((c) => c.errs.length).map((c) => ({ kind: '審件', c })),
+      ...(st.roster.mine || []).filter((c) => c.errs.length).map((c) => ({ kind: '清冊', c }))
+    ];
+    const auditErrs = errRows.filter((x) => x.kind === '審件').length;
+    const list = errRows.length
+      ? `<details class="apt-pd-group apt-person-errs" data-fold="personErr"${state.personErrOpen ? ' open' : ''}>
+        <summary><b>公會退件／意見明細</b>審件退件 ${auditErrs} 件 · 清冊意見 ${errRows.length - auditErrs} 件</summary>
+        <div class="apt-table-wrap"><table class="apt-table apt-goff-case-table">
+          <thead><tr><th>種類</th><th>媒合編號</th><th>地區</th><th>複審日期</th><th>公會意見</th></tr></thead>
+          <tbody>${errRows
+            .map(
+              ({ kind, c }) => `<tr class="is-err">
+                <td>${kind}</td>
+                <td>${esc(c.no) || NIL}</td>
+                <td>${esc(c.city || c.region) || NIL}</td>
+                <td>${esc(String(c.revAt || '').replace(/\//g, '-')) || NIL}</td>
+                <td><b class="apt-bad">${kind === '審件' ? '退件' : '意見'} ${c.errs.length}</b> <small>${esc(c.errs.join('、'))}</small></td>
+              </tr>`
+            )
+            .join('')}</tbody>
+        </table></div></details>`
+      : '';
+    return `<div class="apt-gauges">${internal}${guildCard('我的公會審件良率', 'audit', st.audit)}${guildCard('我的公會清冊良率', 'roster', st.roster)}</div>${list}`;
   }
 
   function guildDetail(range, o) {
@@ -2550,7 +3362,7 @@
     if (state.guildYear?.key !== cur.guild) loadGuildYear(range).catch((e) => console.warn('公會良率年度', e));
     const gy = state.guildYear;
     const multi = o.regions.length > 1;
-    const city = multi && o.regions.includes(open.city) ? open.city : '';
+    const city = multi && !o.noCityBoard && o.regions.includes(open.city) ? open.city : '';
     const regions = city ? [city] : o.regions;
     const groupName = `${o.scopeName || '本組'}合計`;
     const scopeText = city ? `${city}（${groupName.replace('合計', '')}）` : o.regionText || '全區';
@@ -2565,13 +3377,14 @@
     const curVals = months.map((m) => (m <= cur.month ? guildMonthValue(gy, open.kind, guildPeriodOf(cur.year, m), regions) : null));
     const prevVals = months.map((m) => guildMonthValue(gy, open.kind, guildPeriodOf(cur.year - 1, m), regions));
     const pctOf = (v) => (v ? v.rate * 100 : null);
-    const sel = open.period === 'year' ? 'year' : open.period || cur.guild;
+    const sel = open.period === 'year' ? 'year' : open.period && open.period <= cur.guild ? open.period : cur.guild;
     const selIdx = sel !== 'year' && sel.startsWith(`${cur.year}/`) ? Number(sel.slice(4)) - 1 : -1;
     const sum = (vals) => {
       const x = vals.filter(Boolean).reduce((s, v) => ({ total: s.total + v.total, err: s.err + v.err }), { total: 0, err: 0 });
       return x.total ? { ...x, rate: Core.kpiErrRate(x) } : null;
     };
-    const cityBoard = multi ? guildCityBoard(gy, open.kind, k, cur, sel, o.regions, groupName, city, sum) : '';
+    const single = !multi && o.scopeName && o.regions.length === 1 && o.regions[0] !== '全區';
+    const cityBoard = (multi || single) && !o.noCityBoard ? guildCityBoard(gy, open.kind, k, cur, sel, o.regions, groupName, single ? o.regions[0] : city, sum) : '';
     const curSum = sum(curVals);
     const prevSum = sum(prevVals.slice(0, cur.month));
     const prevYear = sum(prevVals);
@@ -2697,16 +3510,18 @@
       ? `<div class="apt-guild-duo${wide ? ' is-wide' : ''}">${wide === 'cats' ? `${catCard}${plot}` : `${plot}${catCard}`}</div>${tableBox}`
       : `${plot}${catCard}`;
     return wrap(`${cityBoard}${duo}
-      <p class="apt-sub-note">良率＝（總件數 − ${k.errText}件數）÷ 總件數，目標 ${Math.round(k.goal * 100)}%；${GUILD_SYS_START} 起由系統計算（同上方卡片），更早的月份與同期取自管報「各都良率總表」（全台與各縣市，後台「公會意見」頁匯入；新竹、嘉義含市與縣），兩者都有時以匯入的為準。滑鼠停在良率上可看資料來源。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`);
+      <p class="apt-sub-note">良率＝（總件數 − ${k.errText}件數）÷ 總件數，目標 ${Math.round(k.goal * 100)}%；${k.op === 'case' ? '審件總件數＝起租已生效案件，包租案件的包租、轉租兩張合約同地址只算一件；' : ''}${GUILD_SYS_START} 起由系統計算（同上方卡片），更早的月份與同期取自管報「各都良率總表」（全台與各縣市，後台「公會意見」頁匯入；新竹、嘉義含市與縣），兩者都有時以匯入的為準。滑鼠停在良率上可看資料來源。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`);
   }
 
   /** 組長週報：全部組長＝全區；選了組長＝該組組員與負責地區 */
   function leaderGauges(range, scope) {
-    const staff = (state.sb?.staff || []).filter((s) => Core.isOnDuty(s) && s.kind !== '工讀生' && (!scope || s.leader === scope.leader));
-    const regions = scope ? Core.kpiRegionsOfAreas(scope.areas) : ['全區'];
-    const who = scope ? `${esc(scope.leader)} 組${scope.areas?.length ? `（${esc(scope.areas.join('・'))}）` : ''}` : '全區';
-    return `<h4 class="apt-sec-title">本月品質良率<small>${who} · ${scope ? '點上方「看全部組長」回到全區' : '點上方組長看該區'}</small></h4>
-      ${qualityGauges(range, { names: scope ? staff.map((s) => s.name) : null, regions, regionText: scope ? regions.join('・') : '', scopeName: scope ? scope.areas?.join('・') || `${scope.leader} 組` : '' })}`;
+    const inScope = (s) => (scope.names ? scope.names.includes(s.name) : s.leader === scope.leader);
+    const staff = (state.sb?.staff || []).filter((s) => Core.isOnDuty(s) && s.kind !== '工讀生' && (!scope || inScope(s)));
+    const regions = scope ? scopeRegions(scope) : ['全區'];
+    const who = !scope ? '全區' : scope.label ? esc(scope.label) : `${esc(scope.leader)} 組${scope.areas?.length ? `（${esc(scope.areas.join('・'))}）` : ''}`;
+    const boss = state.tab === 'area' ? '區主管' : '組長';
+    return `<h4 class="apt-sec-title">本月品質良率<small>${who} · ${scope ? `點上方「看全部${boss}」回到全區` : `點上方${boss}看該區`}</small></h4>
+      ${qualityGauges(range, { names: scope ? staff.map((s) => s.name) : null, regions, regionText: scope ? regions.join('・') : '', scopeName: scope ? scope.short || scopeLabel(scope) : '', noCityBoard: state.tab === 'weekly' })}`;
   }
 
   /* ---------- 案件繳交稽核：應繳＝起租日在該週（週五～週四）的已生效合約；行政逐件打勾＝已繳 ---------- */
@@ -2762,6 +3577,72 @@
     render();
   }
 
+  /** 清冊進度：每月各地區要完成的表單（key 與資料庫 admin_points_roster_progress.item 相同） */
+  const ROSTER_ITEMS = [
+    { key: 'f4', label: '表4' },
+    { key: 'f7', label: '表7' },
+    { key: 'f9', label: '表9' },
+    { key: 'f8', label: '表8' },
+    { key: 'f10', label: '表10' },
+    { key: 'f11', label: '表11' },
+    { key: 'f12', label: '表12' },
+    { key: 'f13', label: '表13' },
+    { key: 'escrow', label: '租押金專戶' },
+    { key: 'att6', label: '附表單6 教育訓練' }
+  ];
+
+  const CHECKLIST_PERIODS = [
+    { key: '4', label: '4期' },
+    { key: '4-1', label: '4-1期' },
+    { key: '5', label: '5期' }
+  ];
+
+  /** progress 的 key：地區|期別|表單 */
+  function setRosterProgress(lz, list) {
+    lz.progress = new Map((list || []).map((p) => [`${p.region}|${p.period}|${p.item}`, { by: p.by || '', at: p.at || '' }]));
+    lz.progError = '';
+  }
+
+  const rosterDone = (lz, g, period) => ROSTER_ITEMS.filter((it) => lz.progress.has(`${g}|${period}|${it.key}`)).length;
+
+  async function saveRosterProgress(range, cellKey, done) {
+    const lz = state.lease;
+    if (!lz || lz.progSaving) return;
+    const [region, period, item] = cellKey.split('|');
+    lz.progSaving = cellKey;
+    render();
+    try {
+      const res = await window.skyfunAuth.rpc('admin_points_roster_progress_set', { p_token: token(), p_month: leaseMonthKey(range), p_region: region, p_period: period, p_item: item, p_done: done });
+      if (!res?.ok) throw new Error(res?.error || '儲存失敗');
+      setRosterProgress(lz, res.items);
+      setMsg('');
+    } catch (e) {
+      setMsg(`清冊進度沒有存到：${e.message || e}`, 'err');
+    }
+    lz.progSaving = '';
+    render();
+  }
+
+  /** 繳交日格子（點了改成日期輸入框）：清冊／案件繳交日共用 */
+  function leaseDueCellHtml(lz, g, k, label) {
+    const key = `${g}|${k}`;
+    const value = lz.dues.get(g)?.[k] || '';
+    const name = `${g}${label}繳交日`;
+    if (lz.dueSaving === key) return '<span class="apt-lease-due-none">儲存中…</span>';
+    if (state.leaseDueCell === key) {
+      return `<span class="apt-lease-due-editing">
+          <input type="date" data-lease-due-input="${esc(key)}" value="${esc(value)}" aria-label="${esc(name)}" />
+          ${value ? `<button type="button" class="apt-lease-due-clear" data-lease-due-clear="${esc(key)}" title="清除" aria-label="清除${esc(name)}">✕</button>` : ''}
+        </span>`;
+    }
+    let shown = '<span class="apt-lease-due-none">未填</span>';
+    if (value) {
+      const wd = '日一二三四五六'[new Date(`${value}T00:00:00`).getDay()];
+      shown = `<b class="${value < Core.isoDate(new Date()) ? 'is-past' : ''}">${value.slice(5).replace('-', '/')}（${wd}）</b>`;
+    }
+    return `<button type="button" class="apt-lease-due-cell" data-lease-due-cell="${esc(key)}" title="點擊修改${esc(name)}"${lz.dueSaving ? ' disabled' : ''}>${shown}<i aria-hidden="true">✏️</i></button>`;
+  }
+
   function openLeaseDueCell(cellKey) {
     state.leaseDueCell = cellKey;
     render();
@@ -2771,26 +3652,47 @@
     try { input.showPicker?.(); } catch { /* 部分瀏覽器需使用者手勢才可開啟 */ }
   }
 
+  /** 包租案件有包租、轉租兩張合約：同縣市同租賃地址只算一件（已打勾的那張優先），其他張的媒合編號記在 sameAddr */
+  function dedupeLeaseRows(rows, checks) {
+    const keyOf = (r) => {
+      const a = String(r.address || '').normalize('NFKC').replace(/\s+/g, '').replace(/臺/g, '台');
+      return a ? `${String(r.city || '').replace(/臺/g, '台')}|${a}` : `#${r.id}`;
+    };
+    const out = new Map();
+    for (const r of rows) {
+      const k = keyOf(r);
+      const cur = out.get(k);
+      if (!cur) out.set(k, { ...r, sameAddr: [] });
+      else if (checks.has(String(r.id)) && !checks.has(String(cur.id))) out.set(k, { ...r, sameAddr: [...cur.sameAddr, cur.no || ''] });
+      else cur.sameAddr.push(r.no || '');
+    }
+    return [...out.values()];
+  }
+
   async function loadLease(range) {
-    const lz = { key: `${range.year}-${range.month}`, loading: true, rows: [], checks: new Map(), saving: '', dues: new Map(), dueSaving: false };
+    const lz = { key: `${range.year}-${range.month}`, loading: true, rows: [], checks: new Map(), saving: '', dues: new Map(), dueSaving: false, progress: new Map(), progSaving: '' };
     state.lease = lz;
     const { start, end } = leaseMonth(range);
     try {
-      const [data, ck, dues] = await Promise.all([
+      const [data, ck, dues, prog] = await Promise.all([
         fetchWorker('/admin-points/lease-starts', '應繳案件', { start, end }),
         window.skyfunAuth.rpc('admin_points_lease_checks', { p_token: token(), p_start: start, p_end: end }),
-        window.skyfunAuth.rpc('admin_points_lease_dues', { p_token: token(), p_month: leaseMonthKey(range) }).catch((e) => ({ ok: false, error: String(e.message || e) }))
+        window.skyfunAuth.rpc('admin_points_lease_dues', { p_token: token(), p_month: leaseMonthKey(range) }).catch((e) => ({ ok: false, error: String(e.message || e) })),
+        window.skyfunAuth.rpc('admin_points_roster_progress', { p_token: token(), p_month: leaseMonthKey(range) }).catch((e) => ({ ok: false, error: String(e.message || e) }))
       ]);
       if (!ck?.ok) throw new Error(ck?.error || '繳交打勾紀錄讀取失敗');
       if (dues?.ok) setLeaseDues(lz, dues.dues);
       else lz.dueError = dues?.error || '繳交日讀取失敗';
-      lz.rows = Core.rowsFromPayload(data).sort((a, b) => (a.leaseStart < b.leaseStart ? -1 : a.leaseStart > b.leaseStart ? 1 : 0));
+      if (prog?.ok) setRosterProgress(lz, prog.items);
+      else lz.progError = prog?.error || '清冊進度讀取失敗';
       lz.checks = new Map((ck.checks || []).map((c) => [String(c.id), c]));
+      lz.offices = data.offices || [];
+      lz.rows = dedupeLeaseRows(Core.rowsFromPayload(data), lz.checks).sort((a, b) => (a.leaseStart < b.leaseStart ? -1 : a.leaseStart > b.leaseStart ? 1 : 0));
     } catch (e) {
       lz.error = String(e.message || e);
     }
     lz.loading = false;
-    if (state.lease === lz && state.tab === 'weekly') render();
+    if (state.lease === lz && isWeeklyTab()) render();
   }
 
   async function putLeaseCheck(lz, row, checked) {
@@ -2824,21 +3726,23 @@
     render();
   }
 
-  /** 一鍵打勾：逐件存（同單件打勾），中途失敗就停，已存的保留 */
-  async function saveLeaseCheckAll(ids) {
+  /** 一鍵打勾／一鍵取消：逐件存（同單件打勾），中途失敗就停，已存的保留 */
+  async function saveLeaseCheckAll(ids, checked = true) {
     const lz = state.lease;
     if (!lz || lz.saving) return;
-    const rows = ids.map((id) => lz.rows.find((r) => String(r.id) === id)).filter((r) => r && !lz.checks.has(String(r.id)));
+    const rows = ids.map((id) => lz.rows.find((r) => String(r.id) === id)).filter((r) => r && lz.checks.has(String(r.id)) !== checked);
     if (!rows.length) return;
-    if (!window.confirm(`把這 ${rows.length} 件全部打勾為「已繳」？會記錄你是打勾人員。`)) return;
+    const verb = checked ? '打勾' : '取消打勾';
+    if (!window.confirm(checked ? `把這 ${rows.length} 件全部打勾為「已繳」？會記錄你是打勾人員。` : `把這 ${rows.length} 件全部取消打勾、改回「未繳」？原本的打勾人員與時間會清掉。`)) return;
     let done = 0;
     let err = '';
+    lz.bulkMode = checked ? 'check' : 'clear';
     for (const row of rows) {
       lz.saving = String(row.id);
       lz.bulk = `${done}／${rows.length}`;
       render();
       try {
-        await putLeaseCheck(lz, row, true);
+        await putLeaseCheck(lz, row, checked);
         done++;
       } catch (e) {
         err = String(e.message || e);
@@ -2847,16 +3751,16 @@
     }
     lz.saving = '';
     lz.bulk = '';
-    if (err) setMsg(`一鍵打勾只存到 ${done}／${rows.length} 件：${err}`, 'err');
-    else setMsg(`已把 ${done} 件打勾為已繳。`, 'ok');
+    lz.bulkMode = '';
+    if (err) setMsg(`一鍵${verb}只存到 ${done}／${rows.length} 件：${err}`, 'err');
+    else setMsg(checked ? `已把 ${done} 件打勾為已繳。` : `已把 ${done} 件取消打勾，改回未繳。`, 'ok');
     render();
   }
 
-  /** 全部組長＝本業績月全區；選了組長＝可選週次，各地區一個圓環，點地區打勾 */
-  /** opts.detailOut：給一個物件就把地區明細放到 detailOut.html，由呼叫端排在外面（不塞在半寬欄裡） */
-  function leaseSection(range, scope, opts = {}) {
+  /** 全部組長＝本業績月全區；選了組長＝可選週次，各地區一個圓環，點地區打勾（明細插在該列卡片下方） */
+  function leaseSection(range, scope) {
     const CH = window.AdminPointsCharts;
-    const regions = scope ? Core.kpiRegionsOfAreas(scope.areas) : ['全區'];
+    const regions = scope ? scopeRegions(scope) : ['全區'];
     if (state.lease?.key !== `${range.year}-${range.month}`) loadLease(range).catch((e) => console.warn('應繳件數', e));
     const lz = state.lease;
     const short = (d) => d.slice(5).replace('-', '/');
@@ -2880,25 +3784,54 @@
           <small>${note}</small>
         </span>
       </${attrs ? 'button' : 'div'}>`;
-    const areaName = scope?.areas?.length ? scope.areas.join('・') : '';
-    const title = `<h4 class="apt-sec-title">應繳件數・繳交率<small>${scope ? `${esc(areaName || `${scope.leader} 組`)} · ${range.month} 月整月，點地區看明細並打勾` : '全區 · 點下方組長可看各地區明細並打勾'}</small>${LEASE_FOLD_BTN}</h4>`;
-    const notes = '<p class="apt-sub-note">應繳＝起租日落在當月的已生效合約，依物件縣市分區；繳交率＝已打勾件數 ÷ 應繳件數。以日曆月計（1 號～月底，不是業績月）。</p>';
+    const areaName = scope ? scopeLabel(scope) : '';
+    const byOffice = !!(scope && state.tab === 'area' && scope.offices);
+    const unit = byOffice ? '營業處' : '地區';
+    const title = `<h4 class="apt-sec-title">應繳件數・繳交率<small>${scope ? `${esc(areaName)} · ${range.month} 月整月，點${unit}看明細並打勾` : `全區 · 點上方${state.tab === 'area' ? '區主管' : '組長'}可看各${state.tab === 'area' ? '營業處' : '地區'}明細並打勾`}</small>${LEASE_FOLD_BTN}</h4>`;
+    const notes = `<p class="apt-sub-note">應繳＝起租日落在當月的已生效合約，依物件縣市分區；包租案件的包租、轉租兩張合約同地址，只算一件。${byOffice ? `營業處＝該案在媒合管理的「代管營業處」，不是審核人的營業處；只算這一區的營業處，業務支援管理部等公司部門合併為「公司」，沒有應繳的營業處不列。` : ''}繳交率＝已打勾件數 ÷ 應繳件數。以日曆月計（1 號～月底，不是業績月）。</p>`;
     if (!lz || lz.loading) return `${title}<p class="apt-sub-note apt-loading">讀取應繳案件中…</p>`;
     if (lz.error) return `${title}<p class="apt-bad">應繳案件讀取失敗：${esc(lz.error)}</p>`;
     if (!scope) return `${title}<div class="apt-gauges">${card(`全區 ${range.month} 月應繳件數`, stat(rowsOf(null)), periodText)}</div>${notes}`;
 
-    if (state.leaseRegion && !regions.includes(state.leaseRegion)) state.leaseRegion = '';
-    const open = state.leaseRegion;
     const dueOf = (g, k) => lz.dues.get(g)?.[k] || '';
-    const regionTiles = regions
-      .map(
-        (g) => `<button type="button" class="apt-lease-rg${open === g ? ' is-active' : ''}" data-lease-region="${esc(g)}" aria-expanded="${open === g}">
-          <span class="apt-lease-rg-ring">${ring(stat(rowsOf([g])))}</span><b>${esc(g)}</b>
-        </button>`
-      )
-      .join('');
-    const total = stat(rowsOf(regions));
-    const detail = open ? leaseDetail(open, rowsOf([open]), periodText, `${metaOf(stat(rowsOf([open])))}${LEASE_DUE_KINDS.map((k) => `・${k.label}繳交日 ${dueOf(open, k.key) ? `<b>${short(dueOf(open, k.key))}</b>` : '未填'}`).join('')}`) : '';
+    const dueCell = (g) =>
+      LEASE_DUE_KINDS.filter((k) => k.key === 'caseDue')
+        .map((k) => `<span class="apt-lease-rg-due apt-lease-rg-due--${k.key}"><small>${k.icon} ${k.label}繳交日</small>${leaseDueCellHtml(lz, g, k.key, k.label)}</span>`)
+        .join('');
+    const og = byOffice ? leaseOfficeGroups(rowsOf(regions), scope.leader) : null;
+    const groups = og?.groups || regions.map((g) => ({ key: g, rows: rowsOf([g]) }));
+    if (state.leaseRegion && !groups.some((g) => g.key === state.leaseRegion)) state.leaseRegion = '';
+    const open = state.leaseRegion;
+    const openGroup = groups.find((g) => g.key === open);
+    const cols = Math.max(1, groups.length <= 4 ? groups.length : Math.ceil(groups.length / 2));
+    const tileList = groups.map(
+        (g) => `<div class="apt-lease-rg${open === g.key ? ' is-active' : ''}">
+          <button type="button" class="apt-lease-rg-pick" data-lease-region="${esc(g.key)}" aria-expanded="${open === g.key}">
+            <span class="apt-lease-rg-ring">${ring(stat(g.rows))}</span><b>${esc(g.key)}</b>
+            ${byOffice ? `<small class="apt-lease-rg-count">應繳 ${g.rows.length} 件</small>` : ''}
+            <i class="apt-lease-rg-chev" aria-hidden="true"></i>
+          </button>
+          ${byOffice ? '' : `<span class="apt-lease-rg-dues">${dueCell(g.key)}</span>`}
+        </div>`
+      );
+    const officeNote = og?.error ? `<p class="apt-bad">讀不到代管營業處，先依縣市顯示：${esc(og.error)}</p>` : '';
+    const dueStrip = byOffice
+      ? `<div class="apt-lease-duestrip">${regions.map((g) => `<div class="apt-lease-duestrip-item"><b>${esc(g)}</b>${dueCell(g)}</div>`).join('')}</div>`
+      : '';
+    const total = stat(og?.rows || rowsOf(regions));
+    const detailMeta = (g) =>
+      `${metaOf(stat(g.rows))}${byOffice ? '' : LEASE_DUE_KINDS.map((k) => `・${k.label}繳交日 ${dueOf(g.key, k.key) ? `<b>${short(dueOf(g.key, k.key))}</b>` : '未填'}`).join('')}`;
+    if (openGroup) {
+      const i = groups.indexOf(openGroup);
+      const rowEnd = Math.min(groups.length, (Math.floor(i / cols) + 1) * cols);
+      const caret = (((i % cols) + 0.5) / cols) * 100;
+      tileList.splice(
+        rowEnd,
+        0,
+        `<div class="apt-lease-inline" style="--caret:${caret.toFixed(2)}%">${leaseDetail(openGroup.key, openGroup.rows, periodText, detailMeta(openGroup))}</div>`
+      );
+    }
+    const regionTiles = tileList.join('') || `<p class="apt-empty">${byOffice ? '這個月沒有應繳案件' : '沒有營業處'}</p>`;
     const html = `${title}
       <div class="apt-lease-total">
         <div class="apt-lease-total-row">
@@ -2910,11 +3843,11 @@
             <small>${periodText} · 含 ${esc(regions.join('・'))}</small>
           </span>
         </div>
-        <div class="apt-lease-regions">${regionTiles}</div>
+        <div class="apt-lease-regions${byOffice ? ' apt-lease-regions--office' : ''}" data-lease-grid style="grid-template-columns:repeat(${cols}, minmax(0, 1fr))">${regionTiles}</div>
         </div>
+        ${officeNote}${dueStrip}
       </div>
-      ${opts.detailOut ? '' : detail}${notes}`;
-    if (opts.detailOut) opts.detailOut.html = detail;
+      ${notes}`;
     return html;
   }
 
@@ -2926,9 +3859,10 @@
     const lz = state.lease;
     let chips = '<span class="apt-fold-chip">讀取中…</span>';
     if (lz && !lz.loading && !lz.error) {
-      const regions = scope ? Core.kpiRegionsOfAreas(scope.areas) : null;
+      const regions = scope ? scopeRegions(scope) : null;
       const m = leaseMonth(range);
-      const rows = (lz.rows || []).filter((r) => r.leaseStart >= m.start && r.leaseStart <= m.end && (!regions || regions.includes(r.region)));
+      let rows = (lz.rows || []).filter((r) => r.leaseStart >= m.start && r.leaseStart <= m.end && (!regions || regions.includes(r.region)));
+      if (scope && state.tab === 'area' && scope.offices && rows.some((r) => r.office)) rows = areaOwnRows(rows, scope.leader);
       const paid = rows.filter((r) => lz.checks.has(String(r.id))).length;
       const rate = rows.length ? paid / rows.length : null;
       const dueRegions = regions || Core.kpiRegionsOfAreas(['北區', '中區', '南區']);
@@ -2937,19 +3871,25 @@
           const filled = dueRegions.filter((g) => lz.dues.get(g)?.[k.key]).length;
           return `<span class="apt-fold-chip">${k.icon} ${k.label}繳交日 已填 <b class="${filled === dueRegions.length ? 'is-good' : 'is-bad'}">${filled}／${dueRegions.length}</b></span>`;
         }).join('')}`;
+      if (regions) {
+        const all = regions.length * ROSTER_ITEMS.length * CHECKLIST_PERIODS.length;
+        const done = regions.reduce((s, g) => s + CHECKLIST_PERIODS.reduce((t, p) => t + rosterDone(lz, g, p.key), 0), 0);
+        chips += `<span class="apt-fold-chip">✅ 清冊進度 <b class="${done === all ? 'is-good' : 'is-bad'}">${done}／${all}</b></span>`;
+      }
     }
     return `<section class="apt-block apt-block--lease apt-block--folded">
-        <h4 class="apt-sec-title">應繳件數・繳交日<small>${scope ? esc((scope.areas || []).join('・') || `${scope.leader} 組`) : '全區'} · ${range.month} 月</small>
+        <h4 class="apt-sec-title">應繳件數・繳交日<small>${scope ? esc(scopeLabel(scope)) : '全區'} · ${range.month} 月</small>
           <span class="apt-fold-chips">${chips}</span>
           <button type="button" class="apt-fold-btn" data-lease-fold aria-expanded="false">展開 ▾</button></h4>
       </section>`;
   }
 
-  /** 應繳件數右邊：各地區本月的清冊／案件繳交日（行政手填）；scope＝null 為全區，依北中南分組 */
-  function leaseDueSection(range, scope) {
-    const groups = (scope ? [''] : ['北區', '中區', '南區'])
-      .map((a) => ({ area: a, list: Core.kpiRegionsOfAreas(a ? [a] : scope.areas) }))
-      .filter((x) => x.list.length);
+  /** 應繳件數右邊：各地區本月的清冊／案件繳交日（行政手填）；scope＝null 為全區，依北中南分組（areaGroups 可改分組） */
+  function leaseDueSection(range, scope, areaGroups) {
+    const groups = (scope
+      ? [{ area: '', list: scopeRegions(scope) }]
+      : areaGroups || ['北區', '中區', '南區'].map((a) => ({ area: a, list: Core.kpiRegionsOfAreas([a]) }))
+    ).filter((x) => x.list.length);
     const regions = groups.flatMap((x) => x.list);
     const lz = state.lease;
     const title = `<h4 class="apt-sec-title">清冊／案件繳交日<small>${scope ? '' : '全區 · '}${range.month} 月 · 各地區行政手填</small>${LEASE_FOLD_BTN}</h4>`;
@@ -2957,24 +3897,7 @@
     if (!regions.length) return `${title}<p class="apt-empty">這組對不到地區</p>`;
     lz.dueRegions = regions;
     const dueOf = (g, k) => lz.dues.get(g)?.[k] || '';
-    const today = Core.isoDate(new Date());
-    const show = (iso) => {
-      if (!iso) return '<span class="apt-lease-due-none">未填</span>';
-      const wd = '日一二三四五六'[new Date(`${iso}T00:00:00`).getDay()];
-      return `<b class="${iso < today ? 'is-past' : ''}">${iso.slice(5).replace('-', '/')}（${wd}）</b>`;
-    };
-    const cell = (g, k, label) => {
-      const key = `${g}|${k}`;
-      const name = `${g}${label}繳交日`;
-      if (lz.dueSaving === key) return '<span class="apt-lease-due-none">儲存中…</span>';
-      if (state.leaseDueCell === key) {
-        return `<span class="apt-lease-due-editing">
-          <input type="date" data-lease-due-input="${esc(key)}" value="${esc(dueOf(g, k))}" aria-label="${esc(name)}" />
-          ${dueOf(g, k) ? `<button type="button" class="apt-lease-due-clear" data-lease-due-clear="${esc(key)}" title="清除" aria-label="清除${esc(name)}">✕</button>` : ''}
-        </span>`;
-      }
-      return `<button type="button" class="apt-lease-due-cell" data-lease-due-cell="${esc(key)}" title="點擊修改${esc(name)}"${lz.dueSaving ? ' disabled' : ''}>${show(dueOf(g, k))}<i aria-hidden="true">✏️</i></button>`;
-    };
+    const cell = (g, k, label) => leaseDueCellHtml(lz, g, k, label);
     const kind = LEASE_DUE_KINDS.find((k) => k.key === state.leaseDueKind) || LEASE_DUE_KINDS[0];
     const kinds = `<div class="apt-lease-due-kinds" role="tablist" aria-label="繳交日種類">${LEASE_DUE_KINDS.map((k) => {
       const on = k.key === kind.key;
@@ -2983,14 +3906,24 @@
     }).join('')}</div>`;
     const item = (g) => `<li${state.leaseRegion === g ? ' class="is-active"' : ''}><b>${esc(g)}</b>${cell(g, kind.key, kind.label)}</li>`;
     /** 各區排成同樣列數（地區多的區分成多欄），三區高度一致、不留白 */
-    const rowsPer = scope ? Math.ceil(regions.length / (regions.length > 4 ? 2 : 1)) : Math.min(...groups.map((x) => x.list.length));
+    const rowsPer = scope ? Math.ceil(regions.length / (regions.length > 4 ? 2 : 1)) : Math.max(1, Math.ceil(Math.max(...groups.map((x) => x.list.length)) / 2));
     const colsOf = (n) => Math.max(1, Math.ceil(n / rowsPer));
-    const listOf = (list) =>
-      `<ul class="apt-lease-due-list" style="--cols:${colsOf(list.length)};--rows:${rowsPer}">${list.map(item).join('')}</ul>`;
+    const listOf = (list, rows = rowsPer) =>
+      `<ul class="apt-lease-due-list" style="--cols:${colsOf(list.length)};--rows:${rows}">${list.map(item).join('')}</ul>`;
+    /** 只有一兩個地區的區（南區、高雄）疊在同一欄，其他區的欄位才夠寬 */
+    const stacks = [];
+    for (const x of groups) {
+      const last = stacks[stacks.length - 1];
+      const single = (y) => colsOf(y.list.length) === 1;
+      if (last && single(x) && last.every(single) && last.reduce((s, y) => s + y.list.length, 0) + x.list.length <= rowsPer) last.push(x);
+      else stacks.push([x]);
+    }
+    const areaCard = (x, rows) =>
+      `<div class="apt-lease-due-area apt-lease-due-group--${AREA_TONE[x.area] || 'none'}"><h5>${esc(x.area)}<small>${x.list.length} 區</small></h5>${listOf(x.list, rows)}</div>`;
     const tables = scope
       ? listOf(regions)
-      : `<div class="apt-lease-due-areas" style="grid-template-columns:${groups.map((x) => `minmax(0, ${colsOf(x.list.length)}fr)`).join(' ')}">${groups
-          .map((x) => `<div class="apt-lease-due-area apt-lease-due-group--${AREA_TONE[x.area] || 'none'}"><h5>${esc(x.area)}<small>${x.list.length} 區</small></h5>${listOf(x.list)}</div>`)
+      : `<div class="apt-lease-due-areas" style="grid-template-columns:${stacks.map((st) => `minmax(0, ${Math.max(...st.map((x) => colsOf(x.list.length)))}fr)`).join(' ')}">${stacks
+          .map((st) => (st.length === 1 ? areaCard(st[0], rowsPer) : `<div class="apt-lease-due-stack">${st.map((x) => areaCard(x, x.list.length)).join('')}</div>`))
           .join('')}</div>`;
     const lastSet = [...lz.dues.values()].filter((d) => d.by).sort((a, b) => (a.at < b.at ? 1 : -1))[0];
     return `${title}
@@ -3001,6 +3934,95 @@
           <small>點日期即可修改，選好自動儲存（Esc 取消）。${lastSet ? `最後由 ${esc(lastSet.by)} 更新` : '還沒有人填寫'}</small>
         </div>
         ${lz.dueError ? `<p class="apt-bad">繳交日讀取失敗：${esc(lz.dueError)}</p>` : ''}
+      </div>`;
+  }
+
+  /**
+   * 選了組長／區主管時，應繳件數右邊改成清冊進度：先看各地區圓環（三期合計）＋清冊繳交日，
+   * 點地區再看該地區各期的圓環與表單打勾（表單 × 期別）
+   */
+  function rosterProgressSection(range, scope) {
+    const CH = window.AdminPointsCharts;
+    const regions = scopeRegions(scope);
+    const lz = state.lease;
+    const title = `<h4 class="apt-sec-title">清冊進度<small>${range.month} 月 · ${state.rosterRegion ? '完成請在後面打勾' : '點地區看各期並打勾'}</small>${LEASE_FOLD_BTN}</h4>`;
+    if (!lz || lz.loading) return `${title}<p class="apt-sub-note apt-loading">讀取中…</p>`;
+    if (!regions.length) return `${title}<p class="apt-empty">這組對不到地區</p>`;
+    if (state.rosterRegion && !regions.includes(state.rosterRegion)) state.rosterRegion = '';
+    const when = (iso) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return `${Core.isoDate(d).slice(5).replace('-', '/')} ${d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+    };
+    const per = ROSTER_ITEMS.length;
+    const allOf = CHECKLIST_PERIODS.length * per;
+    const doneAll = (g) => CHECKLIST_PERIODS.reduce((s, p) => s + rosterDone(lz, g, p.key), 0);
+    const tone = (rate) => (rate >= 1 ? '#16a34a' : rate >= 0.5 ? '#0d9488' : rate > 0 ? '#f59e0b' : C_ALL);
+    const ring = (done, all, sub) => CH.donut({ value: (done / all) * 100, text: `${done}／${all}`, sub, color: tone(done / all) });
+    const dueCell = (g) => `<span class="apt-lease-rg-due apt-lease-rg-due--due"><small>📋 清冊繳交日</small>${leaseDueCellHtml(lz, g, 'due', '清冊')}</span>`;
+    const lastOf = (list) => [...lz.progress.entries()].filter(([k]) => list.includes(k.split('|')[0])).map(([, v]) => v).sort((a, b) => (a.at < b.at ? 1 : -1))[0];
+    const err = lz.progError ? `<p class="apt-bad">清冊進度讀取失敗：${esc(lz.progError)}</p>` : '';
+    const g = state.rosterRegion;
+
+    if (!g) {
+      const tiles = regions
+        .map((r) => {
+          const n = doneAll(r);
+          return `<div class="apt-lease-rg apt-roster-rg">
+            <button type="button" class="apt-lease-rg-pick" data-roster-region="${esc(r)}" title="看${esc(r)}各期清冊進度並打勾">
+              <span class="apt-lease-rg-ring">${ring(n, allOf, '完成')}</span><b>${esc(r)}</b>
+              <span class="apt-roster-rg-pers">${CHECKLIST_PERIODS.map((p) => {
+                const d = rosterDone(lz, r, p.key);
+                return `<i class="${d === per ? 'is-good' : ''}">${p.label} ${d}／${per}</i>`;
+              }).join('')}</span>
+            </button>
+            <span class="apt-lease-rg-dues">${dueCell(r)}</span>
+          </div>`;
+        })
+        .join('');
+      const done = regions.reduce((s, r) => s + doneAll(r), 0);
+      const last = lastOf(regions);
+      return `${title}
+        <div class="apt-lease-due-box apt-roster-box">
+          <div class="apt-lease-regions apt-roster-regions" style="grid-template-columns:repeat(${regions.length <= 4 ? regions.length : Math.ceil(regions.length / 2)}, minmax(0, 1fr))">${tiles}</div>
+          <div class="apt-lease-due-foot">
+            <small>圓環＝4期、4-1期、5期合計完成項數；共完成 <b>${done}／${regions.length * allOf}</b>。點地區看各期並打勾，清冊繳交日點日期即可修改。${last ? `最後由 ${esc(last.by)} 更新` : '還沒有人打勾'}</small>
+          </div>
+          ${err}
+        </div>`;
+    }
+
+    const head = CHECKLIST_PERIODS.map((p) => {
+      const d = rosterDone(lz, g, p.key);
+      return `<div class="apt-roster-per${d === per ? ' is-good' : ''}"><span class="apt-roster-per-ring">${ring(d, per, '完成')}</span><b>${esc(p.label)}</b></div>`;
+    }).join('');
+    const body = ROSTER_ITEMS.map((it) => {
+      const cells = CHECKLIST_PERIODS.map((p) => {
+        const key = `${g}|${p.key}|${it.key}`;
+        const x = lz.progress.get(key);
+        const busy = lz.progSaving === key;
+        const tip = x ? `${x.by || ''} ${when(x.at)} 打勾` : `${g} ${p.label} ${it.label} 未完成`;
+        return `<td class="${x ? 'is-done' : ''}"><label class="apt-roster-tick" title="${esc(tip)}"><input type="checkbox" data-roster-check="${esc(key)}"${x ? ' checked' : ''}${lz.progSaving ? ' disabled' : ''} aria-label="${esc(`${g} ${p.label} ${it.label}`)}" />${busy ? '<small>儲存中…</small>' : ''}</label></td>`;
+      }).join('');
+      return `<tr><th>${esc(it.label)}</th>${cells}</tr>`;
+    }).join('');
+    const last = lastOf([g]);
+    return `${title}
+      <div class="apt-lease-due-box apt-roster-box">
+        <div class="apt-roster-detail-head">
+          <button type="button" class="apt-btn-lite" data-roster-region="">← 全部地區</button>
+          <b>${esc(g)}</b><small>三期合計 ${doneAll(g)}／${allOf}</small>
+          ${dueCell(g)}
+        </div>
+        <div class="apt-roster-pers">${head}</div>
+        <div class="apt-table-wrap"><table class="apt-roster-table">
+          <thead><tr><th>表單</th>${CHECKLIST_PERIODS.map((p) => `<th><b>${esc(p.label)}</b><small class="${rosterDone(lz, g, p.key) === per ? 'is-good' : ''}">${rosterDone(lz, g, p.key)}／${per}</small></th>`).join('')}</tr></thead>
+          <tbody>${body}</tbody>
+        </table></div>
+        <div class="apt-lease-due-foot">
+          <small>勾選即自動儲存，會記錄打勾人與時間（游標移到勾選框可看）。${last ? `最後由 ${esc(last.by)} 更新` : '還沒有人打勾'}</small>
+        </div>
+        ${err}
       </div>`;
   }
 
@@ -3018,7 +4040,7 @@
         const busy = lz.saving === id;
         return `<tr class="${c ? 'is-paid' : ''}">
           <td><label class="apt-lease-tick"><input type="checkbox" data-lease-check="${esc(id)}"${c ? ' checked' : ''}${lz.saving ? ' disabled' : ''} />${busy ? '儲存中…' : c ? '已繳' : '未繳'}</label></td>
-          <td>${esc(r.no || '')}</td>
+          <td>${esc(r.no || '')}${r.sameAddr?.length ? `<small class="apt-lease-same" title="同地址的其他合約（包租／轉租），只算一件">＋${esc(r.sameAddr.filter(Boolean).join('、') || `${r.sameAddr.length} 張`)}</small>` : ''}</td>
           <td class="apt-lease-addr">${esc(r.address || '')}</td>
           <td>${esc((r.leaseStart || '').replace(/-/g, '/'))}</td>
           <td>${c ? esc(c.by || '') : ''}</td>
@@ -3027,29 +4049,44 @@
       })
       .join('');
     const unpaid = rows.map((r) => String(r.id)).filter((id) => !lz.checks.has(id));
-    const allBtn = unpaid.length
-      ? `<button type="button" class="apt-lease-all" data-lease-all="${esc(unpaid.join(','))}"${lz.saving ? ' disabled' : ''}>${lz.bulk ? `打勾中 ${lz.bulk}…` : `✓ 一鍵全部打勾（${unpaid.length} 件未繳）`}</button>`
+    const paid = rows.map((r) => String(r.id)).filter((id) => lz.checks.has(id));
+    const tickBtn = unpaid.length
+      ? `<button type="button" class="apt-lease-all" data-lease-all="${esc(unpaid.join(','))}"${lz.saving ? ' disabled' : ''}>${lz.bulk && lz.bulkMode === 'check' ? `打勾中 ${lz.bulk}…` : `✓ 一鍵全部打勾（${unpaid.length} 件未繳）`}</button>`
       : rows.length
         ? '<span class="apt-lease-alldone">✓ 全部已繳</span>'
         : '';
+    const clearBtn = rows.length
+      ? `<button type="button" class="apt-lease-clear" data-lease-clear="${esc(paid.join(','))}"${lz.saving || !paid.length ? ' disabled' : ''}${paid.length ? '' : ' title="還沒有打勾的案件"'}>${lz.bulk && lz.bulkMode === 'clear' ? `取消中 ${lz.bulk}…` : `✕ 一鍵全部取消（${paid.length} 件已繳）`}</button>`
+      : '';
+    const allBtn = tickBtn + clearBtn;
+    const closeBtn = (cls) =>
+      `<button type="button" class="${cls}" data-lease-region="${esc(region)}" aria-label="收起${esc(region)}明細">收起<i class="apt-lease-rg-chev is-up" aria-hidden="true"></i></button>`;
     return `<div class="apt-lease-detail">
-        <h4 class="apt-sec-title">${esc(region)}｜應繳明細<span class="apt-lease-detail-meta">${meta || ''}</span><small>${periodText} · 打勾＝已繳交，會記錄打勾人員與時間</small>${allBtn}<button type="button" class="apt-btn-lite" data-lease-region="${esc(region)}">收起</button></h4>
+        <div class="apt-lease-dhead">
+          <div class="apt-lease-dtitle">
+            <b>${esc(region)}</b>
+            <span class="apt-lease-detail-meta">${meta || ''}</span>
+            <small>${periodText} · 打勾＝已繳交，會記錄打勾人員與時間</small>
+          </div>
+          <div class="apt-lease-dactions">${allBtn}${closeBtn('apt-lease-close')}</div>
+        </div>
         <div class="apt-table-wrap"><table class="apt-table apt-lease-table">
           <thead><tr><th>繳交</th><th>媒合編號</th><th>地址</th><th>起租日</th><th>打勾人員</th><th>打勾日期</th></tr></thead>
           <tbody>${body || '<tr><td colspan="6" class="apt-empty">這段期間沒有應繳案件</td></tr>'}</tbody>
         </table></div>
+        ${rows.length > 8 ? `<div class="apt-lease-dfoot">${closeBtn('apt-lease-close apt-lease-close--foot')}</div>` : ''}
       </div>`;
   }
 
-  /** 個人績效：內部良率看自己的抽查；公會良率看所屬部別的地區（公會件數沒有分到個人） */
+  /** 個人績效：內部良率看自己的抽查；公會審件／清冊依合約「複審通過」的審核者算到個人 */
   function personGauges(range, name) {
     const st = (state.sb?.staff || []).find((s) => s.name === name);
     const region = Core.kpiRegionOfStaff(st?.region);
-    return `<h4 class="apt-sec-title">本月品質良率<small>內部審件良率是自己的抽查結果；公會審件／清冊良率是所屬地區${region ? `（${esc(region)}）` : ''}的整體良率</small></h4>
-      ${qualityGauges(range, { names: [name], regions: region ? [region] : [], regionText: region ? `${region}地區` : '' })}`;
+    return `<h4 class="apt-sec-title">本月品質良率<small>內部審件良率是自己的抽查結果；公會審件／清冊良率依合約「複審通過」的審核者算到個人（審件＝我複審的起租案件，清冊＝表單04／09 裡我複審過的合約，退件／意見依媒合編號算）</small></h4>
+      ${personQuality(range, name, region)}`;
   }
 
-  const AREA_TONE = { 北區: 'north', 中區: 'mid', 南區: 'south', 東部及離島: 'east' };
+  const AREA_TONE = { 北區: 'north', 中區: 'mid', 南區: 'south', 高雄: 'kh', 東部及離島: 'east' };
 
   function areaPills(areas) {
     return areas.map((a) => `<i class="apt-area apt-area--${AREA_TONE[a] || 'east'}">${esc(a)}</i>`).join('');
@@ -3100,7 +4137,7 @@
     const q = encodeURIComponent(id);
     if (row.type === 'object') return `https://skyfunsystem.com/Object/ObjectData?id=${q}`;
     if (row.type === 'tenant') return `https://skyfunsystem.com/Tenant/TenantData?id=${q}`;
-    if (row.type === 'contract') return `https://skyfunsystem.com/Contrat/EditContrat?id=${q}&mode=view`;
+    if (row.type === 'contract') return `https://skyfunsystem.com/Audit/Audit_Contrat?id=${q}`;
     return '';
   }
 
@@ -4054,6 +5091,7 @@
     $('page-admin-points')?.classList.toggle('apt-wide', state.tab === 'month');
     if (state.tab === 'person') box.innerHTML = renderPerson();
     else if (state.tab === 'weekly') box.innerHTML = renderWeekly();
+    else if (state.tab === 'area') box.innerHTML = renderArea();
     else if (state.tab === 'duration') box.innerHTML = renderDuration();
     else if (state.tab === 'spot') box.innerHTML = renderSpot();
     else box.innerHTML = renderMonth();
@@ -4074,9 +5112,11 @@
       if (sp) window.SimPractice.mount({ course: sp.dataset.course, self: sp.dataset.name === myName(), name: sp.dataset.name });
     }
     if ($('guide-exam-board') && window.GuideExam) {
+      const areaNames = state.tab === 'area' ? areaStaffNames() : null;
       window.GuideExam.mountBoard({
-        staff: activeStaff(),
-        leader: state.tab === 'weekly' ? state.leader || '' : null,
+        staff: areaNames ? activeStaff().filter((s) => areaNames.has(s.name)) : activeStaff(),
+        leader: state.tab === 'weekly' ? state.leader || '' : areaNames ? '' : null,
+        scoped: !!areaNames,
         highlight: state.tab === 'person' ? state.person : ''
       });
     }
@@ -4278,14 +5318,98 @@
     return (state.sb?.opinions || []).filter((o) => o.kind === kind && o.name === me).slice().reverse();
   }
 
+  /** 這天之後填的案件意見，填寫滿一天沒勾「已修正」會發 LINE 提醒（同 admin_points_opinion_remind_from） */
+  const OP_REMIND_FROM = Date.parse('2026-10-15T00:00:00+08:00');
+  const OP_FIX_MS = 864e5;
+
+  function opDeadline(o) {
+    const t = Date.parse(o.createdAt);
+    return t >= OP_REMIND_FROM ? t + OP_FIX_MS : null;
+  }
+
+  function opLate(o) {
+    const due = opDeadline(o);
+    return !o.fixedAt && due != null && Date.now() > due;
+  }
+
+  function mdHm(ms) {
+    const d = new Date(ms);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  function opFixCell(o) {
+    const due = opDeadline(o);
+    const late = opLate(o);
+    const note = o.fixedAt
+      ? `${mdHm(Date.parse(o.fixedAt))} 勾選`
+      : late
+        ? `超過一天未修正${o.remindCount ? `・已提醒 ${o.remindCount} 次` : ''}`
+        : due
+          ? `${mdHm(due)} 前要勾`
+          : '';
+    return `<td class="apt-op-fix"><label class="apt-op-fixbox${o.fixedAt ? ' is-done' : late ? ' is-late' : ''}">
+        <input type="checkbox" data-op-fixed="${o.id}"${o.fixedAt ? ' checked' : ''}><span>已修正</span></label>${note ? `<small>${note}</small>` : ''}</td>`;
+  }
+
+  /** 自己還沒勾「已修正」的案件意見（含其他業績月） */
+  async function loadOpenOpinions() {
+    if (!token()) return;
+    try {
+      const res = await window.skyfunAuth.rpc('admin_points_opinion_open', { p_token: token() });
+      if (res?.ok) state.opOpen = res.opinions || [];
+    } catch {
+      /* 讀不到時只列本業績月 */
+    }
+    opBadge();
+  }
+
+  function opBadge() {
+    for (const btn of document.querySelectorAll('[data-op-open]')) {
+      const kind = btn.dataset.opOpen;
+      const late = (state.opOpen || []).filter((o) => o.kind === kind && opLate(o)).length;
+      let b = btn.querySelector('.apt-op-badge');
+      if (!late) {
+        b?.remove();
+        continue;
+      }
+      if (!b) {
+        b = document.createElement('span');
+        b.className = 'apt-op-badge';
+        btn.append(b);
+      }
+      b.textContent = `${late} 筆未修正`;
+    }
+  }
+
+  async function setOpinionFixed(kind, box) {
+    const id = Number(box.dataset.opFixed);
+    const fixed = box.checked;
+    box.disabled = true;
+    try {
+      const res = await window.skyfunAuth.rpc('admin_points_opinion_fix', { p_token: token(), p_id: id, p_fixed: fixed });
+      if (!res?.ok) throw new Error(res?.error || '更新失敗');
+      for (const o of [...(state.sb?.opinions || []), ...(state.opOpen || [])]) if (o.id === id) Object.assign(o, res.opinion);
+      opBadge();
+      const list = document.querySelector('#apt-op-mask .apt-op-list');
+      if (list) list.innerHTML = opinionRows(kind);
+    } catch (err) {
+      box.checked = !fixed;
+      box.disabled = false;
+      window.alert(String(err.message || err));
+    }
+  }
+
   function opinionRows(kind) {
     const list = myOpinions(kind);
     const isCase = kind === 'case';
-    const head = `<th>填寫日</th><th>公會期數</th><th>縣市</th>${isCase ? '<th>媒合編號</th>' : '<th>清冊期數</th><th>媒合編號</th>'}<th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${isCase ? '' : '<th>行政檢討對策</th>'}<th>點數</th><th></th>`;
-    const rows = list
+    const ids = new Set(list.map((o) => o.id));
+    const others = (state.opOpen || []).filter((o) => o.kind === kind && !ids.has(o.id) && o.name === myName()).slice().reverse();
+    const head = `<th>填寫日</th><th>公會期數</th><th>縣市</th>${isCase ? '<th>媒合編號</th>' : '<th>清冊期數</th><th>媒合編號</th>'}<th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${isCase ? '' : '<th>行政檢討對策</th>'}<th>已修正</th><th>點數</th><th></th>`;
+    const rowCls = (o) => [o.noPoints && 'apt-op-nopts', opLate(o) && 'apt-op-late', ids.has(o.id) || 'apt-op-other'].filter((c) => typeof c === 'string');
+    const rows = [...others, ...list]
       .map(
-        (o) => `<tr${o.noPoints ? ' class="apt-op-nopts"' : ''}>
-          <td>${esc(shortDate(o.date))}</td>
+        (o) => `<tr${rowCls(o).length ? ` class="${rowCls(o).join(' ')}"` : ''}>
+          <td>${esc(shortDate(o.date))}${ids.has(o.id) ? '' : '<small class="apt-op-other-tag">其他業績月</small>'}</td>
           <td>${esc(o.guildPeriod)}</td>
           <td>${o.region ? esc(o.region) : NIL}</td>
           ${isCase
@@ -4295,16 +5419,19 @@
           <td>${o.category ? esc(o.category) : NIL}</td>
           <td class="apt-op-text">${esc(o.content)}</td>
           ${isCase ? '' : `<td class="apt-op-text apt-op-measure">${esc(o.measure)}</td>`}
+          ${opFixCell(o)}
           <td class="num">${o.noPoints ? noPointsTag(o) : 1}</td>
-          <td><button type="button" class="apt-op-del" data-op-del="${o.id}">刪除</button></td>
+          <td>${ids.has(o.id) ? `<button type="button" class="apt-op-del" data-op-del="${o.id}">刪除</button>` : ''}</td>
         </tr>`
       )
       .join('');
     const range = state.meta?.range;
+    const late = [...others, ...list].filter(opLate).length;
     return `<h4 class="apt-op-list-title">我在 ${range ? `${range.month} 月業績（${esc(range.start.slice(5))}～${esc(range.end.slice(5))}）` : '這個業績月'}填的${OPINION_FORMS[kind].title}<small>${list.length} 筆 · ${opinionPts(list)} 點</small></h4>
+      <p class="apt-op-fix-tip${late ? ' is-late' : ''}">${late ? `⚠️ 有 <b>${late}</b> 筆超過一天還沒勾「已修正」，請盡快修正。` : '修正完成後請勾「已修正」。'}填寫滿一天還沒勾，會用 LINE 提醒填寫的人（每天最多一次）。${others.length ? '其他業績月還沒勾的也列在最上面。' : ''}</p>
       <div class="apt-table-wrap"><table class="apt-table apt-op-table">
         <thead><tr>${head}</tr></thead>
-        <tbody>${rows || `<tr><td colspan="${isCase ? 9 : 11}" class="apt-empty">還沒有填寫</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="${isCase ? 10 : 12}" class="apt-empty">還沒有填寫</td></tr>`}</tbody>
       </table></div>`;
   }
 
@@ -4363,10 +5490,18 @@
       const del = e.target.closest('[data-op-del]');
       if (del) deleteOpinion(kind, Number(del.dataset.opDel), del);
     });
+    mask.addEventListener('change', (e) => {
+      const box = e.target.closest('[data-op-fixed]');
+      if (box) setOpinionFixed(kind, box);
+    });
     const form = mask.querySelector('form');
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       saveOpinion(kind, e.currentTarget);
+    });
+    loadOpenOpinions().then(() => {
+      const box = mask.isConnected && mask.querySelector('.apt-op-list');
+      if (box) box.innerHTML = opinionRows(kind);
     });
     if (kind === 'case') {
       const region = form.elements.region;
@@ -4541,6 +5676,24 @@
         render();
         return;
       }
+      const guildOffEl = e.target.closest('[data-guild-office]');
+      if (guildOffEl) {
+        state.guildOffOpen = state.guildOffOpen === guildOffEl.dataset.guildOffice ? '' : guildOffEl.dataset.guildOffice;
+        render();
+        return;
+      }
+      const guildOffRetry = e.target.closest('[data-guild-off-retry]');
+      if (guildOffRetry) {
+        state.guildOff.delete(guildOffRetry.dataset.guildOffRetry);
+        render();
+        return;
+      }
+      const rosterOffRetry = e.target.closest('[data-roster-off-retry]');
+      if (rosterOffRetry) {
+        state.rosterOff.delete(rosterOffRetry.dataset.rosterOffRetry);
+        render();
+        return;
+      }
       const guildCityEl = e.target.closest('[data-guild-city]');
       if (guildCityEl && state.guildOpen) {
         const city = guildCityEl.dataset.guildCity;
@@ -4551,7 +5704,12 @@
       const guildMonthEl = e.target.closest('[data-guild-month], [data-pick="guild-month"]');
       if (guildMonthEl && state.guildOpen) {
         const cur = state.guildYear?.cur;
-        state.guildOpen.period = guildMonthEl.dataset.guildMonth || (cur ? guildPeriodOf(cur.year, Number(guildMonthEl.dataset.pickI) + 1) : '');
+        const period = guildMonthEl.dataset.guildMonth || (cur ? guildPeriodOf(cur.year, Number(guildMonthEl.dataset.pickI) + 1) : '');
+        if (period !== 'year' && cur && period > cur.guild) {
+          setMsg(`公會期數 ${period} 還沒有資料，目前最新是 ${cur.guild}。`, 'warn');
+          return;
+        }
+        state.guildOpen.period = period;
         render();
         return;
       }
@@ -4674,6 +5832,12 @@
         drawSpot();
         return;
       }
+      const rosterRegion = e.target.closest('[data-roster-region]');
+      if (rosterRegion) {
+        state.rosterRegion = rosterRegion.dataset.rosterRegion;
+        render();
+        return;
+      }
       const dueKind = e.target.closest('[data-lease-due-kind]');
       if (dueKind) {
         state.leaseDueKind = dueKind.dataset.leaseDueKind;
@@ -4696,16 +5860,34 @@
         saveLeaseCheckAll(leaseAll.dataset.leaseAll.split(',').filter(Boolean));
         return;
       }
+      const leaseClear = e.target.closest('[data-lease-clear]');
+      if (leaseClear) {
+        saveLeaseCheckAll(leaseClear.dataset.leaseClear.split(',').filter(Boolean), false);
+        return;
+      }
       const leaseBtn = e.target.closest('[data-lease-region]');
       if (leaseBtn) {
-        state.leaseRegion = state.leaseRegion === leaseBtn.dataset.leaseRegion ? '' : leaseBtn.dataset.leaseRegion;
-        render();
+        toggleLeaseRegion(leaseBtn.dataset.leaseRegion);
         return;
       }
       const leaderBtn = e.target.closest('[data-pick-leader]');
       if (leaderBtn) {
         state.leader = leaderBtn.dataset.pickLeader;
         state.spot = null;
+        render();
+        return;
+      }
+      const areaBtn = e.target.closest('[data-pick-area]');
+      if (areaBtn) {
+        state.area = areaBtn.dataset.pickArea;
+        state.areaOffice = '';
+        render();
+        return;
+      }
+      const officeBtn = e.target.closest('[data-pick-office]');
+      if (officeBtn) {
+        const o = officeBtn.dataset.pickOffice;
+        state.areaOffice = state.areaOffice === o ? '' : o;
         render();
         return;
       }
@@ -4742,6 +5924,7 @@
       'toggle',
       (e) => {
         if (e.target.dataset?.fold === 'nonAdmin') state.nonAdminOpen = e.target.open;
+        if (e.target.dataset?.fold === 'personErr') state.personErrOpen = e.target.open;
       },
       true
     );
@@ -4761,6 +5944,10 @@
         saveLeaseCheck(e.target.dataset.leaseCheck, e.target.checked);
         return;
       }
+      if (e.target.dataset?.rosterCheck) {
+        if (state.meta?.range) saveRosterProgress(state.meta.range, e.target.dataset.rosterCheck, e.target.checked);
+        return;
+      }
       if (e.target.dataset?.leaseDueInput) {
         const v = e.target.value;
         if (state.meta?.range && (!v || Number(v.slice(0, 4)) >= 2000)) saveLeaseDue(state.meta.range, e.target.dataset.leaseDueInput, v);
@@ -4770,6 +5957,9 @@
       else if (e.target.id === 'apt-leader') {
         state.leader = e.target.value;
         state.spot = null;
+      } else if (e.target.id === 'apt-area') {
+        state.area = e.target.value;
+        state.areaOffice = '';
       }
       else if (e.target.id === 'apt-dur-by') state.durBy = e.target.value;
       else if (e.target.id === 'apt-dur-person') state.durPerson = e.target.value;

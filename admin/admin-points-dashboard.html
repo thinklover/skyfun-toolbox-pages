@@ -315,7 +315,7 @@
       <h6>訓練與考試</h6>
       <button type="button" class="tab-btn" data-tab="training">🎓 教育訓練</button>
       <button type="button" class="tab-btn" data-tab="exam">📝 執行要點考試</button>
-      <button type="button" class="tab-btn" data-tab="sim">🧪 物審模擬系統</button>
+      <button type="button" class="tab-btn" data-tab="sim">🧪 審核模擬系統</button>
       <h6>追蹤</h6>
       <button type="button" class="tab-btn" data-tab="plan">📌 改善計畫</button>
       <h6>設定</h6>
@@ -643,7 +643,7 @@
     <div id="tab-training" class="space-y-4 hidden">
       <div class="page-head"><h2>教育訓練</h2><p>所有人的影片觀看進度與考試分數；系統自動判定，不用登錄</p></div>
       <details class="help"><summary>怎麼算通過？</summary>
-        <p>物審、房客、預審、複審：看完教學影片（看過 95% 以上）＋線上考試滿分＋實作完成，三項都完成才算通過。實作在模擬公司系統做：物審已開放，通過指定題數就算完成，題庫與作答明細看「物審模擬系統」；房客、預審、複審的模擬環境建置中，實作先顯示「準備中」。執行要點：線上考試全部題目都考過滿分就算通過，明細看「執行要點考試」。</p>
+        <p>物審、房客、預審、複審：看完教學影片（看過 95% 以上）＋線上考試滿分＋實作完成，三項都完成才算通過。實作在模擬公司系統做：物審、房客、預審已開放，通過指定題數就算完成，題庫與作答明細看「審核模擬系統」；複審的模擬環境建置中，實作先顯示「準備中」。執行要點：線上考試全部題目都考過滿分就算通過，明細看「執行要點考試」。</p>
       </details>
       <div class="toolbar">
         <div class="flex gap-2 pb-1">
@@ -701,14 +701,19 @@
     </div>
 
     <div id="tab-sim" class="space-y-4 hidden">
-      <div class="page-head"><h2>物審模擬系統</h2><p>從公司系統抓已核准的物件當題目，新人在模擬系統審案、系統自動評分</p></div>
+      <div class="page-head"><h2>審核模擬系統</h2><p>從公司系統抓審核過的案件當題目，新人在模擬系統審案、系統自動評分；物審、房客審核、合約預審各有自己的題庫與作答紀錄</p></div>
       <details class="help"><summary>怎麼運作？</summary>
-        <p>題目：在「從公司系統加題」挑已核准的物件按「加入題庫」，會把物件、房東、安全檢核資料與附件複製一份到模擬系統（附件存在私有空間，只有作答中的同仁看得到），並算出這個案件可以埋哪些錯。<br>
-        個資：房東（含代理人、共有人）的姓名、身分證字號、生日、電話、Email、戶籍／通訊地址、銀行帳號會換成同格式的假資料；身分證正反面、存摺封面、建物謄本、權狀、房屋稅單、稅籍證明改用假資料畫的模擬文件（謄本標示部、稅籍編號、坐落、持分照案件資料；稅單的現值與稅額是模擬數字），原件不會下載；代理人身分證、同意書、戶籍資料等其他房東個資附件以示意圖代替。物件地址維持原樣。已加入的題目要按「重新抓取」才會換成新的模擬文件。<br>
-        出題：同仁從工具箱點數表「教育訓練 › 物審 › 實作」進入，每題隨機挑一個案件、隨機改錯 3～5 處（約 2 成完全沒錯）。<br>
-        評分：放行／退回判斷正確 40 分；找錯 60 分依錯誤數平分（沒有錯的案件判斷正確就給滿）；每誤標一處扣 5 分。判斷正確、錯誤全部找到、誤標不超過 1 處才算這題通過，通過 <b id="sim-target">3</b> 題算實作完成。<br>
-        題庫要有足夠的案件，同一個人才不會一直遇到同一件；建議至少 10 件。停用的案件不會再出題，已作答的紀錄保留。</p>
+        <p>題目：先在上方選課程，再到「從公司系統加題」挑案件按「加入題庫」（物審挑已核准物件、房客審核挑已生效房客、合約預審挑預審通過以後的代管／轉租合約，包租約不出題），會把案件資料與附件複製一份到模擬系統（附件存在私有空間，只有作答中的同仁看得到），並算出這個案件可以埋哪些錯。<br>
+        個資：房東、房客、家人、代理人、共有人、共住人的姓名、身分證字號、生日、電話、Email、戶籍／通訊地址、銀行帳號會換成同格式的假資料；身分證正反面、存摺封面、戶籍謄本、建物謄本、權狀、房屋稅單、稅籍證明、繳租證明、信任租報告改用假資料畫的模擬文件，原件不會下載；其他含個資的附件以示意圖代替。物件地址維持原樣。已加入的題目要按「重新抓取」才會換成新的模擬文件。<br>
+        出題：同仁從工具箱點數表「教育訓練 › 物審／房客／預審 › 實作」進入，每題隨機挑一個案件、隨機改錯 3～5 處（約 2 成完全沒錯）。<br>
+        評分：判斷（物審、預審是放行／退回；房客審核是送財調／退件）正確 40 分；找錯 60 分依錯誤數平分（沒有錯的案件判斷正確就給滿）；每誤標一處扣 5 分。判斷正確、錯誤全部找到、誤標不超過 1 處才算這題通過，每門課通過 <b id="sim-target">3</b> 題算實作完成。<br>
+        題庫要有足夠的案件，同一個人才不會一直遇到同一件；每門課建議至少 10 件。停用的案件不會再出題，已作答的紀錄保留。</p>
       </details>
+      <div class="flex gap-2">
+        <button type="button" class="seg is-on" data-sim-course="obj">物件審核</button>
+        <button type="button" class="seg" data-sim-course="tenant">房客審核</button>
+        <button type="button" class="seg" data-sim-course="pre">合約預審</button>
+      </div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="sim-stats"></div>
       <div class="toolbar">
         <div class="flex gap-2 pb-1">
@@ -730,6 +735,7 @@
           <span class="muted" id="sim-src-page"></span>
           <button type="button" class="btn btn-ghost btn-sm" id="sim-src-next">下一頁</button>
           <span class="muted" id="sim-src-progress"></span>
+          <button type="button" class="btn btn-ghost btn-sm ml-auto" id="sim-tpl-capture" title="開發房客、預審實作用：抓公司系統頁面版型與資料欄位結構（個資只留格式，不存內容）">抓房客／預審頁面版型</button>
         </div>
       </div>
       <div class="overflow-x-auto"><table>
@@ -1559,7 +1565,7 @@
         $('kpi-sources').innerHTML = `<p class="list-title mb-1">清冊總件數</p>
           <div class="overflow-x-auto"><table class="kpi-src"><thead><tr><th class="l">地區</th><th class="l">公司</th>${head}<th>合計</th></tr></thead>
             <tbody>${compRows}<tr class="sum"><td class="l" colspan="2">全區</td>${tot.map((n) => `<td>${n}</td>`).join('')}<td>${tot.reduce((s, n) => s + n, 0)}</td></tr></tbody></table></div>
-          <p class="list-title mt-3 mb-1">審件總件數（起租已生效，依登記縣市）</p>
+          <p class="list-title mt-3 mb-1">審件總件數（起租已生效，依登記縣市；包租／轉租同地址只算一件）</p>
           <div class="overflow-x-auto"><table class="kpi-src" style="width:auto"><thead><tr><th class="l">地區</th><th class="l">登記縣市</th><th>件數</th></tr></thead>
             <tbody>${cities.map((c) => `<tr><td class="l">${esc(c.region || '其他（只算全區）')}</td><td class="l">${esc(c.city)}</td><td>${c.n}</td></tr>`).join('')}
             <tr class="sum"><td class="l" colspan="2">全區</td><td>${k.audit['全區'].total}</td></tr></tbody></table></div>`;
@@ -2044,11 +2050,12 @@
         train.loading = true;
         $('t-count').textContent = '讀取中…';
         try {
-          const [res, gx, sx] = await Promise.all([
+          const [res, gx, sxs] = await Promise.all([
             rpc('course_exam_admin_list', { p_limit: 5000 }),
             rpc('guide_exam_admin_list', { p_query: '', p_limit: 1 }).catch(() => null),
-            rpc('sim_obj_admin_list', { p_limit: 5000 }).catch(() => null)
+            Promise.all(PRACTICE_COURSES.map((c) => rpc('sim_obj_admin_list', { p_limit: 5000, p_course: c }).catch(() => null)))
           ]);
+          const sx = sxs.find(Boolean);
           Object.assign(train, {
             loaded: true,
             people: new Map((res.people || []).map((x) => [`${x.course}|${x.name}`, x])),
@@ -2056,7 +2063,7 @@
             items: res.items || [],
             guide: new Map(((gx && gx.people) || []).map((p) => [p.userName, p])),
             guideTotal: Number(gx && gx.total) || 0,
-            sim: simPeople((sx && sx.items) || []),
+            sim: new Map(PRACTICE_COURSES.map((c, i) => [c, simPeople((sxs[i] && sxs[i].items) || [])])),
             simTarget: Number(sx && sx.target) || 3
           });
           renderTraining();
@@ -2072,7 +2079,7 @@
       function courseOf(course, name) {
         const ex = train.people.get(`${course}|${name}`);
         const v = train.videos.get(`${course}|${name}`);
-        const p = course === 'obj' ? train.sim.get(name) || { passes: 0, attempts: 0, best: null } : null;
+        const p = PRACTICE_COURSES.includes(course) ? train.sim.get(course)?.get(name) || { passes: 0, attempts: 0, best: null } : null;
         return { ex, v, p, st: Core.trainingState(course, { videoDone: !!(v && v.completedAt), examPassed: !!(ex && ex.passed), practiceDone: !!p && p.passes >= train.simTarget }) };
       }
       function practiceText(course, p, st) {
@@ -2210,26 +2217,35 @@
             it.status === 'submitted' ? (it.passed ? '滿分通過' : '需重考') : '作答中', it.durationSec ?? '', it.autoSubmitted ? 'Y' : '', it.overtime ? 'Y' : '']));
       });
 
-      /* ---------- 物審模擬系統：題庫（從公司系統抓已核准物件）＋作答紀錄 ---------- */
+      /* ---------- 審核模擬系統：題庫（從公司系統抓審核過的案件）＋作答紀錄，物審／房客審核／合約預審各自一套 ---------- */
 
       const SIM_BASE = String(window.SKYFUN_SIM_BASE || 'https://skyfun-sim-obj.pages.dev').replace(/\/$/, '');
       const SIM_FILE_BASE = 'https://skyfun-training-video.dahwork123.workers.dev';
-      const SIM_PAGE = { A: '物件審核頁', L: '房東資料', S: '安全檢核表' };
-      const SIM_DECISION = { 1: '核准', 2: '退回' };
-      const sim = { loaded: false, loading: false, busy: false, view: 'items', target: 3, cases: [], items: [], openId: null, src: null };
+      const SIM_PAGE = { A: '物件審核頁', L: '房東資料', S: '安全檢核表', T: '房客審核頁', C: '合約審核頁' };
+      /** list／bundle：公司系統唯讀端點；rules：出題規則檔與全域名稱；decision：學員按的 1／2 代表什麼 */
+      const SIM_COURSES = {
+        obj: { label: '物審', list: 'cases', bundle: 'bundle', rules: ['sim-obj-rules.js', 'SimObjRules'], decision: { 1: '核准', 2: '退回' }, load: '讀取公司系統已核准物件', srcState: '已核准' },
+        tenant: { label: '房客審核', list: 'tenant-cases', bundle: 'tenant-bundle', rules: ['sim-tenant-rules.js', 'SimTenantRules'], decision: { 1: '送財調', 2: '退件' }, load: '讀取公司系統已生效房客', srcState: '已生效' },
+        pre: { label: '合約預審', list: 'pre-cases', bundle: 'pre-bundle', rules: ['sim-pre-rules.js', 'SimPreRules'], decision: { 1: '核准', 2: '退回' }, load: '讀取公司系統預審通過合約', srcState: '預審通過以後' }
+      };
+      const sim = { course: 'obj', loaded: false, loading: false, busy: false, view: 'items', target: 3, cases: [], items: [], openId: null, src: null };
+      const simConf = () => SIM_COURSES[sim.course];
+      const simDecision = (d) => simConf().decision[d] || '—';
 
       async function loadSim() {
         if (sim.loading) return;
         sim.loading = true;
         $('sim-count').textContent = '讀取中…';
+        const course = sim.course;
         try {
-          const res = await rpc('sim_obj_admin_list', { p_limit: 5000 });
-          Object.assign(sim, { loaded: true, target: Number(res.target) || 3, cases: res.cases || [], items: res.items || [] });
+          const res = await rpc('sim_obj_admin_list', { p_limit: 5000, p_course: course });
+          if (course === sim.course) Object.assign(sim, { loaded: true, target: Number(res.target) || 3, cases: res.cases || [], items: res.items || [] });
         } catch (e) {
           say(e.message);
         } finally {
           sim.loading = false;
-          renderSim();
+          if (course !== sim.course) loadSim();
+          else renderSim();
         }
       }
 
@@ -2248,10 +2264,28 @@
         });
       }
       let simBankList = null;
-      async function loadSimTools() {
-        const [rules, cards] = await Promise.all([loadSimScript('sim-obj-rules.js', 'SimObjRules'), loadSimScript('sim-cards.js', 'SimCards')]);
+      async function loadSimTools(course) {
+        // 房客、預審的規則檔建立在物審規則上，物審規則要先載入
+        const [base, cards] = await Promise.all([loadSimScript('sim-obj-rules.js', 'SimObjRules'), loadSimScript('sim-cards.js', 'SimCards')]);
+        const [file, name] = SIM_COURSES[course].rules;
+        const rules = name === 'SimObjRules' ? base : await loadSimScript(file, name);
         if (!simBankList) simBankList = await fetch(`${SIM_BASE}/json/bankList.json`).then((r) => r.json()).catch(() => []);
         return { R: rules, C: cards };
+      }
+
+      /** 公司系統資料包 → 出題規則要的案件資料 */
+      function simSource(course, b) {
+        if (course === 'obj') return { id: b.id, obj: b.obj, landlord: b.landlord, safety: b.safety, safeObj: b.safeObj, audit: b.audit };
+        const { ok: _ok, ...rest } = b;
+        return rest;
+      }
+      function simTitle(course, d, id) {
+        if (course === 'tenant') return `${d.tenant.cityIdRegister || d.tenant.cityId || ''} 房客 #${id}`;
+        if (course === 'pre') {
+          const c = d.contract;
+          return `${c.city || String(c.rentAddress || '').slice(0, 3)} ${['代管', '包租', '轉租'][Number(c.contratType)] || ''}合約 #${id}`;
+        }
+        return `${d.obj.registerCity || ''}${d.obj.registerDistrict || ''} #${id}`;
       }
 
       async function simCompany(path, asFile) {
@@ -2284,12 +2318,14 @@
         sim.busy = true;
         btn.disabled = true;
         const prog = (t) => { $('sim-src-progress').textContent = t; };
+        const course = sim.course;
         try {
-          const { R, C } = await loadSimTools();
+          const { R, C } = await loadSimTools(course);
           prog(`#${id} 讀取案件資料…`);
-          const b = await simCompany(`bundle?id=${id}`);
-          // 房東個資換成同格式的假資料；身分證、存摺、謄本、權狀用假資料重畫，不下載原件
-          const { data, cards } = R.anonymize(R.prepare({ id: b.id, obj: b.obj, landlord: b.landlord, safety: b.safety, safeObj: b.safeObj, audit: b.audit }), id);
+          const src = simSource(course, await simCompany(`${SIM_COURSES[course].bundle}?id=${id}`));
+          if (R.usable && !R.usable(src)) throw new Error(`#${id} 是包租約，合約預審只出代管、轉租`);
+          // 個資換成同格式的假資料；身分證、存摺、謄本、權狀、繳租證明等用假資料重畫，不下載原件
+          const { data, cards } = R.anonymize(R.prepare(src), id);
           const names = R.collectFiles(data);
           const files = {};
           const failed = [];
@@ -2307,7 +2343,7 @@
                 body = pdf ? f.blob : await simShrink(f.blob);
               }
               const type = pdf ? 'application/pdf' : 'image/jpeg';
-              const key = `sim/obj/${id}/${i + 1}.${pdf ? 'pdf' : 'jpg'}`;
+              const key = `sim/${course}/${id}/${i + 1}.${pdf ? 'pdf' : 'jpg'}`;
               const up = await fetch(`${SIM_FILE_BASE}/s/${key}`, {
                 method: 'PUT',
                 headers: { 'x-admin-secret': secret, 'content-type': type },
@@ -2319,10 +2355,10 @@
               failed.push(e.message);
             }
           }
-          const title = `${data.obj.registerCity || ''}${data.obj.registerDistrict || ''} #${id}`;
+          const title = simTitle(course, data, id);
           prog(`#${id} 存入題庫…`);
           const res = await rpc('sim_obj_admin_save_case', {
-            p_source_id: id, p_title: title, p_data: data, p_files: files, p_candidates: R.generate(data)
+            p_source_id: id, p_title: title, p_data: data, p_files: files, p_candidates: R.generate(data), p_course: course
           });
           say(`已加入題庫：${title}，可埋的錯 ${res.candidates} 種${failed.length ? `；${failed.length} 個附件複製失敗（${failed[0]}），可以按「重新抓取」再試` : ''}`, !failed.length);
           await loadSim();
@@ -2338,13 +2374,81 @@
 
       async function simLoadSource(page) {
         $('sim-src-progress').textContent = '讀取公司系統…';
+        const course = sim.course;
         try {
-          sim.src = await simCompany(`cases?page=${Math.max(1, page)}`);
+          const src = await simCompany(`${SIM_COURSES[course].list}?page=${Math.max(1, page)}`);
+          if (course === sim.course) sim.src = src;
         } catch (e) {
           say(e.message);
         } finally {
           $('sim-src-progress').textContent = '';
           renderSim();
+        }
+      }
+
+      const SIM_ENUM_WORDS = /^(同意|不同意|出租人|承租人|出租人負擔|承租人負擔|雙方|得|不得|是|否|有|無|包租|代管|轉租|包租約|轉租約|新案|續約|轉軌[0-9一二三四]?|符合|不符合|通過|不通過|已生效|預審通過|複審中|複審通過|預審中|一般戶|弱勢戶|第一類|第二類|男|女|本國|外籍|月|年|元|個月|true|false|null)$/;
+      /** 只留格式：數字→9、英文→A、中文→中；JSON 字串展開後一樣處理 */
+      function simShape(v, depth = 0) {
+        if (Array.isArray(v)) return v.slice(0, 3).map((x) => simShape(x, depth + 1)).concat(v.length > 3 ? [`…共 ${v.length} 筆`] : []);
+        if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, simShape(x, depth + 1)]));
+        if (typeof v !== 'string') return v;
+        const t = v.trim();
+        if (depth < 12 && /^[[{]/.test(t)) {
+          try { return { json: simShape(JSON.parse(t), depth + 1) }; } catch { /* 不是 JSON */ }
+        }
+        if (SIM_ENUM_WORDS.test(t)) return t;
+        const ext = (t.match(/\.(jpe?g|png|webp|gif|heic|pdf)$/i) || [''])[0];
+        return t.replace(/[0-9]/g, '9').replace(/[A-Za-z]/g, 'A').replace(/[\u3400-\u9fff]/g, '中').slice(0, 40) + (ext && !t.endsWith(ext) ? ext : '');
+      }
+      function simMaskHtml(h) {
+        return h.replace(/\b[A-Z][12890]\d{8}\b/g, 'A100000000').replace(/\b09\d{2}-?\d{3}-?\d{3}\b/g, '0900000000');
+      }
+
+      async function simCaptureTemplates(btn) {
+        if (sim.busy) return;
+        sim.busy = true;
+        btn.disabled = true;
+        const prog = (t) => { $('sim-src-progress').textContent = t; };
+        try {
+          prog('讀取房客、合約清單…');
+          const [tc, pc] = await Promise.all([simCompany('tenant-cases?page=1'), simCompany('pre-cases?page=1')]);
+          const tid = tc.items[0]?.id;
+          const cid = pc.items[0]?.id;
+          if (!tid || !cid) throw new Error('公司系統沒有可用的房客或合約案件');
+          await rpc('sim_admin_save_template', { p_name: 'tenant-cases', p_body: JSON.stringify({ total: tc.total, items: simShape(tc.items) }) });
+          await rpc('sim_admin_save_template', { p_name: 'pre-cases', p_body: JSON.stringify({ total: pc.total, items: simShape(pc.items), statuses: [...new Set(pc.items.map((x) => x.applyStatus))] }) });
+          const pages = [['tenant-index'], ['tenant-audit', tid], ['tenant-data', tid], ['contrat-index'], ['contrat-audit', cid], ['contrat-edit', cid],
+            ['contrat-form-escrow'], ['contrat-form-charter'], ['contrat-form-sublet']];
+          for (const [name, id] of pages) {
+            prog(`抓頁面 ${name}…`);
+            const p = await simCompany(`page?name=${name}${id ? `&id=${id}` : ''}`);
+            await rpc('sim_admin_save_template', { p_name: `page-${name}`, p_body: simMaskHtml(p.html) });
+          }
+          const ids = tc.items.slice(0, 3).map((x) => x.id);
+          for (let i = 0; i < ids.length; i++) {
+            prog(`房客資料結構 ${i + 1}／${ids.length}…`);
+            const b = await simCompany(`tenant-bundle?id=${ids[i]}`);
+            await rpc('sim_admin_save_template', { p_name: `tenant-shape-${i + 1}`, p_body: JSON.stringify(simShape({ tenant: b.tenant, tenantAudit: b.tenantAudit, dataProgress: b.dataProgress, audit: b.audit, aiLog: b.aiLog })) });
+          }
+          const byType = new Map();
+          pc.items.forEach((x) => { if (!byType.has(x.contratType)) byType.set(x.contratType, x.id); });
+          const cids = [...byType.values()].slice(0, 4);
+          for (let i = 0; i < cids.length; i++) {
+            prog(`合約資料結構 ${i + 1}／${cids.length}…`);
+            const b = await simCompany(`pre-bundle?id=${cids[i]}`);
+            const { ok: _ok, id: _id, ...rest } = b;
+            await rpc('sim_admin_save_template', { p_name: `pre-shape-${i + 1}`, p_body: JSON.stringify(simShape(rest)) });
+          }
+          prog('參考資料…');
+          const refs = await simCompany('refs');
+          await rpc('sim_admin_save_template', { p_name: 'refs', p_body: JSON.stringify({ cityPropertyLimits: refs.cityPropertyLimits }) });
+          say('頁面版型與資料結構已存好，可以通知開發繼續做房客、預審實作', true);
+        } catch (e) {
+          say(e.message);
+        } finally {
+          prog('');
+          sim.busy = false;
+          btn.disabled = false;
         }
       }
 
@@ -2361,17 +2465,19 @@
             <b>${esc(e.label)}</b><div class="line"><span>位置</span>${esc(SIM_PAGE[e.page] || e.page)}　教學影片 ${esc(e.video)}</div><div class="line">${esc(e.explain)}</div></div>`).join('');
         const falses = (r.falseFlags || []).map((k) => `<div class="q bad"><span class="res fail">⚠ 誤標</span><b>${esc(SIM_PAGE[k[0]] || '')}</b><div class="line">${esc(k.slice(2))}</div></div>`).join('');
         return `<div class="space-y-1">
-            <div>判斷：${esc(SIM_DECISION[r.decision] || '—')}（正確是 ${esc(SIM_DECISION[r.expected] || '—')}）${r.decisionOk ? '<span class="badge b-done">正確</span>' : '<span class="badge b-fail">錯誤</span>'}</div>
-            ${it.reason ? `<div>退回理由：${esc(it.reason)}</div>` : ''}
-            ${errs || '<div class="muted">這一題沒有埋錯，應該核准。</div>'}
+            <div>判斷：${esc(simDecision(r.decision))}（正確是 ${esc(simDecision(r.expected))}）${r.decisionOk ? '<span class="badge b-done">正確</span>' : '<span class="badge b-fail">錯誤</span>'}</div>
+            ${it.reason ? `<div>${sim.course === 'tenant' ? '審核意見' : '退回理由'}：${esc(it.reason)}</div>` : ''}
+            ${errs || `<div class="muted">這一題沒有埋錯，應該${esc(simDecision(1))}。</div>`}
             ${falses}
           </div>`;
       }
 
       function renderSim() {
+        document.querySelectorAll('[data-sim-course]').forEach((b) => b.classList.toggle('is-on', b.dataset.simCourse === sim.course));
         document.querySelectorAll('[data-sim-view]').forEach((b) => b.classList.toggle('is-on', b.dataset.simView === sim.view));
         document.querySelectorAll('[data-sim-only]').forEach((el) => el.classList.toggle('hidden', el.dataset.simOnly !== sim.view));
         $('sim-add-bar').classList.toggle('hidden', sim.view !== 'add');
+        $('sim-src-load').textContent = simConf().load;
         $('sim-target').textContent = sim.target;
         if (!sim.loaded) {
           $('sim-stats').innerHTML = '';
@@ -2391,7 +2497,7 @@
         ].map(([k, v]) => '<div class="stat"><b>' + v + '</b><span>' + esc(k) + '</span></div>').join('');
 
         if (sim.view === 'cases') {
-          $('sim-head').innerHTML = '<tr><th>題庫編號</th><th>案件</th><th>公司物件編號</th><th>可埋的錯</th><th>附件</th><th>作答次數</th><th>更新時間</th><th>狀態</th><th></th></tr>';
+          $('sim-head').innerHTML = `<tr><th>題庫編號</th><th>案件</th><th>公司${{ obj: '物件', tenant: '房客', pre: '合約' }[sim.course]}編號</th><th>可埋的錯</th><th>附件</th><th>作答次數</th><th>更新時間</th><th>狀態</th><th></th></tr>`;
           $('sim-count').textContent = '共 ' + sim.cases.length + ' 件';
           $('sim-rows').innerHTML = sim.cases.map((c) => `<tr class="${c.enabled ? '' : 'is-off'}"><td>${c.id}</td><td class="font-bold">${esc(c.title)}</td><td>${esc(c.sourceId)}</td>
               <td title="${esc((c.codes || []).join('、'))}">${c.candidates} 種</td><td>${c.files} 個</td><td>${c.attempts}</td><td>${fmtTime(c.updatedAt)}</td>
@@ -2405,16 +2511,25 @@
         if (sim.view === 'add') {
           const src = sim.src;
           const pages = src ? Math.max(1, Math.ceil(src.total / 50)) : 0;
-          $('sim-src-page').textContent = src ? `第 ${src.page}／${pages} 頁（已核准 ${src.total} 件）` : '';
+          $('sim-src-page').textContent = src ? `第 ${src.page}／${pages} 頁（${simConf().srcState} ${src.total} 件）` : '';
           $('sim-src-prev').disabled = !src || src.page <= 1;
           $('sim-src-next').disabled = !src || src.page >= pages;
           $('sim-count').textContent = '';
           const inBank = new Set(sim.cases.map((c) => Number(c.sourceId)));
-          $('sim-head').innerHTML = '<tr><th>公司物件編號</th><th>案件類型</th><th>地址</th><th>業者</th><th>期別</th><th>申請日</th><th></th></tr>';
+          const cols = {
+            obj: [['公司物件編號', 'id'], ['案件類型', 'caseType'], ['地址', 'address'], ['業者', 'agentName'], ['期別', 'periodName'], ['申請日', 'applyDate']],
+            tenant: [['公司房客編號', 'id'], ['房客編號', 'tenantNo'], ['姓名', 'tenantName'], ['身分', 'tenantIdentity'], ['期別', 'periodName'], ['送審日', 'submitDate']],
+            pre: [['公司合約編號', 'id'], ['契約類型', 'contratType'], ['審核狀態', 'applyStatus'], ['租賃地址', 'rentAddress'], ['期別', 'socialHousingPeriod'], ['申請日', 'applyDate']]
+          }[sim.course];
+          const addBtn = (r) => {
+            if (sim.course === 'pre' && (r.contratType === '包租' || String(r.contratType) === '1')) return '<span class="muted">包租約不出題</span>';
+            const has = inBank.has(Number(r.id));
+            return `<button type="button" class="btn ${has ? 'btn-ghost' : 'btn-main'} btn-sm" data-sim-add="${esc(r.id)}"${sim.busy ? ' disabled' : ''}>${has ? '重新抓取' : '加入題庫'}</button>`;
+          };
+          $('sim-head').innerHTML = '<tr>' + cols.map(([h]) => `<th>${h}</th>`).join('') + '<th></th></tr>';
           $('sim-rows').innerHTML = !src
-            ? '<tr><td colspan="7" class="muted">按上方「讀取公司系統已核准物件」</td></tr>'
-            : src.items.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.caseType)}</td><td>${esc(r.address)}</td><td>${esc(r.agentName)}</td><td>${esc(r.periodName)}</td><td>${esc(r.applyDate)}</td>
-                <td><button type="button" class="btn ${inBank.has(Number(r.id)) ? 'btn-ghost' : 'btn-main'} btn-sm" data-sim-add="${esc(r.id)}"${sim.busy ? ' disabled' : ''}>${inBank.has(Number(r.id)) ? '重新抓取' : '加入題庫'}</button></td></tr>`).join('') ||
+            ? `<tr><td colspan="7" class="muted">按上方「${esc(simConf().load)}」</td></tr>`
+            : src.items.map((r) => '<tr>' + cols.map(([, k]) => `<td>${esc(r[k])}</td>`).join('') + `<td>${addBtn(r)}</td></tr>`).join('') ||
               '<tr><td colspan="7" class="muted">這一頁沒有案件</td></tr>';
           return;
         }
@@ -2428,12 +2543,18 @@
           const open = sim.openId === it.id;
           const row = `<tr class="click${open ? ' is-open' : ''}" data-sim-open="${it.id}"><td>${fmtTime(it.submittedAt)}</td><td class="font-bold">${esc(it.name)}</td><td>${esc(staffLeader(it.name) || '—')}</td><td>${esc(it.team || '—')}</td>
               <td>${esc(it.caseTitle)}</td><td>${errs.length}</td><td>${errs.filter((e) => e.found).length}</td><td>${(r.falseFlags || []).length}</td>
-              <td class="${r.decisionOk ? 'pass' : 'fail'}">${esc(SIM_DECISION[it.decision] || '—')}</td><td class="${it.passed ? 'pass' : 'fail'}">${it.score} 分</td>
+              <td class="${r.decisionOk ? 'pass' : 'fail'}">${esc(simDecision(it.decision))}</td><td class="${it.passed ? 'pass' : 'fail'}">${it.score} 分</td>
               <td>${it.passed ? '<span class="badge b-done">通過</span>' : '<span class="badge b-fail">未通過</span>'}</td><td>${dur(it.durationSec)}</td></tr>`;
           return open ? row + `<tr><td colspan="12" class="detail">${simDetail(it)}</td></tr>` : row;
         }).join('') || '<tr><td colspan="12" class="muted">還沒有人交卷</td></tr>';
       }
 
+      document.querySelectorAll('[data-sim-course]').forEach((b) => b.addEventListener('click', () => {
+        if (sim.busy || b.dataset.simCourse === sim.course) return;
+        Object.assign(sim, { course: b.dataset.simCourse, loaded: false, cases: [], items: [], openId: null, src: null });
+        renderSim();
+        loadSim();
+      }));
       document.querySelectorAll('[data-sim-view]').forEach((b) => b.addEventListener('click', () => {
         sim.view = b.dataset.simView;
         renderSim();
@@ -2443,6 +2564,7 @@
       $('sim-src-load').addEventListener('click', () => simLoadSource(1));
       $('sim-src-prev').addEventListener('click', () => sim.src && simLoadSource(sim.src.page - 1));
       $('sim-src-next').addEventListener('click', () => sim.src && simLoadSource(sim.src.page + 1));
+      $('sim-tpl-capture').addEventListener('click', (e) => simCaptureTemplates(e.currentTarget));
       $('sim-rows').addEventListener('click', async (e) => {
         const add = e.target.closest('[data-sim-add]');
         if (add) return simImport(Number(add.dataset.simAdd), add);
@@ -2469,12 +2591,12 @@
       });
       $('sim-csv').addEventListener('click', () => {
         if (!sim.loaded) return;
-        downloadCsv('物審模擬系統_作答紀錄_', ['交卷時間', '姓名', '組長', '處別', '案件', '埋錯數', '找到', '漏掉的錯', '誤標數', '判斷', '正確判斷', '分數', '通過', '用時(秒)', '退回理由'],
+        downloadCsv(`${simConf().label}模擬系統_作答紀錄_`, ['交卷時間', '姓名', '組長', '處別', '案件', '埋錯數', '找到', '漏掉的錯', '誤標數', '判斷', '正確判斷', '分數', '通過', '用時(秒)', '理由／意見'],
           simItems().map((it) => {
             const errs = simErrors(it);
             const r = it.result || {};
             return [fmtTime(it.submittedAt), it.name, staffLeader(it.name), it.team, it.caseTitle, errs.length, errs.filter((e) => e.found).length,
-              errs.filter((e) => !e.found).map((e) => e.label).join('、'), (r.falseFlags || []).length, SIM_DECISION[it.decision] || '', SIM_DECISION[r.expected] || '',
+              errs.filter((e) => !e.found).map((e) => e.label).join('、'), (r.falseFlags || []).length, simConf().decision[it.decision] || '', simConf().decision[r.expected] || '',
               it.score, it.passed ? 'Y' : '', it.durationSec ?? '', it.reason || ''];
           }));
       });

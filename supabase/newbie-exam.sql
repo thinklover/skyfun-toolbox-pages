@@ -112,7 +112,7 @@ $$;
 create or replace function public.newbie_exam_start(p_token text, p_region text default null)
 returns json language plpgsql security definer set search_path to 'public' as $$
 declare
-  v_uid uuid; v_acc public.toolbox_accounts%rowtype; v_region text; v_row public.newbie_exam_attempts%rowtype;
+  v_uid uuid; v_acc public.toolbox_accounts%rowtype; v_region text; v_row public.newbie_exam_attempts%rowtype; v_last text;
 begin
   v_uid := admin_qa_user_id(p_token);
   if v_uid is null then return json_build_object('ok', false, 'error', '請先登入'); end if;
@@ -138,9 +138,14 @@ begin
   update public.newbie_exam_attempts set status = 'abandoned'
   where user_id = v_uid and status = 'in_progress';
 
+  -- 第一次隨機抽 A／B；重考換另一卷，不會連續抽到同一卷
+  select paper into v_last from public.newbie_exam_attempts
+  where user_id = v_uid order by started_at desc limit 1;
+
   insert into public.newbie_exam_attempts (user_id, username, user_name, team, paper, region, deadline_at)
   values (v_uid, v_acc.username, coalesce(nullif(v_acc.name, ''), v_acc.username), coalesce(v_acc.team, ''),
-    case when random() < 0.5 then 'A' else 'B' end, v_region, now() + interval '20 minutes')
+    case v_last when 'A' then 'B' when 'B' then 'A' else case when random() < 0.5 then 'A' else 'B' end end,
+    v_region, now() + interval '20 minutes')
   returning * into v_row;
 
   return json_build_object('ok', true, 'resumed', false, 'attemptId', v_row.id, 'paper', v_row.paper,

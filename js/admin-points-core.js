@@ -64,7 +64,7 @@
   /** 有教學影片＋線上考試的課程 */
   const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev'];
   /** 已開放模擬系統實作的課程；其他課程的模擬環境還在建置，實作一律顯示準備中 */
-  const PRACTICE_COURSES = ['obj'];
+  const PRACTICE_COURSES = ['obj', 'tenant', 'pre'];
   /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */
   const TRAINING_TESTERS = ['簡為倢', '邱奕棋'];
   const isOnDuty = (s) => s.status === '在職' && !TRAINING_TESTERS.includes(s.name);
@@ -596,7 +596,7 @@
 
   /**
    * 組長週報（同試算表欄位）：本週點數／抽查／客訴依週加總，月累積與懲處依業績月。
-   * @param opts { staff, checks, incidents, week:{start,end}, perf:{year,month,start,end}, prevTotals: Map|null, leader }
+   * @param opts { staff, checks, incidents, week:{start,end}, perf:{year,month,start,end}, prevTotals: Map|null, leader, names?: Set 只算這些人 }
    */
   function weeklyReport(result, opts) {
     const { week, perf } = opts;
@@ -607,7 +607,7 @@
     const weekIncidents = (opts.incidents || []).filter((c) => inWeek(c.date));
     const monthIncidents = opts.incidents || [];
     const rows = (opts.staff || [])
-      .filter((s) => isOnDuty(s) && s.kind !== '工讀生' && (!opts.leader || s.leader === opts.leader))
+      .filter((s) => isOnDuty(s) && s.kind !== '工讀生' && (!opts.leader || s.leader === opts.leader) && (!opts.names || opts.names.has(s.name)))
       .map((s) => {
         const p = byName.get(s.name);
         let weekPoints = 0;
@@ -1334,6 +1334,103 @@
       .sort((a, b) => areaRank(a.areas[0]) - areaRank(b.areas[0]) || a.leader.localeCompare(b.leader, 'zh-Hant'));
   }
 
+  /**
+   * 區主管：人力明細的營業處（北一處、中二處、南投一處…）依「處」前面的地名歸區；高雄獨立一區。
+   * heads＝營業處地名（例：竹一處＝竹、南投一處＝南投），只管特定處就寫到處號（例：南一）；
+   * regions／cities＝該區的 KPI 地區與縣市（應繳件數、KPI 表用）。同一區可以有多位區主管。
+   */
+  const AREA_MANAGERS = [
+    { manager: '郭涵菲', area: '北區', heads: ['北', '基', '宜'], regions: ['台北', '新北', '基隆', '宜蘭'], cities: ['台北市', '新北市', '基隆市', '宜蘭縣'] },
+    {
+      manager: '林敬國',
+      area: '中區',
+      heads: ['桃', '竹', '中', '彰', '投', '南投', '嘉'],
+      regions: ['桃園', '新竹', '台中', '彰化', '南投', '嘉義'],
+      cities: ['桃園市', '新竹市', '新竹縣', '台中市', '彰化縣', '南投縣', '嘉義市', '嘉義縣']
+    },
+    { manager: '葉芮恩', area: '南區', heads: ['南一'], regions: ['台南'], cities: ['台南市'] },
+    { manager: '葉建志', area: '南區', heads: ['南二'], regions: ['台南'], cities: ['台南市'] },
+    { manager: '林昕伶', area: '高雄', heads: ['高', '屏'], regions: ['高雄'], cities: ['高雄市'] }
+  ];
+  const OFFICE_NUM = '一二三四五六七八九十';
+
+  /** 「北三處 北四處」這種一人兼兩處的寫法統一成「北三處・北四處」；星鴻的處別代碼不顯示（「高一處 (K1)」→「高一處」） */
+  function officeName(office) {
+    return String(office || '')
+      .replace(/[（(［\[【][^）)］\]】]*[）)］\]】]/g, ' ')
+      .replace(/[A-Za-z0-9]+/g, ' ')
+      .trim()
+      .split(/[\s、,，/／・\-－]+/)
+      .filter(Boolean)
+      .join('・');
+  }
+
+  /** 營業處地名與處號：南投一處 → { head: '南投', num: 0 }；不是「○○處」回傳 null */
+  function officeParts(office) {
+    const m = officeName(office).match(/^(.{1,2}?)([一二三四五六七八九十]+)處/);
+    return m ? { head: m[1], unit: m[1] + m[2], num: OFFICE_NUM.indexOf(m[2][0]) } : null;
+  }
+
+  /** 區主管設定裡對到這個處的位置（先比處號，例：南一；再比地名，例：南） */
+  function headIndex(m, p) {
+    const i = m.heads.indexOf(p.unit);
+    return i >= 0 ? i : m.heads.indexOf(p.head);
+  }
+
+  /** 營業處 → 區主管設定；租賃管理部、工讀生、駐府人員等不是「○○處」的回傳 null */
+  function officeArea(office) {
+    const p = officeParts(office);
+    return p ? AREA_MANAGERS.find((m) => headIndex(m, p) >= 0) || null : null;
+  }
+
+  function officeRank(office) {
+    const p = officeParts(office);
+    const m = officeArea(office);
+    if (!p || !m) return 999999;
+    return AREA_MANAGERS.indexOf(m) * 10000 + headIndex(m, p) * 100 + p.num;
+  }
+
+  /** 各區主管轄下：在職、非工讀生、營業處對得到的行政（names）與各營業處 */
+  function areaScopes(staff) {
+    return AREA_MANAGERS.map((m) => {
+      const list = (staff || []).filter((s) => isOnDuty(s) && s.kind !== '工讀生' && officeArea(s.office) === m);
+      const offices = [...new Set(list.map((s) => officeName(s.office)))].sort((a, b) => officeRank(a) - officeRank(b));
+      return { ...m, names: list.map((s) => s.name), members: list.length, offices };
+    });
+  }
+
+  /** 區主管週月報：weeklyReport 的列依營業處加總（營業處對不到區主管的不列） */
+  function officeReport(rows) {
+    const map = new Map();
+    for (const r of rows) {
+      const m = officeArea(r.office);
+      if (!m) continue;
+      const key = officeName(r.office);
+      if (!map.has(key)) {
+        map.set(key, {
+          office: key, area: m.area, manager: m.manager, members: 0, names: [], weekPoints: 0, points: 0,
+          stage1: 0, stage2: 0, bonus: 0, bonusPending: false, checked: 0, correct: 0, complaints: 0, penalized: 0
+        });
+      }
+      const o = map.get(key);
+      o.members += 1;
+      o.names.push(r.name);
+      o.weekPoints += r.weekPoints;
+      o.points += r.points;
+      if (r.stage >= 1) o.stage1 += 1;
+      if (r.stage >= 2) o.stage2 += 1;
+      o.bonus += r.bonusPending ? 0 : r.bonus;
+      if (r.bonusPending) o.bonusPending = true;
+      o.checked += r.checked;
+      o.correct += r.correct;
+      o.complaints += r.complaints;
+      if (r.penalty !== '無') o.penalized += 1;
+    }
+    return [...map.values()]
+      .map((o) => ({ ...o, avg: o.members ? o.points / o.members : 0, stageRate: o.members ? o.stage1 / o.members : null, rate: o.checked ? o.correct / o.checked : null }))
+      .sort((a, b) => officeRank(a.office) - officeRank(b.office));
+  }
+
   /** 承接率週別：業績月第一天起算，每週到星期五為止（週六～週五） */
   function takeupWeeks(range) {
     const out = [];
@@ -1578,6 +1675,12 @@
     cityRank,
     regionRank,
     leaderScopes,
+    AREA_MANAGERS,
+    officeName,
+    officeArea,
+    officeRank,
+    areaScopes,
+    officeReport,
     canViewPerson,
     isSupervisor,
     canSpotCheck,

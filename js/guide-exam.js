@@ -180,7 +180,7 @@
       seen.add(s.name);
       return { name: s.name, leader: s.leader || '', where: [s.region, s.office].filter(Boolean).join(' '), kind: s.kind || '', row: overview?.map?.get(s.name) };
     });
-    if (!board?.leader && !boardUi.leader) {
+    if (!board?.leader && !board?.scoped && !boardUi.leader) {
       for (const [name, row] of overview?.map || []) if (!seen.has(name)) rows.push({ name, leader: '', where: '', kind: '', row, extra: true });
     }
     return rows.map((r) => {
@@ -300,9 +300,9 @@
       </div>`;
   }
 
-  /** 由點數表呼叫：opts.staff 人力明細在職名單；opts.leader 有值時只顯示該組（由外部篩選） */
+  /** 由點數表呼叫：opts.staff 人力明細在職名單；opts.leader 有值時只顯示該組（由外部篩選）；opts.scoped 只列 staff 裡的人 */
   function mountBoard(opts) {
-    board = { staff: opts?.staff || [], leader: opts?.leader != null ? opts.leader : null, highlight: opts?.highlight || '' };
+    board = { staff: opts?.staff || [], leader: opts?.leader != null ? opts.leader : null, scoped: !!opts?.scoped, highlight: opts?.highlight || '' };
     renderBoard();
     loadOverview();
   }

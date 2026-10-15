@@ -222,18 +222,20 @@
     if (state.exam) return;
     state.exam = { loading: true, map: new Map() };
     try {
-      const [res, course, sim] = await Promise.all([
+      const [res, course, sims] = await Promise.all([
         rpc('guide_exam_overview'),
         rpc('course_exam_overview').catch(() => null),
-        rpc('sim_obj_overview').catch(() => null)
+        Promise.all(Core.PRACTICE_COURSES.map((c) => rpc('sim_obj_overview', { p_course: c }).catch(() => null)))
       ]);
+      const sim = new Map();
+      Core.PRACTICE_COURSES.forEach((c, i) => (sims[i]?.items || []).forEach((x) => sim.set(`${c}|${x.name}`, Number(x.passes) || 0)));
       state.exam = {
         total: Number(res.total) || 0,
         map: new Map((res.items || []).map((x) => [x.name, x])),
         course: new Map((course?.items || []).map((x) => [`${x.course}|${x.name}`, x])),
         video: new Map((course?.videos || []).map((x) => [`${x.course}|${x.name}`, x])),
-        simTarget: Number(sim?.target) || 3,
-        sim: new Map((sim?.items || []).map((x) => [x.name, Number(x.passes) || 0]))
+        simTarget: Number(sims.find(Boolean)?.target) || 3,
+        sim
       };
     } catch (e) {
       state.exam = { error: e.message, map: new Map() };
@@ -270,7 +272,7 @@
     const stateOf = (key) => Core.trainingState(key, {
       videoDone: !!ex?.video?.get(`${key}|${name}`)?.completedAt,
       examPassed: !!ex?.course?.get(`${key}|${name}`)?.passed,
-      practiceDone: key === 'obj' && (ex?.sim?.get(name) || 0) >= ex?.simTarget,
+      practiceDone: (ex?.sim?.get(`${key}|${name}`) || 0) >= ex?.simTarget,
       guideRate: examRate
     });
     const done = new Set(nodes.filter((n) => stateOf(n.key).done).map((n) => n.key));
