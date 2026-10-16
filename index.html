@@ -7844,11 +7844,11 @@
                             <label class="block">上架人姓名 *
                                 <input name="posterName" class="sf591-in w-full mt-1" required placeholder="人事管理搜尋用" />
                             </label>
-                            <label class="block">營業員證號
-                                <input name="salesLicense" class="sf591-in w-full mt-1 bg-slate-50" readonly placeholder="查詢後自動帶入" />
+                            <label class="block">營業員證號 <span class="font-normal text-slate-500 text-xs">填姓名後自動查</span>
+                                <input name="salesLicense" class="sf591-in w-full mt-1 bg-slate-50" readonly placeholder="填上架人姓名後自動帶入" />
                             </label>
                             <div class="flex flex-wrap items-end gap-2">
-                                <button type="button" id="sf591-btn-license" class="btn tone-slate-mid">查人事證號</button>
+                                <button type="button" id="sf591-btn-license" class="btn tone-slate-mid">重新查證號</button>
                                 <span id="sf591-license-status" class="text-xs text-slate-500"></span>
                             </div>
                         </div>
@@ -8090,11 +8090,11 @@
                     <section class="rounded-2xl border border-slate-200 p-4 space-y-3">
                         <h3 class="font-bold text-purple-950 text-base">9 · 標題、描述、聯絡</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-                            <label class="block">地區經紀人
-                                <input name="brokerLine" class="sf591-in w-full mt-1 bg-slate-50" readonly placeholder="依縣市從契約書帶入" />
+                            <label class="block">地區經紀人 <span class="font-normal text-slate-500 text-xs">填縣市後自動帶入，例：不動產經紀人易奷柔：(111)高市字第01481號</span>
+                                <input name="brokerLine" class="sf591-in w-full mt-1 bg-slate-50" readonly placeholder="填縣市後自動帶入" />
                             </label>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" id="sf591-btn-broker" class="btn tone-slate-mid">抓取經紀人</button>
+                                <button type="button" id="sf591-btn-broker" class="btn tone-slate-mid">重新抓取經紀人</button>
                                 <button type="button" id="sf591-btn-prepare" class="btn tone-purple">準備文案（證號＋經紀＋模板）</button>
                             </div>
                         </div>

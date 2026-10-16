@@ -94,6 +94,7 @@
       if (!node) return;
       node.value = val == null ? '' : String(val);
     };
+    const prevRegion = form.elements.namedItem('region')?.value || '';
     set('region', parsed.region);
     set('section', parsed.section);
     set('street', parsed.street);
@@ -103,14 +104,16 @@
     set('floor', parsed.floor || '');
     if (parsed.totalFloors) set('totalFloors', parsed.totalFloors);
     const hint = el('sf591-addr-hint');
-    if (!hint) return;
-    if (!parsed.region || !parsed.section || !parsed.street || !parsed.number) {
-      hint.textContent = '拆解不完整，請檢查下方欄位並手動補齊';
-      hint.className = 'text-xs text-amber-700';
-    } else {
-      hint.textContent = `已拆解：${parsed.region}${parsed.section}${parsed.street}${parsed.lane ? parsed.lane + '巷' : ''}${parsed.alley ? parsed.alley + '弄' : ''}${parsed.number}號${parsed.floor ? parsed.floor + '樓' : ''}`;
-      hint.className = 'text-xs text-emerald-700';
+    if (hint) {
+      if (!parsed.region || !parsed.section || !parsed.street || !parsed.number) {
+        hint.textContent = '拆解不完整，請檢查下方欄位並手動補齊';
+        hint.className = 'text-xs text-amber-700';
+      } else {
+        hint.textContent = `已拆解：${parsed.region}${parsed.section}${parsed.street}${parsed.lane ? parsed.lane + '巷' : ''}${parsed.alley ? parsed.alley + '弄' : ''}${parsed.number}號${parsed.floor ? parsed.floor + '樓' : ''}`;
+        hint.className = 'text-xs text-emerald-700';
+      }
     }
+    if (parsed.region && parsed.region !== prevRegion) scheduleBrokerLookup();
   }
 
   function parseFullAddress() {
@@ -137,14 +140,73 @@
     }
   }
 
+  function formatBrokerLine(broker) {
+    if (!broker) return '';
+    const name = String(broker.name || '')
+      .replace(/[：:]/g, '')
+      .trim();
+    const cert = String(broker.certNo || '').replace(/\s+/g, '').trim();
+    if (name && cert && !/法人|名稱|住址|通訊/.test(name)) {
+      return `不動產經紀人${name}：${cert}`;
+    }
+    const raw = String(broker.rawLine || '').trim();
+    if (/不動產經紀人[\u4e00-\u9fff]{2,8}：/.test(raw) && !/法人名稱|通訊住址/.test(raw)) return raw;
+    return '';
+  }
+
   function setBrokerUi(broker) {
     cachedBroker = broker || null;
     const line = form.elements.namedItem('brokerLine');
     const json = form.elements.namedItem('brokerJson');
-    if (json) json.value = broker ? JSON.stringify(broker) : '';
-    if (line) {
-      line.value = broker ? broker.rawLine || `不動產經紀人${broker.name}：${broker.certNo}` : '';
+    const formatted = formatBrokerLine(broker);
+    if (broker && formatted) {
+      broker.rawLine = formatted;
+      cachedBroker = broker;
     }
+    if (json) json.value = broker && formatted ? JSON.stringify(broker) : '';
+    if (line) line.value = formatted;
+  }
+
+  let licenseTimer = null;
+  let brokerTimer = null;
+
+  async function autoLookupLicense() {
+    const name = form.elements.namedItem('posterName')?.value?.trim() || '';
+    if (name.length < 2) return;
+    try {
+      status('自動查詢人事證號…');
+      const data = await api('/api/license/lookup', { name });
+      setLicenseUi(data.license, !!data.canPost, data.error);
+      status(data.canPost ? `證號已自動帶入：${data.license}` : data.error || '無證號不可上架');
+    } catch (e) {
+      setLicenseUi('', false, e.message);
+      status('自動查證號失敗：' + (e.message || e));
+    }
+  }
+
+  async function autoLookupBroker() {
+    const city = form.elements.namedItem('region')?.value?.trim() || '';
+    if (city.length < 2) return;
+    try {
+      status('自動抓取地區經紀人…');
+      const data = await api('/api/broker/lookup', { city });
+      if (!data.ok) throw new Error(data.error || '找不到經紀人');
+      setBrokerUi(data.broker);
+      status('經紀人已自動帶入：' + formatBrokerLine(data.broker));
+    } catch (e) {
+      setBrokerUi(null);
+      status('自動抓經紀人失敗：' + (e.message || e));
+    }
+  }
+
+  function scheduleLicenseLookup() {
+    clearTimeout(licenseTimer);
+    licenseTimer = setTimeout(() => autoLookupLicense(), 600);
+  }
+
+  function scheduleBrokerLookup() {
+    clearTimeout(brokerTimer);
+    brokerTimer = setTimeout(() => autoLookupBroker(), 600);
   }
 
   function depositAmount(fd) {
@@ -315,40 +377,13 @@
     }
   });
 
-  el('sf591-btn-license')?.addEventListener('click', async () => {
-    const name = form.elements.namedItem('posterName')?.value?.trim() || '';
-    if (!name) {
-      status('請先填上架人姓名');
-      return;
-    }
-    try {
-      status('查詢人事證號…');
-      const data = await api('/api/license/lookup', { name });
-      setLicenseUi(data.license, !!data.canPost, data.error);
-      status(data.canPost ? '證號已帶入' : data.error || '無證號不可上架');
-    } catch (e) {
-      setLicenseUi('', false, e.message);
-      status('查證號失敗：' + (e.message || e));
-    }
-  });
+  form.elements.namedItem('posterName')?.addEventListener('change', scheduleLicenseLookup);
+  form.elements.namedItem('posterName')?.addEventListener('blur', scheduleLicenseLookup);
+  form.elements.namedItem('region')?.addEventListener('change', scheduleBrokerLookup);
+  form.elements.namedItem('region')?.addEventListener('blur', scheduleBrokerLookup);
 
-  el('sf591-btn-broker')?.addEventListener('click', async () => {
-    const city = form.elements.namedItem('region')?.value?.trim() || '';
-    if (!city) {
-      status('請先填縣市');
-      return;
-    }
-    try {
-      status('抓取地區經紀人…');
-      const data = await api('/api/broker/lookup', { city });
-      if (!data.ok) throw new Error(data.error || '找不到經紀人');
-      setBrokerUi(data.broker);
-      status('經紀人已帶入');
-    } catch (e) {
-      setBrokerUi(null);
-      status('抓經紀人失敗：' + (e.message || e));
-    }
-  });
+  el('sf591-btn-license')?.addEventListener('click', () => autoLookupLicense());
+  el('sf591-btn-broker')?.addEventListener('click', () => autoLookupBroker());
 
   el('sf591-btn-prepare')?.addEventListener('click', async () => {
     try {
