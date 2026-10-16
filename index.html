@@ -4692,7 +4692,7 @@
 
                 <div class="home-feature-card home-card-business">
                     <button onclick="showPage('business')" class="btn btn-block btn-center btn-xl tone-purple hc-btn"><span class="hc-ico" aria-hidden="true">💼</span><span class="hc-name">業務專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">租金水準、公證費、591 自動上架、表單與周會檔案；解約退還試算請至「催收解約專區」。</p>
+                    <p id="sf591-home-desc" class="text-slate-600 mt-3 text-center text-sm leading-relaxed">租金水準、公證費、表單與周會檔案；解約退還試算請至「催收解約專區」。</p>
                 </div>
 
                 <div class="home-feature-card home-card-termination">
@@ -7228,7 +7228,7 @@
             </button>
             <div class="bg-gradient-to-br from-purple-50 via-white to-slate-50 rounded-[2rem] p-6 border border-purple-200 shadow-lg">
                 <h2 class="text-3xl font-bold text-slate-900 mb-2 text-center">💼 業務專區</h2>
-                <p class="text-slate-600 mb-4 text-center max-w-2xl mx-auto leading-relaxed">租金水準、公證費試算、591 自動上架工作台、各式表單、周會簡報下載與線上表單後台；解約退還金額試算請至首頁「催收解約專區」。</p>
+                <p id="sf591-biz-desc" class="text-slate-600 mb-4 text-center max-w-2xl mx-auto leading-relaxed">租金水準、公證費試算、各式表單、周會簡報下載與線上表單後台；解約退還金額試算請至首頁「催收解約專區」。</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button onclick="showPage('rent')" class="btn btn-block btn-center btn-solid-purple text-xl">
                         📈 前往租金水準試算器
@@ -7236,7 +7236,7 @@
                     <button onclick="showPage('business-notary-fee')" class="btn btn-block btn-center btn-solid-purple text-xl">
                         📜 公證費試算器
                     </button>
-                    <button onclick="showPage('business-591-listing')" class="btn btn-block btn-center btn-solid-purple text-xl">
+                    <button id="sf591-entry-btn" onclick="showPage('business-591-listing')" class="hidden btn btn-block btn-center btn-solid-purple text-xl">
                         🏠 591 自動上架工作台
                     </button>
                     <button onclick="showPage('business-forms')" class="btn btn-block btn-center btn-solid-purple text-xl">
@@ -13219,9 +13219,10 @@
             { page: 'tenant-kinship', title: '親屬等親表', category: '房客專區', keywords: '親等 親屬 二等親 三等親 血親 姻親' },
             { page: 'business-income-standards', title: '低收/中低收收入標準', category: '房客專區', keywords: '低收入 中低收入 租補 補助 115年 標準' },
             { external: 'https://pip.moi.gov.tw/Publicize/Info/B1021', title: '300億租金補貼試算', category: '房客專區', keywords: '300億 租補 租金補貼 內政部 試算 pip' },
-            { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發 591 自動上架 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
+            { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
             { page: 'rent', title: '租金水準試算器', category: '業務專區', keywords: '租金水準試算器 租金水準 試算器 計算器 租金 坪數 行情 估租 單坪 屋齡 行政區 評定 待租 評定結果 擬定月租 收件上限 社宅' },
-            { page: 'business-591-listing', title: '591 自動上架工作台', category: '業務專區', keywords: '591 上架 自動上架 刊登 套餐 單筆 營業員 證號 經紀人 制式模板 桃園 高雄 AI 文案 RPA 工作台' },
+            // 591 僅測試站顯示（見 enableSf591OnPreviewHost）
+            { page: 'business-591-listing', title: '591 自動上架工作台', category: '業務專區', keywords: '591 上架 自動上架 刊登 套餐 單筆 營業員 證號 經紀人 制式模板 桃園 高雄 AI 文案 RPA 工作台', previewOnly: true },
             { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1151001 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案 報名表 財補報名表 報名 下載報名表 上傳報名表' },
             { page: 'newbie-quest', title: '業績任務板', category: '新人專區', keywords: '業績 任務板 打卡 新人 考核 kpi 追蹤 任務 新人任務' },
             { file: './admin/accounts-dashboard.html', title: '帳號管理後台', category: '管理工具', keywords: '後台 admin 帳號 開通 停用 登入紀錄 管理員' },
@@ -13415,7 +13416,41 @@
 
         document.addEventListener('skyfun-auth-ready', () => updateAppChrome(lastActivePageName || 'home'));
 
+        function isSf591PreviewHost() {
+            const h = String(location.hostname || '').toLowerCase();
+            return (
+                h === 'skyfun-toolbox-preview.pages.dev' ||
+                h.endsWith('.skyfun-toolbox-preview.pages.dev') ||
+                h === 'localhost' ||
+                h === '127.0.0.1' ||
+                h === 'thinklover.github.io' ||
+                h === 'dahwork123-hash.github.io'
+            );
+        }
+
+        function enableSf591OnPreviewHost() {
+            const on = isSf591PreviewHost();
+            const btn = document.getElementById('sf591-entry-btn');
+            if (btn) btn.classList.toggle('hidden', !on);
+            const biz = document.getElementById('sf591-biz-desc');
+            if (biz && on) {
+                biz.textContent =
+                    '租金水準、公證費試算、591 自動上架工作台、各式表單、周會簡報下載與線上表單後台；解約退還金額試算請至首頁「催收解約專區」。';
+            }
+            const home = document.getElementById('sf591-home-desc');
+            if (home && on) {
+                home.textContent =
+                    '租金水準、公證費、591 自動上架、表單與周會檔案；解約退還試算請至「催收解約專區」。';
+            }
+            if (!on && Array.isArray(window.SITE_SEARCH_INDEX)) {
+                window.SITE_SEARCH_INDEX = window.SITE_SEARCH_INDEX.filter((x) => !x.previewOnly);
+            }
+        }
+
         function showPage(pageName, opts = {}) {
+            if (pageName === 'business-591-listing' && !isSf591PreviewHost()) {
+                pageName = 'business';
+            }
             const skipHistory = !!opts.skipHistory;
             const fromPage = lastActivePageName;
 
@@ -13595,6 +13630,7 @@
 
         window.showPage = showPage;
         window.goPreviousPage = goPreviousPage;
+        enableSf591OnPreviewHost();
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('[data-app-home]')) return;
