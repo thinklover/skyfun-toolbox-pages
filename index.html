@@ -4692,7 +4692,7 @@
 
                 <div class="home-feature-card home-card-business">
                     <button onclick="showPage('business')" class="btn btn-block btn-center btn-xl tone-purple hc-btn"><span class="hc-ico" aria-hidden="true">💼</span><span class="hc-name">業務專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">租金水準、公證費、表單與周會檔案；解約退還試算請至「催收解約專區」。</p>
+                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">租金水準、公證費、591 自動上架、表單與周會檔案；解約退還試算請至「催收解約專區」。</p>
                 </div>
 
                 <div class="home-feature-card home-card-termination">
@@ -7228,7 +7228,7 @@
             </button>
             <div class="bg-gradient-to-br from-purple-50 via-white to-slate-50 rounded-[2rem] p-6 border border-purple-200 shadow-lg">
                 <h2 class="text-3xl font-bold text-slate-900 mb-2 text-center">💼 業務專區</h2>
-                <p class="text-slate-600 mb-4 text-center max-w-2xl mx-auto leading-relaxed">租金水準、公證費試算、各式表單、周會簡報下載與線上表單後台；解約退還金額試算請至首頁「催收解約專區」。</p>
+                <p class="text-slate-600 mb-4 text-center max-w-2xl mx-auto leading-relaxed">租金水準、公證費試算、591 自動上架工作台、各式表單、周會簡報下載與線上表單後台；解約退還金額試算請至首頁「催收解約專區」。</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button onclick="showPage('rent')" class="btn btn-block btn-center btn-solid-purple text-xl">
                         📈 前往租金水準試算器
@@ -7236,10 +7236,13 @@
                     <button onclick="showPage('business-notary-fee')" class="btn btn-block btn-center btn-solid-purple text-xl">
                         📜 公證費試算器
                     </button>
+                    <button onclick="showPage('business-591-listing')" class="btn btn-block btn-center btn-solid-purple text-xl">
+                        🏠 591 自動上架工作台
+                    </button>
                     <button onclick="showPage('business-forms')" class="btn btn-block btn-center btn-solid-purple text-xl">
                         📋 各式表單
                     </button>
-                    <a href="./docs/weekly-meeting/" class="btn btn-block btn-center btn-solid-purple text-xl no-underline">
+                    <a href="./docs/weekly-meeting/" class="btn btn-block btn-center btn-solid-purple text-xl no-underline md:col-span-2">
                         📂 業務周會檔案
                     </a>
                 </div>
@@ -7798,6 +7801,186 @@
                     </div>
 
                 </div>
+            </div>
+        </div>
+
+        <!-- 業務專區：591 自動上架工作台（本機 RPA 說明） -->
+        <div id="page-business-591-listing" class="hidden max-w-5xl mx-auto space-y-6">
+            <button onclick="showPage('business')" class="mb-4 btn btn-sm tone-slate-soft">
+                ← 返回業務專區
+            </button>
+
+            <div class="bg-white rounded-[2rem] p-6 border border-purple-200 shadow-lg space-y-6">
+                <div class="text-center space-y-2">
+                    <h2 class="text-3xl font-bold text-purple-900 mb-1">🏠 591 自動上架工作台</h2>
+                    <p class="text-slate-600 text-sm max-w-2xl mx-auto leading-relaxed">雲端版（Cloudflare）：開 <strong>Live View</strong> 人工登入 591 → 組文案／填表 → 再回 Live View <strong>人工點確認刊登</strong>。不用本機安裝、不用 Render。</p>
+                </div>
+
+                <div class="rounded-2xl border-2 border-rose-200 bg-rose-50 p-4 text-sm text-rose-950 space-y-2">
+                    <div class="font-black text-rose-900">⚠ 上架硬規則</div>
+                    <ul class="list-disc pl-5 space-y-1 leading-relaxed">
+                        <li><strong>沒有營業員證照，絕對不准上架 591</strong>（會查星鴻人事並擋下）。</li>
+                        <li>591 刊登內容、金額須與<strong>租約、媒合頁面一致</strong>。</li>
+                        <li>每人扣的是<strong>自己 591 帳號</strong>；「確認刊登」一定要在 Live View 自己點。</li>
+                    </ul>
+                </div>
+
+                <div class="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 space-y-3">
+                    <h3 class="font-bold text-purple-950 text-lg">雲端操作（三步）</h3>
+                    <ol class="list-decimal pl-5 space-y-2 text-sm text-slate-800 leading-relaxed">
+                        <li>按「① 開啟 Live View 登入」→ 用<strong>自己的</strong> 591 帳密登入</li>
+                        <li>填下方物件資料 →「② 準備文案」→「③ 雲端填表」</li>
+                        <li>回到 Live View，確認無誤後<strong>人工點確認刊登</strong></li>
+                    </ol>
+                    <p class="text-xs text-slate-600">模板目前：<strong>桃園市、高雄市</strong>。API：<code id="sf591-api-base" class="bg-white px-1 rounded border text-[11px]">https://skyfun-591-listing.dahwork123.workers.dev</code></p>
+                </div>
+
+                <div class="flex flex-wrap gap-3 justify-center">
+                    <button type="button" id="sf591-btn-live" class="btn tone-emerald px-6 py-3 text-base font-black">① 開啟 Live View 登入</button>
+                    <button type="button" id="sf591-btn-prepare" class="btn tone-purple px-6 py-3 text-base font-black">② 準備文案</button>
+                    <button type="button" id="sf591-btn-fill" class="btn tone-purple px-6 py-3 text-base font-black">③ 雲端填表</button>
+                    <button type="button" onclick="showPage('newbie-business')" class="btn tone-slate-mid px-6 py-3 text-base">業務專線教材</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <label class="block">上架人姓名 *
+                        <input id="sf591-poster" class="w-full mt-1 px-3 py-2 border-2 border-slate-200 rounded-xl" placeholder="人事管理搜尋用" />
+                    </label>
+                    <label class="block">縣市 *
+                        <select id="sf591-city" class="w-full mt-1 px-3 py-2 border-2 border-slate-200 rounded-xl">
+                            <option value="桃園市">桃園市</option>
+                            <option value="高雄市">高雄市</option>
+                        </select>
+                    </label>
+                    <label class="block md:col-span-2">行政區／路名／號／樓（簡填）
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                            <input id="sf591-section" class="px-3 py-2 border-2 border-slate-200 rounded-xl" placeholder="行政區" />
+                            <input id="sf591-street" class="px-3 py-2 border-2 border-slate-200 rounded-xl" placeholder="路名" />
+                            <input id="sf591-number" class="px-3 py-2 border-2 border-slate-200 rounded-xl" placeholder="號" />
+                            <input id="sf591-floor" class="px-3 py-2 border-2 border-slate-200 rounded-xl" placeholder="樓" />
+                        </div>
+                    </label>
+                    <label class="block">租金
+                        <input id="sf591-rent" type="number" class="w-full mt-1 px-3 py-2 border-2 border-slate-200 rounded-xl" placeholder="例如 15000" />
+                    </label>
+                    <label class="block">聯絡電話
+                        <input id="sf591-phone" class="w-full mt-1 px-3 py-2 border-2 border-slate-200 rounded-xl" placeholder="0912…" />
+                    </label>
+                </div>
+
+                <div id="sf591-status" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 min-h-[3rem]" aria-live="polite">尚未開始。請先開 Live View 登入。</div>
+                <pre id="sf591-preview" class="hidden text-xs whitespace-pre-wrap bg-white border border-slate-200 rounded-xl p-3 max-h-64 overflow-auto"></pre>
+
+                <div class="rounded-[1.25rem] border border-amber-200 bg-amber-50/80 p-4 text-xs text-amber-950 space-y-1 leading-relaxed">
+                    <div class="font-bold">注意</div>
+                    <p>需 Cloudflare <strong>Workers Paid</strong>（Browser Rendering）。Live View 連結等同登入憑證，勿轉傳。</p>
+                    <p>星鴻查證號／經紀人用公司服務帳；591 請用個人帳號。詳細見 repo <code class="bg-white px-1 rounded border">CLOUD.md</code>。</p>
+                </div>
+                <script>
+                (function () {
+                    const API = (window.SKYFUN_591_API || 'https://skyfun-591-listing.dahwork123.workers.dev').replace(/\/$/, '');
+                    const el = (id) => document.getElementById(id);
+                    const status = (msg) => { const s = el('sf591-status'); if (s) s.textContent = msg; };
+                    let sessionId = sessionStorage.getItem('sf591SessionId') || '';
+                    let liveUrl = sessionStorage.getItem('sf591LiveUrl') || '';
+                    let prepared = null;
+
+                    async function api(path, body) {
+                        const res = await fetch(API + path, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body || {}),
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok && !data.ok && !data.needLogin) throw new Error(data.error || ('HTTP ' + res.status));
+                        return data;
+                    }
+
+                    function listingFromForm() {
+                        return {
+                            posterName: el('sf591-poster')?.value?.trim() || '',
+                            address: {
+                                region: el('sf591-city')?.value || '',
+                                section: el('sf591-section')?.value?.trim() || '',
+                                street: el('sf591-street')?.value?.trim() || '',
+                                number: el('sf591-number')?.value?.trim() || '',
+                                floor: el('sf591-floor')?.value?.trim() || '',
+                            },
+                            rent: { rent: Number(el('sf591-rent')?.value || 0) || null },
+                            contact: {
+                                name: el('sf591-poster')?.value?.trim() || '',
+                                phone: el('sf591-phone')?.value?.trim() || '',
+                                role: '仲介',
+                            },
+                            billing: { mode: 'package', packageName: '住宅-黃金套餐' },
+                            kind: 'whole',
+                        };
+                    }
+
+                    el('sf591-btn-live')?.addEventListener('click', async () => {
+                        try {
+                            status('建立雲端瀏覽器 session…');
+                            const data = await api('/api/session/start', {});
+                            sessionId = data.sessionId || '';
+                            liveUrl = data.liveViewUrl || '';
+                            sessionStorage.setItem('sf591SessionId', sessionId);
+                            sessionStorage.setItem('sf591LiveUrl', liveUrl);
+                            if (liveUrl) {
+                                window.open(liveUrl, '_blank', 'noopener,noreferrer');
+                                status('已開啟 Live View。請登入自己的 591，完成後再按「準備文案／雲端填表」。session=' + sessionId.slice(0, 8) + '…');
+                            } else if (data.screenshot) {
+                                status('Live View 連結暫不可用，已取得畫面截圖（請稍後重試 Live）。session=' + (sessionId || '無'));
+                            } else {
+                                status('已建立 session，但尚未取得 Live View URL，請稍後再按一次。');
+                            }
+                        } catch (e) {
+                            status('失敗：' + (e.message || e));
+                        }
+                    });
+
+                    el('sf591-btn-prepare')?.addEventListener('click', async () => {
+                        try {
+                            status('查證號／經紀人並組模板…');
+                            const data = await api('/api/prepare', { listing: listingFromForm() });
+                            prepared = data.listing;
+                            const prev = el('sf591-preview');
+                            if (prev) {
+                                prev.classList.remove('hidden');
+                                prev.textContent = (prepared.title || '') + '\n\n' + (prepared.description || '');
+                            }
+                            status('文案已準備。營業員：' + (prepared.salesLicense || '') + '；經紀人：' + (prepared.broker?.rawLine || ''));
+                        } catch (e) {
+                            status('準備失敗：' + (e.message || e));
+                        }
+                    });
+
+                    el('sf591-btn-fill')?.addEventListener('click', async () => {
+                        try {
+                            if (!sessionId) {
+                                status('請先按「① 開啟 Live View 登入」');
+                                return;
+                            }
+                            status('雲端填表中（請稍候）…');
+                            const data = await api('/api/fill', {
+                                sessionId,
+                                listing: prepared || listingFromForm(),
+                            });
+                            if (data.liveViewUrl) {
+                                liveUrl = data.liveViewUrl;
+                                sessionStorage.setItem('sf591LiveUrl', liveUrl);
+                                window.open(liveUrl, '_blank', 'noopener,noreferrer');
+                            }
+                            if (data.needLogin) {
+                                status(data.message || '請先在 Live View 登入 591');
+                                return;
+                            }
+                            status((data.message || '填表完成') + ' → 請到 Live View 人工點「確認刊登」。');
+                        } catch (e) {
+                            status('填表失敗：' + (e.message || e));
+                        }
+                    });
+                })();
+                </script>
             </div>
         </div>
 
@@ -13022,8 +13205,9 @@
             { page: 'tenant-kinship', title: '親屬等親表', category: '房客專區', keywords: '親等 親屬 二等親 三等親 血親 姻親' },
             { page: 'business-income-standards', title: '低收/中低收收入標準', category: '房客專區', keywords: '低收入 中低收入 租補 補助 115年 標準' },
             { external: 'https://pip.moi.gov.tw/Publicize/Info/B1021', title: '300億租金補貼試算', category: '房客專區', keywords: '300億 租補 租金補貼 內政部 試算 pip' },
-            { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
+            { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發 591 自動上架 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
             { page: 'rent', title: '租金水準試算器', category: '業務專區', keywords: '租金水準試算器 租金水準 試算器 計算器 租金 坪數 行情 估租 單坪 屋齡 行政區 評定 待租 評定結果 擬定月租 收件上限 社宅' },
+            { page: 'business-591-listing', title: '591 自動上架工作台', category: '業務專區', keywords: '591 上架 自動上架 刊登 套餐 單筆 營業員 證號 經紀人 制式模板 桃園 高雄 AI 文案 RPA 工作台' },
             { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1151001 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案 報名表 財補報名表 報名 下載報名表 上傳報名表' },
             { page: 'newbie-quest', title: '業績任務板', category: '新人專區', keywords: '業績 任務板 打卡 新人 考核 kpi 追蹤 任務 新人任務' },
             { file: './admin/accounts-dashboard.html', title: '帳號管理後台', category: '管理工具', keywords: '後台 admin 帳號 開通 停用 登入紀錄 管理員' },
@@ -13094,6 +13278,7 @@
             'business-land-value-tax': 'page-business-land-value-tax',
             'business-income-standards': 'page-business-income-standards',
             'business-notary-fee': 'page-business-notary-fee',
+            'business-591-listing': 'page-business-591-listing',
             'business-deposit-refund': 'page-business-deposit-refund',
             'business-bao-deposit-refund': 'page-business-bao-deposit-refund',
             'business-forms': 'page-business-forms',
@@ -13153,7 +13338,7 @@
             'page-newbie-business', 'page-newbie-rentmgr',
             'page-newbie-roadmap', 'page-newbie-glossary', 'page-newbie-screening', 'page-newbie-quest', 'page-newbie-subsidy', 'page-newbie-transcript',
             'page-business', 'page-business-land-value-tax',
-            'page-business-income-standards', 'page-business-notary-fee', 'page-business-deposit-refund',
+            'page-business-income-standards', 'page-business-notary-fee', 'page-business-591-listing', 'page-business-deposit-refund',
             'page-business-bao-deposit-refund', 'page-business-forms', 'page-termination',
             'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus',
             'page-announcement', 'page-manager-bonus', 'page-administration', 'page-admin-qa', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
