@@ -886,7 +886,7 @@
             '<label class="acf-field' + (isOther ? '' : ' hidden') + '" data-resubmit-other-wrap><span>其他分類 <em>*</em></span><input data-resubmit="otherCategory" value="' + esc(isOther ? c.category.slice(3) : '') + '" maxlength="80"></label>' +
             '<label class="acf-field"><span>完整主旨 <em>*</em></span><input data-resubmit="title" value="' + esc(d.title) + '" maxlength="500" required></label>' +
             field('一、案件摘要', 'summary', c.summary, true) +
-            field('二、時間歷程與證據狀態', 'timeline', c.timeline, false) +
+            field('二、時間歷程與證據狀態', 'timeline', c.timeline, true) +
             field('三、案件說明', 'description', c.description, true) +
             field('四、擬辦', 'proposal', c.proposal, true) +
             '<label class="acf-field"><span>主旨結語</span><select data-resubmit="closing"><option' + (c.closing !== '敬請核示' ? ' selected' : '') + '>擬請核示</option><option' + (c.closing === '敬請核示' ? ' selected' : '') + '>敬請核示</option></select></label>' +
@@ -1149,8 +1149,8 @@
                     showRespect: !!root.querySelector('[data-resubmit="showRespect"]')?.checked
                 };
                 if (!categoryChoice || (categoryChoice === '其他' && !otherCategory) || !updatedTitle ||
-                    !updatedContent.summary || !updatedContent.description || !updatedContent.proposal) {
-                    detailMsg('請填完主旨分類、完整主旨、案件摘要、案件說明與擬辦', 'err');
+                    !updatedContent.summary || !updatedContent.timeline || !updatedContent.description || !updatedContent.proposal) {
+                    detailMsg('請填完主旨分類、完整主旨、案件摘要、時間歷程與證據狀態、案件說明與擬辦', 'err');
                     return;
                 }
             }
