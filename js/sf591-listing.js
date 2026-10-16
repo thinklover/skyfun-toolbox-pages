@@ -385,6 +385,50 @@
   el('sf591-btn-license')?.addEventListener('click', () => autoLookupLicense());
   el('sf591-btn-broker')?.addEventListener('click', () => autoLookupBroker());
 
+  /** 上架人姓名＝工具箱登入使用者本名 */
+  function toolboxDisplayName() {
+    try {
+      const u = window.skyfunAuth?.getUser?.();
+      const name = String(u?.name || '').trim();
+      // 排除身分證當 username 誤填進 name 的情況
+      if (name && !/^[A-Za-z][12]\d{8}$/.test(name) && name.length >= 2) return name;
+    } catch {
+      /* ignore */
+    }
+    return '';
+  }
+
+  function prefillPosterFromToolbox(force) {
+    const poster = form.elements.namedItem('posterName');
+    const contact = form.elements.namedItem('contactName');
+    const name = toolboxDisplayName();
+    if (!name || !poster) return false;
+    if (!force && poster.value && poster.value.trim() !== name) return false;
+    if (!poster.value || force || poster.value.trim() === name) {
+      poster.value = name;
+      if (contact && (!contact.value || contact.value.trim() === name)) contact.value = name;
+      scheduleLicenseLookup();
+      return true;
+    }
+    return false;
+  }
+
+  document.addEventListener('skyfun-auth-ready', () => prefillPosterFromToolbox(true));
+  // 進入 591 頁時再帶一次（auth 通常已就緒）
+  const pageEl = document.getElementById('page-business-591-listing');
+  if (pageEl && typeof MutationObserver !== 'undefined') {
+    const mo = new MutationObserver(() => {
+      if (!pageEl.classList.contains('hidden')) prefillPosterFromToolbox(true);
+    });
+    mo.observe(pageEl, { attributes: true, attributeFilter: ['class'] });
+  }
+  // auth 腳本在後面載入：短暫重試
+  let tries = 0;
+  const boot = setInterval(() => {
+    tries += 1;
+    if (prefillPosterFromToolbox(true) || tries >= 20) clearInterval(boot);
+  }, 300);
+
   el('sf591-btn-prepare')?.addEventListener('click', async () => {
     try {
       status('準備文案（證號＋經紀＋模板）…');
