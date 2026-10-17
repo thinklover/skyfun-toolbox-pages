@@ -2366,10 +2366,11 @@
     return { year: year - 1911, month, guild: `${year - 1911}/${String(month).padStart(2, '0')}` };
   }
 
-  async function fetchKpiPart(m, part) {
+  async function fetchKpiPart(m, part, refresh) {
     let res;
     try {
-      res = await fetch(`${RPA_BASE}/admin-points/kpi?year=${m.year}&month=${m.month}&part=${part}`, {
+      const q = `year=${m.year}&month=${m.month}&part=${part}${refresh ? '&refresh=1' : ''}`;
+      res = await fetch(`${RPA_BASE}/admin-points/kpi?${q}`, {
         headers: { 'X-Skyfun-Session': token() }
       });
     } catch {
@@ -3051,18 +3052,22 @@
   const OFF_NO_ROW = '意見對不到清冊';
 
   /** 該公會期數的表單04／09（每列媒合編號），複審人分批向 Worker 查，快取在 state.rosterOff */
-  function loadRosterOffices(period) {
-    if (state.rosterOff.has(period)) return;
+  function loadRosterOffices(period, refresh) {
+    if (!refresh && state.rosterOff.has(period)) return;
     const [year, month] = period.split('/').map(Number);
     const g = { year, month, guild: period };
     const entry = { busy: true, rev: new Map(), focus: [] };
     state.rosterOff.set(period, entry);
-    Promise.all([fetchKpiPart(g, 'roster04'), fetchKpiPart(g, 'roster09'), guildSysPeriod(period)])
+    Promise.all([fetchKpiPart(g, 'roster04', refresh), fetchKpiPart(g, 'roster09', refresh), guildSysPeriod(period)])
       .then(([a, b]) => {
-        if (![a, b].every((d) => (d.rows || []).every((r) => Array.isArray(r[4])))) throw new Error('清冊資料沒有媒合編號，請重新整理（Ctrl＋F5）後再試');
+        if (![a, b].every((d) => (d.rows || []).every((r) => Array.isArray(r[4])))) {
+          throw new Error('清冊資料沒有媒合編號，請按重試或重新整理（Ctrl＋F5）後再試');
+        }
         entry.rows = [];
         for (const [form, d] of [['04', a], ['09', b]]) {
-          for (const [region, company, per, , nos] of d.rows || []) for (const no of nos) entry.rows.push({ form, region, company, period: per, no: String(no || '').trim() });
+          for (const [region, company, per, , nos] of d.rows || []) {
+            for (const no of nos) entry.rows.push({ form, region, company, period: per, no: String(no || '').trim() });
+          }
         }
         entry.ids = { ...(a.ids || {}), ...(b.ids || {}) };
       })
@@ -5690,7 +5695,9 @@
       }
       const rosterOffRetry = e.target.closest('[data-roster-off-retry]');
       if (rosterOffRetry) {
-        state.rosterOff.delete(rosterOffRetry.dataset.rosterOffRetry);
+        const p = rosterOffRetry.dataset.rosterOffRetry;
+        state.rosterOff.delete(p);
+        loadRosterOffices(p, true);
         render();
         return;
       }

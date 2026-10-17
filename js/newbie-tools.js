@@ -1569,8 +1569,32 @@
         knowledgeChunksCache = null;
     };
 
+    /** Magic / Aceternity：滑鼠聚光；各頁注入 Background Beams */
+    function initNbMagicCards() {
+        if (document.documentElement.dataset.nbMagicBound) return;
+        document.documentElement.dataset.nbMagicBound = '1';
+        document.querySelectorAll('[id^="page-newbie"].nb-magic-page').forEach((page) => {
+            if (page.querySelector(':scope > .nb-ui-beams')) return;
+            const beams = document.createElement('div');
+            beams.className = 'nb-ui-beams';
+            beams.setAttribute('aria-hidden', 'true');
+            beams.innerHTML = '<span></span><span></span><span></span><span></span><span></span>';
+            page.insertBefore(beams, page.firstChild);
+        });
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        document.addEventListener('pointermove', (e) => {
+            const card = e.target.closest('[data-nb-magic], .nb-mcard, .nb-role-head, .nb-panel');
+            if (!card || !card.closest('[id^="page-newbie"]')) return;
+            const r = card.getBoundingClientRect();
+            if (!r.width || !r.height) return;
+            card.style.setProperty('--mx', ((e.clientX - r.left) / r.width) * 100 + '%');
+            card.style.setProperty('--my', ((e.clientY - r.top) / r.height) * 100 + '%');
+        }, { passive: true });
+    }
+
     function init() {
         initNbDisclosureScrollLock();
+        initNbMagicCards();
         initPhotoChecklistEvents();
         initLegacyRoadmap();
         initGlossary('nb-glossary-search', 'nb-glossary-list', null);

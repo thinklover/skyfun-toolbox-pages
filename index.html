@@ -4395,6 +4395,7 @@
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261015-22">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261017-1">
+<link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -5797,8 +5798,8 @@
 
 
         <!-- 新人專區：路線圖 -->
-        <div id="page-newbie-roadmap" class="hidden max-w-4xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+        <div id="page-newbie-roadmap" class="hidden max-w-4xl mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
             <p class="nb-legacy-banner">完整路線圖與教材請用 <button type="button" class="nb-inline-link" onclick="showPage('newbie-business')">業務專線</button> 或 <button type="button" class="nb-inline-link" onclick="showPage('newbie-rentmgr')">租管師專線</button>。</p>
             <div id="nb-roadmap-panel" class="nb-panel space-y-4">
                 <div class="rd-header">
@@ -5815,8 +5816,8 @@
         </div>
 
         <!-- 新人專區：白話詞典 -->
-        <div id="page-newbie-glossary" class="hidden max-w-4xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+        <div id="page-newbie-glossary" class="hidden max-w-4xl mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
             <div class="nb-panel space-y-4">
                 <div class="rd-header">
                     <h4>社宅白話詞典</h4>
@@ -5831,8 +5832,8 @@
         </div>
 
         <!-- 新人專區：進件資格快篩 -->
-        <div id="page-newbie-screening" class="hidden max-w-4xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+        <div id="page-newbie-screening" class="hidden max-w-4xl mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
             <p class="nb-legacy-banner">業務日常建議用 <button type="button" class="nb-inline-link" onclick="showPage('newbie-business'); setTimeout(function(){ document.querySelector('[data-nb-section=screen]')?.click(); }, 80);">業務專線 → 快篩</button>。</p>
             <div id="nb-screen-panel" class="nb-panel space-y-4">
                 <div class="rd-header">
@@ -6611,8 +6612,8 @@
             </div>
 
 
-        <div id="page-newbie-business" class="hidden max-w-4xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+        <div id="page-newbie-business" class="hidden max-w-4xl mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
             <div class="nb-role-shell">
                 <header class="nb-role-head nb-role-head--business">
                     <h1>💼 業務新人專線</h1>
@@ -6705,8 +6706,8 @@
                 </div>
             </div>
         </div>
-        <div id="page-newbie-rentmgr" class="hidden max-w-4xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+        <div id="page-newbie-rentmgr" class="hidden max-w-4xl mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
             <div class="nb-role-shell">
                 <header class="nb-role-head nb-role-head--rentmgr">
                     <h1>🏢 租管師新人專線</h1>
@@ -6806,16 +6807,17 @@
         </div>
 
         <!-- 專區頁面：新人 - 業務開發心法（點按鈕才顯示） -->
-        <div id="page-newbie-playbook" class="hidden max-w-4xl mx-auto space-y-4">
-            <button onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
-            <div class="nb-panel space-y-5">
-                <header class="text-center border-b border-slate-100 pb-4">
-                    <h2 class="text-2xl font-black text-emerald-900 mb-1">🧠 業務開發心法</h2>
-                    <p class="text-slate-600 text-sm">話術與開發策略；591、緣故等細節見 <button type="button" class="nb-inline-link" onclick="showPage('newbie-business')">業務專線 → 路線圖</button></p>
+        <div id="page-newbie-playbook" class="hidden max-w-4xl mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
+            <div class="nb-panel nb-magic-surface space-y-5" data-nb-magic>
+                <header class="nb-magic-subhead">
+                    <h2>🧠 業務開發心法</h2>
+                    <p>話術與開發策略；591、緣故等細節見 <button type="button" class="nb-inline-link" onclick="showPage('newbie-business')">業務專線 → 路線圖</button></p>
                 </header>
 
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
-                    <h3 class="text-lg font-bold text-emerald-900 mb-2">核心觀念</h3>
+                <div class="nb-mcard nb-mcard--soft nb-shine" data-nb-magic>
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <h3 class="nb-mcard-name">核心觀念</h3>
                     <ul class="list-disc pl-5 space-y-2 text-slate-700 text-sm">
                         <li>間接媒合：強調社宅優惠與<strong>信任租</strong>篩房客</li>
                         <li>直接媒合：強調修繕、保險與代管責任</li>
@@ -6824,21 +6826,24 @@
                     </ul>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="rounded-[1.5rem] bg-white border border-emerald-200 p-4">
-                        <div class="font-bold text-emerald-900 mb-2">1. 591 電話開發</div>
-                        <div class="text-sm text-slate-700">適合敢打電話、反應快的人</div>
+                <div class="nb-magic-grid-2">
+                    <div class="nb-mcard nb-mcard--soft nb-shine" data-nb-magic>
+                        <span class="nb-mcard-glow" aria-hidden="true"></span>
+                        <strong class="nb-mcard-name">1. 591 電話開發</strong>
+                        <small class="nb-mcard-desc">適合敢打電話、反應快的人</small>
                     </div>
-                    <div class="rounded-[1.5rem] bg-white border border-emerald-200 p-4">
-                        <div class="font-bold text-emerald-900 mb-2">2. FB／地方租屋社團</div>
-                        <div class="text-sm text-slate-700">適合擅長文字溝通、經營社群的人</div>
+                    <div class="nb-mcard nb-mcard--soft nb-shine" data-nb-magic>
+                        <span class="nb-mcard-glow" aria-hidden="true"></span>
+                        <strong class="nb-mcard-name">2. FB／地方租屋社團</strong>
+                        <small class="nb-mcard-desc">適合擅長文字溝通、經營社群的人</small>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-[1.5rem] border border-slate-200 p-5 space-y-4">
-                    <h3 class="text-2xl font-bold text-slate-800">兩條開發主線</h3>
+                <div class="nb-mcard nb-mcard--soft nb-shine space-y-4" data-nb-magic>
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <h3 class="nb-mcard-name">兩條開發主線</h3>
 
-                    <div class="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+                    <div class="nb-mcard-inset">
                         <div class="font-bold text-slate-900 mb-2">591 電話開發四步驟</div>
                         <ol class="list-decimal pl-5 space-y-2 text-sm text-slate-700">
                             <li><span class="font-bold">判斷能否做社宅</span>：先問「請問電一度幾塊？」（分租常見）</li>
@@ -6854,7 +6859,7 @@
                         </div>
                     </div>
 
-                    <div class="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+                    <div class="nb-mcard-inset">
                         <div class="font-bold text-slate-900 mb-2">FB／社團開發</div>
                         <ul class="list-disc pl-5 space-y-2 text-sm text-slate-700">
                             <li>話術：先問房東「之前出租過程中，有遇到什麼比較麻煩的地方嗎？」</li>
@@ -6867,8 +6872,9 @@
                     </div>
                 </div>
 
-                <div class="bg-amber-50/70 rounded-[1.5rem] border border-amber-200 p-5">
-                    <h3 class="text-2xl font-bold text-amber-900 mb-3">每週執行建議</h3>
+                <div class="nb-mcard nb-mcard--soft nb-mcard--amber nb-shine" data-nb-magic>
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <h3 class="nb-mcard-name">每週執行建議</h3>
                     <ul class="list-disc pl-5 space-y-2 text-sm text-slate-700">
                         <li>依個人優勢分配 591、社團、緣故等管道比重，不要只靠單一路線</li>
                         <li>建議每日接觸約 40 位房東（含追蹤、電開、社團、緣故）</li>
@@ -7813,7 +7819,7 @@
             <div class="bg-white rounded-[2rem] p-6 border border-purple-200 shadow-lg space-y-6">
                 <div class="text-center space-y-2">
                     <h2 class="text-3xl font-bold text-purple-900 mb-1">🏠 591 自動上架</h2>
-                    <p class="text-slate-600 text-sm max-w-2xl mx-auto leading-relaxed">欄位與本機《591上架RPA》工作台相同。填完後後台執行；<strong>只有確認刊登</strong>才跳出畫面。</p>
+                    <p class="text-slate-600 text-sm max-w-2xl mx-auto leading-relaxed">填完後按開始：先開 <strong>591 登入分頁</strong>自行輸入帳密；登入後後台填表，最後才跳出確認刊登。</p>
                 </div>
 
                 <div class="rounded-2xl border-2 border-rose-200 bg-rose-50 p-4 text-sm text-rose-950 space-y-2">
@@ -7949,7 +7955,7 @@
                             <label class="block">押金金額<input name="deposit" type="number" class="sf591-in w-full mt-1" placeholder="自訂時填" /></label>
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <label class="block">租金包含
+                            <label class="block">租金包含 *
                                 <select name="rentIncludes" class="sf591-in w-full mt-1" required>
                                     <option value="">請選擇</option>
                                     <option value="無">無</option>
@@ -7958,25 +7964,23 @@
                                     <option value="管理費">含管理費</option>
                                 </select>
                             </label>
-                            <label class="block">水費
+                            <label class="block">水費 *
                                 <select name="waterFee" class="sf591-in w-full mt-1" required>
-                                    <option value="">請選擇</option>
-                                    <option value="台水繳費">台水繳費</option>
+                                    <option value="台水繳費" selected>台水繳費</option>
                                     <option value="平分帳單">平分帳單</option>
                                     <option value="費用另計">費用另計</option>
                                     <option value="其他">其他</option>
                                 </select>
                             </label>
-                            <label class="block">電費
+                            <label class="block">電費 *
                                 <select name="electricFee" class="sf591-in w-full mt-1" required>
-                                    <option value="">請選擇</option>
-                                    <option value="台電繳費">台電繳費</option>
+                                    <option value="台電繳費" selected>台電繳費</option>
                                     <option value="平分帳單">平分帳單</option>
                                     <option value="費用另計">費用另計</option>
                                     <option value="其他">其他</option>
                                 </select>
                             </label>
-                            <label class="block">產權登記
+                            <label class="block">產權登記 *
                                 <select name="ownership" class="sf591-in w-full mt-1" required>
                                     <option value="">請選擇</option>
                                     <option value="已辦產">已辦產</option>
@@ -8093,9 +8097,10 @@
                             <label class="block">地區經紀人 <span class="font-normal text-slate-500 text-xs">填縣市後自動帶入，例：不動產經紀人易奷柔：(111)高市字第01481號</span>
                                 <input name="brokerLine" class="sf591-in w-full mt-1 bg-slate-50" readonly placeholder="填縣市後自動帶入" />
                             </label>
-                            <div class="flex flex-wrap gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <button type="button" id="sf591-btn-broker" class="btn tone-slate-mid">重新抓取經紀人</button>
-                                <button type="button" id="sf591-btn-prepare" class="btn tone-purple">準備文案（證號＋經紀＋模板）</button>
+                                <button type="button" id="sf591-btn-prepare" class="btn tone-purple">準備文案（AI 標題＋開場＋模板）</button>
+                                <span id="sf591-prepare-status" class="text-xs text-slate-600" aria-live="polite"></span>
                             </div>
                         </div>
                         <input type="hidden" name="brokerJson" value="" />
@@ -8111,7 +8116,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <label class="block">聯絡人 *<input name="contactName" class="sf591-in w-full mt-1" required /></label>
                             <label class="block">電話 *<input name="contactPhone" class="sf591-in w-full mt-1" required /></label>
-                            <label class="block">身分
+                            <label class="block">身分 *
                                 <select name="contactRole" class="sf591-in w-full mt-1" required>
                                     <option value="">請選擇</option>
                                     <option value="仲介">仲介</option>
@@ -8122,16 +8127,24 @@
                         </div>
                     </section>
 
-                    <section class="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 space-y-3">
-                        <h3 class="font-bold text-purple-950 text-base">你的 591 帳號（後台登入用，不會存進公司系統）</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <label class="block">591 帳號／手機 *
-                                <input id="sf591-user" class="sf591-in w-full mt-1" required placeholder="手機或帳號" autocomplete="username" />
-                            </label>
-                            <label class="block">591 密碼 *
-                                <input id="sf591-pass" type="password" class="sf591-in w-full mt-1" required placeholder="密碼" autocomplete="current-password" />
-                            </label>
+                    <section class="rounded-2xl border border-slate-200 p-4 space-y-3">
+                        <h3 class="font-bold text-purple-950 text-base">10 · 照片 *</h3>
+                        <p class="text-xs text-slate-500">建議 5 張以上、第 1 張為封面。可拖曳或點選上傳（最多 8 張，會自動壓縮）。</p>
+                        <div id="sf591-dropzone" class="rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/40 px-4 py-8 text-center cursor-pointer hover:border-purple-400 transition">
+                            <div class="font-bold text-purple-900">拖曳照片到這裡，或點擊選擇</div>
+                            <div class="text-xs text-slate-500 mt-1">支援 JPG／PNG／WebP</div>
+                            <input type="file" id="sf591-photo-input" accept="image/*" multiple class="hidden" />
                         </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="sf591-btn-clear-photos" class="btn btn-sm tone-slate-soft">清空照片</button>
+                            <span id="sf591-photo-count" class="text-xs text-slate-600">尚未選擇照片</span>
+                        </div>
+                        <div id="sf591-photo-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2"></div>
+                    </section>
+
+                    <section class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 space-y-2">
+                        <h3 class="font-bold text-emerald-950 text-base">591 登入方式</h3>
+                        <p class="text-xs text-emerald-900/90 leading-relaxed">按「開始上架」後會<strong>自動開啟 591 登入分頁</strong>，請自行輸入帳密登入。完成後請<strong>回到工具箱按綠色 Done</strong>（不要用分頁內的內頁按鈕）。</p>
                     </section>
                 </form>
 
@@ -8154,27 +8167,35 @@
                     <button type="button" onclick="showPage('newbie-business')" class="btn tone-slate-mid px-6 py-3 text-base">業務專線教材</button>
                 </div>
 
-                <div id="sf591-status" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 min-h-[3rem]" aria-live="polite">填完與本機工作台相同的欄位後按「開始上架」。照片請於確認畫面再補傳（測試版暫未串上傳）。</div>
+                <div id="sf591-status" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 min-h-[3rem]" aria-live="polite">填完欄位與照片後按「開始上架」：會先開 591 讓你自行登入，登入後後台填完才跳出確認刊登。</div>
                 <pre id="sf591-preview" class="hidden text-xs whitespace-pre-wrap bg-white border border-slate-200 rounded-xl p-3 max-h-48 overflow-auto"></pre>
             </div>
 
             <div id="sf591-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center p-3 bg-black/60">
-                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden border border-purple-200">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden border border-purple-200">
                     <div class="flex items-center justify-between gap-3 px-4 py-3 bg-purple-50 border-b border-purple-100">
                         <div>
-                            <div class="font-black text-purple-950">請確認後點「確認刊登」</div>
-                            <div class="text-xs text-slate-600">後台已填到確認頁。請核對內容無誤再送出；關閉視窗不會自動刊登。</div>
+                            <div id="sf591-modal-title" class="font-black text-purple-950">請登入 591</div>
+                            <div id="sf591-modal-sub" class="text-xs text-slate-600">在 591 分頁完成後，請回到此工具箱按下方 Done。</div>
                         </div>
-                        <div class="flex gap-2 shrink-0">
-                            <a id="sf591-open-tab" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-emerald">新分頁開啟</a>
-                            <button type="button" id="sf591-modal-close" class="btn btn-sm tone-slate-soft">關閉</button>
+                        <button type="button" id="sf591-modal-close" class="btn btn-sm tone-slate-soft shrink-0">關閉</button>
+                    </div>
+                    <div class="px-4 py-4 space-y-3 border-b border-slate-100">
+                        <a id="sf591-open-tab" href="#" target="_blank" rel="noopener noreferrer" class="btn tone-slate-mid w-full text-center text-base font-black py-3">開啟 591 分頁</a>
+                        <button type="button" id="sf591-btn-done" class="btn tone-emerald w-full text-center text-base font-black py-3">Done（已完成，繼續）</button>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" id="sf591-btn-relive" class="btn btn-sm tone-purple">重新取得連結</button>
+                            <span id="sf591-modal-hint" class="text-xs text-slate-600 self-center"></span>
                         </div>
                     </div>
-                    <iframe id="sf591-frame" title="591 確認刊登" class="w-full flex-1 min-h-[70vh] bg-slate-100" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
-                    <img id="sf591-shot" alt="591 畫面截圖" class="hidden w-full max-h-[70vh] object-contain bg-slate-100" />
+                    <div class="flex-1 overflow-auto bg-slate-100 p-3">
+                        <p class="text-xs text-slate-500 mb-2">下方為當下截圖（僅供核對，請在 591 分頁操作）：</p>
+                        <img id="sf591-shot" alt="591 畫面截圖" class="w-full object-contain bg-white rounded-lg border border-slate-200" />
+                        <iframe id="sf591-frame" title="unused" class="hidden"></iframe>
+                    </div>
                 </div>
             </div>
-            <script src="./js/sf591-listing.js"></script>
+            <script src="./js/sf591-listing.js?v=20261016-toolbox-done"></script>
         </div>
 
         <!-- 業務專區：公證費試算（公證法第119條欄位，依公證費用標準表） -->
@@ -10343,94 +10364,107 @@
             </div>
         </div>
 
-        <!-- 專區頁面：新人 -->
-        <div id="page-newbie" class="hidden max-w-6xl mx-auto space-y-5">
-            <button onclick="showPage('home')" class="mb-2 btn btn-sm tone-slate-soft">← 返回首頁</button>
+        <!-- 專區頁面：新人（Magic UI 風格：Bento + Magic Card + Shine Border + Blur Fade） -->
+        <div id="page-newbie" class="hidden max-w-6xl mx-auto nb-magic nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('home')">← 首頁</button>
 
-            <header class="adz-head">
-                <div>
-                    <h2 class="adz-title">🚀 新人專區</h2>
-                    <p class="adz-sub">先選工作專線；路線圖、詞典、進件速查與工具都在專線裡</p>
-                </div>
+            <header class="nb-magic-head">
+                <p class="nb-ui-stack" aria-label="設計風格">Magic UI · shadcn/ui · Aceternity UI</p>
+                <h2 class="nb-magic-title">🚀 新人專區</h2>
+                <p class="nb-magic-shiny">先選工作專線；路線圖、詞典、進件速查與工具都在專線裡</p>
             </header>
+            <div class="nb-ui-beams" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
 
-            <button type="button" class="apt-entry adz-hero adz-hero--subsidy" onclick="showPage('newbie-subsidy')">
-                <span class="apt-entry-icon" aria-hidden="true">💰</span>
-                <span class="apt-entry-text">
-                    <strong>財補專區</strong>
-                    <small>財務補助報名、每月試算、打卡上傳、簽呈與線上考試，獎金辦法一次看懂</small>
-                </span>
-                <span class="apt-entry-arrow" aria-hidden="true">進入財補 →</span>
-                <span class="adz-hero-board">
-                    <span class="adz-top-label">財補專區內容</span>
-                    <span class="adz-top">
-                        <span class="adz-top-item"><i>📝</i><b>報名表</b></span>
-                        <span class="adz-top-item"><i>🧮</i><b>月份試算</b></span>
-                        <span class="adz-top-item"><i>📸</i><b>打卡上傳</b></span>
-                        <span class="adz-top-item"><i>✍️</i><b>簽呈</b></span>
-                        <span class="adz-top-item"><i>💯</i><b>線上考試</b></span>
-                        <span class="adz-top-item"><i>🎁</i><b>獎金辦法</b></span>
+            <div class="nb-bento" data-nb-magic-root>
+                <button type="button" class="nb-mcard nb-mcard--feature nb-mcard--subsidy nb-shine" data-nb-magic onclick="showPage('newbie-subsidy')">
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-top">
+                        <span class="nb-mcard-ico" aria-hidden="true">💰</span>
+                        <span class="nb-mcard-go">進入財補 →</span>
                     </span>
-                </span>
-            </button>
+                    <strong class="nb-mcard-name">財補專區</strong>
+                    <small class="nb-mcard-desc">報名、試算、打卡、簽呈與線上考試，獎金辦法一次看懂</small>
+                    <span class="nb-mcard-chips" aria-hidden="true">
+                        <span>報名表</span><span>月份試算</span><span>打卡上傳</span><span>簽呈</span><span>線上考試</span><span>獎金辦法</span>
+                    </span>
+                </button>
 
-            <div class="adz-quick">
-                <button type="button" class="apt-entry adz-hero adz-hero--biz" onclick="showPage('newbie-business')">
-                    <span class="apt-entry-icon" aria-hidden="true">💼</span>
-                    <span class="apt-entry-text">
-                        <strong>業務新人</strong>
-                        <small>電開、591、場勘委租到送審，照路線圖一步一步做</small>
+                <button type="button" class="nb-mcard nb-mcard--biz nb-shine" data-nb-magic onclick="showPage('newbie-business')">
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-top">
+                        <span class="nb-mcard-ico" aria-hidden="true">💼</span>
+                        <span class="nb-mcard-go">進入專線 →</span>
                     </span>
-                    <span class="apt-entry-arrow" aria-hidden="true">進入專線 →</span>
-                    <span class="adz-hero-board">
-                        <span class="adz-top-label">工作流程</span>
-                        <span class="adz-top">
-                            <span class="adz-top-item"><i>📞</i><span>STEP 1</span><b>開發房東</b></span>
-                            <span class="adz-top-item"><i>🏠</i><span>STEP 2</span><b>場勘收資料</b></span>
-                            <span class="adz-top-item"><i>📤</i><span>STEP 3</span><b>送審</b></span>
+                    <strong class="nb-mcard-name">業務新人</strong>
+                    <small class="nb-mcard-desc">電開、591、場勘委租到送審，照路線圖一步一步做</small>
+                    <span class="nb-mcard-steps" aria-hidden="true">
+                        <span><i>1</i>開發房東</span>
+                        <span><i>2</i>場勘收資料</span>
+                        <span><i>3</i>送審</span>
+                    </span>
+                </button>
+
+                <button type="button" class="nb-mcard nb-mcard--rm nb-shine" data-nb-magic onclick="showPage('newbie-rentmgr')">
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-top">
+                        <span class="nb-mcard-ico" aria-hidden="true">🏢</span>
+                        <span class="nb-mcard-go">進入專線 →</span>
+                    </span>
+                    <strong class="nb-mcard-name">租管師新人</strong>
+                    <small class="nb-mcard-desc">新案維運、續約、催收解約，日常管理照路線圖處理</small>
+                    <span class="nb-mcard-steps" aria-hidden="true">
+                        <span><i>1</i>新案維運</span>
+                        <span><i>2</i>續約</span>
+                        <span><i>3</i>催收解約</span>
+                    </span>
+                </button>
+
+                <button type="button" class="nb-mcard nb-mcard--tool" id="nb-card-quest" data-nb-magic onclick="showPage('newbie-quest')">
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-ico" aria-hidden="true">🎮</span>
+                    <strong class="nb-mcard-name">業績任務板</strong>
+                    <small class="nb-mcard-desc">電開／591／場勘打卡 · XP</small>
+                </button>
+                <button type="button" class="nb-mcard nb-mcard--tool" id="nb-card-glossary" data-nb-magic onclick="showPage('newbie-glossary')">
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-ico" aria-hidden="true">📖</span>
+                    <strong class="nb-mcard-name">詞典</strong>
+                    <small class="nb-mcard-desc">社宅常用名詞</small>
+                </button>
+                <button type="button" class="nb-mcard nb-mcard--tool" id="nb-card-screening" data-nb-magic onclick="showPage('newbie-screening')">
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-ico" aria-hidden="true">✅</span>
+                    <strong class="nb-mcard-name">進件資格速查</strong>
+                    <small class="nb-mcard-desc">物件、房客能不能進件</small>
+                </button>
+                <button type="button" class="nb-mcard nb-mcard--tool" id="nb-card-playbook" data-nb-magic onclick="showPage('newbie-playbook')">
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-ico" aria-hidden="true">🧠</span>
+                    <strong class="nb-mcard-name">開發心法</strong>
+                    <small class="nb-mcard-desc">話術與心態</small>
+                </button>
+                <button type="button" class="nb-mcard nb-mcard--tool" id="nb-hub-open-qa" data-nb-magic>
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-ico" aria-hidden="true">💬</span>
+                    <strong class="nb-mcard-name">問答</strong>
+                    <small class="nb-mcard-desc">有疑問直接問</small>
+                </button>
+                <button type="button" class="nb-mcard nb-mcard--tool" id="nb-card-transcript" data-nb-magic onclick="showPage('newbie-transcript')">
+                    <span class="nb-mcard-glow" aria-hidden="true"></span>
+                    <span class="nb-mcard-ico" aria-hidden="true">📑</span>
+                    <strong class="nb-mcard-name">調閱一類謄本</strong>
+                    <small class="nb-mcard-desc">教學 SOP · 圖解</small>
+                </button>
+
+                <details class="nb-mcard nb-mcard--policy" id="nb-card-policy" data-nb-magic>
+                    <summary>
+                        <span class="nb-mcard-ico" aria-hidden="true">📌</span>
+                        <span class="nb-mcard-sum">
+                            <strong class="nb-mcard-name">政策提醒</strong>
+                            <small class="nb-mcard-desc">期別 · 租補 · 稅務</small>
                         </span>
-                    </span>
-                </button>
-
-                <button type="button" class="apt-entry adz-hero adz-hero--rm" onclick="showPage('newbie-rentmgr')">
-                    <span class="apt-entry-icon" aria-hidden="true">🏢</span>
-                    <span class="apt-entry-text">
-                        <strong>租管師新人</strong>
-                        <small>新案維運、續約、催收解約，日常管理照路線圖處理</small>
-                    </span>
-                    <span class="apt-entry-arrow" aria-hidden="true">進入專線 →</span>
-                    <span class="adz-hero-board">
-                        <span class="adz-top-label">工作流程</span>
-                        <span class="adz-top">
-                            <span class="adz-top-item"><i>🧰</i><span>STEP 1</span><b>新案維運</b></span>
-                            <span class="adz-top-item"><i>🔁</i><span>STEP 2</span><b>續約</b></span>
-                            <span class="adz-top-item"><i>⚖️</i><span>STEP 3</span><b>催收解約</b></span>
-                        </span>
-                    </span>
-                </button>
-            </div>
-
-            <div class="adz-folds nb-folds">
-                <button type="button" class="af-fold adz-go-card" id="nb-card-quest" onclick="showPage('newbie-quest')">
-                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🎮</i>業績任務板</span><span class="af-summary-hint">電開／591／場勘打卡 · XP 與每日任務</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
-                </button>
-                <button type="button" class="af-fold adz-go-card" id="nb-card-glossary" onclick="showPage('newbie-glossary')">
-                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">📖</i>詞典</span><span class="af-summary-hint">社宅、包租代管常用名詞</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
-                </button>
-                <button type="button" class="af-fold adz-go-card" id="nb-card-screening" onclick="showPage('newbie-screening')">
-                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">✅</i>進件資格速查</span><span class="af-summary-hint">物件、房客能不能進件，先跑一輪</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
-                </button>
-                <button type="button" class="af-fold adz-go-card" id="nb-card-playbook" onclick="showPage('newbie-playbook')">
-                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🧠</i>開發心法</span><span class="af-summary-hint">開發房東的話術與心態</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
-                </button>
-                <button type="button" class="af-fold adz-go-card" id="nb-hub-open-qa">
-                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">💬</i>問答</span><span class="af-summary-hint">有疑問直接問</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
-                </button>
-                <button type="button" class="af-fold adz-go-card" id="nb-card-transcript" onclick="showPage('newbie-transcript')">
-                    <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">📑</i>調閱一類謄本</span><span class="af-summary-hint">教學 SOP · 圖解步驟</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
-                </button>
-                <details class="admin-tools-card admin-tools-card--compact af-fold" id="nb-card-policy">
-                    <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">📌</i>政策提醒</span><span class="af-summary-hint">期別 · 租補 · 稅務</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                        <span class="nb-mcard-chev" aria-hidden="true">▾</span>
+                    </summary>
                     <ul class="nb-policy-list">
                         <li><strong>第三至五期</strong>（住都1140030759）：第三、四、五期可併行；第五期租約最長 3 年。</li>
                         <li><strong>300 億租補</strong>與社宅包租代管不同；2026 年起新案加強租賃標的合法性查核。</li>
@@ -10443,8 +10477,8 @@
         </div>
 
         <!-- 新人專區：調閱一類謄本 SOP -->
-        <div id="page-newbie-transcript" class="hidden max-w-4xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+        <div id="page-newbie-transcript" class="hidden max-w-4xl mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
             <div class="nb-page-shell">
                 <header class="nb-page-header">
                     <p class="nb-page-eyebrow">新人專區 · 教學 SOP</p>
@@ -10537,8 +10571,8 @@
         </div>
 
         <!-- 新人專區：財補專區 -->
-        <div id="page-newbie-subsidy" class="hidden max-w-4xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+        <div id="page-newbie-subsidy" class="hidden max-w-4xl mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
             <div class="nb-page-shell">
                 <header class="nb-page-header">
                     <h2>💰 財補專區</h2>
@@ -10812,8 +10846,8 @@
         </script>
 
         <!-- 業績任務板（遊戲化打卡） -->
-        <div id="page-newbie-quest" class="hidden max-w-lg mx-auto space-y-4">
-            <button type="button" onclick="showPage('newbie')" class="mb-2 btn btn-sm tone-slate-soft">← 返回新人專區</button>
+        <div id="page-newbie-quest" class="hidden max-w-lg mx-auto space-y-4 nb-magic-page">
+            <button type="button" class="nb-magic-back" onclick="showPage('newbie')">← 新人專區</button>
             <div class="nb-page-shell nq-shell">
                 <header class="nb-page-header">
                     <h2>🎮 業績任務板</h2>
@@ -11599,7 +11633,7 @@
         <script src="./js/care-visit-notice.js"></script>
         <script src="./js/practice-tools.js"></script>
         <script src="./js/rentmgr-flow-guide.js"></script>
-        <script src="./js/newbie-tools.js"></script>
+        <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
         <script src="./js/reveal.js?v=20261014-1"></script>
         <script src="./js/admin-points-core.js?v=20261015-7"></script>
@@ -11613,7 +11647,7 @@
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261014-2"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261015-39"></script>
+        <script src="./js/admin-points.js?v=20261016-40"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
