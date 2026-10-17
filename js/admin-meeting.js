@@ -35,8 +35,58 @@
 
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
     const img = (m, i) => `./assets/meetings/${m.id}/${String(i + 1).padStart(2, '0')}.jpg`;
-    const view = { id: MEETINGS[0]?.id, tab: 'slides', slide: 0 };
+    const view = { id: MEETINGS[0]?.id, tab: 'slides', slide: 0, q: '' };
     const meeting = () => MEETINGS.find((m) => m.id === view.id) || MEETINGS[0];
+
+    /** 搜尋：跨所有週會比對日期、標題與每張投影片標題（不分大小寫、空白分隔多關鍵字需全部符合） */
+    const norm = (t) => String(t || '').toLowerCase();
+    function searchHits(q) {
+        const words = norm(q).split(/\s+/).filter(Boolean);
+        if (!words.length) return [];
+        const out = [];
+        MEETINGS.forEach((m) => m.slides.forEach((t, i) => {
+            const hay = norm(`${m.date} ${m.id} ${m.title} ${t}`);
+            if (words.every((w) => hay.includes(w))) out.push({ m, i, t });
+        }));
+        return out;
+    }
+    function hl(t, q) {
+        const words = norm(q).split(/\s+/).filter(Boolean);
+        let h = esc(t);
+        words.forEach((w) => {
+            const ew = esc(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            h = h.replace(new RegExp(`(${ew})(?![^<]*>)`, 'gi'), '<mark>$1</mark>');
+        });
+        return h;
+    }
+    function searchBarHtml() {
+        return `<form class="amt-search" data-amt-search role="search">
+            <input type="search" class="amt-search-input" data-amt-q placeholder="🔍 搜尋週會內容（例：解約、押金、未成年）" value="${esc(view.q)}" aria-label="搜尋行政週會" />
+            <button type="submit" class="amt-search-btn">搜尋</button>
+            <button type="button" class="amt-search-clear" data-amt="clear"${view.q ? '' : ' hidden'}>清除</button>
+        </form>
+        <div class="amt-results" data-amt-results>${resultsHtml()}</div>`;
+    }
+    function resultsHtml() {
+        if (!view.q.trim()) return '';
+        const hits = searchHits(view.q);
+        if (!hits.length) return `<p class="amt-results-empty">找不到「${esc(view.q)}」相關的週會內容。</p>`;
+        return `<p class="amt-results-count">找到 <b>${hits.length}</b> 張相關投影片，點一下直接跳到該張：</p>
+            <div class="amt-results-list">${hits.map((h) => `<button type="button" class="amt-result" data-amt="hit" data-id="${esc(h.m.id)}" data-i="${h.i}">
+                <span class="amt-result-meta">${esc(h.m.date)} · 第 ${h.i + 1} 張</span><span class="amt-result-title">${hl(h.t, view.q)}</span></button>`).join('')}</div>`;
+    }
+    /** 即時篩選：更新結果清單，並把左側縮圖中不符合的淡化 */
+    function applySearch() {
+        const root = document.getElementById('admin-meeting-root');
+        if (!root) return;
+        const box = root.querySelector('[data-amt-results]');
+        if (box) box.innerHTML = resultsHtml();
+        const clr = root.querySelector('[data-amt="clear"]');
+        if (clr) clr.hidden = !view.q;
+        const m = meeting();
+        const set = new Set(searchHits(view.q).filter((h) => h.m.id === m.id).map((h) => h.i));
+        root.querySelectorAll('.amt-thumb').forEach((b, k) => b.classList.toggle('is-dim', !!view.q.trim() && !set.has(k)));
+    }
 
     /** 像 PPT：左邊縮圖、右邊大圖，上一張／下一張、方向鍵翻頁、全螢幕放映 */
     function deckHtml(m) {
@@ -75,7 +125,7 @@
             .join('');
         return `<div class="amt-head">${picker}<div class="amt-tabs">${tabs}</div></div>
             ${view.tab === 'slides'
-                ? `${deckHtml(m)}<div class="amt-cta">
+                ? `${searchBarHtml()}${deckHtml(m)}<div class="amt-cta">
                         <p class="amt-tip">用 ← → 方向鍵或點投影片左右兩側翻頁。看完簡報後請完成線上小考，全部答對才算通過。</p>
                         <button type="button" class="amt-cta-btn" data-amt="tab" data-tab="exam">📝 開始線上小考（20 題）→</button>
                     </div>`
@@ -128,6 +178,7 @@
         const root = document.getElementById('admin-meeting-root');
         if (!root) return;
         root.innerHTML = html();
+        if (view.tab === 'slides') applySearch();
         if (view.tab === 'exam') {
             const el = root.querySelector('[data-cx-root]');
             if (window.CourseExam?.has(meeting().course)) window.CourseExam.mount({ course: meeting().course, self: true, root: el });
@@ -148,7 +199,16 @@
         else if (act === 'prev') goSlide(view.slide - 1);
         else if (act === 'next') goSlide(view.slide + 1);
         else if (act === 'full') toggleFull();
-        else return;
+        else if (act === 'clear') {
+            view.q = '';
+            const inp = document.querySelector('#admin-meeting-root [data-amt-q]');
+            if (inp) { inp.value = ''; inp.focus(); }
+            applySearch();
+        } else if (act === 'hit') {
+            if (b.dataset.id !== view.id) { view.id = b.dataset.id; view.slide = +b.dataset.i; render(); }
+            else goSlide(+b.dataset.i);
+            document.querySelector('#admin-meeting-root [data-amt-stage]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else return;
         if (m && act !== 'tab') e.preventDefault();
     }
 
@@ -177,6 +237,17 @@
                 view.slide = 0;
                 render();
             }
+        });
+        root.addEventListener('input', (e) => {
+            if (e.target.matches('[data-amt-q]')) { view.q = e.target.value; applySearch(); }
+        });
+        root.addEventListener('submit', (e) => {
+            if (!e.target.matches('[data-amt-search]')) return;
+            e.preventDefault();
+            view.q = e.target.querySelector('[data-amt-q]').value;
+            applySearch();
+            const first = root.querySelector('.amt-result');
+            if (first) first.click();
         });
         document.addEventListener('keydown', onKey);
         const fold = document.getElementById('admin-meeting-zone');

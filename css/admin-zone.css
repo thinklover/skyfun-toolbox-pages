@@ -679,3 +679,22 @@
 #page-administration .adc-k-kfin { --k-ink: #475569; --k-bg: #f4f6f9; --k-line: #e2e8f0; }
 #page-administration .adc-k-meeting { --k-ink: #0891b2; --k-bg: #e6f9fd; --k-line: #bdeef8; }
 #page-administration .adc-k-kall { --k-ink: #c026d3; --k-bg: #fcefff; --k-line: #f3d2fb; }
+
+/* 行政週會：搜尋 */
+.amt-search { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.5rem; }
+.amt-search-input { flex: 1 1 14rem; min-width: 0; padding: 0.42rem 0.7rem; border: 1px solid #a5e3ef; border-radius: 0.55rem; font: inherit; font-size: 0.88rem; color: #0f172a; background: #fff; }
+.amt-search-input:focus { outline: none; border-color: #0891b2; box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.18); }
+.amt-search-btn { padding: 0.42rem 0.95rem; border: 0; border-radius: 0.55rem; background: #0891b2; color: #fff; font: inherit; font-size: 0.85rem; font-weight: 800; cursor: pointer; }
+.amt-search-btn:hover { background: #0e7490; }
+.amt-search-clear { padding: 0.4rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 0.55rem; background: #fff; font: inherit; font-size: 0.82rem; font-weight: 800; color: #334155; cursor: pointer; }
+.amt-results:empty { display: none; }
+.amt-results { margin-bottom: 0.6rem; padding: 0.55rem 0.65rem; border: 1px solid #cffafe; border-radius: 0.65rem; background: #f0fdff; }
+.amt-results-count, .amt-results-empty { margin: 0 0 0.4rem; font-size: 0.8rem; font-weight: 700; color: #475569; }
+.amt-results-empty { margin: 0; }
+.amt-results-list { display: flex; flex-direction: column; gap: 0.3rem; max-height: 14rem; overflow-y: auto; }
+.amt-result { display: flex; flex-wrap: wrap; gap: 0.15rem 0.6rem; align-items: baseline; text-align: left; padding: 0.38rem 0.6rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; background: #fff; font: inherit; cursor: pointer; }
+.amt-result:hover { border-color: #0891b2; background: #ecfeff; }
+.amt-result-meta { font-size: 0.72rem; font-weight: 800; color: #0e7490; white-space: nowrap; }
+.amt-result-title { font-size: 0.85rem; font-weight: 700; color: #1e293b; }
+.amt-result mark { background: #fde68a; color: inherit; border-radius: 0.15rem; padding: 0 0.1rem; }
+.amt-thumb.is-dim { opacity: 0.28; }
