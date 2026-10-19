@@ -1283,7 +1283,6 @@
     if (panel) {
       panel.classList.remove('hidden');
       panel.querySelector('details')?.removeAttribute('open');
-      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
 
@@ -1296,7 +1295,6 @@
       status.textContent = '';
       status.className = 'text-xs text-slate-600 leading-relaxed';
     }
-    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function showHandoverDraftStatus(msg, isErr) {

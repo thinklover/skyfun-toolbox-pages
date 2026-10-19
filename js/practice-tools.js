@@ -11,7 +11,12 @@
     /** 社宅包租（三年合約）虛擬帳號前五碼 — 依案件區域 */
     const SOCIAL_HOUSING_REGION_PREFIXES = [
         { id: 'taipei', label: '台北', prefix: '10491' },
+        { id: 'keelung', label: '基隆', prefix: '60400' },
+        { id: 'yilan', label: '宜蘭', prefix: '76550' },
+        { id: 'hsinchu-city', label: '新竹市', prefix: '76551' },
+        { id: 'hsinchu-county', label: '新竹縣', prefix: '76552' },
         { id: 'chiayi', label: '嘉義', prefix: '23567' },
+        { id: 'skyfun-chiayi', label: '星鴻嘉義', prefix: '76553' },
         { id: 'ntpc', label: '新北', prefix: '60402' },
         { id: 'taoyuan', label: '桃園', prefix: '60403' },
         { id: 'taichung', label: '台中', prefix: '60404' },

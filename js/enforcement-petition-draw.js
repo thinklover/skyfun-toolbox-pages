@@ -292,6 +292,10 @@
         const c = createCtx(page, fonts, rgb);
         const { text, textCenter, vLabel, wrap, hline, vline, rect } = c;
         const debtors = debtorList(d);
+        const isNote = (helpers && helpers.mode) === 'note-ruling' || d.mode === 'note-ruling';
+        const subTitle = isNote ? '（本票聲請）' : '（強制執行）';
+        const creditorLabel = isNote ? '債權人' : '出租人';
+        const debtorLabel = isNote ? '發票人' : '承租人';
 
         const top = H - 44;
         const bottom = 38;
@@ -305,7 +309,7 @@
 
         rect(L, titleBottom, TITLE_W, top - titleBottom);
         text('民事聲請狀', L + 8, top - 30, SZ.title);
-        text('（強制執行）', L + 6, top - 54, SZ.subTitle);
+        text(subTitle, L + 6, top - 54, SZ.subTitle);
 
         const caseL = L + TITLE_W;
         const caseW = R - caseL;
@@ -366,17 +370,29 @@
 
         const bodyX = bodyL + 14;
         let cy = hdrBottom - 30;
-        text(`出租人：${d.landlordName}`, bodyX, cy, SZ.body);
+        text(`${creditorLabel}：${d.landlordName}`, bodyX, cy, SZ.body);
         cy -= 24;
         text('地址：', bodyX, cy, SZ.body);
         wrap(d.landlordAddr, bodyX + 42, cy, TW - (bodyX - L) - 14, SZ.body, 19);
         cy -= 32;
         text(`電話：${d.landlordPhone || ''}`, bodyX, cy, SZ.body);
 
-        drawDebtorBlock(c, bodyX, creditorBottom, debtors[0], d.propertyAddr);
+        drawDebtorBlockLabeled(c, bodyX, creditorBottom, debtors[0], d.propertyAddr || d.debtorAddr, debtorLabel);
         if (debtors.length > 1 && debtors[1]) {
-            drawDebtorBlock(c, bodyX, debtor1Bottom, debtors[1], d.propertyAddr);
+            drawDebtorBlockLabeled(c, bodyX, debtor1Bottom, debtors[1], d.propertyAddr || d.debtorAddr, debtorLabel);
         }
+    }
+
+    function drawDebtorBlockLabeled(c, bodyX, yTop, debtor, propertyAddr, label) {
+        const { text, wrap } = c;
+        const maxW = TW - (bodyX - L) - 12;
+        let cy = yTop - 28;
+        text(`${label || '承租人'}：${debtor.name}`, bodyX, cy, SZ.body);
+        text(`身分證字號：${debtor.id}`, bodyX + 210, cy, SZ.body);
+        cy -= 24;
+        text('地址：', bodyX, cy, SZ.body);
+        const addr = debtor.addr || propertyAddr || '';
+        wrap(addr, bodyX + 42, cy, maxW - 42, SZ.body, 19);
     }
 
     function drawPage2(page, fonts, rgb, d, helpers) {
@@ -441,11 +457,75 @@
         text(`具狀人：${d.petitioner}`, L + 300, PETITIONER_Y, SZ.p2Hdr);
     }
 
+    /** 本票裁定聲請狀第 2 頁（內容依司法院「聲請裁定本票強制執行狀」） */
+    function drawNoteRulingPage2(page, fonts, rgb, d, helpers) {
+        const c = createCtx(page, fonts, rgb);
+        const { text, wrap, rect, vLabel, vline } = c;
+        const buildNotePetitionItems = helpers.buildNotePetitionItems;
+        const buildNoteReasonParagraphs = helpers.buildNoteReasonParagraphs;
+        const buildNoteScheduleLines = helpers.buildNoteScheduleLines;
+        const buildEvidenceItems = helpers.buildEvidenceItems;
+
+        const top = H - 44;
+        const bottom = 38;
+        const DATE_Y = 108;
+        const PETITIONER_Y = 92;
+        const evidenceItems = buildEvidenceItems();
+        const footLineH = 15;
+        const footPad = 12;
+        const footLabel = '證物名稱及件數';
+        // 直書標籤至少要容得下「證物名稱及件數」七字，避免矮框把字切開
+        const minLabelH = footLabel.length * (SZ.hdr + 2) + 20;
+        const contentH = Math.max(evidenceItems.length, 1) * footLineH + footPad * 2;
+        const footInnerH = Math.max(minLabelH, contentH, 110);
+        const FOOT_BOTTOM = 176;
+        const FOOT_TOP = FOOT_BOTTOM + footInnerH;
+        const COURT_Y = FOOT_TOP + 22;
+        const CLOSE_Y = COURT_Y + 26;
+        const REASON_MIN_Y = CLOSE_Y + 22;
+
+        rect(L, bottom, TW, top - bottom);
+
+        let y = top - 30;
+        text('為聲請裁定本票強制執行事：', L + 12, y, SZ.p2Title);
+        y -= 26;
+        text('聲請事項', L + 12, y, SZ.p2Hdr);
+        y -= 22;
+        y = drawParagraphList(c, buildNotePetitionItems(d), L + 32, y, TW - 44, SZ.p2Body, 20, REASON_MIN_Y + 160) - 6;
+        y -= 8;
+        text('事實及理由', L + 12, y, SZ.p2Hdr);
+        y -= 22;
+        y = drawParagraphList(c, buildNoteReasonParagraphs(d), L + 32, y, TW - 44, SZ.p2Body, 20, REASON_MIN_Y + 80) - 6;
+        y -= 8;
+        text('附表：本票', L + 12, y, SZ.p2Hdr);
+        y -= 22;
+        drawParagraphList(c, buildNoteScheduleLines(d), L + 32, y, TW - 44, SZ.p2Body, 20, REASON_MIN_Y);
+
+        const footLabelW = LABEL_W;
+        rect(L, FOOT_BOTTOM, TW, FOOT_TOP - FOOT_BOTTOM);
+        vline(L + footLabelW, FOOT_BOTTOM, FOOT_TOP);
+        vLabel(footLabel, L + 1, FOOT_TOP - 6, FOOT_BOTTOM + 6, SZ.hdr);
+
+        const footTextX = L + footLabelW + 10;
+        const footTextW = TW - footLabelW - 20;
+        let ey = FOOT_TOP - 22;
+        for (const item of evidenceItems) {
+            ey = wrap(item, footTextX, ey, footTextW, SZ.body, footLineH) - 2;
+        }
+
+        text('此　致', L + 12, CLOSE_Y, SZ.p2Hdr);
+        text(`臺灣${d.court}地方法院民事庭　　　　公鑒`, L + 30, COURT_Y, SZ.p2Body);
+
+        text(`中華民國${d.filingY}年${d.filingM}月${d.filingD}日`, L + 12, DATE_Y, SZ.body);
+        text(`具狀人：${d.petitioner}`, L + 300, PETITIONER_Y, SZ.p2Hdr);
+    }
+
     function drawPage3Checklist(page, fonts, rgb, d, helpers) {
         const c = createCtx(page, fonts, rgb);
         const { text, textCenter, rect, hline, vline, wrap, black } = c;
         const items = helpers.buildEvidenceChecklist();
         const debtors = debtorList(d);
+        const isNote = (helpers && helpers.mode) === 'note-ruling' || d.mode === 'note-ruling';
         const caseName = debtors.map((t) => t.name).filter(Boolean).join('、')
             || d.debtorName || d.tenantName || '';
         const propertyAddr = d.propertyAddr || d.debtorAddr || d.tenantAddr
@@ -459,8 +539,13 @@
         textCenter('證物清單（業務備查用）', L, R, top - 28, 20);
         let metaY = top - 54;
         metaY = wrap(`案件：${caseName}`, L + 14, metaY, TW - 28, SZ.body, 18) - 4;
-        metaY = wrap(`承租地址：${propertyAddr}`, L + 14, metaY, TW - 28, SZ.body, 18) - 4;
-        metaY = wrap(`公證書字號：${notaryRef}`, L + 14, metaY, TW - 28, SZ.body, 18) - 6;
+        if (isNote) {
+            metaY = wrap(`本票金額：新臺幣${d.amountCN || ''}`, L + 14, metaY, TW - 28, SZ.body, 18) - 4;
+            metaY = wrap(`本票張數：${d.noteCount || 1} 張`, L + 14, metaY, TW - 28, SZ.body, 18) - 6;
+        } else {
+            metaY = wrap(`承租地址：${propertyAddr}`, L + 14, metaY, TW - 28, SZ.body, 18) - 4;
+            metaY = wrap(`公證書字號：${notaryRef}`, L + 14, metaY, TW - 28, SZ.body, 18) - 6;
+        }
 
         const tableTop = Math.min(metaY - 8, top - 96);
         const tableBottom = bottom + 90;
@@ -520,15 +605,18 @@
             kai: await doc.embedFont(fontBytes),
             times: await doc.embedFont(StandardFonts.TimesRoman)
         };
+        const mode = (helpers && helpers.mode) || d.mode || 'enforcement';
+        const h = Object.assign({}, helpers, { mode });
 
         const page1 = doc.addPage([W, H]);
-        drawPage1(page1, fonts, rgb, d, helpers);
+        drawPage1(page1, fonts, rgb, d, h);
 
         const page2 = doc.addPage([W, H]);
-        drawPage2(page2, fonts, rgb, d, helpers);
+        if (mode === 'note-ruling') drawNoteRulingPage2(page2, fonts, rgb, d, h);
+        else drawPage2(page2, fonts, rgb, d, h);
 
         const page3 = doc.addPage([W, H]);
-        drawPage3Checklist(page3, fonts, rgb, d, helpers);
+        drawPage3Checklist(page3, fonts, rgb, d, h);
 
         return doc.save();
     };

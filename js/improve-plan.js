@@ -11,6 +11,8 @@
   const DAY_MS = 86400000;
 
   const TEXT_LIMIT = 300;
+  /** 只有「具體做法」限 300 字；「本期要改善的項目」不限字數 */
+  const LIMITED_FIELDS = new Set(['actions']);
   const AI_FIELDS = { focus: '本期要改善的項目', actions: '具體做法' };
   const aiUrl = () => String(window.SKYFUN_PETITION_AI_URL || 'https://skyfun-petition-ai.onrender.com').replace(/\/$/, '') + '/api/improve-plan/polish';
 
@@ -140,6 +142,9 @@
   }
 
   function countHtml(name, len) {
+    if (!LIMITED_FIELDS.has(name)) {
+      return `<small class="ipl-count" data-ipl-count="${name}">${len} 字</small>`;
+    }
     const tone = len > TEXT_LIMIT ? ' is-over' : len >= TEXT_LIMIT - 30 ? ' is-near' : '';
     return `<small class="ipl-count${tone}" data-ipl-count="${name}">${len}／${TEXT_LIMIT}</small>`;
   }
@@ -153,10 +158,11 @@
     const undo = st.original != null && !st.busy
       ? `<button type="button" class="ipl-ai-undo" data-ipl-ai-undo="${name}">↩ 還原</button>`
       : '';
+    const maxAttr = LIMITED_FIELDS.has(name) ? ` maxlength="${TEXT_LIMIT}"` : '';
     return `<div class="ipl-f" data-ipl-field="${name}">
         <span class="ipl-f-head"><label for="ipl-f-${name}">${label}${req ? ' <em>*</em>' : ''}</label>
           <span class="ipl-ai"><button type="button" class="ipl-ai-btn" data-ipl-ai="${name}"${st.busy ? ' disabled' : ''}>${st.busy ? '✨ 潤飾中…' : '✨ AI 潤飾'}</button>${undo}</span></span>
-        <textarea id="ipl-f-${name}" name="${name}" rows="${rows}" maxlength="${TEXT_LIMIT}" placeholder="${esc(hint)}">${esc(text)}</textarea>
+        <textarea id="ipl-f-${name}" name="${name}" rows="${rows}"${maxAttr} placeholder="${esc(hint)}">${esc(text)}</textarea>
         <span class="ipl-f-foot"><small class="ipl-ai-msg${st.tone ? ` is-${st.tone}` : ''}">${esc(st.msg || '')}</small>${countHtml(name, text.length)}</span>
       </div>`;
   }
@@ -169,7 +175,7 @@
     return `<form class="ipl-form" novalidate>
         <div class="ipl-form-title">${editing ? '✏️ 修改改善計畫' : '✍️ 填寫改善計畫'}<small>本次評等 ${esc(ctx.grade)}${ctx.score ? `（${Math.round(Number(ctx.score))} 分）` : ''}；送出後處長、組長都看得到</small></div>
         ${adviceHtml()}
-        <p class="ipl-handwrite">✍️ 「本期要改善的項目」與「具體做法」請用自己的話寫（各 ${TEXT_LIMIT} 字內），寫完可以按「✨ AI 潤飾」修飾文字。</p>
+        <p class="ipl-handwrite">✍️ 「本期要改善的項目」不限字數；「具體做法」請在 ${TEXT_LIMIT} 字內。寫完可以按「✨ AI 潤飾」修飾文字。</p>
         <div class="ipl-grid">
           ${field('focus', '本期要改善的項目', 2, d.focus, '例如：審核速度（物審平均比全體慢 20%）', true)}
           ${field('actions', '具體做法', 3, d.actions, '每天／每週要做什麼，例如：每天上午先清物審待辦、遇到卡關 10 分鐘內找組長', true)}
@@ -245,7 +251,9 @@
     if (!String(d.focus).trim()) return fail('請填寫要改善的項目');
     if (!String(d.actions).trim()) return fail('請填寫具體做法');
     for (const [k, label] of Object.entries(AI_FIELDS)) {
-      if (String(d[k]).trim().length > TEXT_LIMIT) return fail(`「${label}」超過 ${TEXT_LIMIT} 字，請精簡`);
+      if (LIMITED_FIELDS.has(k) && String(d[k]).trim().length > TEXT_LIMIT) {
+        return fail(`「${label}」超過 ${TEXT_LIMIT} 字，請精簡`);
+      }
     }
     if (Object.values(ui.ai).some((s) => s.busy)) return fail('AI 潤飾中，請等它完成再送出');
     ui.busy = true;
@@ -301,7 +309,9 @@
       $('apt-plan-panel')?.querySelector(`textarea[name="${name}"]`)?.focus();
       return;
     }
-    if (text.length > TEXT_LIMIT) return setAi(name, { msg: `超過 ${TEXT_LIMIT} 字，請先精簡`, tone: 'err' });
+    if (LIMITED_FIELDS.has(name) && text.length > TEXT_LIMIT) {
+      return setAi(name, { msg: `超過 ${TEXT_LIMIT} 字，請先精簡`, tone: 'err' });
+    }
     setAi(name, { busy: true, msg: '大約 5～20 秒；AI 服務在休息時第一次要等 30～60 秒…', tone: '' });
     try {
       const res = await fetch(aiUrl(), {
@@ -367,7 +377,6 @@
     if (act === 'list') {
       ui.mode = ui.mode === 'closed' ? 'list' : 'closed';
       paint();
-      if (ui.mode === 'list') $('apt-plan-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       return;
     }
     if (act === 'cancel') {
@@ -397,7 +406,6 @@
       ui.ai = {};
       ui.msg = '';
       paint();
-      $('apt-plan-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       return;
     }
     const del = e.target.closest('[data-ipl-del]');

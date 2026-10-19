@@ -2915,7 +2915,6 @@
         plan.name = plan.name === tr.dataset.pName ? '' : tr.dataset.pName;
         renderPlan();
         $('p-list-fold').open = true;
-        $('p-list-fold').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
       $('p-list-filter').addEventListener('click', (e) => {
         if (!e.target.closest('[data-p-clear]')) return;
@@ -4422,6 +4421,6 @@
       }
     })();
   </script>
-<script src="../js/reveal.js?v=20261014-1"></script>
+<script src="../js/reveal.js?v=20261018-29"></script>
 </body>
 </html>

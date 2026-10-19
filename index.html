@@ -1400,7 +1400,9 @@
         }
         .pt-sign-pad { border: 1.5px solid #94a3b8; border-radius: 0.65rem; background: #fff; overflow: hidden; }
         .pt-sign-pad canvas { display: block; width: 100%; height: 10rem; background: #fff; touch-action: none; cursor: crosshair; }
-        .pt-sign-tools { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.35rem; }
+        .pt-sign-tools { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.35rem; flex-wrap: wrap; }
+        .pt-sign-btns { display: inline-flex; align-items: center; gap: 0.85rem; flex-shrink: 0; }
+        .pt-sign-upload { color: #0f766e; text-decoration: underline; font-weight: 700; cursor: pointer; }
         .pt-sign-clear { border: 0; background: transparent; color: #0f766e; text-decoration: underline; font-weight: 700; cursor: pointer; }
         .pt-signatures { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.55rem; }
         .pt-signature { border: 1px solid #cbd5e1; border-radius: 0.65rem; background: #fff; padding: 0.5rem; text-align: center; }
@@ -3360,12 +3362,15 @@
 
         body[data-layout="phone"] .layout-home-cards {
             grid-template-columns: 1fr;
+            grid-auto-rows: 1fr;
         }
         body[data-layout="tablet"] .layout-home-cards {
             grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-auto-rows: 1fr;
         }
         body[data-layout="desktop"] .layout-home-cards {
             grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-auto-rows: 1fr;
         }
 
         body[data-layout="phone"] .app-main-title {
@@ -3871,6 +3876,7 @@
         .home-card-rentmgr::before { background-image: url("assets/illus-q-rentmgr.svg"); }
         .home-card-announce::before { background-image: url("assets/illus-q-announce.svg"); }
         .home-card-administration::before { background-image: url("assets/illus-q-feedback.svg"); }
+        .home-card-sponsor::before { background-image: none; background: radial-gradient(circle at 30% 30%, rgba(201, 162, 39, 0.25), transparent 60%); }
         .home-feature-card p {
             color: var(--ink-muted);
             font-weight: 500;
@@ -4310,13 +4316,31 @@
         #home-menu .home-feature-card {
             --m: #6366f1; --m-ink: #1e1b4b; --m-sub: #5b5f86; --m-line: #dfe1ff; --m-bg1: #f1f0ff; --m-bg2: #e6edff;
             position: relative; overflow: hidden; isolation: isolate;
-            display: flex; flex-direction: column;
+            display: flex !important; flex-direction: column;
+            width: 100%; height: 100%; min-height: 10.5rem; margin: 0; cursor: pointer;
+            text-align: left; color: inherit;
             border: 1px solid var(--m-line) !important;
             border-radius: 22px !important;
             padding: 1.4rem 1.4rem 1.25rem !important;
             background: linear-gradient(135deg, #ffffff 0%, var(--m-bg1) 50%, var(--m-bg2) 100%);
             box-shadow: 0 16px 36px -24px color-mix(in srgb, var(--m) 55%, transparent), 0 1px 3px rgba(15, 23, 42, 0.05) !important;
             transition: transform 0.18s, box-shadow 0.18s;
+        }
+        #home-menu .home-feature-card.home-card-sponsor {
+            cursor: default;
+        }
+        #home-menu .home-feature-card.home-card-sponsor:hover {
+            transform: none;
+        }
+        #home-menu .home-feature-card:focus-visible {
+            outline: 3px solid color-mix(in srgb, var(--m) 45%, #fff);
+            outline-offset: 3px;
+        }
+        #home-menu .home-card-newbie,
+        #home-menu .home-card-rentmgr {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
         #home-menu .home-feature-card::before {
             content: ""; display: block; position: absolute; z-index: -1; inset: auto; opacity: 1;
@@ -4341,14 +4365,17 @@
         #home-menu .home-card-rentmgr { --m: #e11d48; --m-ink: #5f0a22; --m-sub: #8a5866; --m-line: #fcd5de; --m-bg1: #fff0f3; --m-bg2: #fdeef2; }
         #home-menu .home-card-announce { --m: #2563eb; --m-ink: #172554; --m-sub: #55658c; --m-line: #d6e2fd; --m-bg1: #eef3ff; --m-bg2: #e8eeff; }
         #home-menu .home-card-administration { --m: #0d9488; --m-ink: #134e4a; --m-sub: #4f7a74; --m-line: #c9efe9; --m-bg1: #e9faf7; --m-bg2: #e4f4fb; }
+        #home-menu .home-card-sponsor { --m: #c9a227; --m-ink: #192437; --m-sub: #6b5c3a; --m-line: #e8d7a8; --m-bg1: #fff9eb; --m-bg2: #f7f1e3; }
+        #home-menu .home-card-sponsor .hc-desc {
+            flex: 1;
+            display: flex;
+            align-items: flex-start;
+        }
         #home-menu .home-feature-card .hc-btn {
             position: static; display: flex; align-items: center; justify-content: flex-start; gap: 0.9rem;
             width: 100%; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
-            color: var(--m-ink); text-align: left; font-weight: 900;
+            color: var(--m-ink); text-align: left; font-weight: 900; pointer-events: none;
         }
-        #home-menu .home-feature-card .hc-btn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-        #home-menu .home-feature-card .hc-btn:focus-visible { outline: none; }
-        #home-menu .home-feature-card:has(.hc-btn:focus-visible) { outline: 3px solid color-mix(in srgb, var(--m) 45%, #fff); outline-offset: 3px; }
         #home-menu .hc-ico {
             display: inline-grid; place-items: center; flex-shrink: 0; width: 3.1rem; height: 3.1rem; border-radius: 16px;
             font-size: 1.5rem; line-height: 1; background: #fff;
@@ -4371,9 +4398,12 @@
             #home-menu .hc-go { display: none; }
         }
         #home-menu .home-feature-card p,
-        #home-menu .home-feature-card p.text-slate-600 {
+        #home-menu .home-feature-card p.text-slate-600,
+        #home-menu .home-feature-card .hc-desc {
+            display: block;
             margin-top: 0.8rem !important; text-align: left !important;
             font-size: 0.86rem; font-weight: 400; line-height: 1.6; color: var(--m-sub);
+            pointer-events: none;
         }
     </style>
 <style id="toolbox-auth-lite-critical">
@@ -4393,7 +4423,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261015-22">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261017-lease-pair">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261017-1">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
@@ -4504,7 +4534,7 @@
         </div>
         <div class="relative z-10">
 
-        <a id="home-weekly-meeting-link" href="./docs/weekly-meeting/?v=20261017-2" class="app-weekly-meeting-link no-underline" title="管理部週會簡報與表單下載">📂 業務周會</a>
+        <a id="home-weekly-meeting-link" href="./docs/weekly-meeting/?v=20261017-5" class="app-weekly-meeting-link no-underline" title="管理部週會簡報與表單下載">📂 業務周會</a>
 
         <!-- 首頁標題區 -->
         <header class="app-hero">
@@ -4514,7 +4544,7 @@
                     <p class="app-hero-badge app-hero-badge--expert">閒置資產活化的專家</p>
                 </div>
                 <h1 class="app-main-title"><button type="button" class="app-home-link" data-app-home aria-label="返回首頁">🏡 星鴻社宅工具箱</button></h1>
-                <p class="sponsor-tagline text-[11px] sm:text-xs md:text-sm leading-relaxed max-w-xl">贊助商-aka總經理室特助aka續約修繕部經理aka桃園區協理aka邱奕棋</p>
+                <p class="sponsor-tagline text-[11px] sm:text-xs md:text-sm leading-relaxed max-w-xl">贊助商-aka總經理室特助aka續約修繕部經理aka前桃園區協理aka管理部協理aka邱奕棋</p>
             </div>
         </header>
 
@@ -4681,44 +4711,44 @@
             </div>
 
             <div class="layout-home-cards">
-                <div class="home-feature-card home-card-landlord">
-                    <button onclick="showPage('landlord')" class="btn btn-block btn-center btn-xl tone-sky hc-btn"><span class="hc-ico" aria-hidden="true">🏠</span><span class="hc-name">房東專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">稅務試算、房屋稅級距，一次搞懂。</p>
+                <div class="home-feature-card home-card-landlord" role="button" tabindex="0" onclick="showPage('landlord')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('landlord');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏠</span><span class="hc-name">房東專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">稅務試算、房屋稅級距，一次搞懂。</span>
                 </div>
 
-                <div class="home-feature-card home-card-tenant">
-                    <button onclick="showPage('tenant')" class="btn btn-block btn-center btn-xl tone-emerald hc-btn"><span class="hc-ico" aria-hidden="true">🏃</span><span class="hc-name">房客專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">承租資格試算、承租條件、辦理單位通訊錄與親屬等親。</p>
+                <div class="home-feature-card home-card-tenant" role="button" tabindex="0" onclick="showPage('tenant')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('tenant');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏃</span><span class="hc-name">房客專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">承租資格試算、承租條件、辦理單位通訊錄與親屬等親。</span>
                 </div>
 
-                <div class="home-feature-card home-card-business">
-                    <button onclick="showPage('business')" class="btn btn-block btn-center btn-xl tone-purple hc-btn"><span class="hc-ico" aria-hidden="true">💼</span><span class="hc-name">業務專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p id="sf591-home-desc" class="text-slate-600 mt-3 text-center text-sm leading-relaxed">租金水準、公證費、表單與周會檔案；解約退還試算請至「催收解約專區」。</p>
+                <div class="home-feature-card home-card-business" role="button" tabindex="0" onclick="showPage('business')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('business');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">💼</span><span class="hc-name">業務專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span id="sf591-home-desc" class="hc-desc">租金水準、公證費、表單與周會檔案；解約退還試算請至「催收解約專區」。</span>
                 </div>
 
-                <div class="home-feature-card home-card-termination">
-                    <button onclick="showPage('termination')" class="btn btn-block btn-center btn-xl tone-indigo hc-btn"><span class="hc-ico" aria-hidden="true">📄</span><span class="hc-name">催收解約專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">包租／轉租（代租代管）解約退還金額試算。</p>
+                <div class="home-feature-card home-card-termination" role="button" tabindex="0" onclick="showPage('termination')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('termination');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">📄</span><span class="hc-name">催收解約專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">包租／轉租（代租代管）解約退還金額試算。</span>
                 </div>
 
-                <div class="home-feature-card home-card-newbie">
-                    <button onclick="showPage('newbie')" class="btn btn-block btn-center btn-xl tone-amber hc-btn"><span class="hc-ico" aria-hidden="true">🚀</span><span class="hc-name">新人專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">業務／租管師專線、任務板打卡與教材快篩。</p>
+                <div class="home-feature-card home-card-newbie" role="button" tabindex="0" onclick="showPage('newbie')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('newbie');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🚀</span><span class="hc-name">新人專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">業務／租管師專線、任務板打卡與教材快篩。</span>
                 </div>
 
-                <div class="home-feature-card home-card-rentmgr">
-                    <button onclick="showPage('rentmanager')" class="btn btn-block btn-center btn-xl tone-rose hc-btn"><span class="hc-ico" aria-hidden="true">🧑</span><span class="hc-name">租管師專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">路線圖、教材、快篩與任務板；依業務或租管師專線學習。</p>
+                <div class="home-feature-card home-card-rentmgr" role="button" tabindex="0" onclick="showPage('rentmanager')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('rentmanager');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🧑</span><span class="hc-name">租管師專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">路線圖、教材、快篩與任務板；依業務或租管師專線學習。</span>
                 </div>
 
-                <div class="home-feature-card home-card-announce">
-                    <button onclick="showPage('announcement')" class="btn btn-block btn-center btn-xl tone-blue hc-btn"><span class="hc-ico" aria-hidden="true">📣</span><span class="hc-name">簽呈公告專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">公司內部公告、簽呈與重要通知彙整。</p>
+                <div class="home-feature-card home-card-announce" role="button" tabindex="0" onclick="showPage('announcement')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('announcement');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">📣</span><span class="hc-name">簽呈公告專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">公司內部公告、簽呈與重要通知彙整。</span>
                 </div>
 
-                <div class="home-feature-card home-card-administration">
-                    <button onclick="showPage('administration')" class="btn btn-block btn-center btn-xl tone-teal hc-btn"><span class="hc-ico" aria-hidden="true">🏛️</span><span class="hc-name">行政專區</span><span class="hc-go" aria-hidden="true">→</span></button>
-                    <p class="text-slate-600 mt-3 text-center text-sm leading-relaxed">解約退還與租金試算等行政工具。</p>
+                <div class="home-feature-card home-card-administration" role="button" tabindex="0" onclick="showPage('administration')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('administration');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏛️</span><span class="hc-name">行政專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">解約退還與租金試算等行政工具。</span>
                 </div>
             </div>
         </div>
@@ -5563,7 +5593,13 @@
                         <div class="acf-field acf-field--wide">
                             <span class="acf-label">承辦人電子簽名</span>
                             <div class="pt-sign-pad"><canvas width="700" height="220" data-signature="applicant" aria-label="承辦人電子簽名板"></canvas></div>
-                            <div class="pt-sign-tools"><span class="acf-hint">請用滑鼠、手機觸控或觸控筆簽名。</span><button type="button" class="pt-sign-clear" data-clear-sign="applicant">清除重簽</button></div>
+                            <div class="pt-sign-tools">
+                                <span class="acf-hint">可手寫，或上傳手簽照片／圖片（手機可拍照）。</span>
+                                <span class="pt-sign-btns">
+                                    <label class="pt-sign-upload">上傳簽名照<input type="file" accept="image/*" data-sign-upload="applicant" hidden></label>
+                                    <button type="button" class="pt-sign-clear" data-clear-sign="applicant">清除重簽</button>
+                                </span>
+                            </div>
                         </div>
                     </div>
                     </fieldset>
@@ -7248,7 +7284,7 @@
                     <button onclick="showPage('business-forms')" class="btn btn-block btn-center btn-solid-purple text-xl">
                         📋 各式表單
                     </button>
-                    <a href="./docs/weekly-meeting/?v=20261017-2" class="btn btn-block btn-center btn-solid-purple text-xl no-underline md:col-span-2">
+                    <a href="./docs/weekly-meeting/?v=20261017-5" class="btn btn-block btn-center btn-solid-purple text-xl no-underline md:col-span-2">
                         📂 業務周會檔案
                     </a>
                 </div>
@@ -7510,8 +7546,7 @@
                 ← 返回首頁
             </button>
             <div class="bg-gradient-to-br from-indigo-50 via-white to-slate-50 rounded-[2rem] p-6 border border-indigo-200 shadow-lg">
-                <h2 class="text-3xl font-bold text-slate-900 mb-2 text-center">📄 催收解約專區</h2>
-                <p class="text-slate-600 mb-6 text-center max-w-2xl mx-auto leading-relaxed">欠租催收工具與解約流程：先在下方<strong>查地址</strong>，看房東／房客後再選包租或轉租試算、暫存，或開<strong>現場點交</strong>。</p>
+                <h2 class="text-3xl font-bold text-slate-900 mb-6 text-center">📄 催收解約專區</h2>
                 <section class="mb-6 rounded-2xl border-2 border-violet-200 bg-gradient-to-b from-violet-50/90 to-white p-4 md:p-5 shadow-md">
                     <h3 class="text-lg md:text-xl font-black text-violet-950 text-center mb-4">催收工具</h3>
                     <div class="mb-5">
@@ -7519,8 +7554,10 @@
                         <div class="practice-hub-grid practice-hub-grid--gens">
                             <button type="button" onclick="showPage('practice-templates')" class="practice-hub-card"><span>💬</span><strong>訊息範本產生</strong><small>LINE 複製</small></button>
                             <button type="button" onclick="showPage('lal-generator')" class="practice-hub-card"><span>📮</span><strong>存證信函產生</strong><small>PDF 下載</small></button>
+                            <a href="./docs/lal-howto/?v=20261017-1" class="practice-hub-card no-underline"><span>📘</span><strong>如何寄存證信函</strong><small>流程・注意・法務檢附</small></a>
                             <button type="button" onclick="openEnforcementSection('form')" class="practice-hub-card"><span>⚖️</span><strong>聲請狀產生器</strong><small>PDF 下載</small></button>
                             <button type="button" onclick="showPage('care-visit-notice')" class="practice-hub-card"><span>🏠</span><strong>家訪單產生器</strong><small>欠租關懷通知單</small></button>
+                            <a href="./docs/collection-flow/?v=20261019-10" class="practice-hub-card no-underline"><span>📖</span><strong>欠租催收流程</strong><small>SOP・怎麼做＋為什麼</small></a>
                         </div>
                     </div>
                     <div class="border-t border-violet-200/80 pt-4">
@@ -11152,7 +11189,7 @@
                 <section class="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-3">
                     <h3 class="font-bold text-indigo-950">① 地區與案號</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <label class="practice-field sm:col-span-2 lg:col-span-1"><span>承辦地區（帶入法院／公證用語）</span>
+                        <label class="practice-field sm:col-span-2 lg:col-span-1"><span>承辦地區（帶入法院／公證用語）<span class="req-mark" aria-hidden="true">*</span></span>
                             <select id="ep-region" class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white">
                                 <option value="">請選擇地區（帶入法院／公證用語）</option>
                                 <option value="新北">新北</option>
@@ -11168,14 +11205,8 @@
                                 <option value="嘉義">嘉義</option>
                                 <option value="屏東">屏東</option>
                             </select></label>
-                        <label class="practice-field"><span>案號年度（例 115，勿加「年度」）</span>
+                        <label class="practice-field"><span>案號年度（例 115，勿加「年度」）<span class="req-mark" aria-hidden="true">*</span></span>
                             <input id="ep-case-year" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="114" /></label>
-                        <label class="practice-field"><span>案號字號（選填）</span>
-                            <input id="ep-case-serial" type="text" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="法院收件後填" /></label>
-                        <label class="practice-field"><span>承辦（選填）</span>
-                            <input id="ep-handler" type="text" class="w-full px-3 py-2 border border-slate-200 rounded-lg" /></label>
-                        <label class="practice-field"><span>股別（選填）</span>
-                            <input id="ep-division" type="text" class="w-full px-3 py-2 border border-slate-200 rounded-lg" /></label>
                         <label class="practice-field"><span>管轄地方法院<span class="req-mark" aria-hidden="true">*</span></span>
                             <input id="ep-court" type="text" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="新北" /></label>
                     </div>
@@ -11212,24 +11243,24 @@
                     <h3 class="font-bold text-violet-950">③ 契約與欠租期間</h3>
                     <p class="text-xs text-slate-600">供訴狀「事由」段落帶入；日期請填<strong>民國</strong>年。</p>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <label class="practice-field"><span>契約簽訂年</span><input id="ep-contract-y" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="113" /></label>
-                        <label class="practice-field"><span>月</span><input id="ep-contract-m" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="6" /></label>
-                        <label class="practice-field"><span>日</span><input id="ep-contract-d" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="1" /></label>
-                        <label class="practice-field"><span>契約類型</span>
+                        <label class="practice-field"><span>簽約日<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-contract-y" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="113" /></label>
+                        <label class="practice-field"><span>月<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-contract-m" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="6" /></label>
+                        <label class="practice-field"><span>日<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-contract-d" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="1" /></label>
+                        <label class="practice-field"><span>契約類型<span class="req-mark" aria-hidden="true">*</span></span>
                             <select id="ep-lease-type" class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white">
+                                <option value="轉租" selected>房屋租賃（轉租）</option>
                                 <option value="租賃">房屋租賃</option>
-                                <option value="轉租">房屋租賃（轉租）</option>
                             </select></label>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <label class="practice-field"><span>月租金（元）</span><input id="ep-monthly-rent" type="number" min="0" step="1" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="12000" /></label>
+                        <label class="practice-field"><span>月租金（元）<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-monthly-rent" type="number" min="0" step="1" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="12000" /></label>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                        <label class="practice-field"><span>欠租起算年</span><input id="ep-arrears-start-y" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="114" /></label>
-                        <label class="practice-field"><span>月起</span><input id="ep-arrears-start-m" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="1" /></label>
-                        <label class="practice-field"><span>截至年</span><input id="ep-arrears-end-y" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="114" /></label>
-                        <label class="practice-field"><span>月</span><input id="ep-arrears-end-m" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="3" /></label>
-                        <label class="practice-field"><span>日（選填，計算日租金用）</span><input id="ep-arrears-end-d" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="31" /></label>
+                        <label class="practice-field"><span>欠租起算年<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-arrears-start-y" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="114" /></label>
+                        <label class="practice-field"><span>月起<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-arrears-start-m" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="1" /></label>
+                        <label class="practice-field"><span>截至年<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-arrears-end-y" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="114" /></label>
+                        <label class="practice-field"><span>月<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-arrears-end-m" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="3" /></label>
+                        <label class="practice-field"><span>日<span class="req-mark" aria-hidden="true">*</span></span><input id="ep-arrears-end-d" type="text" inputmode="numeric" class="w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="31" /></label>
                     </div>
                 </section>
 
@@ -11289,14 +11320,25 @@
                 </section>
 
                 <div class="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center">
+                    <button type="button" id="ep-btn-preview" class="btn btn-sm tone-indigo">預覽</button>
                     <button type="button" id="ep-btn-generate" class="btn btn-sm tone-rose font-bold">產生 PDF 訴狀（下載列印）</button>
-                    <button type="button" id="ep-btn-preview" class="btn btn-sm tone-indigo">預覽內文</button>
                     <button type="button" id="ep-btn-clear" class="btn btn-sm tone-slate-soft">清除欄位</button>
                     <p id="ep-status" class="text-sm text-slate-500 flex-1"></p>
                 </div>
 
-                <details class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <summary class="font-semibold text-slate-800 cursor-pointer">內文預覽</summary>
+                <div id="ep-preview-wrap" class="rounded-xl border border-indigo-200 bg-white overflow-hidden" hidden>
+                    <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-indigo-50 border-b border-indigo-100">
+                        <strong class="text-indigo-950 text-sm">📄 民事聲請狀預覽（完整 3 頁）</strong>
+                        <span class="flex gap-2">
+                            <button type="button" id="ep-btn-preview-tab" class="btn btn-sm tone-slate-soft">另開分頁</button>
+                            <button type="button" id="ep-btn-preview-close" class="btn btn-sm tone-slate-soft">關閉預覽</button>
+                        </span>
+                    </div>
+                    <iframe id="ep-preview-frame" title="民事聲請狀預覽" class="w-full bg-slate-100" style="height:min(78vh,820px);border:0"></iframe>
+                </div>
+
+                <details class="rounded-xl border border-slate-200 bg-slate-50 p-4 ep-preview-details">
+                    <summary class="font-semibold text-slate-800 cursor-pointer">文字對照（選看）</summary>
                     <div id="ep-preview" class="mt-3 text-sm leading-relaxed text-slate-800 font-serif whitespace-normal break-words"></div>
                 </details>
 
@@ -11343,11 +11385,10 @@
                                 <strong>建物登記第一類謄本</strong>
                                 <span class="med-flow-doc-tag">↗ 開啟範例</span>
                             </button>
-                            <button type="button" class="med-flow-card med-flow-card--orange is-clickable" onclick="openMediationDoc('power-of-attorney')">
+                            <div class="med-flow-card med-flow-card--orange">
                                 <strong>委任書＋法定代理人委任書</strong>
-                                <span>委任代理人時</span>
-                                <span class="med-flow-doc-tag">↗ 開啟範例</span>
-                            </button>
+                                <span>請用催收流程「備齊文件」套版產生</span>
+                            </div>
                         </div>
                     </div>
                     <div class="med-flow-arrow" aria-hidden="true">↓</div>
@@ -11413,10 +11454,9 @@
                                 <span class="med-flow-doc-tag">↗ 開啟範例</span>
                             </button>
                             <div class="med-flow-arrow" aria-hidden="true">↓</div>
-                            <a href="https://www.judicial.gov.tw/tw/cp-1366-4113-9f90f-1.html" target="_blank" rel="noopener noreferrer" class="med-flow-card med-flow-card--red is-clickable" style="text-decoration:none">
+                            <div class="med-flow-card med-flow-card--red">
                                 <strong>得依法提起訴訟、聲請支付命令<br/>或其他法律程序追償</strong>
-                                <span class="med-flow-doc-tag">↗ 司法院空白訴狀</span>
-                            </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -11425,7 +11465,7 @@
                     <div class="font-bold text-slate-800">範例文件一覽</div>
                     <ul class="list-disc pl-5 space-y-1">
                         <li><button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('docs-overview')">調解所需文件說明</button></li>
-                        <li><button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('mediation-notice')">調解通知書</button>、<button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('power-of-attorney')">調解用委任書</button>、<button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('legal-rep-attorney')">法定代理人委任書</button></li>
+                        <li><button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('mediation-notice')">調解通知書</button>（委任書請用催收流程套版產生）</li>
                         <li><button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('business-registration')">營業事業登記證影本</button>、<button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('company-change')">公司變更登記表</button>、<button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('building-transcript')">第一類謄本</button></li>
                         <li><button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('repayment-agreement')">房租欠款還款協議書</button>、<button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('cert-success')">調解成立證明書</button>、<button type="button" class="text-sky-700 underline font-semibold" onclick="openMediationDoc('cert-fail')">調解不成立證明書</button></li>
                     </ul>
@@ -11554,11 +11594,22 @@
                 </section>
 
                 <div class="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center">
+                    <button type="button" id="cvn-btn-preview" class="btn btn-sm tone-indigo font-bold">預覽</button>
                     <button type="button" id="cvn-btn-generate" class="btn btn-sm tone-rose font-bold">產生 PDF（下載列印）</button>
                     <button type="button" id="cvn-btn-clear" class="btn btn-sm tone-slate-soft">清除欄位</button>
                     <p id="cvn-status" class="text-sm text-slate-500 flex-1"></p>
                 </div>
-                <p class="text-xs text-slate-500 leading-relaxed">※ 僅協助產出關懷通知單，不構成法律意見。首次產生 PDF 若需載入標楷體，可能需等待十餘秒。</p>
+                <div id="cvn-preview-wrap" class="cvn-preview-wrap rounded-xl border-2 border-amber-300 bg-white overflow-hidden" hidden>
+                    <div class="cvn-preview-bar flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-amber-50 border-b border-slate-200">
+                        <strong class="text-sm font-bold text-slate-900">📄 家訪單預覽</strong>
+                        <span class="cvn-preview-actions flex gap-2">
+                            <button type="button" id="cvn-btn-preview-tab" class="btn btn-sm tone-slate-soft">另開分頁</button>
+                            <button type="button" id="cvn-btn-preview-close" class="btn btn-sm tone-slate-soft">關閉預覽</button>
+                        </span>
+                    </div>
+                    <iframe id="cvn-preview-frame" title="家訪單預覽" class="block w-full border-0 bg-slate-600" style="height:min(72vh,720px)"></iframe>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">※ 僅協助產出關懷通知單，不構成法律意見。可先按「預覽」確認再下載；首次產生若需載入標楷體，可能需等待十餘秒。</p>
             </div>
         </div>
 
@@ -11567,6 +11618,13 @@
             <div class="practice-panel space-y-5">
                 <h2 class="practice-h2">📮 存證信函產生器</h2>
                 <p class="text-sm text-slate-600">依中華郵政存證信函格式產生 PDF。填寫後下載列印，至郵局寄發。</p>
+                <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950 leading-relaxed">
+                    <strong>業務怎麼寄？</strong>
+                    選範本 → 貼上／修改 → 產出 PDF → 蓋公司大小章 → 填回執 → 郵局寄出。
+                    <a href="./docs/lal-howto/?v=20261017-1" class="font-bold text-sky-700 underline ml-1">完整教學與法務檢附清單</a>
+                    ·
+                    <a href="https://lalg-pro.onrender.com/" target="_blank" rel="noopener" class="font-bold text-sky-700 underline">線上產生器 ↗</a>
+                </div>
                 <div class="flex flex-wrap gap-2">
                     <button type="button" id="btn-lal-clear-parties" class="btn btn-sm tone-slate-soft">清除收件資訊</button>
                     <button type="button" id="btn-lal-clear-content" class="btn btn-sm tone-slate-soft">清除內文</button>
@@ -11630,12 +11688,12 @@
         <script src="./js/enforcement-petition-draw.js"></script>
         <script src="./js/enforcement-petition.js"></script>
         <script src="./js/lal-generator.js"></script>
-        <script src="./js/care-visit-notice.js"></script>
+        <script src="./js/care-visit-notice.js?v=20261017-61"></script>
         <script src="./js/practice-tools.js"></script>
         <script src="./js/rentmgr-flow-guide.js"></script>
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
-        <script src="./js/reveal.js?v=20261014-1"></script>
+        <script src="./js/reveal.js?v=20261018-29"></script>
         <script src="./js/admin-points-core.js?v=20261015-7"></script>
         <script src="./js/admin-points-charts.js?v=20261014-3"></script>
         <script src="./js/admin-training-content.js?v=20261014-2"></script>
@@ -11645,9 +11703,9 @@
         <script src="./js/admin-meeting-exam-data.js?v=20261012-1"></script>
         <script src="./js/course-exam.js?v=20261014-1"></script>
         <script src="./js/sim-practice.js?v=20261015-1"></script>
-        <script src="./js/improve-plan.js?v=20261014-2"></script>
+        <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261016-40"></script>
+        <script src="./js/admin-points.js?v=20261017-lease-pair"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
@@ -11670,7 +11728,7 @@
         <script src="./js/admin-calendar.js?v=20261011-5"></script>
         <script src="./js/admin-org.js?v=20261014-2"></script>
         <script src="./js/admin-meeting.js?v=20261017-1"></script>
-    <script src="./js/petition.js?v=20261016-2"></script>
+    <script src="./js/petition.js?v=20261018-35"></script>
         <script src="./js/receipt-endorsement-form.js?v=20261001-1"></script>
 <script src="./js/lite-hide-api.js?v=20261001-1"></script>
 <script src="./js/site-file-search-index.js?v=20261013-1"></script>
@@ -12111,14 +12169,6 @@
             wireDepositRefundPage('page-business-bao-deposit-refund', 'baoref-', 'landlord');
             depositRefundInitAllPages();
 
-            document.querySelectorAll('details.toolbox-details').forEach(function (el) {
-                el.addEventListener('toggle', function () {
-                    if (!el.open) return;
-                    requestAnimationFrame(function () {
-                        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                    });
-                });
-            });
         });
 
         /** 公證費：公證書並載明逕受強制執行（公證法第119條）欄位，依「公證費用標準表」表列（單位：新台幣）。逾2億依表末「以下類推」每1千萬加1,500元。 */
@@ -13422,6 +13472,7 @@
         window.SITE_SEARCH_INDEX = [
             { page: 'business', title: '業務周會檔案', category: '業務專區', keywords: '周會 週會 簡報 業務周會 管理部 下載 領款收據', file: './docs/weekly-meeting/' },
             { file: './docs/weekly-meeting/', title: '業務周會檔案', category: '首頁專區', keywords: '周會 週會 簡報 業務周會 管理部 下載 領款收據' },
+            { file: './docs/collection-flow/', title: '租賃欠租催收流程', category: '催收解約專區', keywords: '欠租 催收 SOP 流程 存證信函 調解 強制執行 還款協議 本票 面訪' },
             { page: 'landlord', title: '房東專區', category: '首頁專區', keywords: '房東 出租 業主 房東客' },
             { page: 'calculator', title: '房東稅務試算表', category: '房東專區', keywords: '稅務試算 稅 所得 二代健保 預扣 綜所稅 社宅優惠 四種租賃' },
             { page: 'landlord-house-tax', title: '房屋稅課稅級距', category: '房東專區', keywords: '房屋稅 級距 自用 非自用 課稅' },
@@ -13471,6 +13522,7 @@
             { page: 'rentmanager', rentmgrItem: 6, title: '官方 LINE 續約轉包租範本', category: '租管師專區', keywords: 'line 官方line 續約 轉包租 文字範本' },
             { page: 'rentmanager', rentmgrItem: 7, title: '包租領款收據', category: '租管師專區', keywords: '領款收據 包租 押金 續轉包 收據' },
             { page: 'lal-generator', title: '存證信函產生器', category: '催收解約專區', keywords: '存證信函 產生器 郵局 pdf 下載 催收' },
+            { file: './docs/lal-howto/', title: '如何寄存證信函', category: '催收解約專區', keywords: '存證信函 怎麼寄 範本 回執 蓋章 郵局 催告 法務 強執 列印 租屋處 戶籍地' },
             { page: 'care-visit-notice', title: '家訪單產生器', category: '催收解約專區', keywords: '家訪 關懷通知單 欠租 訪視 家訪單 pdf' },
             { page: 'collection-case', title: '強制執行聲請狀產生器', category: '催收解約專區', keywords: '強制執行 聲請狀 訴狀 欠租 查封 動產 公證 pdf 套版 產生器' },
             { page: 'enforcement-flow', title: '強制執行流程（案例）', category: '催收解約專區', keywords: '強制執行 流程 案例 存證信函 查封 動產 欠租 公證 範例' },
@@ -13763,8 +13815,6 @@
         const MEDIATION_DOC_URLS = {
             'docs-overview': './docs/mediation/01-docs-overview.pdf',
             'mediation-notice': './docs/mediation/02-mediation-notice.pdf',
-            'power-of-attorney': './docs/mediation/03-power-of-attorney.pdf',
-            'legal-rep-attorney': './docs/mediation/04-legal-rep-attorney.pdf',
             'business-registration': './docs/mediation/05-business-registration.pdf',
             'company-change': './docs/mediation/06-company-change.pdf',
             'building-transcript': './docs/mediation/07-building-transcript.pdf',
@@ -13778,9 +13828,8 @@
                 window.alert('負責人身分證影本請使用公司內部備存之空白／範例格式。');
                 return;
             }
-            if (key === 'power-of-attorney') {
-                window.open(MEDIATION_DOC_URLS['power-of-attorney'], '_blank', 'noopener,noreferrer');
-                window.open(MEDIATION_DOC_URLS['legal-rep-attorney'], '_blank', 'noopener,noreferrer');
+            if (key === 'power-of-attorney' || key === 'legal-rep-attorney') {
+                window.alert('委任書請到催收流程「備齊文件」用套版產生，不再提供空白範例。');
                 return;
             }
             const url = MEDIATION_DOC_URLS[key];

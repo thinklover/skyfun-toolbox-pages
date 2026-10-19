@@ -209,7 +209,6 @@
     function openEditor(s, keepOpen) {
         editing = editing === s && !keepOpen ? null : s;
         render();
-        if (editing) $('nb-ck-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function showMsg(text, isError) {

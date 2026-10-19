@@ -3,6 +3,7 @@
  */
 (function () {
   const API = (window.SKYFUN_591_API || 'https://skyfun-591-listing.dahwork123.workers.dev').replace(/\/$/, '');
+  const CRED_KEY = 'sf591-local-cred-v1';
   const form = document.getElementById('sf591-listing-form');
   if (!form) return;
 
@@ -12,7 +13,145 @@
     if (s) s.textContent = msg;
   };
 
+  function loadSavedCreds() {
+    try {
+      const raw = localStorage.getItem(CRED_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      const u = el('sf591-user');
+      const p = el('sf591-pass');
+      if (u && data.username) u.value = String(data.username);
+      if (p && data.password) p.value = String(data.password);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function saveCreds() {
+    try {
+      const username = el('sf591-user')?.value?.trim() || '';
+      const password = el('sf591-pass')?.value || '';
+      if (!username || !password) return;
+      localStorage.setItem(CRED_KEY, JSON.stringify({ username, password }));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  loadSavedCreds();
+  el('sf591-user')?.addEventListener('change', saveCreds);
+  el('sf591-pass')?.addEventListener('change', saveCreds);
+  el('sf591-user')?.addEventListener('blur', saveCreds);
+  el('sf591-pass')?.addEventListener('blur', saveCreds);
+
   let cachedBroker = null;
+  /** @type {{ name: string, mimeType: string, base64: string, preview: string }[]} */
+  let photoItems = [];
+  const PHOTO_MAX = 8;
+  const PHOTO_MAX_EDGE = 1280;
+  const PHOTO_QUALITY = 0.72;
+
+  function updatePhotoUi() {
+    const count = el('sf591-photo-count');
+    const grid = el('sf591-photo-grid');
+    if (count) {
+      count.textContent = photoItems.length
+        ? `已選 ${photoItems.length} 張（第 1 張＝封面）`
+        : '尚未選擇照片';
+    }
+    if (!grid) return;
+    grid.innerHTML = '';
+    photoItems.forEach((p, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'relative rounded-lg overflow-hidden border border-slate-200 bg-white';
+      wrap.innerHTML = `<img src="${p.preview}" alt="" class="w-full h-24 object-cover" /><button type="button" data-i="${i}" class="absolute top-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">×</button>${i === 0 ? '<span class="absolute bottom-1 left-1 bg-purple-700 text-white text-[10px] px-1 rounded">封面</span>' : ''}`;
+      wrap.querySelector('button')?.addEventListener('click', () => {
+        photoItems.splice(i, 1);
+        updatePhotoUi();
+      });
+      grid.appendChild(wrap);
+    });
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ''));
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function compressImage(file) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width;
+          let h = img.height;
+          const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(w, h));
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const jpeg = canvas.toDataURL('image/jpeg', PHOTO_QUALITY);
+          const base64 = jpeg.split(',')[1] || '';
+          resolve({
+            name: (file.name || 'photo.jpg').replace(/\.\w+$/, '.jpg'),
+            mimeType: 'image/jpeg',
+            base64,
+            preview: jpeg,
+          });
+        };
+        img.onerror = reject;
+        img.src = dataUrl;
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  async function addPhotoFiles(fileList) {
+    const files = [...(fileList || [])].filter((f) => f.type.startsWith('image/'));
+    if (!files.length) return;
+    status(`壓縮照片中（${files.length}）…`);
+    for (const f of files) {
+      if (photoItems.length >= PHOTO_MAX) break;
+      try {
+        photoItems.push(await compressImage(f));
+      } catch (e) {
+        console.warn('photo compress fail', e);
+      }
+    }
+    updatePhotoUi();
+    status(photoItems.length ? `已準備 ${photoItems.length} 張照片` : '照片讀取失敗');
+  }
+
+  const dropzone = el('sf591-dropzone');
+  const photoInput = el('sf591-photo-input');
+  dropzone?.addEventListener('click', () => photoInput?.click());
+  dropzone?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('border-purple-500');
+  });
+  dropzone?.addEventListener('dragleave', () => dropzone.classList.remove('border-purple-500'));
+  dropzone?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('border-purple-500');
+    addPhotoFiles(e.dataTransfer?.files);
+  });
+  photoInput?.addEventListener('change', () => {
+    addPhotoFiles(photoInput.files);
+    photoInput.value = '';
+  });
+  el('sf591-btn-clear-photos')?.addEventListener('click', () => {
+    photoItems = [];
+    updatePhotoUi();
+  });
 
   const REGIONS = [
     '台北市', '臺北市', '新北市', '桃園市', '台中市', '臺中市', '台南市', '臺南市', '高雄市',
@@ -318,6 +457,11 @@
         packageName: fd.get('packageName') || '住宅-黃金套餐',
         singlePlanName: fd.get('singlePlanName') || '',
       },
+      photos: photoItems.map((p) => ({
+        name: p.name,
+        mimeType: p.mimeType,
+        base64: p.base64,
+      })),
     };
   }
 
@@ -328,40 +472,210 @@
       body: JSON.stringify(body || {}),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok && !data.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    if (!res.ok && !data.ok && !data.needManualLogin) {
+      throw new Error(data.error || data.message || 'HTTP ' + res.status);
+    }
     return data;
+  }
+
+  /** /api/run NDJSON 串流：可能先 login、再 confirm */
+  async function apiRunStream(body, onEvent) {
+    const res = await fetch(API + '/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+    const ctype = res.headers.get('content-type') || '';
+    if (!res.ok && !ctype.includes('ndjson')) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || data.message || 'HTTP ' + res.status);
+    }
+    // 非串流（準備失敗等）
+    if (!ctype.includes('ndjson')) {
+      const data = await res.json().catch(() => ({}));
+      if (!data.ok) throw new Error(data.error || '執行失敗');
+      if (onEvent) await onEvent(data);
+      return data;
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let last = null;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split('\n');
+      buf = parts.pop() || '';
+      for (const line of parts) {
+        if (!line.trim()) continue;
+        let ev;
+        try {
+          ev = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        last = ev;
+        if (onEvent) await onEvent(ev);
+        if (ev.phase === 'error') throw new Error(ev.error || '執行失敗');
+      }
+    }
+    if (buf.trim()) {
+      try {
+        const ev = JSON.parse(buf);
+        last = ev;
+        if (onEvent) await onEvent(ev);
+        if (ev.phase === 'error') throw new Error(ev.error || '執行失敗');
+      } catch (e) {
+        if (e.message && e.message !== '執行失敗') throw e;
+      }
+    }
+    return last;
+  }
+
+  let lastSessionId = '';
+  let lastLiveUrl = '';
+  let heartbeatTimer = null;
+
+  function stopHeartbeat() {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+  }
+
+  function startHeartbeat() {
+    stopHeartbeat();
+    if (!lastSessionId) return;
+    // 每 45 秒輕觸 session，避免 idle 關閉（keep_alive 上限 10 分鐘）
+    heartbeatTimer = setInterval(() => {
+      if (!lastSessionId) return;
+      api('/api/session/live', { sessionId: lastSessionId })
+        .then((data) => {
+          if (data?.liveViewUrl) {
+            lastLiveUrl = data.liveViewUrl;
+            const tab = el('sf591-open-tab');
+            if (tab) tab.href = data.liveViewUrl;
+          }
+          if (data?.screenshot) {
+            const shot = el('sf591-shot');
+            if (shot) shot.src = data.screenshot;
+          }
+        })
+        .catch(() => {});
+    }, 45000);
   }
 
   function showConfirm(data) {
     const modal = el('sf591-modal');
-    const frame = el('sf591-frame');
     const shot = el('sf591-shot');
     const tab = el('sf591-open-tab');
+    const hint = el('sf591-modal-hint');
+    const title = el('sf591-modal-title');
+    const sub = el('sf591-modal-sub');
+    const doneBtn = el('sf591-btn-done');
     const url = data.liveViewUrl || '';
+    lastSessionId = data.sessionId || lastSessionId || '';
+    lastLiveUrl = url || lastLiveUrl || '';
+    const isLogin = data.phase === 'login' || data.needManualLogin;
+
+    if (title) title.textContent = isLogin ? '請登入 591' : '後台已填完—請確認刊登';
+    if (sub) {
+      sub.textContent = isLogin
+        ? '在 591 分頁用「密碼登入」自行輸入帳密；登入成功後回到工具箱按下方 Done。'
+        : '在 591 分頁核對後按「確認刊登」，再回到工具箱按下方 Done。';
+    }
     if (tab) {
       tab.href = url || '#';
-      tab.classList.toggle('hidden', !url);
+      tab.classList.toggle('pointer-events-none', !url);
+      tab.classList.toggle('opacity-50', !url);
+      tab.textContent = isLogin ? '開啟 591 登入分頁' : '開啟 591 確認畫面（新分頁）';
     }
-    if (url && frame) {
-      frame.classList.remove('hidden');
-      if (shot) shot.classList.add('hidden');
-      frame.src = url;
-    } else if (data.screenshot && shot) {
-      if (frame) {
-        frame.classList.add('hidden');
-        frame.removeAttribute('src');
+    if (doneBtn) {
+      doneBtn.disabled = !lastSessionId;
+      doneBtn.textContent = isLogin ? 'Done（已登入，繼續填表）' : 'Done（已確認刊登）';
+    }
+    if (hint) {
+      hint.textContent = url
+        ? '不要用分頁右上角的內頁按鈕；請回工具箱按綠色 Done。'
+        : '尚無連結。請按「重新取得連結」，或重跑開始上架。';
+    }
+    if (shot) {
+      if (data.screenshot) {
+        shot.src = data.screenshot;
+        shot.classList.remove('hidden');
+      } else {
+        shot.removeAttribute('src');
       }
-      shot.classList.remove('hidden');
-      shot.src = data.screenshot;
+    }
+    const frame = el('sf591-frame');
+    if (frame) {
+      frame.removeAttribute('src');
+      frame.classList.add('hidden');
     }
     modal?.classList.remove('hidden');
+    startHeartbeat();
+  }
+
+  async function sendToolboxDone(action) {
+    const hint = el('sf591-modal-hint');
+    const doneBtn = el('sf591-btn-done');
+    if (!lastSessionId) {
+      if (hint) hint.textContent = '沒有 session，請重新按「開始上架」。';
+      return;
+    }
+    if (doneBtn) doneBtn.disabled = true;
+    if (hint) hint.textContent = action === 'fail' ? '已送出 Fail…' : '已送出 Done，後台繼續處理中…';
+    try {
+      await api('/api/session/done', { sessionId: lastSessionId, action: action || 'done' });
+      status(action === 'fail' ? '已按 Fail' : '已按 Done，請稍候…');
+    } catch (e) {
+      if (hint) hint.textContent = '送出失敗：' + (e.message || e);
+      if (doneBtn) doneBtn.disabled = false;
+    }
   }
 
   function closeConfirm() {
+    stopHeartbeat();
     el('sf591-modal')?.classList.add('hidden');
     const frame = el('sf591-frame');
     if (frame) frame.removeAttribute('src');
   }
+
+  async function reconnectLiveView() {
+    const hint = el('sf591-modal-hint');
+    const btn = el('sf591-btn-relive');
+    if (!lastSessionId) {
+      if (hint) hint.textContent = '沒有 session，請重新按「開始上架」。';
+      return;
+    }
+    if (hint) hint.textContent = '重新取得連結中…';
+    if (btn) btn.disabled = true;
+    try {
+      const data = await api('/api/session/live', { sessionId: lastSessionId });
+      if (!data.liveViewUrl) throw new Error(data.error || '無法取得 Live View');
+      lastLiveUrl = data.liveViewUrl;
+      const tab = el('sf591-open-tab');
+      if (tab) {
+        tab.href = data.liveViewUrl;
+        tab.classList.remove('pointer-events-none', 'opacity-50');
+        tab.textContent = '開啟 591 確認畫面（新分頁）';
+      }
+      if (data.screenshot) {
+        const shot = el('sf591-shot');
+        if (shot) shot.src = data.screenshot;
+      }
+      if (hint) hint.textContent = '連結已更新，請再點綠色按鈕開啟。';
+      startHeartbeat();
+    } catch (e) {
+      if (hint) hint.textContent = '失敗：' + (e.message || e) + '（請重跑開始上架）';
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  el('sf591-btn-relive')?.addEventListener('click', () => reconnectLiveView());
+  el('sf591-btn-done')?.addEventListener('click', () => sendToolboxDone('done'));
 
   form.elements.namedItem('billingMode')?.addEventListener('change', syncBillingModeUi);
   syncBillingModeUi();
@@ -430,9 +744,24 @@
   }, 300);
 
   el('sf591-btn-prepare')?.addEventListener('click', async () => {
+    const btn = el('sf591-btn-prepare');
+    const prepSt = el('sf591-prepare-status');
+    const setPrep = (msg, cls) => {
+      if (prepSt) {
+        prepSt.textContent = msg || '';
+        prepSt.className = 'text-xs ' + (cls || 'text-slate-600');
+      }
+      status(msg || '');
+    };
+    const prevLabel = btn?.textContent || '';
     try {
-      status('準備文案（證號＋經紀＋模板）…');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '產生中…';
+      }
+      setPrep('正在產生標題／開場（約數秒）…', 'text-amber-700');
       const data = await api('/api/prepare', { listing: formToListing() });
+      if (!data?.ok) throw new Error(data?.error || '準備失敗');
       if (data.listing?.salesLicense) setLicenseUi(data.listing.salesLicense, true);
       if (data.listing?.broker) setBrokerUi(data.listing.broker);
       if (data.listing?.title && form.elements.namedItem('title')) {
@@ -449,14 +778,27 @@
         prev.classList.remove('hidden');
         prev.textContent = (data.listing?.title || '') + '\n\n' + (data.listing?.description || '');
       }
-      status(
-        '文案已準備｜營業員：' +
-          (data.listing?.salesLicense || '') +
-          '｜' +
-          (data.listing?.broker?.rawLine || '')
-      );
+      const src =
+        data.copySource === 'workers-ai'
+          ? 'Workers AI'
+          : data.copySource === 'openai'
+            ? 'OpenAI'
+            : data.copySource === 'fallback'
+              ? '規則備援'
+              : data.copySource || 'AI';
+      const okMsg =
+        `已帶入標題／描述（${src}）` +
+        (data.listing?.salesLicense ? `｜${data.listing.salesLicense}` : '') +
+        (data.warning ? `｜${data.warning}` : '');
+      setPrep(okMsg, 'text-emerald-700');
+      form.elements.namedItem('title')?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
     } catch (e) {
-      status('準備失敗：' + (e.message || e));
+      setPrep('準備失敗：' + (e.message || e), 'text-rose-700');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = prevLabel || '準備文案（AI 標題＋開場＋模板）';
+      }
     }
   });
 
@@ -467,46 +809,65 @@
 
   el('sf591-btn-run')?.addEventListener('click', async () => {
     const btn = el('sf591-btn-run');
-    const username = el('sf591-user')?.value?.trim() || '';
-    const password = el('sf591-pass')?.value || '';
-    if (!username || !password) {
-      status('請填自己的 591 帳號與密碼');
-      return;
-    }
     if (!form.reportValidity()) {
-      status('請補齊必填欄位');
+      status('請補齊必填欄位（標 * 者）');
       return;
     }
+    if (!photoItems.length) {
+      status('請至少上傳 1 張照片（建議 5 張以上）');
+      el('sf591-dropzone')?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     try {
       if (btn) {
         btn.disabled = true;
         btn.textContent = '後台執行中…';
       }
-      status('後台執行中：查證號／組文案／登入 591／填表，請稍候（約 1～2 分鐘）…');
-      const data = await api('/api/run', {
-        username,
-        password,
-        listing: formToListing(),
-      });
-      if (!data.ok) throw new Error(data.error || '執行失敗');
-      if (data.listing?.salesLicense) setLicenseUi(data.listing.salesLicense, true);
-      if (data.listing?.broker) setBrokerUi(data.listing.broker);
-      if (data.listing?.description && form.elements.namedItem('description')) {
-        form.elements.namedItem('description').value = data.listing.description;
-      }
-      const prev = el('sf591-preview');
-      if (prev) {
-        prev.classList.remove('hidden');
-        prev.textContent = (data.listing?.title || '') + '\n\n' + (data.listing?.description || '');
-      }
-      status(
-        (data.message || '已到確認前') +
-          '｜營業員：' +
-          (data.listing?.salesLicense || '') +
-          '｜' +
-          (data.listing?.broker?.rawLine || '')
+      status('後台準備中…接著會開啟 591 登入分頁，請自行輸入帳密');
+      const data = await apiRunStream(
+        { listing: formToListing() },
+        async (ev) => {
+          if (ev.phase === 'status' && ev.message) status(ev.message);
+          if (ev.listing?.salesLicense) setLicenseUi(ev.listing.salesLicense, true);
+          if (ev.listing?.broker) setBrokerUi(ev.listing.broker);
+          if (ev.listing?.description && form.elements.namedItem('description')) {
+            form.elements.namedItem('description').value = ev.listing.description;
+          }
+          if (ev.listing?.title) {
+            const prev = el('sf591-preview');
+            if (prev) {
+              prev.classList.remove('hidden');
+              prev.textContent = (ev.listing.title || '') + '\n\n' + (ev.listing.description || '');
+            }
+          }
+          // 開 591 分頁；Done 一定在工具箱按（不用內頁按鈕）
+          if (ev.phase === 'login' && ev.liveViewUrl) {
+            status(ev.message || '請在 591 分頁登入，再回工具箱按 Done');
+            showConfirm({ ...ev, needManualLogin: true });
+            try {
+              window.open(ev.liveViewUrl, '_blank', 'noopener,noreferrer');
+            } catch {
+              /* 被擋則靠「開啟 591 分頁」 */
+            }
+          }
+          if (ev.phase === 'confirm' && ev.liveViewUrl) {
+            status(ev.message || '後台已填完，請確認刊登後回工具箱按 Done');
+            showConfirm(ev);
+            try {
+              window.open(ev.liveViewUrl, '_blank', 'noopener,noreferrer');
+            } catch {
+              /* ignore */
+            }
+          }
+        }
       );
-      showConfirm(data);
+
+      if (data?.phase === 'confirm' || data?.ok) {
+        /* 已在 onEvent 處理 */
+      } else if (data && !data.ok) {
+        throw new Error(data.error || '執行失敗');
+      }
     } catch (e) {
       status('失敗：' + (e.message || e));
     } finally {

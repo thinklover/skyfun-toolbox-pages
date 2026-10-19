@@ -2231,9 +2231,10 @@
     } else swap();
   }
 
-  /** 應繳件數＋清冊進度上下排：應繳件數固定整排寬，點開明細時卡片才不會跟著縮放移位 */
+  /** 應繳件數左＋清冊進度右；點開地區／營業處明細時改上下排，明細才有整排寬 */
   function leasePair(range, scope) {
-    return `<div class="apt-block-pair apt-block-pair--stack">${blockZone('lease', leaseSection(range, scope))}${blockZone('due', rosterProgressSection(range, scope))}</div>`;
+    const stack = state.leaseRegion ? ' apt-block-pair--stack' : '';
+    return `<div class="apt-block-pair${stack}">${blockZone('lease', leaseSection(range, scope))}${blockZone('due', rosterProgressSection(range, scope))}</div>`;
   }
 
   /* ---------- 區主管週月報：同組長週月報，範圍改成區主管轄下的營業處（依人力明細行政的營業處） ---------- */
@@ -2901,26 +2902,37 @@
     return d?.auditor ? d : null;
   }
 
-  /** 審核時間紀錄查不到複審的案件，改到媒合管理合約明細的審核紀錄抓「複審通過」的審核者（Worker 每次只查一部分，分批補完） */
+  const CONTRACT_REV_CHUNK = 200;
+
+  /** 審核時間紀錄查不到複審的案件，改到媒合管理合約明細補抓（分批；Worker 先回快取再查缺的） */
   async function loadGuildDetailReviewers(entry) {
     let ids = caseGroups(entry.cases)
       .filter((list) => !list.some((c) => revOfCase(entry, c)))
       .flatMap((list) => list.map((c) => String(c.id)));
     entry.detailTodo = ids.length;
     entry.detailBusy = ids.length > 0;
+    entry.detailError = '';
     while (ids.length) {
+      const chunk = ids.slice(0, CONTRACT_REV_CHUNK);
       let data;
       try {
-        const res = await fetch(`${RPA_BASE}/admin-points/contract-reviewers?ids=${ids.slice(0, 300).join(',')}`, { headers: { 'X-Skyfun-Session': token() } });
+        const res = await fetch(`${RPA_BASE}/admin-points/contract-reviewers?ids=${chunk.join(',')}`, {
+          headers: { 'X-Skyfun-Session': token() }
+        });
         data = await res.json().catch(() => null);
         if (!res.ok || !data?.ok) throw new Error(data?.error || `合約明細審核紀錄讀取失敗（HTTP ${res.status}）`);
       } catch (e) {
         entry.detailError = String(e.message || e);
         break;
       }
-      for (const [id, auditor, time] of data.rows || []) entry.detail.set(String(id), { auditor, time: String(time || '').replace(/-/g, '/'), fromDetail: true });
-      const rest = [...(data.pending || []).map(String), ...ids.slice(300)];
-      if (rest.length >= ids.length) break;
+      const before = entry.detail.size;
+      for (const [id, auditor, time] of data.rows || []) {
+        entry.detail.set(String(id), { auditor, time: String(time || '').replace(/-/g, '/'), fromDetail: true });
+      }
+      const pending = new Set((data.pending || []).map(String));
+      const rest = [...ids.slice(CONTRACT_REV_CHUNK), ...chunk.filter((id) => pending.has(id) && !entry.detail.has(id))];
+      if (!rest.length) break;
+      if (rest.length >= ids.length && entry.detail.size === before) break;
       ids = rest;
       guildRerender();
     }
@@ -3029,8 +3041,8 @@
       .join('');
     const total = rows.reduce((s, b) => ({ total: s.total + b.total, err: s.err + b.err }), { total: 0, err: 0 });
     const detailNote = entry.detailBusy
-      ? `<p class="apt-sub-note apt-loading">審核時間紀錄查不到複審的 ${entry.detailTodo} 張合約，正在到媒合管理合約明細補抓複審人（已抓 ${entry.detail.size} 張，第一次較久，之後有快取）…</p>`
-      : entry.detailError
+      ? `<p class="apt-sub-note apt-loading">審核時間紀錄缺複審的 ${entry.detailTodo} 張，正在補抓（已帶入 ${entry.detail.size}／${entry.detailTodo}；已查過的在 Worker 有快取，會一次帶回）…</p>`
+        : entry.detailError
         ? `<p class="apt-bad">合約明細補抓複審人失敗：${esc(entry.detailError)} <button type="button" class="apt-btn-lite" data-guild-off-retry="${esc(sel)}">重試</button></p>`
         : '';
     return `<div class="apt-goff">${head}${detailNote}
@@ -3081,26 +3093,61 @@
       });
   }
 
-  /** Worker 每次只查一部分合約（第一次要建媒合編號索引），正在看的地區先查 */
+  const ROSTER_REV_LS = 'apt-roster-rev-v2';
+  const ROSTER_REV_CHUNK = 250;
+  const ROSTER_REV_TTL_MS = 12 * 3600 * 1000;
+
+  function readRosterRevLocal(period) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(`${ROSTER_REV_LS}:${period}`) || 'null');
+      if (!raw?.at || Date.now() - raw.at > ROSTER_REV_TTL_MS || !Array.isArray(raw.rows)) return null;
+      return new Map(
+        raw.rows.map(([no, auditor, time, flag]) => [
+          String(no),
+          { auditor: auditor || '', time: String(time || '').replace(/-/g, '/'), flag: flag || '' }
+        ])
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  function writeRosterRevLocal(period, map) {
+    try {
+      const rows = [...map.entries()].map(([no, v]) => [no, v.auditor || '', v.time || '', v.flag || '']);
+      localStorage.setItem(`${ROSTER_REV_LS}:${period}`, JSON.stringify({ at: Date.now(), rows }));
+    } catch {
+      /* quota */
+    }
+  }
+
+  /** Worker 每次只查一部分；瀏覽器會記住進度，重開頁面先帶入本機快取再補缺 */
   async function loadRosterReviewers(entry, period) {
     const errNos = (state.guildSys.get(period)?.data?.errors || []).filter((o) => o.kind === 'roster').map((o) => String(o.caseNo || '').trim());
     const all = [...new Set([...entry.rows.map((r) => r.no), ...errNos].filter(Boolean))];
     const regionOf = new Map(entry.rows.map((r) => [r.no, r.region]));
     entry.detailTodo = all.length;
     entry.detailBusy = true;
+    entry.detailError = '';
+    const local = readRosterRevLocal(period);
+    if (local?.size) {
+      for (const [no, v] of local) if (all.includes(no) && !entry.rev.has(no)) entry.rev.set(no, v);
+      guildRerender();
+    }
     for (let round = 0; round < 800; round++) {
       const want = all.filter((no) => !entry.rev.has(no));
       if (!want.length) break;
-      const focus = new Set(entry.focus);
+      const focus = new Set(entry.focus || []);
       if (!focus.has('全區')) want.sort((x, y) => Number(focus.has(regionOf.get(y))) - Number(focus.has(regionOf.get(x))));
+      const chunk = want.slice(0, ROSTER_REV_CHUNK);
       const ids = {};
-      for (const no of want) if (entry.ids[no]) ids[no] = entry.ids[no];
+      for (const no of chunk) if (entry.ids?.[no]) ids[no] = entry.ids[no];
       let data;
       try {
         const res = await fetch(`${RPA_BASE}/admin-points/roster-reviewers`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Skyfun-Session': token() },
-          body: JSON.stringify({ nos: want, ids })
+          body: JSON.stringify({ nos: chunk, ids })
         });
         data = await res.json().catch(() => null);
         if (!res.ok || !data?.ok) throw new Error(data?.error || `清冊複審人讀取失敗（HTTP ${res.status}）`);
@@ -3109,10 +3156,14 @@
         break;
       }
       const before = entry.rev.size;
-      for (const [no, auditor, time, flag] of data.rows || []) entry.rev.set(String(no), { auditor, time: String(time || '').replace(/-/g, '/'), flag });
-      if (entry.rev.size === before && data.indexDone) break;
+      for (const [no, auditor, time, flag] of data.rows || []) {
+        entry.rev.set(String(no), { auditor: auditor || '', time: String(time || '').replace(/-/g, '/'), flag: flag || '' });
+      }
+      if (entry.rev.size > before) writeRosterRevLocal(period, entry.rev);
+      if (entry.rev.size === before) break;
       guildRerender();
     }
+    if (!entry.detailError) writeRosterRevLocal(period, entry.rev);
     entry.detailBusy = false;
     guildRerender();
   }
@@ -3253,10 +3304,12 @@
       .join('');
     const total = rows.reduce((s, b) => ({ total: s.total + b.total, err: s.err + b.err }), { total: 0, err: 0 });
     const detailNote = entry.detailBusy
-      ? `<p class="apt-sub-note apt-loading">正在到媒合管理合約明細查清冊每件的複審人（已查 ${entry.rev.size}／${entry.detailTodo} 個媒合編號；第一次要查全部合約，可能要幾分鐘，之後有快取）…</p>`
+      ? `<p class="apt-sub-note apt-loading">正在補齊清冊複審人（已有 ${entry.rev.size}／${entry.detailTodo}）。本機有進度快取，重開會先帶入；缺的才跟 Worker 補，Worker 也會記 KV，第二次會快很多…</p>`
       : entry.detailError
         ? `<p class="apt-bad">清冊複審人查詢失敗：${esc(entry.detailError)} <button type="button" class="apt-btn-lite" data-roster-off-retry="${esc(sel)}">重試</button></p>`
-        : '';
+        : entry.rev.size
+          ? `<p class="apt-sub-note">清冊複審人已齊（${entry.rev.size} 筆），本機與雲端皆有快取。</p>`
+          : '';
     return `<div class="apt-goff">${head}${detailNote}
         <div class="apt-table-wrap"><table class="apt-table apt-goff-table">
           <thead><tr><th>營業處</th><th>區主管</th><th class="num">清冊件數</th><th class="num">公會意見</th><th class="num">清冊良率</th></tr></thead>
@@ -5657,7 +5710,6 @@
         const kind = guildCardEl.dataset.guildKind;
         state.guildOpen = state.guildOpen?.kind === kind ? null : { kind, period: '', city: state.guildOpen?.city || '' };
         render();
-        if (state.guildOpen) $('apt-body').querySelector('.apt-guild')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         return;
       }
       if (e.target.closest('[data-guild-close]')) {
@@ -5696,6 +5748,11 @@
       const rosterOffRetry = e.target.closest('[data-roster-off-retry]');
       if (rosterOffRetry) {
         const p = rosterOffRetry.dataset.rosterOffRetry;
+        try {
+          localStorage.removeItem(`${ROSTER_REV_LS}:${p}`);
+        } catch {
+          /* ignore */
+        }
         state.rosterOff.delete(p);
         loadRosterOffices(p, true);
         render();
@@ -5726,14 +5783,12 @@
         const i = Number(pickEl?.dataset.pickI);
         state.pick = pickEl && picked(id) !== i ? { key: pickKey(), id, i } : null;
         render();
-        if (state.pick) $('apt-pick-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         return;
       }
       const pviewBtn = e.target.closest('[data-pview]');
       if (pviewBtn) {
         state.personView = pviewBtn.dataset.pview;
         render();
-        $('apt-body').querySelector('.apt-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       const weekBtn = e.target.closest('[data-train-week]');
@@ -5776,9 +5831,6 @@
         state.trainNode = key;
         state.trainShut = false;
         render();
-        const page = $('apt-body').querySelector('.apt-train-page');
-        if (page) page.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        else $('apt-body').querySelector('.apt-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       const nodeRow = e.target.closest('[data-goto-node]');
@@ -5903,7 +5955,6 @@
         const name = pointBtn.dataset.pointPerson;
         state.openPoint = state.openPoint === name ? '' : name;
         render();
-        if (state.openPoint) $('apt-body').querySelector('.apt-pd-row')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         return;
       }
       const nameBtn = e.target.closest('[data-person]');

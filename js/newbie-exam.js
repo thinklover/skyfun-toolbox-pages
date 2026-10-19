@@ -268,7 +268,6 @@
         mountFloat();
         updateCount();
         startTimer();
-        document.getElementById('nb-exam-root')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function onAnswerInput(e) {
@@ -446,7 +445,6 @@
             '<button type="button" class="nb-exam-start" id="nb-exam-back">回到考試首頁</button></div>' +
             '<details class="nb-exam-review" open><summary>逐題檢討</summary>' + list + '</details>';
         document.getElementById('nb-exam-back').addEventListener('click', () => renderHome());
-        document.getElementById('nb-exam-root')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     /* ---------- 初始化 ---------- */

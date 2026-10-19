@@ -559,8 +559,6 @@
     setListActive(id);
     detail.innerHTML = '<p class="aqa-msg">載入中…</p>';
     showDetailPanel(true);
-    const ws = $('aqa-workspace');
-    if (ws && ws.getBoundingClientRect().top < 0) ws.scrollIntoView({ block: 'start' });
     try {
       const data = await rpc('admin_qa_get', { p_token: token(), p_question_id: id });
       if (!data?.ok) throw new Error(data?.error || '讀取失敗');

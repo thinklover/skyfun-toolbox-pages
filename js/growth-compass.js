@@ -848,7 +848,6 @@
     const toggleTile = (key) => {
       ui.open = key && ui.open !== key ? key : null;
       render();
-      if (ui.open) root.querySelector('#gc-tile-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
     root.addEventListener('click', (e) => {
       if (e.target.closest('[data-gc-close]')) return toggleTile(null);

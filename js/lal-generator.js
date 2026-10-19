@@ -37,11 +37,14 @@
     const TITLE_Y_INTERVAL = 0.139 * PDF_INCH;
     const CC_RECEIVER_FIX = [0.278 * PDF_INCH, 0.069 * PDF_INCH];
 
-    const TEMPLATE_PATH = 'assets/lal/tw_lal.pdf';
-    const FONT_PATH = 'assets/lal/TW-Kai-98_1.ttf';
-    const PDF_LIB_LOCAL = 'js/vendor/pdf-lib.min.js';
+    const ASSET_BASE = (typeof window.LAL_ASSET_BASE === 'string' && window.LAL_ASSET_BASE)
+        ? window.LAL_ASSET_BASE.replace(/\/?$/, '/')
+        : './';
+    const TEMPLATE_PATH = ASSET_BASE + 'assets/lal/tw_lal.pdf';
+    const FONT_PATH = ASSET_BASE + 'assets/lal/TW-Kai-98_1.ttf';
+    const PDF_LIB_LOCAL = ASSET_BASE + 'js/vendor/pdf-lib.min.js';
     const PDF_LIB_CDN = 'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
-    const FONTKIT_LOCAL = 'js/vendor/fontkit.umd.js';
+    const FONTKIT_LOCAL = ASSET_BASE + 'js/vendor/fontkit.umd.js';
     const FONTKIT_CDN = 'https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.js';
 
     let pdfLibPromise = null;
@@ -51,6 +54,62 @@
         receiver: { namePh: '收件人姓名', addrPh: '收件人詳細地址（租屋處）' },
         cc: { namePh: '副本收件人姓名', addrPh: '副本收件人詳細地址（多為戶籍地）' }
     };
+
+    /** 包租寄件人：與家訪單／解約單相同營業處清單 */
+    const COMPANY_NAME = '星鴻股份有限公司';
+    const COMPANY_OFFICES = [
+        { id: 'tp', name: '台北分公司', phone: '0809-092-122', addr: '103 台北市大同區重慶北路一段26巷9弄1號4樓' },
+        { id: 'ty', name: '桃園分公司', phone: '(03) 275-7773', addr: '320 桃園市中壢區環北路400號13樓之6' },
+        { id: 'tc-1', name: '台中分公司', phone: '(04) 3707-2368', addr: '406 台中市北屯區文心路四段698號6樓之1' },
+        { id: 'tn', name: '台南分公司', phone: '(06) 703-2305', addr: '704 台南市北區成功路54號11樓之1' },
+        { id: 'kh', name: '高雄分公司', phone: '(07) 976-3955', addr: '806 高雄市前鎮區一心一路239號11樓之2' },
+        { id: 'hsinchu', name: '新竹分公司', phone: '(03) 622-3937', addr: '302 新竹縣竹北市光明五街342號2樓' },
+        { id: 'yilan', name: '宜蘭分公司', phone: '(03) 910-8705', addr: '260 宜蘭縣宜蘭市舊城北路154號2樓' },
+        { id: 'keelung', name: '基隆分公司', phone: '(02) 7751-7851', addr: '202 基隆市中正區義二路196號2樓' },
+        { id: 'changhua', name: '彰化分公司', phone: '(04) 706-0725', addr: '' },
+        { id: 'nantou', name: '南投分公司', phone: '(049) 700-9327', addr: '542 南投縣草屯鎮中正路755號7樓之1' },
+        { id: 'chiayi', name: '嘉義分公司', phone: '(05) 320-9119', addr: '600 嘉義市西區上海路175號2樓' }
+    ];
+
+    function stripPostalPrefix(addr) {
+        return String(addr || '').replace(/^\d{3}\s*/, '').trim();
+    }
+
+    function getCompanyOffice(id) {
+        return COMPANY_OFFICES.find((o) => o.id === id) || null;
+    }
+
+    function ensureOfficeSelectOptions() {
+        const sel = $('lal-office-select');
+        if (!sel || sel.dataset.filled === '1') return;
+        sel.innerHTML = '<option value="">－ 請選擇營業處 －</option>' +
+            COMPANY_OFFICES.map((o) =>
+                '<option value="' + o.id + '">' + o.name + (o.phone ? '　' + o.phone : '') + '</option>'
+            ).join('');
+        sel.dataset.filled = '1';
+    }
+
+    function fillBaoSenderFromOffice() {
+        const sel = $('lal-office-select');
+        if (!sel || !sel.value) return false;
+        const office = getCompanyOffice(sel.value);
+        if (!office) return false;
+        const addr = stripPostalPrefix(office.addr);
+        clearParties('sender');
+        const list = partyListEl('sender');
+        if (!list) return false;
+        list.appendChild(createPartyCard('sender', {
+            name: COMPANY_NAME,
+            addr: addr || ('（請補齊' + office.name + '地址）')
+        }, 1));
+        const tip = $('lal-office-tip');
+        if (tip) {
+            tip.textContent = addr
+                ? ('已帶入：' + COMPANY_NAME + '／' + office.name + '／' + addr)
+                : (office.name + '地址尚未建檔，請手動補在寄件人地址欄。');
+        }
+        return true;
+    }
     let templateBytesPromise = null;
     let fontBytesPromise = null;
 
@@ -64,8 +123,8 @@
         return new URL(path.replace(/^\.\//, ''), document.baseURI).href;
     }
 
-    const FONT_MANIFEST = 'js/lal-font/manifest.js';
-    const FONT_PART_PREFIX = 'js/lal-font/part-';
+    const FONT_MANIFEST = ASSET_BASE + 'js/lal-font/manifest.js';
+    const FONT_PART_PREFIX = ASSET_BASE + 'js/lal-font/part-';
 
     function base64ToArrayBuffer(b64) {
         const bin = atob(b64);
@@ -74,23 +133,32 @@
         return buf.buffer;
     }
 
+    function isFontBytes(buf) {
+        if (!buf || buf.byteLength < 4) return false;
+        const u8 = new Uint8Array(buf);
+        const tag = String.fromCharCode(u8[0], u8[1], u8[2], u8[3]);
+        if (tag === 'OTTO' || tag === 'ttcf' || tag === 'true') return true;
+        return u8[0] === 0x00 && u8[1] === 0x01 && u8[2] === 0x00 && u8[3] === 0x00;
+    }
+
     /** file:// 或 fetch 失敗時，從內嵌分片載入標楷體（無需手動選檔） */
     async function loadEmbeddedFontBytes() {
         const status = $('lal-status');
-        if (!window.LAL_FONT_PART_COUNT) {
-            await loadScript(resolveAssetUrl(FONT_MANIFEST));
-        }
+        window.LAL_FONT_PARTS = [];
+        window.LAL_FONT_PART_COUNT = 0;
+        await loadScript(resolveAssetUrl(FONT_MANIFEST + '?v=lal'));
         const total = window.LAL_FONT_PART_COUNT;
         if (!total) {
             throw new Error('找不到內嵌字型。請確認資料夾內含 js/lal-font/');
         }
-        window.LAL_FONT_PARTS = window.LAL_FONT_PARTS || [];
-        for (let i = window.LAL_FONT_PARTS.length; i < total; i++) {
+        for (let i = 0; i < total; i++) {
             if (status) status.textContent = `載入字型中…（${i + 1}/${total}）`;
-            const partPath = FONT_PART_PREFIX + String(i).padStart(3, '0') + '.js';
+            const partPath = FONT_PART_PREFIX + String(i).padStart(3, '0') + '.js?v=lal';
             await loadScript(resolveAssetUrl(partPath));
         }
-        return base64ToArrayBuffer(window.LAL_FONT_PARTS.join(''));
+        const bytes = base64ToArrayBuffer(window.LAL_FONT_PARTS.join(''));
+        if (!isFontBytes(bytes)) throw new Error('內嵌字型格式無效');
+        return bytes;
     }
 
     function loadScript(src) {
@@ -150,8 +218,12 @@
 
     function fetchAsset(path) {
         const url = resolveAssetUrl(path);
-        return fetch(url).then((r) => {
+        return fetch(url).then(async (r) => {
             if (!r.ok) throw new Error('無法載入資源（HTTP ' + r.status + '）：' + url);
+            const ct = String(r.headers.get('content-type') || '').toLowerCase();
+            if (ct.includes('text/html')) {
+                throw new Error('資源路徑回傳網頁而非檔案：' + url);
+            }
             return r.arrayBuffer();
         }).catch((err) => {
             if (err.message && err.message.includes('Failed to fetch')) {
@@ -174,7 +246,9 @@
     async function loadFontBytes() {
         if (!isFileProtocol()) {
             try {
-                return await fetchAsset(FONT_PATH);
+                const buf = await fetchAsset(FONT_PATH);
+                if (isFontBytes(buf)) return buf;
+                console.warn('字型檔格式不正確，改載入內嵌分片');
             } catch (err) {
                 console.warn('字型 fetch 失敗，改載入內嵌分片', err);
             }
@@ -204,14 +278,15 @@
     }
 
     let tplAutoTimer = null;
-    let tplFieldsBound = false;
     /** 使用者手動改過內文時，不再被範本自動覆寫 */
     let contentManuallyEdited = false;
 
     function getSelectedLetterTemplate() {
         const id = $('lal-tpl-select')?.value;
         if (!id) return null;
-        return (window.LAL_LETTER_TEMPLATES || []).find((t) => t.id === id) || null;
+        return listLetterTemplates().find((t) => t.id === id)
+            || (window.LAL_LETTER_TEMPLATES || []).find((t) => t.id === id)
+            || null;
     }
 
     function val(id) {
@@ -503,10 +578,6 @@
             });
             wrap.appendChild(grid);
             bindLeaseTermAutoCalc();
-            const hint = document.createElement('p');
-            hint.className = 'lal-hint';
-            hint.textContent = '起租日、迄租日可直接輸入 115/06/15；離開欄位後會自動格式化，並計算計租年／月數帶入內文';
-            wrap.appendChild(hint);
             return wrap;
         }
 
@@ -672,25 +743,43 @@
             const block = renderTplFieldBlock(fk);
             if (block) host.appendChild(block);
         });
-        if (!tplFieldsBound) {
-            tplFieldsBound = true;
+        if (host.dataset.tplBound !== '1') {
+            host.dataset.tplBound = '1';
             host.addEventListener('input', scheduleApplyLetterTemplate);
             host.addEventListener('change', scheduleApplyLetterTemplate);
         }
         applyLetterTemplate(true);
+        if (typeof window.applyLalCaseMode === 'function') window.applyLalCaseMode();
+    }
+
+    function listLetterTemplates() {
+        const all = window.LAL_LETTER_TEMPLATES || [];
+        const allow = window.LAL_TEMPLATE_ALLOWLIST;
+        if (!Array.isArray(allow) || !allow.length) return all;
+        const set = new Set(allow.map(String));
+        return all.filter((t) => set.has(t.id));
     }
 
     function initLetterTemplateSelect() {
         const sel = $('lal-tpl-select');
         if (!sel || !window.LAL_LETTER_TEMPLATES) return;
-        if (sel.options.length) return;
+        if (sel.dataset.bound === '1') return;
+        sel.dataset.bound = '1';
+        if (sel.options.length) {
+            sel.addEventListener('change', renderTplFields);
+            return;
+        }
+        const templates = listLetterTemplates();
+        const onlyOne = templates.length === 1;
+        if (!onlyOne) {
+            const opt0 = document.createElement('option');
+            opt0.value = '';
+            opt0.textContent = '— 請選擇範本 —';
+            sel.appendChild(opt0);
+        }
         let lastGroup = '';
-        const opt0 = document.createElement('option');
-        opt0.value = '';
-        opt0.textContent = '— 請選擇範本 —';
-        sel.appendChild(opt0);
-        window.LAL_LETTER_TEMPLATES.forEach((t) => {
-            if (t.group !== lastGroup) {
+        templates.forEach((t) => {
+            if (!onlyOne && t.group !== lastGroup) {
                 const og = document.createElement('optgroup');
                 og.label = t.group;
                 og.dataset.group = t.group;
@@ -700,9 +789,15 @@
             const opt = document.createElement('option');
             opt.value = t.id;
             opt.textContent = t.title;
-            sel.lastElementChild.appendChild(opt);
+            if (onlyOne) sel.appendChild(opt);
+            else sel.lastElementChild.appendChild(opt);
         });
         sel.addEventListener('change', renderTplFields);
+        const defId = window.LAL_TEMPLATE_DEFAULT || (onlyOne ? templates[0].id : '');
+        if (defId && templates.some((t) => t.id === defId)) {
+            sel.value = defId;
+            renderTplFields();
+        }
     }
 
     function partyListEl(role) {
@@ -929,6 +1024,60 @@
         return outDoc.save();
     }
 
+    let lalPreviewUrl = null;
+
+    function revokeLalPreview() {
+        if (lalPreviewUrl) {
+            URL.revokeObjectURL(lalPreviewUrl);
+            lalPreviewUrl = null;
+        }
+    }
+
+    function ensureLalPreviewUi() {
+        const actions = document.querySelector('.lal-actions') || $('btn-lal-generate')?.parentElement;
+        if (!actions) return;
+        if (!$('btn-lal-preview')) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.id = 'btn-lal-preview';
+            btn.textContent = '預覽';
+            const gen = $('btn-lal-generate');
+            if (gen) actions.insertBefore(btn, gen);
+            else actions.appendChild(btn);
+        }
+        if ($('lal-preview-wrap')) return;
+        const wrap = document.createElement('div');
+        wrap.id = 'lal-preview-wrap';
+        wrap.className = 'lal-preview-wrap';
+        wrap.hidden = true;
+        wrap.innerHTML =
+            '<div class="lal-preview-bar">' +
+              '<strong>📄 存證信函預覽</strong>' +
+              '<span class="lal-preview-actions">' +
+                '<button type="button" id="btn-lal-preview-tab" class="soft">另開分頁</button>' +
+                '<button type="button" id="btn-lal-preview-close" class="soft">關閉預覽</button>' +
+              '</span>' +
+            '</div>' +
+            '<iframe id="lal-preview-frame" title="存證信函預覽"></iframe>';
+        const foot = $('lal-foot-seal');
+        if (foot && foot.parentNode) foot.parentNode.insertBefore(wrap, foot);
+        else actions.parentNode?.insertBefore(wrap, actions.nextSibling);
+
+        if (!$('lal-preview-style')) {
+            const style = document.createElement('style');
+            style.id = 'lal-preview-style';
+            style.textContent =
+                '.lal-preview-wrap{margin:12px 0;border:2px solid #c9a227;border-radius:12px;overflow:hidden;background:#fff;}' +
+                '.lal-preview-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:linear-gradient(180deg,#fffbeb,#fff);border-bottom:1px solid #e2e8f0;}' +
+                '.lal-preview-bar strong{font-size:14px;font-weight:900;color:#192437;}' +
+                '.lal-preview-actions{display:flex;gap:8px;}' +
+                '.lal-preview-wrap iframe{display:block;width:100%;height:min(72vh,720px);border:0;background:#525659;}' +
+                '#btn-lal-preview-tab,#btn-lal-preview-close{appearance:none;border:1.5px solid #cbd5e1;border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;background:#fff;color:#192437;}' +
+                '#btn-lal-preview{background:#1d4ed8!important;color:#fff!important;border-color:#1d4ed8!important;}';
+            document.head.appendChild(style);
+        }
+    }
+
     function downloadPdf(bytes, filename) {
         const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
@@ -943,9 +1092,11 @@
         }, 200);
     }
 
-    async function generatePdf() {
+    async function generatePdf(mode) {
+        const isPreview = mode === 'preview';
         const status = $('lal-status');
         const btn = $('btn-lal-generate');
+        const btnPv = $('btn-lal-preview');
         const senders = readParties('sender');
         const receivers = readParties('receiver');
         const ccs = readParties('cc');
@@ -972,15 +1123,33 @@
         }
 
         try {
-            if (status) status.textContent = '載入字型與範本中（首次可能需十餘秒）…';
+            if (status) status.textContent = isPreview
+                ? '產生預覽中（首次載入字型可能需十餘秒）…'
+                : '載入字型與範本中（首次可能需十餘秒）…';
             if (btn) btn.disabled = true;
+            if (btnPv) btnPv.disabled = true;
 
             const PDFLib = await loadPdfLib();
             const [fontBytes, templateBytes] = await Promise.all([getFontBytes(), getTemplateBytes()]);
-            if (status) status.textContent = '排版產生中…';
+            if (status) status.textContent = isPreview ? '預覽排版中…' : '排版產生中…';
 
             const overlayBytes = await buildOverlayPdf(PDFLib, fontBytes, senders, receivers, ccs, finalContent);
             const finalBytes = await mergeWithTemplate(PDFLib, overlayBytes, templateBytes);
+
+            if (isPreview) {
+                ensureLalPreviewUi();
+                revokeLalPreview();
+                const blob = new Blob([finalBytes], { type: 'application/pdf' });
+                lalPreviewUrl = URL.createObjectURL(blob);
+                const wrap = $('lal-preview-wrap');
+                const frame = $('lal-preview-frame');
+                if (wrap && frame) {
+                    wrap.hidden = false;
+                    frame.src = lalPreviewUrl;
+                }
+                if (status) status.textContent = '已產生預覽，確認無誤後再按「產生 PDF 文件」下載列印。';
+                return;
+            }
 
             const d = new Date();
             const fn = `lal_${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}-${d.getHours()}${d.getMinutes()}${d.getSeconds()}.pdf`;
@@ -990,18 +1159,19 @@
             console.error(e);
             resetAssetCache();
             const msg = (e && e.message) ? String(e.message) : String(e);
-            alert('產生失敗：' + msg);
+            alert((isPreview ? '預覽失敗：' : '產生失敗：') + msg);
             if (status) status.textContent = '';
         } finally {
             if (btn) btn.disabled = false;
+            if (btnPv) btnPv.disabled = false;
         }
     }
 
-    let lalBound = false;
-
     function bindLal() {
-        if (lalBound) return;
-        lalBound = true;
+        const gen = $('btn-lal-generate');
+        if (!gen || gen.dataset.bound === '1') return;
+        gen.dataset.bound = '1';
+        ensureLalPreviewUi();
         $('btn-lal-add-sender')?.addEventListener('click', () => addParty('sender'));
         $('btn-lal-add-receiver')?.addEventListener('click', () => addParty('receiver'));
         $('btn-lal-add-cc')?.addEventListener('click', () => addParty('cc'));
@@ -1020,7 +1190,20 @@
         $('btn-lal-clear-all')?.addEventListener('click', () => {
             if (confirm('清除全部資料？')) clearAll();
         });
-        $('btn-lal-generate')?.addEventListener('click', generatePdf);
+        gen.addEventListener('click', () => generatePdf('download'));
+        $('btn-lal-preview')?.addEventListener('click', () => generatePdf('preview'));
+        $('btn-lal-preview-close')?.addEventListener('click', () => {
+            const wrap = $('lal-preview-wrap');
+            const frame = $('lal-preview-frame');
+            if (frame) frame.src = 'about:blank';
+            if (wrap) wrap.hidden = true;
+            revokeLalPreview();
+            const st = $('lal-status');
+            if (st && /預覽/.test(st.textContent || '')) st.textContent = '';
+        });
+        $('btn-lal-preview-tab')?.addEventListener('click', () => {
+            if (lalPreviewUrl) window.open(lalPreviewUrl, '_blank', 'noopener');
+        });
         $('btn-lal-apply-tpl')?.addEventListener('click', () => applyLetterTemplate(false));
     }
 
@@ -1041,11 +1224,148 @@
         } catch { /* ignore */ }
     }
 
+    function readCaseMode() {
+        const caseType = document.querySelector('input[name="lal-case-type"]:checked')?.value || 'bao';
+        const mailTarget = document.querySelector('input[name="lal-mail-target"]:checked')?.value || 'rent';
+        return {
+            caseType,
+            mailTarget,
+            seal: caseType === 'dai' ? '房東印章' : '公司大小章',
+            copies: mailTarget === 'both' ? 4 : 3,
+            withCc: mailTarget === 'both'
+        };
+    }
+
+    function syncReceiptTemplate() {
+        const tenantEl = $('lal-receipt-tenant');
+        const lessorEl = $('lal-receipt-lessor');
+        if (!tenantEl && !lessorEl) return;
+        const receivers = typeof readParties === 'function' ? readParties('receiver') : [];
+        const senders = typeof readParties === 'function' ? readParties('sender') : [];
+        const r = receivers[0] || {};
+        const s = senders[0] || {};
+        if (tenantEl) {
+            const t = [r.name, r.addr].filter(Boolean).join('\n');
+            tenantEl.textContent = t || '填好上方「收件人」後會自動帶入';
+        }
+        if (lessorEl) {
+            const mode = typeof readCaseMode === 'function' ? readCaseMode() : { caseType: 'bao' };
+            const tag = mode.caseType === 'dai' ? '（代管＝房東）' : '（包租＝公司）';
+            const t = [s.name, s.addr].filter(Boolean).join('\n');
+            lessorEl.textContent = t ? (t + '\n' + tag) : ('填好上方「寄件人」後會自動帶入' + tag);
+        }
+    }
+
+    function applyLalCaseMode() {
+        if (!window.LAL_CASE_MODE_UI) return;
+        const mode = readCaseMode();
+        const isBao = mode.caseType === 'bao';
+        const ccCol = $('lal-cc-col');
+        if (ccCol) {
+            ccCol.hidden = !mode.withCc;
+            if (!mode.withCc) clearParties('cc');
+        }
+        document.querySelector('.lal-parties')?.classList.toggle('is-no-cc', !mode.withCc);
+
+        const officeRow = $('lal-office-row');
+        if (officeRow) officeRow.hidden = !isBao;
+        ensureOfficeSelectOptions();
+        const addSenderBtn = $('btn-lal-add-sender');
+        if (addSenderBtn) addSenderBtn.hidden = isBao;
+        const senderTitle = document.querySelector('#cf-lal .lal-party-col h4, .lal-party-col:has(#lal-list-sender) h4');
+        const senderHead = $('lal-sender-title');
+        if (senderHead) {
+            senderHead.textContent = isBao ? '寄件人（選營業處自動帶入）' : '寄件人（房東）';
+        } else if (senderTitle && partyListEl('sender')?.closest('.lal-party-col')?.contains(senderTitle)) {
+            senderTitle.textContent = isBao ? '寄件人（選營業處自動帶入）' : '寄件人（房東）';
+        }
+
+        if (isBao) {
+            if ($('lal-office-select')?.value) fillBaoSenderFromOffice();
+            else {
+                const tip = $('lal-office-tip');
+                if (tip) tip.textContent = '請先選營業處，寄件人會自動帶入星鴻股份有限公司與該處地址。';
+            }
+        } else {
+            const tip = $('lal-office-tip');
+            if (tip) tip.textContent = '';
+            const officeSel = $('lal-office-select');
+            if (officeSel) officeSel.value = '';
+        }
+
+        const creditorBlock = document.querySelector('[data-lal-field="creditor"]');
+        if (creditorBlock) creditorBlock.hidden = true;
+        const creditor = $('lal-f-creditor');
+        if (creditor) {
+            // 包租：台端向本公司；代管：台端向本人
+            creditor.value = isBao ? '本公司' : '本人';
+            creditor.disabled = true;
+        }
+
+        const hint = $('lal-case-hint');
+        if (hint) {
+            const officeBit = isBao ? '；包租請選<strong>營業處</strong>帶入寄件人' : '；代管請自行填房東為寄件人';
+            const sealBit = isBao
+                ? '大小章蓋在<strong>存證信函右上角</strong>'
+                : '<strong>房東印章</strong>蓋在<strong>存證信函右上角</strong>';
+            hint.innerHTML = mode.withCc
+                ? `本案${sealBit}；列印存證信函 <b>4</b> 份（收件租屋處＋副本戶籍地）${officeBit}。出門帶：存證信函 4 份、信封、回執聯。`
+                : `本案${sealBit}；列印存證信函 <b>3</b> 份（僅租屋處，無副本）${officeBit}。出門帶：存證信函 3 份、信封、回執聯。`;
+        }
+        const pack = $('lal-pack-tip');
+        if (pack) {
+            pack.innerHTML = mode.withCc
+                ? `帶 <b>存證信函 3 份或 4 份、信封、回執聯</b>。${isBao ? '大小章' : '房東印章'}蓋在<strong>存證信函右上角</strong>。寄<b>租屋處＋戶籍地</b>。`
+                : `帶 <b>存證信函 3 份或 4 份、信封、回執聯</b>。${isBao ? '大小章' : '房東印章'}蓋在<strong>存證信函右上角</strong>。寄<b>租屋處</b>（無副本）。`;
+        }
+        const foot = $('lal-foot-seal');
+        if (foot) {
+            foot.textContent = isBao
+                ? `※ 產出後請將大小章蓋在存證信函右上角、填回執，至郵局以掛號附回執寄發（列印 ${mode.copies} 份）。僅協助套印格式，不構成法律意見。`
+                : `※ 產出後請將房東印章蓋在存證信函右上角、填回執，至郵局以掛號附回執寄發（列印 ${mode.copies} 份）。僅協助套印格式，不構成法律意見。`;
+        }
+        const note = $('lal-embed-note');
+        if (note) {
+            const caseLabel = isBao ? '包租' : '代管';
+            note.textContent = mode.withCc
+                ? `已選：${caseLabel}／租屋地＋戶籍地（4 份含副本）。首次產生若需載入標楷體，可能需等待十餘秒。`
+                : `已選：${caseLabel}／僅租屋地（3 份、無副本）。首次產生若需載入標楷體，可能需等待十餘秒。`;
+        }
+        if (!contentManuallyEdited) scheduleApplyLetterTemplate();
+        syncReceiptTemplate();
+    }
+
+    function bindLalCaseMode() {
+        if (!window.LAL_CASE_MODE_UI) return;
+        const root = $('cf-lal') || document;
+        if (root.dataset.caseModeBound === '1') {
+            applyLalCaseMode();
+            return;
+        }
+        root.dataset.caseModeBound = '1';
+        root.querySelectorAll('input[name="lal-case-type"], input[name="lal-mail-target"]').forEach((el) => {
+            el.addEventListener('change', applyLalCaseMode);
+        });
+        ensureOfficeSelectOptions();
+        $('lal-office-select')?.addEventListener('change', () => {
+            fillBaoSenderFromOffice();
+            syncReceiptTemplate();
+        });
+        root.addEventListener('input', (e) => {
+            if (e.target.closest('[data-lal-party]')) syncReceiptTemplate();
+        });
+        applyLalCaseMode();
+    }
+
+    window.applyLalCaseMode = applyLalCaseMode;
+    window.readLalCaseMode = readCaseMode;
+
     window.initLalGenerator = function () {
         bindLal();
         initLetterTemplateSelect();
         warnIfFileProtocol();
         applyArrearsPrefill();
+        bindLalCaseMode();
     };
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', window.initLalGenerator);

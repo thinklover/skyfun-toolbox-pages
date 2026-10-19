@@ -5,6 +5,11 @@
 (function () {
     'use strict';
 
+    const ASSET_BASE = (typeof window.ENFORCEMENT_PETITION_ASSET_BASE === 'string' && window.ENFORCEMENT_PETITION_ASSET_BASE)
+        ? window.ENFORCEMENT_PETITION_ASSET_BASE.replace(/\/?$/, '/')
+        : ((typeof window.NOTE_PETITION_ASSET_BASE === 'string' && window.NOTE_PETITION_ASSET_BASE)
+            ? window.NOTE_PETITION_ASSET_BASE.replace(/\/?$/, '/')
+            : '');
     const PDF_INCH = 72;
     const PAGE_W = 595.28;
     const PAGE_H = 841.89;
@@ -13,12 +18,15 @@
     const MARGIN_T = 52;
     const MARGIN_B = 52;
     const LINE_H = 18;
-    const FONT_PATH = 'assets/lal/TW-Kai-98_1.ttf';
-    const FONT_MANIFEST = 'js/lal-font/manifest.js';
-    const FONT_PART_PREFIX = 'js/lal-font/part-';
+    const FONT_PATHS = [
+        ASSET_BASE + 'assets/lal/TW-Kai-98_1.ttf',
+        ASSET_BASE + 'fonts/TW-Kai.ttf'
+    ];
+    const FONT_MANIFEST = ASSET_BASE + 'js/lal-font/manifest.js';
+    const FONT_PART_PREFIX = ASSET_BASE + 'js/lal-font/part-';
 
-    let bound = false;
     let fontBytesPromise = null;
+    let previewUrl = null;
 
     function $(id) { return document.getElementById(id); }
 
@@ -60,30 +68,55 @@
         return buf.buffer;
     }
 
-    async function loadEmbeddedFontBytes() {
-        const status = $('ep-status');
-        if (!window.LAL_FONT_PART_COUNT) {
-            await loadScript(resolveAssetUrl(FONT_MANIFEST));
-        }
-        const total = window.LAL_FONT_PART_COUNT;
-        if (!total) throw new Error('找不到內嵌字型（js/lal-font）');
-        window.LAL_FONT_PARTS = window.LAL_FONT_PARTS || [];
-        for (let i = window.LAL_FONT_PARTS.length; i < total; i++) {
-            if (status) status.textContent = `載入字型中…（${i + 1}/${total}）`;
-            await loadScript(resolveAssetUrl(FONT_PART_PREFIX + String(i).padStart(3, '0') + '.js'));
-        }
-        return base64ToArrayBuffer(window.LAL_FONT_PARTS.join(''));
+    function isFontBytes(buf) {
+        if (!buf || buf.byteLength < 4) return false;
+        const u8 = new Uint8Array(buf);
+        const tag = String.fromCharCode(u8[0], u8[1], u8[2], u8[3]);
+        if (tag === 'OTTO' || tag === 'ttcf' || tag === 'true') return true;
+        return u8[0] === 0x00 && u8[1] === 0x01 && u8[2] === 0x00 && u8[3] === 0x00;
     }
 
-    async function getFontBytes() {
+    async function loadEmbeddedFontBytes(statusEl) {
+        window.LAL_FONT_PARTS = [];
+        window.LAL_FONT_PART_COUNT = 0;
+        await loadScript(resolveAssetUrl(FONT_MANIFEST + '?v=ep'));
+        const total = window.LAL_FONT_PART_COUNT;
+        if (!total) throw new Error('找不到內嵌字型（js/lal-font）');
+        for (let i = 0; i < total; i++) {
+            if (statusEl) statusEl.textContent = `載入字型中…（${i + 1}/${total}）`;
+            await loadScript(resolveAssetUrl(FONT_PART_PREFIX + String(i).padStart(3, '0') + '.js?v=ep'));
+        }
+        if (!Array.isArray(window.LAL_FONT_PARTS) || window.LAL_FONT_PARTS.length < total) {
+            throw new Error('字型分片未載入完整');
+        }
+        const bytes = base64ToArrayBuffer(window.LAL_FONT_PARTS.join(''));
+        if (!isFontBytes(bytes)) throw new Error('內嵌字型格式無效');
+        return bytes;
+    }
+
+    async function fetchFontBytes(rel) {
+        const r = await fetch(resolveAssetUrl(rel));
+        if (!r.ok) return null;
+        const ct = String(r.headers.get('content-type') || '').toLowerCase();
+        if (ct.includes('text/html')) return null;
+        const buf = await r.arrayBuffer();
+        return isFontBytes(buf) ? buf : null;
+    }
+
+    async function getFontBytes(statusEl) {
         if (!fontBytesPromise) {
             fontBytesPromise = (async () => {
-                try {
-                    const r = await fetch(resolveAssetUrl(FONT_PATH));
-                    if (r.ok) return r.arrayBuffer();
-                } catch { /* fallback */ }
-                return loadEmbeddedFontBytes();
-            })();
+                for (const rel of FONT_PATHS) {
+                    try {
+                        const buf = await fetchFontBytes(rel);
+                        if (buf) return buf;
+                    } catch { /* try next */ }
+                }
+                return loadEmbeddedFontBytes(statusEl);
+            })().catch((err) => {
+                fontBytesPromise = null;
+                throw err;
+            });
         }
         return fontBytesPromise;
     }
@@ -255,21 +288,35 @@
     function addDebtorRow(data, index) {
         const wrap = $('ep-debtors-list');
         if (!wrap) return;
+        const embed = !!$('ep-form')?.classList?.contains('nrpbox');
         const row = document.createElement('div');
-        row.className = 'ep-debtor-row rounded-lg border border-slate-200 bg-slate-50/60 p-3 space-y-2';
+        row.className = embed
+            ? 'ep-debtor-row'
+            : 'ep-debtor-row rounded-lg border border-slate-200 bg-slate-50/60 p-3 space-y-2';
         const title = index === 0 ? '第一位債務人' : '第二位債務人';
         const canRemove = index > 0;
-        row.innerHTML = `
-            <div class="flex items-center justify-between gap-2">
-                <span class="text-sm font-semibold text-slate-800">${title}</span>
-                ${canRemove ? '<button type="button" class="btn btn-sm tone-slate-soft ep-debtor-remove">刪除</button>' : ''}
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label class="practice-field"><span>姓名<span class="req-mark" aria-hidden="true">*</span></span>
-                    <input type="text" class="ep-debtor-name w-full px-3 py-2 border border-slate-200 rounded-lg" value="${esc(data?.name || '')}" /></label>
-                <label class="practice-field"><span>身分證統一編號<span class="req-mark" aria-hidden="true">*</span></span>
-                    <input type="text" class="ep-debtor-id w-full px-3 py-2 border border-slate-200 rounded-lg" value="${esc(data?.id || '')}" /></label>
-            </div>`;
+        if (embed) {
+            row.innerHTML = `
+                <div class="ep-dyn-h"><strong>${title}</strong>${canRemove ? '<button type="button" class="soft ep-debtor-remove">刪除</button>' : ''}</div>
+                <div class="nrp-grid">
+                    <label class="nrp-field"><span>姓名<span class="req">*</span></span>
+                        <input type="text" class="ep-debtor-name" value="${esc(data?.name || '')}" /></label>
+                    <label class="nrp-field"><span>身分證統一編號<span class="req">*</span></span>
+                        <input type="text" class="ep-debtor-id" value="${esc(data?.id || '')}" /></label>
+                </div>`;
+        } else {
+            row.innerHTML = `
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-sm font-semibold text-slate-800">${title}</span>
+                    ${canRemove ? '<button type="button" class="btn btn-sm tone-slate-soft ep-debtor-remove">刪除</button>' : ''}
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="practice-field"><span>姓名<span class="req-mark" aria-hidden="true">*</span></span>
+                        <input type="text" class="ep-debtor-name w-full px-3 py-2 border border-slate-200 rounded-lg" value="${esc(data?.name || '')}" /></label>
+                    <label class="practice-field"><span>身分證統一編號<span class="req-mark" aria-hidden="true">*</span></span>
+                        <input type="text" class="ep-debtor-id w-full px-3 py-2 border border-slate-200 rounded-lg" value="${esc(data?.id || '')}" /></label>
+                </div>`;
+        }
         row.querySelector('.ep-debtor-remove')?.addEventListener('click', () => {
             row.remove();
             updateAddDebtorButton();
@@ -331,7 +378,7 @@
         const preset = (window.ENFORCEMENT_REGION_PRESETS || {})[region] || {};
         const notaryOffice = val('ep-notary-exec') || preset.notaryExec || '';
         const notaryRef = val('ep-notary-serial');
-        const leaseTypeVal = val('ep-lease-type') || '租賃';
+        const leaseTypeVal = val('ep-lease-type') || '轉租';
         const propertyAddr = val('ep-property-addr');
 
         return {
@@ -452,21 +499,60 @@
         }, 200);
     }
 
-    async function generatePdf() {
+    function revokePreview() {
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            previewUrl = null;
+        }
+    }
+
+    function closePreview() {
+        revokePreview();
+        const wrap = $('ep-preview-wrap');
+        const frame = $('ep-preview-frame');
+        if (frame) frame.src = 'about:blank';
+        if (wrap) wrap.hidden = true;
+    }
+
+    function showPdfPreview(bytes) {
+        revokePreview();
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        previewUrl = URL.createObjectURL(blob);
+        const wrap = $('ep-preview-wrap');
+        const frame = $('ep-preview-frame');
+        const textPre = $('ep-preview');
+        if (frame) frame.src = previewUrl;
+        if (wrap) wrap.hidden = false;
+        if (textPre) {
+            const data = collectFormData();
+            textPre.innerHTML = buildDocumentParagraphs(data).map((l) => esc(l)).join('<br>');
+        }
+        const details = document.querySelector('#ep-form details.ep-preview-details, #ep-form details');
+        if (details) details.open = true;
+        wrap?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function openPreviewTab() {
+        if (previewUrl) window.open(previewUrl, '_blank', 'noopener');
+    }
+
+    async function makePdf(mode) {
         const status = $('ep-status');
-        const btn = $('ep-btn-generate');
+        const btnGen = $('ep-btn-generate');
+        const btnPrev = $('ep-btn-preview');
         const d = collectFormData();
         const miss = validateDataWithHints(d);
         if (miss.length) {
             alert('請填寫：' + miss.join('、'));
-            const first = document.querySelector('#ep-form .practice-field.is-error input, #ep-form .practice-field.is-error select, #ep-form .practice-field.is-error textarea');
+            const first = document.querySelector('#ep-form .practice-field.is-error input, #ep-form .practice-field.is-error select, #ep-form .practice-field.is-error textarea, #ep-form .nrp-field.is-error input, #ep-form .nrp-field.is-error select, #ep-form .nrp-field.is-error textarea');
             first?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
 
         try {
-            if (status) status.textContent = '載入字型中…';
-            if (btn) btn.disabled = true;
+            if (status) status.textContent = mode === 'preview' ? '產生預覽中…' : '載入字型中…';
+            if (btnGen) btnGen.disabled = true;
+            if (btnPrev) btnPrev.disabled = true;
             const PDFLib = window.PDFLib;
             if (!PDFLib) throw new Error('PDF 函式庫未載入');
             if (!window.fontkit) throw new Error('字型引擎未載入');
@@ -474,7 +560,7 @@
                 throw new Error('找不到訴狀排版程式');
             }
 
-            const fontBytes = await getFontBytes();
+            const fontBytes = await getFontBytes(status);
             if (status) status.textContent = '繪製訴狀表格中…';
             const finalBytes = await window.buildEnforcementPetitionPdf(PDFLib, fontBytes, d, {
                 amountInFormalText,
@@ -486,25 +572,33 @@
                 buildEvidenceChecklist
             });
 
+            if (mode === 'preview') {
+                showPdfPreview(finalBytes);
+                if (status) status.textContent = '預覽已就緒（含證物清單共 3 頁），確認後再下載列印。';
+                return;
+            }
+
             const stamp = new Date();
             const fn = `強制執行聲請_${d.debtorName || '案件'}_${stamp.getFullYear()}${String(stamp.getMonth() + 1).padStart(2, '0')}${String(stamp.getDate()).padStart(2, '0')}.pdf`;
             downloadPdf(finalBytes, fn);
+            showPdfPreview(finalBytes);
             if (status) status.textContent = '已產生訴狀 PDF（含證物清單共 3 頁），請列印後至法院遞狀。';
-            updatePreview(d);
         } catch (e) {
             console.error(e);
             alert('產生失敗：' + (e?.message || e));
             if (status) status.textContent = '';
         } finally {
-            if (btn) btn.disabled = false;
+            if (btnGen) btnGen.disabled = false;
+            if (btnPrev) btnPrev.disabled = false;
         }
     }
 
-    function updatePreview(d) {
-        const pre = $('ep-preview');
-        if (!pre) return;
-        const data = d || collectFormData();
-        pre.innerHTML = buildDocumentParagraphs(data).map((l) => esc(l)).join('<br>');
+    function generatePdf() {
+        return makePdf('download');
+    }
+
+    function updatePreview() {
+        return makePdf('preview');
     }
 
     function updateAmountSummary() {
@@ -534,14 +628,25 @@
     function addArrearsRow(labelVal, amtVal) {
         const wrap = $('ep-arrears-rows');
         if (!wrap) return;
+        const embed = !!$('ep-form')?.classList?.contains('nrpbox');
         const row = document.createElement('div');
-        row.className = 'ep-arrears-row grid grid-cols-[1fr_7.5rem_2.5rem] gap-2 items-end';
-        row.innerHTML = `
-            <label class="practice-field mb-0"><span class="sr-only">積欠項目</span>
-                <input type="text" class="ep-ar-label w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="113/12 租金、管理費" value="${esc(labelVal || '')}" /></label>
-            <label class="practice-field mb-0"><span class="sr-only">金額</span>
-                <input type="number" class="ep-ar-amt w-full px-3 py-2 border border-slate-200 rounded-lg text-right tabular-nums" min="0" step="1" value="${esc(amtVal || '')}" /></label>
-            <button type="button" class="btn btn-sm tone-slate-soft ep-ar-remove mb-0.5 justify-self-center" title="刪除">✕</button>`;
+        if (embed) {
+            row.className = 'ep-arrears-row';
+            row.innerHTML = `
+                <label class="nrp-field"><span class="sr-only">積欠項目</span>
+                    <input type="text" class="ep-ar-label" placeholder="113/12 租金、管理費" value="${esc(labelVal || '')}" /></label>
+                <label class="nrp-field"><span class="sr-only">金額</span>
+                    <input type="number" class="ep-ar-amt" min="0" step="1" value="${esc(amtVal || '')}" /></label>
+                <button type="button" class="soft ep-ar-remove" title="刪除">✕</button>`;
+        } else {
+            row.className = 'ep-arrears-row grid grid-cols-[1fr_7.5rem_2.5rem] gap-2 items-end';
+            row.innerHTML = `
+                <label class="practice-field mb-0"><span class="sr-only">積欠項目</span>
+                    <input type="text" class="ep-ar-label w-full px-3 py-2 border border-slate-200 rounded-lg" placeholder="113/12 租金、管理費" value="${esc(labelVal || '')}" /></label>
+                <label class="practice-field mb-0"><span class="sr-only">金額</span>
+                    <input type="number" class="ep-ar-amt w-full px-3 py-2 border border-slate-200 rounded-lg text-right tabular-nums" min="0" step="1" value="${esc(amtVal || '')}" /></label>
+                <button type="button" class="btn btn-sm tone-slate-soft ep-ar-remove mb-0.5 justify-self-center" title="刪除">✕</button>`;
+        }
         row.querySelector('.ep-ar-remove')?.addEventListener('click', () => {
             const count = document.querySelectorAll('#ep-arrears-rows .ep-arrears-row').length;
             if (count <= 1) {
@@ -587,6 +692,7 @@
             { id: 'hsinchu', name: '新竹分公司', phone: '(03) 622-3937', addr: '302 新竹縣竹北市光明五街342號2樓' },
             { id: 'yilan', name: '宜蘭分公司', phone: '(03) 910-8705', addr: '260 宜蘭縣宜蘭市舊城北路154號2樓' },
             { id: 'keelung', name: '基隆分公司', phone: '(02) 7751-7851', addr: '202 基隆市中正區義二路196號2樓' },
+            { id: 'changhua', name: '彰化分公司', phone: '(04) 706-0725', addr: '' },
             { id: 'nantou', name: '南投分公司', phone: '(049) 700-9327', addr: '542 南投縣草屯鎮中正路755號7樓之1' }
         ],
         '星華股份有限公司': [
@@ -644,7 +750,7 @@
     }
 
     function clearFieldErrorState() {
-        document.querySelectorAll('#ep-form .practice-field.is-error').forEach((el) => el.classList.remove('is-error'));
+        document.querySelectorAll('#ep-form .practice-field.is-error, #ep-form .nrp-field.is-error').forEach((el) => el.classList.remove('is-error'));
         document.querySelectorAll('#ep-form .field-error').forEach((el) => el.remove());
         document.querySelectorAll('#ep-form [aria-invalid=\"true\"]').forEach((el) => el.removeAttribute('aria-invalid'));
     }
@@ -652,7 +758,7 @@
     function markFieldError(el, message) {
         if (!el) return;
         el.setAttribute('aria-invalid', 'true');
-        const field = el.closest('.practice-field');
+        const field = el.closest('.practice-field, .nrp-field');
         if (!field) return;
         field.classList.add('is-error');
         const msg = document.createElement('div');
@@ -665,7 +771,27 @@
         clearFieldErrorState();
         const miss = [];
 
+        if (!val('ep-region') && !d.court) { miss.push('承辦地區'); markFieldError($('ep-region'), '必填：承辦地區'); }
+        if (!d.caseYear) { miss.push('案號年度'); markFieldError($('ep-case-year'), '必填：案號年度'); }
         if (!d.court) { miss.push('管轄地方法院'); markFieldError($('ep-court'), '必填：管轄地方法院'); }
+        if (!d.contractY || !d.contractM || !d.contractD) {
+            miss.push('簽約日');
+            if (!d.contractY) markFieldError($('ep-contract-y'), '必填');
+            if (!d.contractM) markFieldError($('ep-contract-m'), '必填');
+            if (!d.contractD) markFieldError($('ep-contract-d'), '必填');
+        }
+        if (!d.monthlyRent) { miss.push('月租金'); markFieldError($('ep-monthly-rent'), '必填：月租金'); }
+        if (!d.arrearsStartY || !d.arrearsStartM) {
+            miss.push('欠租起算年月');
+            if (!d.arrearsStartY) markFieldError($('ep-arrears-start-y'), '必填');
+            if (!d.arrearsStartM) markFieldError($('ep-arrears-start-m'), '必填');
+        }
+        if (!d.arrearsEndY || !d.arrearsEndM || !d.arrearsEndD) {
+            miss.push('欠租截至年月日');
+            if (!d.arrearsEndY) markFieldError($('ep-arrears-end-y'), '必填');
+            if (!d.arrearsEndM) markFieldError($('ep-arrears-end-m'), '必填');
+            if (!d.arrearsEndD) markFieldError($('ep-arrears-end-d'), '必填');
+        }
         if (!d.landlordName) { miss.push('聲請人（出租人）姓名'); markFieldError($('ep-landlord-name'), '必填：出租人姓名／公司名'); }
         if (!d.landlordPhone) { miss.push('出租人電話'); markFieldError($('ep-landlord-phone'), '必填：出租人電話'); }
         if (!d.landlordAddr) { miss.push('出租人地址'); markFieldError($('ep-landlord-addr'), '必填：出租人地址'); }
@@ -722,8 +848,9 @@
     }
 
     function bind() {
-        if (bound) return;
-        bound = true;
+        const form = $('ep-form');
+        if (!form || form.getAttribute('data-ep-bound') === '1') return;
+        form.setAttribute('data-ep-bound', '1');
 
         populateRegionSelect();
         updateNotaryOfficeDatalists();
@@ -770,6 +897,8 @@
         });
         $('ep-btn-generate')?.addEventListener('click', generatePdf);
         $('ep-btn-preview')?.addEventListener('click', () => updatePreview());
+        $('ep-btn-preview-tab')?.addEventListener('click', openPreviewTab);
+        $('ep-btn-preview-close')?.addEventListener('click', closePreview);
         $('ep-btn-clear')?.addEventListener('click', () => {
             if (!confirm('清除本頁所有欄位？')) return;
             document.querySelectorAll('#ep-form input, #ep-form textarea').forEach((el) => {
@@ -782,7 +911,8 @@
             ensureArrearsRows();
             resetLandlordBranchSelect();
             updateAmountSummary();
-            $('ep-preview').innerHTML = '';
+            if ($('ep-preview')) $('ep-preview').innerHTML = '';
+            closePreview();
         });
 
         ensureDebtorRows();
@@ -791,11 +921,118 @@
     }
 
     window.initEnforcementPetition = function () {
+        if (!$('ep-form')) return;
         populateRegionSelect();
         ensureDebtorRows();
         ensureArrearsRows();
         bind();
+        updateAmountSummary();
     };
+
+    window.enforcementPetitionFormHtml = function () {
+        return '' +
+            '<div class="nrpbox" id="ep-form">' +
+              '<h3>⚖️ 強制執行｜民事聲請狀產生器</h3>' +
+              '<p class="nrp-tip">依司法院「民事聲請狀（強制執行）」格式產生 PDF。填妥後先「預覽」確認完整版面，再下載列印。</p>' +
+              '<div class="nrp-sec">' +
+                '<h4>① 地區與案號</h4>' +
+                '<div class="nrp-grid">' +
+                  '<label class="nrp-field"><span>承辦地區<span class="req">*</span></span>' +
+                    '<select id="ep-region"><option value="">請選擇地區</option></select></label>' +
+                  '<label class="nrp-field"><span>案號年度（例 115）<span class="req">*</span></span><input id="ep-case-year" type="text" inputmode="numeric" placeholder="115" /></label>' +
+                  '<label class="nrp-field span2"><span>管轄地方法院<span class="req">*</span></span><input id="ep-court" type="text" placeholder="新北" /></label>' +
+                '</div>' +
+              '</div>' +
+              '<div class="nrp-sec">' +
+                '<h4>② 積欠金額明細</h4>' +
+                '<p class="nrp-tip" style="margin:0">逐筆填寫項目與金額，系統自動加總。</p>' +
+                '<div class="ep-arrears-head"><span>積欠項目</span><span>金額（元）*</span><span></span></div>' +
+                '<div id="ep-arrears-rows" class="ep-arrears-list"></div>' +
+                '<button type="button" class="soft" id="ep-btn-add-arrears">＋ 新增一筆積欠項目</button>' +
+                '<p class="nrp-amt">合計：NT$ <b id="ep-amount-sum">0</b>　大寫：<b id="ep-amount-cn">零元整</b></p>' +
+                '<p class="nrp-tip" style="margin:0">欠租明細：<span id="ep-arrears-detail-preview">（請至少新增一筆）</span></p>' +
+              '</div>' +
+              '<div class="nrp-sec">' +
+                '<h4>③ 契約與欠租期間</h4>' +
+                '<div class="nrp-grid">' +
+                  '<label class="nrp-field"><span>簽約日<span class="req">*</span></span><input id="ep-contract-y" type="text" inputmode="numeric" placeholder="113" /></label>' +
+                  '<label class="nrp-field"><span>月<span class="req">*</span></span><input id="ep-contract-m" type="text" inputmode="numeric" placeholder="6" /></label>' +
+                  '<label class="nrp-field"><span>日<span class="req">*</span></span><input id="ep-contract-d" type="text" inputmode="numeric" placeholder="1" /></label>' +
+                  '<label class="nrp-field"><span>契約類型<span class="req">*</span></span>' +
+                    '<select id="ep-lease-type"><option value="轉租" selected>房屋租賃（轉租）</option><option value="租賃">房屋租賃</option></select></label>' +
+                  '<label class="nrp-field"><span>月租金（元）<span class="req">*</span></span><input id="ep-monthly-rent" type="number" min="0" step="1" placeholder="12000" /></label>' +
+                  '<label class="nrp-field"><span>欠租起算年<span class="req">*</span></span><input id="ep-arrears-start-y" type="text" inputmode="numeric" placeholder="114" /></label>' +
+                  '<label class="nrp-field"><span>月起<span class="req">*</span></span><input id="ep-arrears-start-m" type="text" inputmode="numeric" placeholder="1" /></label>' +
+                  '<label class="nrp-field"><span>截至年<span class="req">*</span></span><input id="ep-arrears-end-y" type="text" inputmode="numeric" placeholder="114" /></label>' +
+                  '<label class="nrp-field"><span>月<span class="req">*</span></span><input id="ep-arrears-end-m" type="text" inputmode="numeric" placeholder="3" /></label>' +
+                  '<label class="nrp-field"><span>日<span class="req">*</span></span><input id="ep-arrears-end-d" type="text" inputmode="numeric" placeholder="31" /></label>' +
+                '</div>' +
+              '</div>' +
+              '<div class="nrp-sec">' +
+                '<h4>④ 聲請人即債權人（出租人） <button type="button" class="soft" id="ep-btn-clear-landlord" style="margin-left:8px">一鍵清除</button></h4>' +
+                '<div class="nrp-grid">' +
+                  '<label class="nrp-field"><span>公司別（選填）</span>' +
+                    '<select id="ep-landlord-company">' +
+                      '<option value="">－ 請選擇公司別 －</option>' +
+                      '<option value="星鴻股份有限公司">星鴻股份有限公司</option>' +
+                      '<option value="星華股份有限公司">星華股份有限公司</option>' +
+                    '</select></label>' +
+                  '<label class="nrp-field"><span>營業處（選填）</span>' +
+                    '<select id="ep-landlord-branch" disabled><option value="">－ 請先選公司別 －</option></select></label>' +
+                  '<label class="nrp-field"><span>姓名<span class="req">*</span></span><input id="ep-landlord-name" type="text" /></label>' +
+                  '<label class="nrp-field"><span>電話<span class="req">*</span></span><input id="ep-landlord-phone" type="tel" /></label>' +
+                  '<label class="nrp-field span2"><span>地址<span class="req">*</span></span><input id="ep-landlord-addr" type="text" /></label>' +
+                '</div>' +
+              '</div>' +
+              '<div class="nrp-sec">' +
+                '<h4>⑤ 相對人即債務人（承租人）</h4>' +
+                '<div id="ep-debtors-list" class="ep-debtors-list"></div>' +
+                '<button type="button" class="soft" id="ep-btn-add-debtor">＋ 新增第二位債務人</button>' +
+                '<div class="nrp-grid" style="margin-top:8px">' +
+                  '<label class="nrp-field span2"><span>承租房屋地址<span class="req">*</span></span><input id="ep-property-addr" type="text" placeholder="租屋地址" /></label>' +
+                '</div>' +
+              '</div>' +
+              '<div class="nrp-sec">' +
+                '<h4>⑥ 公證書（執行名義）</h4>' +
+                '<div class="nrp-grid">' +
+                  '<label class="nrp-field span2"><span>公證書字號<span class="req">*</span></span><input id="ep-notary-serial" type="text" placeholder="113 年度桃院民公柏字第 000325 號" /></label>' +
+                  '<label class="nrp-field span2"><span>公證人事務所<span class="req">*</span></span><input id="ep-notary-exec" type="text" list="ep-notary-exec-list" /></label>' +
+                '</div>' +
+                '<datalist id="ep-notary-exec-list"></datalist>' +
+              '</div>' +
+              '<div class="nrp-sec">' +
+                '<h4>⑦ 具狀人與日期</h4>' +
+                '<div class="nrp-grid">' +
+                  '<label class="nrp-field span2"><span>具狀人<span class="req">*</span></span><input id="ep-petitioner" type="text" value="星鴻股份有限公司" placeholder="星鴻股份有限公司" /></label>' +
+                  '<label class="nrp-field"><span>具狀民國年</span><input id="ep-filing-y" type="number" /></label>' +
+                  '<label class="nrp-field"><span>月</span><input id="ep-filing-m" type="number" min="1" max="12" /></label>' +
+                  '<label class="nrp-field"><span>日</span><input id="ep-filing-d" type="number" min="1" max="31" /></label>' +
+                '</div>' +
+              '</div>' +
+              '<div class="nrp-actions">' +
+                '<button type="button" id="ep-btn-preview">預覽</button>' +
+                '<button type="button" id="ep-btn-generate">產生 PDF（下載列印）</button>' +
+                '<button type="button" class="soft" id="ep-btn-clear">清除欄位</button>' +
+                '<p id="ep-status"></p>' +
+              '</div>' +
+              '<div id="ep-preview-wrap" class="nrp-preview-wrap" hidden>' +
+                '<div class="nrp-preview-bar">' +
+                  '<strong>📄 民事聲請狀預覽（完整 3 頁）</strong>' +
+                  '<span class="nrp-preview-actions">' +
+                    '<button type="button" id="ep-btn-preview-tab" class="soft">另開分頁</button>' +
+                    '<button type="button" id="ep-btn-preview-close" class="soft">關閉預覽</button>' +
+                  '</span>' +
+                '</div>' +
+                '<iframe id="ep-preview-frame" title="民事聲請狀預覽"></iframe>' +
+              '</div>' +
+              '<details class="nrp-sec ep-preview-details">' +
+                '<summary style="cursor:pointer;font-weight:900">文字對照（選看）</summary>' +
+                '<div id="ep-preview" style="margin-top:8px;font-size:13px;line-height:1.55;white-space:pre-wrap"></div>' +
+              '</details>' +
+              '<p class="nrp-foot">※ 可先按「預覽」看完整訴狀版面，再下載列印。須以已公證且載明逕受強制執行之租約為執行名義；遞狀前請覆核。</p>' +
+            '</div>';
+    };
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', window.initEnforcementPetition);
     } else {

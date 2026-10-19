@@ -165,15 +165,78 @@
         canvas.addEventListener('pointerleave', stop);
     }
 
+    /** 把手簽照片／圖片檔置中塞進簽名板（等比縮放） */
+    function loadSignatureImage(canvas, file) {
+        return new Promise((resolve, reject) => {
+            if (!canvas) return reject(new Error('找不到簽名欄'));
+            if (!file) return reject(new Error('請選擇簽名照片'));
+            const type = String(file.type || '').toLowerCase();
+            const name = String(file.name || '').toLowerCase();
+            const isImage = type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(name);
+            if (!isImage) return reject(new Error('請上傳簽名照片（JPG／PNG／WEBP 等）。手簽後拍照上傳即可；PDF 請先存成圖片。'));
+            if (file.size > 10 * 1024 * 1024) return reject(new Error('簽名照片請在 10MB 以內'));
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    const scale = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+                    const w = img.naturalWidth * scale;
+                    const h = img.naturalHeight * scale;
+                    const x = (canvas.width - w) / 2;
+                    const y = (canvas.height - h) / 2;
+                    ctx.drawImage(img, x, y, w, h);
+                    canvas.dataset.ink = '1';
+                    resolve();
+                } catch (err) {
+                    reject(new Error('簽名照片無法放入簽名欄，請換一張再試'));
+                } finally {
+                    URL.revokeObjectURL(url);
+                }
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error('無法讀取這張簽名照片，請改用 JPG／PNG 再試'));
+            };
+            img.src = url;
+        });
+    }
+
+    function bindSignatureUpload(input, root) {
+        if (!input || input.dataset.boundUpload) return;
+        input.dataset.boundUpload = '1';
+        input.addEventListener('change', async () => {
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            const kind = input.getAttribute('data-sign-upload');
+            const scope = input.closest('.acf-field, .pt-sign-action, form, .acf-detail') || root || document;
+            const canvas = scope.querySelector('canvas[data-signature="' + kind + '"]');
+            try {
+                await loadSignatureImage(canvas, file);
+            } catch (err) {
+                alert(err?.message || '上傳失敗');
+            }
+        });
+    }
+
     function bindSignaturePads(root) {
-        (root || document).querySelectorAll('canvas[data-signature]').forEach(bindSignaturePad);
+        const scope = root || document;
+        scope.querySelectorAll('canvas[data-signature]').forEach(bindSignaturePad);
+        scope.querySelectorAll('input[data-sign-upload]').forEach((input) => bindSignatureUpload(input, scope));
     }
 
     function clearSignature(kind, root) {
-        const canvas = (root || document).querySelector('canvas[data-signature="' + kind + '"]');
+        const scope = root || document;
+        const canvas = scope.querySelector('canvas[data-signature="' + kind + '"]');
         if (!canvas) return;
         canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
         delete canvas.dataset.ink;
+        const upload = scope.querySelector('input[data-sign-upload="' + kind + '"]');
+        if (upload) upload.value = '';
     }
 
     async function signatureBlob(kind, root) {
@@ -827,8 +890,10 @@
     function signaturePadHtml(kind, label) {
         return '<div class="pt-sign-action"><p class="pt-label">' + label + '</p>' +
             '<div class="pt-sign-pad"><canvas width="700" height="220" data-signature="' + kind + '" aria-label="' + label + '"></canvas></div>' +
-            '<div class="pt-sign-tools"><span class="acf-hint">請本人用滑鼠、手機觸控或觸控筆簽名。</span>' +
-            '<button type="button" class="pt-sign-clear" data-clear-sign="' + kind + '">清除重簽</button></div></div>';
+            '<div class="pt-sign-tools"><span class="acf-hint">可手寫，或上傳手簽照片／圖片（手機可拍照）。</span>' +
+            '<span class="pt-sign-btns">' +
+            '<label class="pt-sign-upload">上傳簽名照<input type="file" accept="image/*" data-sign-upload="' + kind + '" hidden></label>' +
+            '<button type="button" class="pt-sign-clear" data-clear-sign="' + kind + '">清除重簽</button></span></div></div>';
     }
 
     function signaturesHtml(d) {

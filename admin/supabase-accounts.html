@@ -58,6 +58,25 @@
     .team-detail-item .user { color: #64748b; margin-left: 0.25rem; }
     .team-detail-item .st { margin-left: 0.35rem; }
     .row-team-highlight td { background: #eef2ff; }
+    .login-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.45rem; }
+    .login-stat {
+      border: 1px solid #e2e8f0; border-radius: 0.55rem; padding: 0.45rem 0.4rem;
+      background: #f8fafc; text-align: center;
+    }
+    .login-stat-num { font-size: 1.15rem; font-weight: 900; color: #1e1b4b; line-height: 1.1; }
+    .login-stat-label { font-size: 0.65rem; color: #64748b; margin-top: 0.15rem; font-weight: 700; }
+    .login-stat.is-hot { border-color: #fbbf24; background: #fffbeb; }
+    .login-stat.is-hot .login-stat-num { color: #b45309; }
+    .login-stat.is-warn { border-color: #f87171; background: #fef2f2; }
+    .login-stat.is-warn .login-stat-num { color: #b91c1c; }
+    .badge-online { background: #d1fae5; color: #065f46; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-idle { background: #e2e8f0; color: #475569; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-abnormal { background: #fee2e2; color: #b91c1c; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
+    .login-events { max-height: 14rem; overflow-y: auto; font-size: 0.78rem; }
+    .login-events table { width: 100%; }
+    .login-events .ok { color: #047857; font-weight: 800; }
+    .login-events .ng { color: #b91c1c; font-weight: 800; }
+    .row-abnormal td { background: #fff1f2; }
   </style>
 </head>
 <body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
@@ -66,7 +85,7 @@
       <h1>帳號核准後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">可補填舊帳號處別 · 與 Render 完整版共用 Supabase 帳號</p>
+    <p class="lead">可看全員登入狀態 · 異常登入會 LINE 通知簡為倢 · 與 Render 完整版共用 Supabase 帳號</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
@@ -79,7 +98,38 @@
   </section>
 
   <section class="card p-4 hidden space-y-3" id="main-panel">
-    <div id="team-stats-panel" class="space-y-2 pb-1 border-b border-slate-700">
+    <div class="space-y-2 pb-2 border-b border-slate-200">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="section-h">全員登入狀態</h2>
+        <p class="text-xs text-slate-500">線上＝15 分鐘內有活動；密碼連錯／停用帳嘗試／1 小時登入≥4 次（疑似共用）會 LINE 通知簡為倢（同類型 30 分鐘內不重送）</p>
+      </div>
+      <div class="login-summary" id="login-summary">
+        <div class="login-stat"><div class="login-stat-num" id="sum-online">—</div><div class="login-stat-label">線上</div></div>
+        <div class="login-stat"><div class="login-stat-num" id="sum-active24h">—</div><div class="login-stat-label">24 小時活躍</div></div>
+        <div class="login-stat"><div class="login-stat-num" id="sum-session">—</div><div class="login-stat-label">仍有登入憑證</div></div>
+        <div class="login-stat is-hot"><div class="login-stat-num" id="sum-fail">—</div><div class="login-stat-label">15 分失敗次數</div></div>
+        <div class="login-stat is-warn"><div class="login-stat-num" id="sum-abnormal">—</div><div class="login-stat-label">15 分異常帳號</div></div>
+      </div>
+      <div class="login-events">
+        <p class="text-xs font-bold text-slate-500 mb-1">近期活躍帳號（依最近活動）</p>
+        <table>
+          <thead>
+            <tr><th>最近活動</th><th>帳號</th><th>姓名</th><th>處別</th><th>狀態</th></tr>
+          </thead>
+          <tbody id="active-user-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="login-events mt-2">
+        <p class="text-xs font-bold text-slate-500 mb-1">登入／異常事件（密碼錯誤、過頻等）</p>
+        <table>
+          <thead>
+            <tr><th>時間</th><th>帳號</th><th>姓名</th><th>處別</th><th>結果</th></tr>
+          </thead>
+          <tbody id="login-event-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="team-stats-panel" class="space-y-2 pb-1 border-b border-slate-200">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h2 class="section-h">各處申請帳號總數</h2>
         <p class="text-xs text-slate-500" id="team-stats-total">—</p>
@@ -97,11 +147,20 @@
       <div class="min-w-[10rem]">
         <label class="block text-xs text-slate-400 mb-1">篩選狀態</label>
         <select id="filter">
-          <option value="pending">待核准</option>
+          <option value="active" selected>已核准</option>
           <option value="">全部</option>
-          <option value="active">已核准</option>
+          <option value="pending">待核准</option>
           <option value="rejected">已拒絕</option>
           <option value="disabled">已停用</option>
+        </select>
+      </div>
+      <div class="min-w-[10rem]">
+        <label class="block text-xs text-slate-400 mb-1">登入篩選</label>
+        <select id="filter-login">
+          <option value="">全部</option>
+          <option value="online">僅線上</option>
+          <option value="abnormal">僅異常</option>
+          <option value="session">仍有憑證</option>
         </select>
       </div>
       <div class="flex-1 min-w-[14rem] max-w-md">
@@ -119,7 +178,10 @@
     <div class="overflow-x-auto">
       <table>
         <thead>
-          <tr><th>帳號</th><th>顯示名稱</th><th>處別</th><th>QA 雙倍</th><th>QA 優質</th><th>狀態</th><th>註冊時間</th><th>操作</th></tr>
+          <tr>
+            <th>帳號</th><th>顯示名稱</th><th>處別</th><th>登入狀態</th><th>最近活動</th>
+            <th>QA 雙倍</th><th>QA 優質</th><th>狀態</th><th>註冊時間</th><th>操作</th>
+          </tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
@@ -134,6 +196,16 @@
       let allUsers = [];
       let statsUsers = [];
       let selectedTeamFilter = null;
+      let loginSummary = null;
+
+      const DETAIL_LABEL = {
+        login_ok: '登入成功',
+        bad_password: '密碼錯誤',
+        pending: '審核中嘗試登入',
+        rejected: '已拒絕嘗試登入',
+        disabled: '已停用嘗試登入',
+        not_registered: '帳號不存在'
+      };
 
       function cfg() {
         const c = window.SKYFUN_SUPABASE || {};
@@ -175,6 +247,94 @@
       function fmt(iso) {
         if (!iso) return '—';
         try { return new Date(iso).toLocaleString('zh-TW'); } catch { return iso; }
+      }
+
+      function isAbnormalUser(u) {
+        const fails = Number(u.failCount15m) || 0;
+        if (fails >= 3) return true;
+        const d = String(u.lastLoginDetail || '');
+        return !u.lastLoginOk && ['bad_password', 'disabled', 'rejected', 'pending'].includes(d)
+          && u.lastLoginAt && (Date.now() - new Date(u.lastLoginAt).getTime() < 15 * 60 * 1000);
+      }
+
+      function loginBadge(u) {
+        if (isAbnormalUser(u)) {
+          const fails = Number(u.failCount15m) || 0;
+          const tip = fails >= 3 ? `密碼錯誤 ${fails} 次` : (DETAIL_LABEL[u.lastLoginDetail] || '異常');
+          return `<span class="badge-abnormal">異常</span><div class="text-[11px] text-rose-700 mt-0.5">${esc(tip)}</div>`;
+        }
+        if (u.isOnline) {
+          return `<span class="badge-online">線上</span>${u.hasSession ? '<div class="text-[11px] text-slate-500 mt-0.5">有憑證</div>' : ''}`;
+        }
+        if (u.hasSession) return '<span class="badge-idle">離線（有憑證）</span>';
+        return '<span class="badge-idle">離線</span>';
+      }
+
+      function renderLoginSummary(summary) {
+        loginSummary = summary || {};
+        const set = (id, n, hot) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.textContent = n == null ? '—' : String(n);
+          const box = el.closest('.login-stat');
+          if (!box || !hot) return;
+          box.classList.toggle('is-warn', Number(n) > 0 && hot === 'warn');
+          box.classList.toggle('is-hot', Number(n) > 0 && hot === 'hot');
+        };
+        set('sum-online', loginSummary.online);
+        set('sum-active24h', loginSummary.active24h);
+        set('sum-session', loginSummary.withSession);
+        set('sum-fail', loginSummary.fail15m, 'hot');
+        set('sum-abnormal', loginSummary.abnormal15m, 'warn');
+      }
+
+      function renderActiveUsers(users) {
+        const tbody = document.getElementById('active-user-rows');
+        if (!tbody) return;
+        const list = (users || [])
+          .filter((u) => u.status === 'active' && u.lastActive)
+          .slice()
+          .sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime())
+          .slice(0, 50);
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-slate-400">尚無最近活動（核准帳號登入工具箱後會出現）</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map((u) => {
+          const st = u.isOnline
+            ? '<span class="badge-online">線上</span>'
+            : (isAbnormalUser(u)
+              ? '<span class="badge-abnormal">異常</span>'
+              : (u.hasSession ? '<span class="badge-idle">離線（有憑證）</span>' : '<span class="badge-idle">離線</span>'));
+          return `<tr class="${u.isOnline ? '' : ''}${isAbnormalUser(u) ? ' row-abnormal' : ''}">
+            <td>${fmt(u.lastActive)}</td>
+            <td>${esc(u.username) || '—'}</td>
+            <td>${esc(u.name) || '—'}</td>
+            <td>${esc(u.team) || '—'}</td>
+            <td>${st}</td>
+          </tr>`;
+        }).join('');
+      }
+
+      function renderLoginEvents(events) {
+        const tbody = document.getElementById('login-event-rows');
+        if (!tbody) return;
+        const list = events || [];
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-slate-400">尚無登入／異常事件（之後登入、密碼錯誤、過頻登入會出現在這裡）</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map((e) => {
+          const cls = e.ok ? 'ok' : 'ng';
+          const label = DETAIL_LABEL[e.detail] || e.detail || '—';
+          return `<tr>
+            <td>${fmt(e.createdAt)}</td>
+            <td>${esc(e.username) || '—'}</td>
+            <td>${esc(e.name) || '—'}</td>
+            <td>${esc(e.team) || '—'}</td>
+            <td class="${cls}">${esc(label)}</td>
+          </tr>`;
+        }).join('');
       }
 
       function teamSelectHtml(userId, current) {
@@ -295,18 +455,25 @@
 
       function renderRows(users) {
         const missingOnly = document.getElementById('filter-missing-team').checked;
+        const loginFilter = document.getElementById('filter-login')?.value || '';
         let list = missingOnly
           ? users.filter((u) => !String(u.team || '').trim())
           : users.slice();
         if (selectedTeamFilter) {
           list = list.filter((u) => userTeamKey(u) === selectedTeamFilter);
         }
+        if (loginFilter === 'online') list = list.filter((u) => u.isOnline);
+        else if (loginFilter === 'abnormal') list = list.filter((u) => isAbnormalUser(u));
+        else if (loginFilter === 'session') list = list.filter((u) => u.hasSession);
         const q = document.getElementById('search').value.trim().toLowerCase();
         if (q) {
           list = list.filter((u) => [u.username, u.name, u.team].some((v) => String(v || '').toLowerCase().includes(q)));
         }
         const suffix = [
           missingOnly ? '缺處別' : '',
+          loginFilter === 'online' ? '僅線上' : '',
+          loginFilter === 'abnormal' ? '僅異常' : '',
+          loginFilter === 'session' ? '仍有憑證' : '',
           selectedTeamFilter ? selectedTeamFilter : '',
           q ? '搜尋「' + q + '」' : ''
         ].filter(Boolean).join(' · ');
@@ -317,6 +484,7 @@
         document.getElementById('rows').innerHTML = list.map((u) => {
           const missing = !String(u.team || '').trim();
           const teamHit = selectedTeamFilter && userTeamKey(u) === selectedTeamFilter;
+          const abnormal = isAbnormalUser(u);
           const acts = [];
           if (u.status === 'pending') {
             acts.push(`<button type="button" class="act-btn act-ok" data-act="active" data-id="${u.id}">核准</button>`);
@@ -326,12 +494,17 @@
           } else if (u.status === 'disabled' || u.status === 'rejected') {
             acts.push(`<button type="button" class="act-btn act-ok" data-act="active" data-id="${u.id}">重新核准</button>`);
           }
-          return `<tr class="${missing ? 'row-missing' : ''}${teamHit ? ' row-team-highlight' : ''}">
+          return `<tr class="${missing ? 'row-missing' : ''}${teamHit ? ' row-team-highlight' : ''}${abnormal ? ' row-abnormal' : ''}">
             <td>${esc(u.username) || '—'}${missing ? '<span class="badge-missing">缺處別</span>' : ''}${u.adminQaDoublePoints ? '<span class="badge-double">✓ 雙倍</span>' : ''}</td>
             <td>${esc(u.name) || '—'}</td>
             <td class="team-cell">
               ${teamSelectHtml(u.id, u.team || '')}
               <button type="button" class="act-btn act-save" data-act="save-team" data-id="${u.id}">儲存處別</button>
+            </td>
+            <td>${loginBadge(u)}</td>
+            <td>
+              <div>${fmt(u.lastActive)}</div>
+              ${u.lastLoginDetail ? `<div class="text-[11px] text-slate-500 mt-0.5">${esc(DETAIL_LABEL[u.lastLoginDetail] || u.lastLoginDetail)} · ${fmt(u.lastLoginAt)}</div>` : ''}
             </td>
             <td>
               <label class="qa-double-toggle">
@@ -363,16 +536,30 @@
         renderTeamDetail(selectedTeamFilter);
       }
 
+      async function loadLoginEvents() {
+        const data = await rpc('toolbox_admin_login_events', { p_secret: secret, p_limit: 40 });
+        if (!data?.ok) throw new Error(data?.error || '讀取登入紀錄失敗');
+        renderLoginEvents(data.events || []);
+      }
+
       async function loadList() {
         const status = document.getElementById('filter').value;
         const [listData] = await Promise.all([
           rpc('toolbox_admin_list', { p_secret: secret, p_status: status || null }),
-          loadTeamStats()
+          loadTeamStats(),
+          loadLoginEvents().catch((e) => {
+            renderLoginEvents([]);
+            document.getElementById('msg').textContent = e.message || '登入紀錄讀取失敗';
+          })
         ]);
         if (!listData?.ok) throw new Error(listData?.error || '讀取失敗');
         allUsers = listData.users || [];
+        renderLoginSummary(listData.summary || null);
+        // 活躍名單用「全部狀態」的 statsUsers（含 lastActive），避免篩成待核准時上面空白
+        renderActiveUsers(statsUsers.length ? statsUsers : allUsers);
         renderRows(allUsers);
-        document.getElementById('msg').textContent = '';
+        document.getElementById('msg').textContent =
+          allUsers.length ? '' : '這篩選目前沒有帳號；可把「篩選狀態」改成「已核准」或「全部」。';
       }
 
       async function setStatus(id, status) {
@@ -427,11 +614,12 @@
         const msg = document.getElementById('login-msg');
         msg.classList.add('hidden');
         try {
-          const data = await rpc('toolbox_admin_list', { p_secret: secret, p_status: 'pending' });
+          const data = await rpc('toolbox_admin_list', { p_secret: secret, p_status: 'active' });
           if (!data?.ok) throw new Error(data?.error || '後台密碼錯誤');
           sessionStorage.setItem(SECRET_KEY, secret);
           document.getElementById('login-panel').classList.add('hidden');
           document.getElementById('main-panel').classList.remove('hidden');
+          document.getElementById('filter').value = 'active';
           await loadList();
         } catch (e) {
           msg.textContent = e.message || '連線失敗';
@@ -444,6 +632,7 @@
       }));
 
       document.getElementById('filter').addEventListener('change', () => loadList().catch(() => {}));
+      document.getElementById('filter-login').addEventListener('change', () => renderRows(allUsers));
       document.getElementById('filter-missing-team').addEventListener('change', () => renderRows(allUsers));
       document.getElementById('search').addEventListener('input', () => renderRows(allUsers));
 
@@ -491,6 +680,6 @@
       if (saved) document.getElementById('admin-secret').value = saved;
     })();
   </script>
-<script src="../js/reveal.js?v=20261014-1"></script>
+<script src="../js/reveal.js?v=20261018-29"></script>
 </body>
 </html>

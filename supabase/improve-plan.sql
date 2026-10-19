@@ -44,7 +44,7 @@ declare
   v_uid uuid;
   v_acc public.toolbox_accounts%rowtype;
   v_name text;
-  v_focus text := left(trim(coalesce(p_data->>'focus', '')), 1000);
+  v_focus text := left(trim(coalesce(p_data->>'focus', '')), 5000);
   v_actions text := left(trim(coalesce(p_data->>'actions', '')), 2000);
   v_target text := left(trim(coalesce(p_data->>'target', '')), 1000);
   v_review text := left(trim(coalesce(p_data->>'review', '')), 2000);
@@ -59,7 +59,6 @@ begin
   end if;
   if v_focus = '' then return json_build_object('ok', false, 'error', '請填寫要改善的項目'); end if;
   if v_actions = '' then return json_build_object('ok', false, 'error', '請填寫具體做法'); end if;
-  if char_length(trim(coalesce(p_data->>'focus', ''))) > 300 then return json_build_object('ok', false, 'error', '要改善的項目請在 300 字內'); end if;
   if char_length(trim(coalesce(p_data->>'actions', ''))) > 300 then return json_build_object('ok', false, 'error', '具體做法請在 300 字內'); end if;
 
   if p_id is null then

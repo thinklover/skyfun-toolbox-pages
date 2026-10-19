@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>如何寄存證信函｜星鴻社宅工具箱</title>
+  <style>
+    :root {
+      --navy: #1b2a4a;
+      --gold: #9a7430;
+      --gold-bg: #f3eadc;
+      --gold-bd: #e0c9a4;
+      --cream: #f7f3ec;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --card: #fff;
+      --rose: #9f1239;
+      --rose-bg: #fff1f2;
+      --sky: #075985;
+      --sky-bg: #e0f2fe;
+      --font: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--ink);
+      background: linear-gradient(180deg, #e8eef7 0%, #f4f6fa 45%, #eef2f7 100%);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 18px 14px 48px; }
+    .back {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-bottom: 12px; padding: 8px 14px; border-radius: 999px;
+      border: 1px solid var(--line); background: #fff; color: var(--ink);
+      text-decoration: none; font-weight: 700; font-size: 13px;
+    }
+    .back:hover { border-color: #94a3b8; color: var(--navy); }
+
+    .poster {
+      background: var(--cream);
+      border: 1px solid #d7deea;
+      border-radius: 18px;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.1);
+      overflow: hidden;
+    }
+    .head {
+      padding: 22px 22px 16px;
+      background: #fff;
+      border-bottom: 3px solid var(--navy);
+      text-align: center;
+    }
+    .eyebrow {
+      font-size: 11px; font-weight: 800; color: var(--gold);
+      letter-spacing: 0.14em; margin: 0;
+    }
+    h1 {
+      margin: 6px 0 0;
+      font-size: clamp(1.4rem, 3.5vw, 1.85rem);
+      color: var(--navy); letter-spacing: 0.08em; font-weight: 900;
+    }
+    .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); font-weight: 600; }
+
+    .body { padding: 18px 16px 22px; display: grid; gap: 16px; }
+
+    .card {
+      background: var(--card);
+      border: 1.5px solid #d7deea;
+      border-radius: 14px;
+      padding: 16px 16px 14px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+      color: var(--navy);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .badge {
+      display: inline-grid; place-items: center;
+      min-width: 26px; height: 26px; padding: 0 6px;
+      border-radius: 999px; background: var(--navy); color: #fff;
+      font-size: 12px; font-weight: 900;
+    }
+
+    .steps {
+      list-style: none; margin: 0; padding: 0;
+      display: grid; gap: 10px; counter-reset: step;
+    }
+    .steps li {
+      counter-increment: step;
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+    .steps li::before {
+      content: counter(step);
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--navy); color: #fff;
+      display: grid; place-items: center;
+      font-size: 13px; font-weight: 900;
+    }
+    .steps strong { color: var(--navy); }
+
+    .notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+    .notes li {
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--rose-bg);
+      border: 1px solid #fecdd3;
+      color: #4c0519;
+      font-size: 14px;
+    }
+    .notes li b {
+      display: inline-block;
+      min-width: 1.4em;
+      color: var(--rose);
+      font-weight: 900;
+    }
+    .notes .ok {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #064e3b;
+    }
+    .notes .ok b { color: #047857; }
+
+    .callout {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--sky-bg);
+      border: 1px solid #bae6fd;
+      color: var(--sky);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .callout em { font-style: normal; color: var(--navy); }
+
+    .checklist {
+      margin: 10px 0 0; padding: 0; list-style: none;
+      display: grid; gap: 8px;
+    }
+    .checklist li {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .checklist .n {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: var(--gold-bg); color: var(--gold);
+      display: grid; place-items: center;
+      font-size: 12px; font-weight: 900;
+      border: 1px solid var(--gold-bd);
+    }
+
+    .focus-wrap {
+      margin-top: 12px;
+      position: relative;
+      padding: 18px 14px 12px;
+      border-radius: 12px;
+      background: var(--gold-bg);
+      border: 1px solid var(--gold-bd);
+      text-align: center;
+    }
+    .focus-pill {
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      padding: 2px 12px; border-radius: 999px;
+      background: #e8d4b0; color: var(--navy);
+      font-size: 12px; font-weight: 900;
+    }
+    .focus-wrap p { margin: 0; font-weight: 800; color: var(--navy); font-size: 15px; }
+
+    .actions {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 11px 16px; border-radius: 10px;
+      text-decoration: none; font-weight: 800; font-size: 14px;
+      border: 1.5px solid transparent;
+    }
+    .btn-primary {
+      background: var(--navy); color: #fff;
+    }
+    .btn-primary:hover { background: #243860; }
+    .btn-ext {
+      background: #fff; color: var(--navy);
+      border-color: #cbd5e1;
+    }
+    .btn-ext:hover { border-color: var(--navy); }
+
+    .related {
+      font-size: 13px; color: var(--muted); margin: 0;
+    }
+    .related a { color: var(--sky); font-weight: 700; }
+
+    .tools {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 0 16px 18px;
+    }
+    .tools a {
+      flex: 1 1 140px;
+      text-align: center;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--navy);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .tools a.soft { background: #fff; color: var(--navy); border: 1.5px solid #cbd5e1; }
+
+    @media (max-width: 560px) {
+      .body { padding: 14px 12px 18px; }
+      .steps li { grid-template-columns: 28px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="../../index.html#termination">← 回催收解約專區</a>
+
+    <article class="poster">
+      <header class="head">
+        <p class="eyebrow">業務實務教學</p>
+        <h1>如何寄存證信函</h1>
+        <p class="sub">選範本 → 產出 → 蓋章 → 回執 → 郵局寄出</p>
+      </header>
+
+      <div class="body">
+        <section class="card" id="flow">
+          <h2><span class="badge">1</span>【存證信函範本】作業流程</h2>
+          <ol class="steps">
+            <li><span>挑選以下<strong>合適的範本</strong>（工具箱內建，或線上產生器）</span></li>
+            <li><span><strong>複製</strong>後到存證信函產生器<strong>貼上</strong></span></li>
+            <li><span><strong>修改內文</strong>後按產出（下載 PDF）</span></li>
+            <li><span><strong>蓋公司大小章</strong></span></li>
+            <li><span><strong>填寫回執單</strong></span></li>
+            <li><span><strong>至郵局寄出</strong></span></li>
+          </ol>
+          <div class="actions">
+            <a class="btn btn-primary" href="../../index.html#lal-generator">打開工具箱產生器</a>
+            <a class="btn btn-ext" href="https://lalg-pro.onrender.com/" target="_blank" rel="noopener">線上產生器（lalg-pro）↗</a>
+          </div>
+        </section>
+
+        <section class="card" id="notes">
+          <h2><span class="badge">!</span>注意事項</h2>
+          <ul class="notes">
+            <li>
+              <b>a.</b>
+              切勿從其他範本中擷取部份內容混在一起；若有多項情況，<strong>先與主管討論</strong>。
+            </li>
+            <li class="ok">
+              <b>b.</b>
+              收件人地址：<strong>租屋處</strong>；副本地址：<strong>戶籍地</strong>。<br />
+              僅有收件人：列印 <strong>3</strong> 份；有收件人＋副本：列印 <strong>4</strong> 份。
+            </li>
+            <li>
+              <b>c.</b>
+              寄出後的存證信函與回執，請各地區<strong>統一找地方妥善保存</strong>，日後需<strong>轉交法務</strong>。
+            </li>
+          </ul>
+        </section>
+
+        <section class="card" id="notice">
+          <h2><span class="badge">2</span>【催告流程】什麼叫「完成催告」</h2>
+          <p class="callout">
+            所謂完成催告，指「<em>存證信函寄出且收到回執</em>」。
+          </p>
+          <p style="margin:14px 0 0;font-size:14px;color:var(--ink);font-weight:700;">
+            提供法務要做強執的案件，一定要有以下資料檢附，法務才能受理：
+          </p>
+          <ul class="checklist">
+            <li><span class="n">1</span><span>兩封存證信函<strong>正本</strong></span></li>
+            <li><span class="n">2</span><span>兩件存證信函<strong>回執</strong></span></li>
+            <li><span class="n">3</span><span>超過信函送達日起算之<strong>期限</strong></span></li>
+            <li><span class="n">4</span><span>有簽終止協議或其他協議，要再<strong>一併檢附</strong></span></li>
+          </ul>
+          <div class="focus-wrap">
+            <span class="focus-pill">重點</span>
+            <p>沒有「信函正本＋回執」＝催告未完成，法務無法受理強執</p>
+          </div>
+        </section>
+
+        <section class="card" id="related">
+          <h2><span class="badge">?</span>相關知識（勿踩紅線）</h2>
+          <p style="margin:0 0 8px;font-size:14px;">
+            租約未到期前，房東／管理者<strong>原則上不可</strong>擅自進入已出租房屋帶看、進入屋內，或擅幫房客打包。催收過程請依 SOP（聯繫、面訪貼單、存證信函…），不可跳過程序用強制手段。
+          </p>
+          <p class="related">
+            來源：信義房屋房訊知識 ·
+            <a href="https://search.app/19hPypfr5Pv5Qj3B6" target="_blank" rel="noopener">開啟原文 ↗</a>
+          </p>
+        </section>
+      </div>
+
+      <nav class="tools" aria-label="相關工具">
+        <a href="../../index.html#lal-generator">📮 存證信函產生</a>
+        <a class="soft" href="../collection-flow/?v=20261019-10">📖 欠租催收流程</a>
+        <a class="soft" href="../../index.html#practice-templates">💬 訊息範本</a>
+        <a class="soft" href="../../index.html#mediation-flow">⚖️ 調解流程</a>
+      </nav>
+    </article>
+  </div>
+</body>
+</html>

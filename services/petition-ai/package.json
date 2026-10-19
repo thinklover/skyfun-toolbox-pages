@@ -1,0 +1,15 @@
+{
+  "name": "skyfun-petition-ai",
+  "private": true,
+  "type": "module",
+  "description": "工具箱簽呈 AI 一鍵整理（Cursor SDK，純文字模式）",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@cursor/sdk": "^1.0.37"
+  }
+}

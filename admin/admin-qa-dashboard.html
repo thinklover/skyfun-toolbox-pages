@@ -601,9 +601,6 @@
         slot.innerHTML = allDetailHtml(data);
         const viewBtn = article.querySelector('[data-all-act="view"]');
         if (viewBtn) viewBtn.textContent = '收合';
-        try {
-          article.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } catch (_) { /* ignore */ }
       }
 
       function closeAllDetail() {
@@ -1127,6 +1124,6 @@
       if (saved) document.getElementById('admin-secret').value = saved;
     })();
   </script>
-<script src="../js/reveal.js?v=20261014-1"></script>
+<script src="../js/reveal.js?v=20261018-29"></script>
 </body>
 </html>

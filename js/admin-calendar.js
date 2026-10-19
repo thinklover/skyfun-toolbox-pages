@@ -544,8 +544,7 @@
         if (!ev && !builtin) slot.querySelector('[name="startDate"]').value = iso(fromYmd(selectedDay(today())));
         state.editing = ev ? ev.id : null;
         state.editItem = builtin || null;
-        slot.querySelector('[name="title"]').focus();
-        slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        slot.querySelector('[name="title"]').focus({ preventScroll: true });
     }
 
     function closeForm() {
@@ -690,7 +689,6 @@
     function selectCell(root, cell) {
         state.selected = Number(cell.dataset.date);
         render();
-        if (window.matchMedia('(max-width: 899px)').matches) root.querySelector('.adc-side')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function icsText(s) {

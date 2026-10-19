@@ -1,0 +1,4324 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>租賃欠租催收流程｜星鴻社宅工具箱</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #192437;
+      --navy-mid: #243556;
+      --blue: #1d4ed8;
+      --blue-soft: #eef2ff;
+      --gold: #c9a227;
+      --gold-bright: #fac02d;
+      --gold-bg: #f8f1e3;
+      --gold-bd: #e0c9a4;
+      --cream: #f7f3ec;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e0d6;
+      --card: #fff;
+      --accent: #c9a227;
+      --danger: #b91c1c;
+      --danger-bg: #fef2f2;
+      --danger-bd: #fecaca;
+      --focus-bg: #fff8e8;
+      --focus-bd: #e0c9a4;
+      --focus-text: #8a6418;
+      --shadow-sm: 0 4px 12px rgba(25, 36, 55, 0.06);
+      --shadow-md: 0 8px 22px rgba(25, 36, 55, 0.1);
+      --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      --font-display: var(--font);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--ink);
+      background: linear-gradient(180deg, #e8eef7 0%, #f7f3ec 45%, #eef2f7 100%);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 12px 14px 28px;
+      min-width: 0;
+      overflow-x: clip;
+    }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
+    }
+    .back {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-bottom: 0; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--line); background: #fff; color: var(--ink);
+      text-decoration: none; font-weight: 700; font-size: 13px;
+    }
+    .sys-open {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-left: auto; padding: 9px 16px; border-radius: 999px;
+      background: var(--navy); color: #fff;
+      text-decoration: none; font-weight: 900; font-size: 14px;
+      border: 1.5px solid var(--gold);
+      box-shadow: 0 4px 12px rgba(25, 36, 55, 0.18);
+      white-space: nowrap;
+    }
+    .sys-open:hover { background: #243556; }
+    .sys-open .sys-ico {
+      width: 18px; height: 18px; border-radius: 4px;
+      background: var(--gold); color: var(--navy);
+      display: grid; place-items: center;
+      font-size: 11px; font-weight: 900; line-height: 1;
+    }
+    .guide .sys-open {
+      margin: 8px 0 0; width: fit-content; margin-left: 0;
+      padding: 7px 12px; font-size: 13px;
+    }
+    .guide-head {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 8px; margin-bottom: 10px;
+    }
+    .guide-head h3 { margin: 0; }
+    .guide-head .sys-open { margin: 0; }
+
+    .poster {
+      background: #fff;
+      border: 1px solid #d7deea;
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(25, 36, 55, 0.1);
+      overflow: hidden;
+      max-width: 100%;
+    }
+    .head {
+      display: grid;
+      grid-template-columns: minmax(140px, 1fr) auto minmax(120px, 1fr);
+      gap: 8px; align-items: center;
+      padding: 14px 18px 12px;
+      background: linear-gradient(180deg, #fffdf8, #fff);
+      border-bottom: 3px solid var(--navy);
+      box-shadow: inset 0 -2px 0 var(--gold);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo {
+      width: 96px; height: 60px; border-radius: 10px;
+      background: #192437;
+      border: 1px solid var(--gold);
+      box-shadow: 0 2px 10px rgba(25, 36, 55, 0.16);
+      display: grid; place-items: center;
+      overflow: hidden; flex-shrink: 0;
+      padding: 5px 8px;
+    }
+    .logo img {
+      width: 100%; height: 100%; object-fit: contain; display: block;
+    }
+    .brand strong { display: block; font-size: 12px; color: var(--navy); letter-spacing: 0.04em; }
+    .brand em { display: block; font-style: normal; font-size: 10px; color: var(--gold); font-weight: 700; }
+    .center { text-align: center; }
+    .center .eyebrow { font-size: 10px; font-weight: 800; color: var(--gold); letter-spacing: 0.12em; }
+    .center h1 {
+      margin: 2px 0 0; font-size: 1.65rem;
+      color: var(--navy); letter-spacing: 0.06em; font-weight: 900;
+    }
+    .ttl .day, .ttl .act, .detail-bar h2, .pnode-btn .ttl {
+      font-weight: 900;
+    }
+    .center .sop { margin: 2px 0 0; font-size: 12px; font-weight: 800; color: var(--navy); }
+    .center .sub { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+    .right { text-align: right; font-size: 11px; font-weight: 700; color: var(--muted); line-height: 1.4; }
+
+    .hint {
+      margin: 10px 14px 0; padding: 9px 14px; border-radius: 10px;
+      background: var(--gold-bg); color: #7a5814;
+      font-size: 15px; font-weight: 700;
+      border: 1px solid var(--gold-bd);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-auto-rows: 1fr;
+      gap: 0; padding: 12px 10px 14px; align-items: stretch;
+      min-height: 420px;
+    }
+    .poster:has(.detail-slot:not(:empty)) .flow {
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--gold-bd);
+      background: linear-gradient(180deg, transparent 70%, rgba(248, 241, 227, 0.45));
+    }
+    .cell {
+      display: flex; align-items: stretch; min-width: 0; min-height: 100%;
+    }
+    .arrow {
+      flex: 0 0 12px; align-self: center; width: 12px; color: var(--gold);
+      font-size: 16px; font-weight: 900; text-align: center; user-select: none;
+    }
+
+    .card {
+      appearance: none; flex: 1 1 auto; width: 100%; min-width: 0;
+      min-height: 100%; margin: 0; padding: 0;
+      font: inherit; color: inherit; text-align: left; cursor: pointer;
+      background: var(--card); border: 1.5px solid #d7deea; border-radius: 12px;
+      overflow: hidden; box-shadow: 0 4px 12px rgba(25, 36, 55, 0.06);
+      display: flex; flex-direction: column;
+    }
+    .card:hover { border-color: var(--gold-bd); }
+    .card.is-on {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.28);
+    }
+
+    .node {
+      flex: 0 0 auto;
+      padding: 12px 8px 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--navy); color: #fff;
+      display: grid; place-items: center; font-weight: 900; font-size: 14px;
+    }
+    .card.is-on .num { background: var(--gold); color: #192437; }
+    .ttl { text-align: center; line-height: 1.35; min-height: 3.4em; }
+    .ttl .day { display: block; font-size: 16.5px; font-weight: 900; color: var(--gold); }
+    .ttl .act {
+      display: block;
+      font-size: 14.5px;
+      font-weight: 900; color: var(--navy); margin-top: 3px;
+    }
+    .art {
+      width: 76px; height: 76px; border-radius: 50%;
+      background: linear-gradient(145deg, #fffdf8, var(--gold-bg));
+      border: 1px solid var(--gold-bd);
+      display: grid; place-items: center; overflow: hidden;
+    }
+    .art svg { width: 58px; height: 58px; display: block; }
+
+    .body {
+      flex: 1 1 auto; padding: 8px 12px 6px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .body ul {
+      margin: 0; padding: 0 0 0 1.15em;
+      font-size: 13.5px; color: #374151; line-height: 1.55; font-weight: 600;
+      min-height: 6.6em;
+    }
+    .body li { margin: 0 0 6px; min-height: 1.45em; }
+    .body li:last-child { margin-bottom: 0; }
+
+    .card-foot {
+      flex: 0 0 auto;
+      margin-top: 0;
+      padding: 4px 12px 12px;
+      width: 100%;
+    }
+    .focus-wrap {
+      flex: 0 0 auto;
+      margin: auto 10px 8px;
+      padding: 10px 8px 8px;
+      align-self: stretch;
+      box-sizing: border-box;
+      width: calc(100% - 20px);
+      text-align: center;
+      min-height: 5.4em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      border: 1px solid #d7deea;
+      border-radius: 10px;
+      background: #f4f7fb;
+    }
+    .focus-pill {
+      display: inline-block;
+      margin: 0 0 4px;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+      order: 1;
+    }
+    .focus {
+      margin: 0;
+      padding: 0;
+      background: none;
+      border: 0;
+      color: var(--navy);
+      font-size: 14.5px;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.3;
+      min-height: 2.7em;
+      height: 2.7em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      width: 100%;
+      order: 2;
+    }
+    .focus .fl {
+      display: block;
+      width: 100%;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--navy);
+      padding: 0 2px;
+      line-height: 1.3;
+      height: 1.3em;
+      box-sizing: border-box;
+    }
+    @media (max-width: 1100px) {
+      .focus { height: auto; min-height: 2.7em; }
+      .focus .fl { white-space: normal; height: auto; min-height: 1.3em; }
+    }
+    .tap {
+      margin: 0; text-align: center;
+      font-size: 13px; font-weight: 800; color: #8a6418;
+      height: 1.4em;
+      line-height: 1.4em;
+    }
+    .common-block[hidden] { display: none !important; }
+    .mf-goals-hero {
+      margin: 0 0 14px; padding: 16px 14px 14px;
+      border-radius: 18px;
+      border: 2px solid var(--gold);
+      background: linear-gradient(180deg, #FFF8E8 0%, #fff 70%);
+      box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.12), var(--shadow-sm);
+    }
+    .mf-goals-hero .mf-goals-label {
+      margin: 0 0 10px; text-align: center;
+      font-size: 13px; font-weight: 700; color: var(--gold);
+      letter-spacing: 0.08em;
+    }
+    .mf-goals-hero .mf-goals-title {
+      margin: 0 0 12px; text-align: center;
+      font-size: 1.35rem; font-weight: 800; color: var(--navy);
+      letter-spacing: -0.02em; line-height: 1.25;
+    }
+    .mf-goals-hero .mf-goals-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+    }
+    @media (max-width: 720px) {
+      .mf-goals-hero .mf-goals-grid { grid-template-columns: 1fr; }
+    }
+    .mf-goals-hero .mf-goal {
+      margin: 0; padding: 14px 12px;
+      border-radius: 14px; background: #fff;
+      border: 1px solid rgba(201,168,76,0.35);
+      text-align: center;
+    }
+    .mf-goals-hero .mf-goal .n {
+      display: inline-grid; place-items: center;
+      width: 28px; height: 28px; border-radius: 9px; margin-bottom: 6px;
+      background: var(--navy); color: var(--gold-bright);
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+    }
+    .mf-goals-hero .mf-goal strong {
+      display: block; font-size: 17px; font-weight: 800; color: var(--navy);
+      letter-spacing: -0.02em; line-height: 1.3;
+    }
+    .mf-goals-hero .mf-goal span {
+      display: block; margin-top: 4px;
+      font-size: 13px; font-weight: 500; color: var(--muted); line-height: 1.4;
+    }
+    .mf-goals-hero .mf-goal ul {
+      margin: 8px 0 0; padding: 0 0 0 1.1em;
+      text-align: left; list-style: disc;
+      font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.5;
+    }
+    .mf-goals-hero .mf-goal li + li { margin-top: 3px; }
+
+    .detail-slot {
+      margin: 0 14px 4px;
+      min-height: 0;
+      min-width: 0;
+      max-width: 100%;
+      width: auto;
+      box-sizing: border-box;
+    }
+    .detail-slot:not(:empty) {
+      margin: 0 14px 16px;
+      padding: 0 0 4px;
+      display: grid;
+      gap: 12px;
+    }
+    .detail-split {
+      display: flex; align-items: center; gap: 12px;
+      margin: 4px 0 2px;
+    }
+    .detail-split::before,
+    .detail-split::after {
+      content: '';
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold-bd) 15%, var(--gold) 50%, var(--gold-bd) 85%, transparent);
+    }
+    .detail-split span {
+      flex: 0 0 auto;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--navy);
+      font-size: 13px; font-weight: 900;
+      letter-spacing: 0.04em;
+      border: 1.5px solid var(--gold);
+      box-shadow: 0 2px 8px rgba(25, 36, 55, 0.08);
+    }
+    .detail {
+      display: none;
+      background: #fff;
+      border: 1.5px solid var(--navy);
+      border-top: 3px solid var(--gold);
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 100%;
+      min-width: 0;
+      box-shadow: 0 8px 22px rgba(25, 36, 55, 0.1);
+    }
+    .detail.is-open { display: block; }
+
+    .detail-bar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 12px 14px;
+      background: linear-gradient(180deg, #fffdf8, #fff);
+      border-bottom: 1px solid var(--gold-bd);
+    }
+    .detail-bar .tag {
+      display: inline-flex; padding: 3px 11px; border-radius: 999px;
+      background: var(--navy); color: var(--gold-bright); font-size: 14px; font-weight: 800;
+    }
+    .detail-bar .mini-art {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--gold-bg); border: 1px solid var(--gold-bd);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .detail-bar .mini-art svg { width: 34px; height: 34px; }
+    .detail-bar h2 {
+      margin: 0; flex: 1; min-width: 180px;
+      font-size: 1.2rem; font-weight: 900; line-height: 1.3;
+    }
+    .detail-bar h2 .day { color: var(--gold); margin-right: 8px; }
+    .detail-bar h2 .act { color: var(--navy); }
+    .detail-bar .close-btn {
+      margin-left: auto;
+      appearance: none; border: 1px solid var(--line); background: #fff;
+      border-radius: 999px; padding: 6px 14px;
+      font: inherit; font-size: 14px; font-weight: 800; color: #475569; cursor: pointer;
+    }
+
+    .detail-body {
+      padding: 12px 14px 14px;
+      display: grid; gap: 12px;
+      min-width: 0; max-width: 100%;
+    }
+
+    .when {
+      margin: 0; padding: 10px 12px; border-radius: 8px;
+      background: var(--gold-bg); border: 1px solid var(--gold-bd);
+      color: #7a5814; font-size: 16px; font-weight: 700;
+    }
+    .when b { color: #8a6418; }
+
+    .flow-hint {
+      margin: 0; font-size: 14px; font-weight: 700; color: #8a6418;
+    }
+
+    .pflow {
+      display: flex; align-items: stretch; gap: 0;
+      overflow-x: auto; padding: 2px 0 4px;
+    }
+    .pflow.is-wide .pnode { min-width: 0; }
+    .pnode {
+      flex: 1 1 0; min-width: 140px;
+      display: flex; align-items: stretch; gap: 0;
+    }
+    .pnode-btn {
+      appearance: none; width: 100%; margin: 0;
+      padding: 18px 14px;
+      font: inherit; text-align: center; cursor: pointer;
+      background: #f8fafc; border: 2px solid #d7deea; border-radius: 14px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; min-height: 112px;
+      transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+    }
+    .pnode-btn:hover { border-color: #94a3b8; }
+    .pnode-btn.is-on {
+      border-color: var(--gold);
+      background: var(--gold-bg);
+      box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.22);
+    }
+    .pnode-btn .sn {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--navy); color: #fff;
+      display: grid; place-items: center;
+      font-size: 20px; font-weight: 900; flex-shrink: 0;
+    }
+    .pnode-btn.is-on .sn { background: var(--gold); color: #192437; }
+    .pnode-btn .ttl {
+      margin: 0; font-size: 17px; font-weight: 900; color: var(--navy);
+      line-height: 1.3; min-height: 0; width: 100%;
+      text-align: center;
+    }
+    .pnode-btn .ttl .tl { display: block; }
+    .pnode-btn .tap-mini {
+      display: block; margin: 0;
+      font-size: 12px; font-weight: 700; color: #8a6418;
+    }
+    .parrow {
+      flex: 0 0 28px; align-self: center;
+      color: var(--gold); font-size: 26px; font-weight: 900; text-align: center;
+      user-select: none;
+    }
+
+    .pdetail {
+      display: none;
+      padding: 12px 14px;
+      border: 1.5px solid var(--gold-bd);
+      border-radius: 12px;
+      background: #fffdf8;
+    }
+    .pdetail.is-open { display: grid; gap: 10px; }
+    .pdetail .why {
+      margin: 0; font-size: 16px; font-weight: 600; color: #334155; line-height: 1.55;
+    }
+    .pdetail .why b { color: var(--navy); }
+    .pdetail .step-focus {
+      margin: 0; padding: 10px 12px;
+      position: relative;
+      background: #FFF7F7;
+      border: 1px solid #FECACA; border-radius: 12px;
+      color: #B91C1C; font-size: 16px; font-weight: 800; text-align: center;
+      line-height: 1.4;
+    }
+    .pdetail .step-focus .fl { display: inline; color: #B91C1C; }
+    .pdetail .step-focus .fl + .fl::before { content: ' · '; color: #B91C1C; }
+    .pdetail .step-focus .focus-pill {
+      display: inline-block; margin: 0 6px 0 0; padding: 0;
+      position: static; transform: none;
+      background: none; border: 0;
+      color: #B91C1C; font-size: 13px; font-weight: 800;
+      letter-spacing: 0.06em;
+    }
+    .pdetail .step-focus .focus-pill::after { content: '｜'; margin-left: 4px; color: #FCA5A5; }
+
+    .msgbox {
+      margin-top: 12px; padding: 18px 18px 16px;
+      border-radius: 20px; background: #fff;
+      border: 1.5px solid #c4b5fd;
+      box-shadow: 0 8px 28px rgba(139, 92, 246, 0.14);
+    }
+    .msgbox h3 {
+      margin: 0 0 10px; font-size: 1.45rem; font-weight: 900; color: var(--navy);
+      letter-spacing: 0.02em; line-height: 1.3;
+    }
+    .msg-fields {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .msg-fields label {
+      display: grid; gap: 4px; font-size: 14px; font-weight: 700; color: #334155;
+    }
+    .msg-fields label.full { grid-column: 1 / -1; }
+    .msg-fields input, .msg-fields select {
+      width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font: inherit; font-size: 15px; background: #fff;
+    }
+    #cf-id { text-transform: uppercase; }
+    .msg-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+    }
+    .msg-actions button {
+      appearance: none; border: none; border-radius: 12px; padding: 10px 16px;
+      font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+      background: var(--navy); color: #fff;
+    }
+    .msg-actions button.soft {
+      background: #F2F2F7; color: var(--blue); border: 1px solid var(--line);
+    }
+    .msgbox textarea {
+      width: 100%; margin-top: 10px; min-height: 160px;
+      padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font: inherit; font-size: 15px; line-height: 1.5; resize: vertical;
+    }
+    .msg-status { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: #047857; min-height: 1.2em; }
+
+    .plink {
+      display: inline-flex; margin-top: 10px; padding: 8px 14px; border-radius: 8px;
+      background: var(--navy); color: #fff; text-decoration: none;
+      font-size: 15px; font-weight: 800;
+    }
+    .plink.soft {
+      background: #fff; color: var(--navy); border: 1.5px solid #cbd5e1;
+    }
+
+    .scriptbox {
+      margin-top: 4px; padding: 18px 18px 16px;
+      border-radius: 20px; background: #fff;
+      border: 1.5px solid #93c5fd;
+      box-shadow: 0 8px 28px rgba(59, 130, 246, 0.14);
+    }
+    .scriptbox h3 {
+      margin: 0 0 10px; font-size: 1.45rem; font-weight: 900; color: var(--navy);
+      letter-spacing: 0.02em; line-height: 1.3;
+    }
+    .scriptbox .script-note {
+      margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #64748b; line-height: 1.45;
+    }
+    .scriptbox ol {
+      margin: 0; padding: 0; list-style: none; display: grid; gap: 10px;
+    }
+    .scriptbox li {
+      display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: start;
+      font-size: 15px; font-weight: 600; color: #334155; line-height: 1.5;
+    }
+    .scriptbox .sn {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--navy); color: #fff;
+      display: grid; place-items: center;
+      font-size: 13px; font-weight: 900;
+    }
+    .scriptbox .say {
+      margin: 4px 0 0; padding: 8px 10px;
+      border-radius: 8px; background: #f8fafc; border: 1px dashed #cbd5e1;
+      font-size: 14.5px; font-weight: 700; color: #0f172a; line-height: 1.5;
+    }
+    .scriptbox .say b { color: var(--focus-text); }
+    .scriptbox .plink { margin-top: 12px; }
+
+    .cvnbox {
+      margin-top: 16px; padding: 18px 18px 16px;
+      border-radius: 20px; background: #fff;
+      border: 1.5px solid #86efac;
+      box-shadow: 0 8px 28px rgba(34, 197, 94, 0.14);
+    }
+    .cvnbox h3 {
+      margin: 0 0 10px; font-size: 1.45rem; font-weight: 900; color: var(--navy);
+      letter-spacing: 0.02em; line-height: 1.3;
+    }
+    .cvnbox .cvn-note {
+      margin: 0 0 12px; font-size: 13.5px; font-weight: 600; color: #64748b; line-height: 1.45;
+    }
+    .cvnbox .cvn-sec {
+      margin: 0 0 10px; padding: 12px;
+      border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .cvnbox .cvn-sec h4 {
+      margin: 0 0 8px; font-size: 14px; font-weight: 900; color: var(--navy);
+    }
+    .cvnbox label.cvn-field {
+      display: grid; gap: 4px; margin: 0 0 8px;
+      font-size: 13px; font-weight: 800; color: #475569;
+    }
+    .cvnbox label.cvn-field span .req { color: #b91c1c; }
+    .cvnbox label.cvn-field input,
+    .cvnbox label.cvn-field select {
+      width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font: inherit; font-size: 14.5px; font-weight: 600; background: #fff; color: #0f172a;
+    }
+    .cvnbox .cvn-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;
+    }
+    .cvnbox .cvn-grid .span2 { grid-column: 1 / -1; }
+    .cvnbox .cvn-date {
+      display: grid; grid-template-columns: 1.2fr 0.8fr 0.8fr; gap: 8px;
+    }
+    .cvnbox .cvn-checks {
+      display: grid; gap: 8px; margin-top: 4px;
+      font-size: 14px; font-weight: 700; color: #334155;
+    }
+    .cvnbox .cvn-checks label {
+      display: flex; align-items: flex-start; gap: 8px; cursor: pointer;
+    }
+    .cvnbox .cvn-checks input[type="checkbox"] {
+      margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0;
+    }
+    .cvnbox .cvn-checks .other-wrap { flex: 1; display: grid; gap: 6px; }
+    .cvnbox .cvn-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px;
+    }
+    .cvnbox .cvn-actions button {
+      appearance: none; border: none; border-radius: 8px; padding: 9px 14px;
+      font: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+      background: var(--navy); color: #fff;
+    }
+    .cvnbox .cvn-actions button.soft {
+      background: #fff; color: var(--navy); border: 1.5px solid #cbd5e1;
+    }
+    .cvnbox #cvn-btn-preview {
+      background: #1d4ed8;
+    }
+    .cvnbox .cvn-preview-wrap {
+      margin-top: 12px; border: 2px solid var(--gold); border-radius: 12px;
+      overflow: hidden; background: #fff;
+    }
+    .cvnbox .cvn-preview-bar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 10px 12px;
+      background: linear-gradient(180deg, #fffbeb, #fff);
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .cvnbox .cvn-preview-bar strong {
+      font-size: 14px; font-weight: 900; color: var(--navy);
+    }
+    .cvnbox .cvn-preview-actions { display: flex; gap: 8px; }
+    .cvnbox .cvn-preview-actions button {
+      appearance: none; border: 1.5px solid #cbd5e1; border-radius: 8px;
+      padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 800;
+      cursor: pointer; background: #fff; color: var(--navy);
+    }
+    .cvnbox .cvn-preview-wrap iframe {
+      display: block; width: 100%; height: min(72vh, 720px);
+      border: 0; background: #525659;
+    }
+    .cvnbox #cvn-status {
+      flex: 1; min-width: 10rem; margin: 0;
+      font-size: 13px; font-weight: 700; color: #64748b;
+    }
+    .cvnbox #cvn-status.text-rose-700 { color: #b91c1c; }
+    .cvnbox #cvn-status.text-slate-500 { color: #64748b; }
+    .cvnbox .cvn-foot {
+      margin: 8px 0 0; font-size: 12px; font-weight: 600; color: #94a3b8; line-height: 1.45;
+    }
+    @media (max-width: 560px) {
+      .cvnbox .cvn-grid { grid-template-columns: 1fr; }
+      .cvnbox .cvn-grid .span2 { grid-column: auto; }
+      .cvnbox .cvn-date { grid-template-columns: 1fr; }
+    }
+
+    .lal-deck {
+      margin-top: 12px;
+      display: grid;
+      gap: 14px;
+    }
+    .lal-deck-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-items: stretch;
+    }
+    @media (max-width: 820px) {
+      .lal-deck-row { grid-template-columns: 1fr; }
+    }
+    .lal-card,
+    .lal-card-face {
+      margin: 0; padding: 0;
+      border-radius: 20px; background: #fff;
+      border: 1.5px solid #93c5fd;
+      box-shadow: 0 8px 28px rgba(59, 130, 246, 0.14);
+      overflow: hidden;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      cursor: pointer;
+    }
+    .lal-card .lal-card-body { cursor: default; }
+    .lal-card--gen,
+    .lal-card-face.lal-card--gen,
+    .lal-card-face.lal-card--visit-cvn {
+      border-color: #86efac;
+      box-shadow: 0 8px 28px rgba(34, 197, 94, 0.14);
+    }
+    .lal-card--receipt,
+    .lal-card-face.lal-card--receipt {
+      border-color: #fcd34d;
+      box-shadow: 0 8px 28px rgba(234, 179, 8, 0.16);
+    }
+    .lal-card-face.lal-card--visit-ops,
+    .lal-card-face.lal-card--nr-why,
+    .lal-card-face.lal-card--nr-docs {
+      border-color: #93c5fd;
+      box-shadow: 0 8px 28px rgba(59, 130, 246, 0.14);
+    }
+    .lal-card-face.lal-card--nr-bring,
+    .lal-card-face.lal-card--nr-pack {
+      border-color: #86efac;
+      box-shadow: 0 8px 28px rgba(34, 197, 94, 0.14);
+    }
+    .lal-card-face.lal-card--nr-fee,
+    .lal-card-face.lal-card--nr-csp {
+      border-color: #fcd34d;
+      box-shadow: 0 8px 28px rgba(234, 179, 8, 0.16);
+    }
+    .lal-card-face.lal-card--nr-gen,
+    .lal-card-face.lal-card--nr-poa {
+      border-color: #86efac;
+      box-shadow: 0 8px 28px rgba(34, 197, 94, 0.14);
+    }
+    .lal-deck-row--1 { grid-template-columns: 1fr; }
+    .lal-card-sum {
+      appearance: none; width: 100%; margin: 0;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 16px 18px 8px;
+      border: 0; background: transparent; cursor: pointer;
+      text-align: left; font: inherit; color: inherit;
+    }
+    .lal-card-sum:hover { background: rgba(15, 23, 42, 0.02); }
+    .lal-card-title {
+      margin: 0; font-size: 1.45rem; font-weight: 900; color: var(--navy);
+      letter-spacing: 0.02em; line-height: 1.3;
+    }
+    .lal-card-chev {
+      flex-shrink: 0;
+      width: 32px; height: 32px; border-radius: 999px;
+      display: grid; place-items: center;
+      background: #f1f5f9; color: var(--navy);
+      font-size: 12px; font-weight: 900;
+      transition: transform 0.15s;
+    }
+    .lal-card.is-open .lal-card-chev,
+    .lal-card-face.is-open .lal-card-chev {
+      transform: rotate(180deg); background: var(--navy); color: #fff;
+    }
+    .lal-card-keys {
+      margin: 0; padding: 4px 18px 16px 2.2em;
+      list-style: disc;
+      font-size: 14.5px; font-weight: 700; color: #334155; line-height: 1.5;
+    }
+    .lal-card-keys li { margin: 0.3em 0; }
+    .lal-card-keys b { color: #9f1239; }
+    .lal-card-hint {
+      margin: 0 18px 14px;
+      font-size: 13px; font-weight: 700; color: #64748b;
+    }
+    /* 上方業務操作：內容收在卡片內 */
+    .lal-card-body {
+      display: none;
+      padding: 0 14px 16px;
+      border-top: 1px solid #e2e8f0;
+      background: linear-gradient(180deg, #f8fafc, #fff 40%);
+    }
+    .lal-card.is-open .lal-card-body {
+      display: block;
+      padding-top: 14px;
+    }
+    /* 下方產生器／回執聯：展開內容在左右卡片之下全寬 */
+    .lal-card-panel {
+      display: none;
+      grid-column: 1 / -1;
+      padding: 16px;
+      border-radius: 20px;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 8px 28px rgba(25, 36, 55, 0.08);
+    }
+    .lal-card-panel.is-open { display: block; }
+    .lal-card-panel[data-lal-panel="gen"],
+    .lal-card-panel[data-lal-panel="visit-cvn"] {
+      border-color: #86efac;
+      box-shadow: 0 8px 28px rgba(34, 197, 94, 0.14);
+    }
+    .lal-card-panel[data-lal-panel="receipt"] {
+      border-color: #fcd34d;
+      box-shadow: 0 8px 28px rgba(234, 179, 8, 0.16);
+    }
+    .lal-card-panel[data-lal-panel="visit-ops"],
+    .lal-card-panel[data-lal-panel="nr-why"],
+    .lal-card-panel[data-lal-panel="nr-docs"] {
+      border-color: #93c5fd;
+      box-shadow: 0 8px 28px rgba(59, 130, 246, 0.14);
+    }
+    .lal-card-panel[data-lal-panel="nr-bring"],
+    .lal-card-panel[data-lal-panel="nr-pack"] {
+      border-color: #86efac;
+      box-shadow: 0 8px 28px rgba(34, 197, 94, 0.14);
+    }
+    .lal-card-panel[data-lal-panel="nr-fee"],
+    .lal-card-panel[data-lal-panel="nr-csp"] {
+      border-color: #fcd34d;
+      box-shadow: 0 8px 28px rgba(234, 179, 8, 0.16);
+    }
+    .lal-card-panel[data-lal-panel="nr-gen"],
+    .lal-card-panel[data-lal-panel="nr-poa"] {
+      border-color: #86efac;
+      box-shadow: 0 8px 28px rgba(34, 197, 94, 0.14);
+    }
+    .lal-card-body .scriptbox,
+    .lal-card-body .lalbox,
+    .lal-card-panel .lalbox,
+    .lal-card-panel .lal-receipt-tpl,
+    .lal-card-panel .scriptbox,
+    .lal-card-panel .cvnbox,
+    .lal-card-panel .nrpbox,
+    .lal-card-panel .hpoabox {
+      margin: 0;
+      border: 0;
+      box-shadow: none;
+      border-radius: 12px;
+      background: transparent;
+      padding: 0;
+    }
+    .lal-card-body .scriptbox h3,
+    .lal-card-body .lalbox h3,
+    .lal-card-panel .lalbox h3,
+    .lal-card-panel .lal-receipt-tpl h4,
+    .lal-card-panel .scriptbox h3,
+    .lal-card-panel .cvnbox h3,
+    .lal-card-panel .nrpbox h3,
+    .lal-card-panel .hpoabox h3 { display: none; }
+    .lal-card-panel .lal-receipt-tpl .guide-fig {
+      margin: 0;
+    }
+    .lal-card-panel .lal-receipt-tpl .guide-fig img {
+      width: 100%;
+      height: auto;
+      max-height: min(70vh, 720px);
+      object-fit: contain;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .lalbox {
+      margin-top: 12px; padding: 18px 18px 16px;
+      border-radius: 20px; background: #fff;
+      border: 1.5px solid #fcd34d;
+      box-shadow: 0 8px 28px rgba(234, 179, 8, 0.16);
+    }
+    .lalbox h3 {
+      margin: 0 0 10px; font-size: 1.45rem; font-weight: 900; color: var(--navy);
+      letter-spacing: 0.02em; line-height: 1.3;
+    }
+    .lalbox .lal-note {
+      margin: 0 0 12px; font-size: 13.5px; font-weight: 600; color: #64748b; line-height: 1.45;
+    }
+    .lalbox .lal-toolbar {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
+    }
+    .lalbox .lal-toolbar button,
+    .lalbox .lal-actions button,
+    .lalbox .lal-party-col > button {
+      appearance: none; border: none; border-radius: 8px; padding: 8px 12px;
+      font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+      background: var(--navy); color: #fff;
+    }
+    .lalbox .lal-toolbar button.soft,
+    .lalbox .lal-actions button.soft {
+      background: #fff; color: var(--navy); border: 1.5px solid #cbd5e1;
+    }
+    .lalbox .lal-toolbar button.warn { background: #b45309; }
+    .lalbox #btn-lal-preview {
+      background: #1d4ed8; color: #fff;
+    }
+    .lalbox .lal-preview-wrap {
+      margin: 12px 0; border: 2px solid var(--gold); border-radius: 12px;
+      overflow: hidden; background: #fff;
+    }
+    .lalbox .lal-preview-bar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 10px 12px;
+      background: linear-gradient(180deg, #fffbeb, #fff); border-bottom: 1px solid #e2e8f0;
+    }
+    .lalbox .lal-preview-bar strong { font-size: 14px; font-weight: 900; color: var(--navy); }
+    .lalbox .lal-preview-actions { display: flex; gap: 8px; }
+    .lalbox .lal-preview-actions button {
+      appearance: none; border: 1.5px solid #cbd5e1; border-radius: 8px;
+      padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 800;
+      cursor: pointer; background: #fff; color: var(--navy);
+    }
+    .lalbox .lal-preview-wrap iframe {
+      display: block; width: 100%; height: min(72vh, 720px); border: 0; background: #525659;
+    }
+    .lal-receipt-tpl {
+      margin: 14px 0 12px; padding: 14px;
+      border-radius: 12px; border: 2.5px solid #0f766e;
+      background: linear-gradient(180deg, #ecfdf5, #fff);
+    }
+    .lal-receipt-tpl h4 {
+      margin: 0 0 6px; font-size: 16px; font-weight: 900; color: #115e59;
+    }
+    .lal-receipt-tpl .lal-receipt-note {
+      margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #334155; line-height: 1.45;
+    }
+    .lal-receipt-tpl .lal-receipt-note b { color: #9f1239; }
+    .lal-receipt-card {
+      border: 2px solid #134e4a; border-radius: 10px; background: #fff; overflow: hidden;
+    }
+    .lal-receipt-card .rc-head {
+      padding: 8px 12px; background: #115e59; color: #fff;
+      font-size: 13px; font-weight: 900; letter-spacing: 0.02em;
+    }
+    .lal-receipt-block {
+      padding: 12px 14px; border-top: 1px dashed #99f6e4;
+    }
+    .lal-receipt-block .rc-label {
+      display: block; margin: 0 0 6px;
+      font-size: 12px; font-weight: 900; color: #0f766e;
+    }
+    .lal-receipt-block .rc-label em {
+      font-style: normal; color: #9f1239; margin-left: 4px;
+    }
+    .lal-receipt-block .rc-val {
+      min-height: 2.6rem; padding: 8px 10px; border-radius: 8px;
+      border: 1.5px solid #5eead4; background: #f0fdfa;
+      font-size: 14px; font-weight: 800; color: #134e4a; white-space: pre-wrap; line-height: 1.4;
+    }
+    .lal-receipt-block.is-lessor .rc-label { color: #9f1239; }
+    .lal-receipt-block.is-lessor .rc-val {
+      border-color: #fb7185; background: #fff1f2; color: #9f1239;
+    }
+    #lal-tpl-panel {
+      margin: 0 0 12px; padding: 12px; border-radius: 10px;
+      background: #fff; border: 2px solid #a5b4fc;
+    }
+    .lal-tpl-toolbar {
+      display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; margin-bottom: 10px;
+      background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+      border: 1px solid #a5b4fc;
+    }
+    .lal-tpl-toolbar label {
+      display: block; font-size: 13px; font-weight: 800; color: #312e81; margin-bottom: 4px;
+    }
+    #lal-tpl-select {
+      width: 100%; min-width: 14rem; padding: 8px 10px; border-radius: 8px;
+      border: 1px solid #6366f1; font: inherit; font-size: 14px; font-weight: 700;
+    }
+    #lal-tpl-fields {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      padding: 10px; border-radius: 8px; background: #f1f5f9; border: 1px solid #cbd5e1;
+    }
+    .lal-field-block, .lal-field-cell, .lal-date-pick {
+      grid-column: 1 / -1; background: #fff; border: 1px solid #cbd5e1;
+      border-radius: 8px; padding: 10px 12px;
+    }
+    .lal-field-title {
+      margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0;
+      font-size: 14px; font-weight: 900; color: #0f172a;
+    }
+    .lal-field-block label, .lal-field-cell label, .lal-date-pick label {
+      display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 3px;
+    }
+    .lal-field-block input, .lal-field-block select,
+    .lal-field-cell input, .lal-field-cell select, .lal-date-pick input {
+      width: 100%; padding: 7px 9px; border: 1px solid #94a3b8; border-radius: 8px;
+      font: inherit; font-size: 14px; background: #fff;
+    }
+    .lal-field-block .lal-subgrid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: 8px;
+    }
+    .lal-case-setup {
+      margin: 0 0 14px; padding: 12px;
+      border-radius: 12px; border: 3px solid var(--navy);
+      background: linear-gradient(180deg, #eef2ff, #fff 40%);
+      box-shadow: 0 4px 18px rgba(25, 36, 55, 0.1);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+    .lal-case-setup:has(#lal-office-row[hidden]) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .lal-case-setup .lal-case-row {
+      margin: 0; padding: 10px 10px 12px;
+      border-radius: 12px; border: 2.5px solid #312e81;
+      background: #fff;
+      box-shadow: 0 2px 0 #c7d2fe;
+      display: flex; flex-direction: column; min-width: 0;
+    }
+    .lal-case-setup .lal-case-label {
+      display: flex; align-items: center; gap: 6px;
+      margin: 0 0 8px; padding-bottom: 6px;
+      border-bottom: 2px solid #e0e7ff;
+      font-size: 13.5px; font-weight: 900; color: #1e1b4b; letter-spacing: 0.01em;
+      line-height: 1.3;
+    }
+    .lal-case-setup .lal-case-label::before {
+      content: '';
+      display: inline-block; width: 6px; height: 1.1em;
+      border-radius: 3px; background: #f59e0b; flex-shrink: 0;
+    }
+    .lal-choice {
+      display: grid; gap: 6px; flex: 1;
+    }
+    .lal-choice label {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 10px 10px; border-radius: 10px; border: 2px solid #cbd5e1;
+      background: #f8fafc; font-size: 13.5px; font-weight: 800; color: #1e293b; cursor: pointer;
+      line-height: 1.35;
+    }
+    .lal-choice input {
+      margin-top: 3px; flex-shrink: 0;
+      width: 1.15rem; height: 1.15rem; accent-color: #1d4ed8;
+    }
+    .lal-choice label:has(input:checked) {
+      border-color: #1d4ed8; background: #dbeafe; color: #1e3a8a;
+      box-shadow: inset 0 0 0 1px #93c5fd;
+    }
+    .lal-choice label b, .lal-choice label strong { color: #9f1239; }
+    #lal-case-hint {
+      grid-column: 1 / -1;
+      margin: 0; padding: 8px 10px; border-radius: 8px;
+      background: #f8fafc; border: 1px dashed #cbd5e1;
+      font-size: 13px; font-weight: 700; color: #475569; line-height: 1.45;
+    }
+    #lal-case-hint::before { content: none; }
+    #lal-case-hint b, #lal-case-hint strong { color: var(--focus-text); background: none; padding: 0; }
+    #lal-office-row[hidden] { display: none !important; }
+    #lal-office-select {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 2.5px solid #1d4ed8;
+      font-size: 16px; font-weight: 900; color: #1e3a8a; background: #eff6ff;
+    }
+    #lal-office-tip {
+      margin: 8px 0 0; font-size: 13px; font-weight: 800; color: #334155; line-height: 1.4;
+    }
+    .lal-parties {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px;
+    }
+    .lal-parties.is-no-cc { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #lal-cc-col[hidden] { display: none !important; }
+    .lal-party-col {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .lal-party-col h4 { margin: 0; font-size: 13px; font-weight: 900; color: var(--navy); }
+    .lal-party-list { display: flex; flex-direction: column; gap: 8px; min-height: 2.5rem; }
+    .lal-party-card {
+      border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; background: #fff;
+    }
+    .lal-party-card__head {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+      font-size: 12px; font-weight: 800; color: #64748b;
+    }
+    .lal-party-card__name-input,
+    .lal-party-card__addr-input {
+      display: block; width: 100%; margin-top: 4px; padding: 7px 9px;
+      border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 13.5px;
+    }
+    .lal-party-card__addr-input { min-height: 3rem; resize: vertical; }
+    #lal-content {
+      width: 100%; min-height: 220px; padding: 10px 12px; margin: 0 0 10px;
+      border: 1px solid #94a3b8; border-radius: 8px; background: #fffef8;
+      font: inherit; font-size: 14px; line-height: 1.65; resize: vertical;
+    }
+    .lalbox .lal-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    #lal-status {
+      flex: 1; min-width: 10rem; margin: 0;
+      font-size: 13px; font-weight: 700; color: #64748b;
+    }
+    .lalbox .lal-foot {
+      margin: 8px 0 0; font-size: 12px; font-weight: 600; color: #94a3b8; line-height: 1.45;
+    }
+    @media (max-width: 900px) {
+      .lal-case-setup,
+      .lal-case-setup:has(#lal-office-row[hidden]) {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 720px) {
+      .lal-parties { grid-template-columns: 1fr; }
+      #lal-tpl-fields { grid-template-columns: 1fr; }
+    }
+
+    .guide {
+      margin-top: 12px; padding: 16px;
+      border-radius: 18px; background: #fff; border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+    }
+    .guide h3 {
+      margin: 0 0 12px;
+      font-size: 1.45rem; font-weight: 900; color: var(--navy); line-height: 1.3;
+      letter-spacing: 0.02em;
+    }
+    .guide-steps {
+      margin: 0 0 12px; padding: 0; list-style: none;
+      display: grid; gap: 10px;
+    }
+    .guide-steps li {
+      display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start;
+      font-size: 14.5px; font-weight: 500; color: var(--ink); line-height: 1.5;
+    }
+    .guide-steps .gn {
+      width: 28px; height: 28px; border-radius: 9px;
+      background: var(--navy); color: #fff;
+      display: grid; place-items: center;
+      font-size: 13px; font-weight: 700;
+      font-family: var(--font-display);
+    }
+    .guide-steps b { color: var(--navy); }
+    .guide-fig {
+      margin: 0; width: 100%; max-width: 100%;
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .guide-fig img {
+      display: block; width: 100%; max-width: 100%; height: auto;
+    }
+    .guide-fig figcaption {
+      padding: 10px 12px; font-size: 13px; font-weight: 700; color: #64748b;
+      border-top: 1px solid #e2e8f0;
+    }
+    .guide-shots {
+      display: grid; gap: 18px; margin-top: 4px;
+    }
+    .guide-shot {
+      margin: 0; padding: 12px;
+      border-radius: 12px;
+      border: 2px solid #c9a227;
+      background: linear-gradient(180deg, #fffbeb 0%, #fff 28%);
+      box-shadow: 0 4px 14px rgba(25, 36, 55, 0.08);
+    }
+    .guide-shot + .guide-shot {
+      border-color: var(--navy);
+      background: linear-gradient(180deg, #eef2ff 0%, #fff 28%);
+    }
+    .guide-shot-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin: 0 0 10px; padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--navy); color: #fff;
+      font-size: 13px; font-weight: 900; letter-spacing: 0.02em;
+    }
+    .guide-shot:first-child .guide-shot-label { background: #b45309; }
+    .guide-shot-label b {
+      display: inline-grid; place-items: center;
+      width: 22px; height: 22px; border-radius: 999px;
+      background: rgba(255,255,255,0.22); font-size: 12px;
+    }
+    .guide-shot .guide-fig {
+      border: 1.5px solid #cbd5e1;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8);
+    }
+    .guide-shot figcaption {
+      background: #f8fafc;
+    }
+    .note-visual {
+      margin: 0; padding: 2px 0 0;
+      display: grid; gap: 14px;
+    }
+    .note-visual .nv-row {
+      display: grid; gap: 8px;
+    }
+    .note-visual .nv-h {
+      margin: 0; font-size: 13px; font-weight: 900; color: var(--navy);
+      letter-spacing: 0.02em;
+    }
+    .note-visual .nv-h span {
+      display: inline-block; margin-right: 6px; padding: 2px 8px;
+      border-radius: 999px; background: var(--navy); color: #fff;
+      font-size: 11px; vertical-align: 1px;
+    }
+    .note-visual .nv-grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+    }
+    @media (min-width: 640px) {
+      .note-visual .nv-grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .note-visual .nv-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .note-visual .nv-card {
+      margin: 0; padding: 10px 10px 12px;
+      border-radius: 12px; border: 1.5px solid #e2e8f0;
+      background: #fff; text-align: center;
+    }
+    .note-visual .nv-card .ico {
+      display: grid; place-items: center; margin: 0 auto 6px;
+      width: 40px; height: 40px; border-radius: 12px;
+      font-size: 20px; line-height: 1;
+      background: #eef2ff; color: var(--navy);
+    }
+    .note-visual .nv-card.must .ico { background: #fee2e2; }
+    .note-visual .nv-card.ok .ico { background: #dcfce7; }
+    .note-visual .nv-card.warn .ico { background: #ffedd5; }
+    .note-visual .nv-card strong {
+      display: block; font-size: 13px; font-weight: 900; color: var(--navy);
+    }
+    .note-visual .nv-card small {
+      display: block; margin-top: 3px;
+      font-size: 11.5px; font-weight: 700; color: #64748b; line-height: 1.35;
+    }
+    .note-visual .nv-flow {
+      display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px;
+      margin: 0; padding: 0; list-style: none;
+    }
+    .note-visual .nv-flow li {
+      flex: 1 1 88px; margin: 0; padding: 10px 8px;
+      border-radius: 12px; border: 1.5px solid #c7d2fe;
+      background: linear-gradient(180deg, #eef2ff, #fff);
+      text-align: center; font-size: 12.5px; font-weight: 900; color: #1e3a5f;
+    }
+    .note-visual .nv-flow li em {
+      display: block; margin: 0 auto 4px;
+      width: 22px; height: 22px; border-radius: 999px;
+      background: var(--navy); color: #fff;
+      font-style: normal; font-size: 11px; line-height: 22px;
+    }
+    .note-visual .nv-flow .arr {
+      flex: 0 0 auto; align-self: center;
+      border: 0; background: transparent; color: #94a3b8; font-size: 16px; padding: 0;
+    }
+    .note-visual .nv-pair {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center;
+    }
+    .note-visual .nv-pair .nv-card { text-align: left; padding: 12px; }
+    .note-visual .nv-pair .plus {
+      font-size: 20px; font-weight: 900; color: #c9a227; text-align: center;
+    }
+    .note-visual .nv-tip {
+      margin: 0; padding: 10px 12px; border-radius: 12px;
+      background: linear-gradient(90deg, #fff7ed, #fffbeb);
+      border: 1.5px solid #fdba74;
+      font-size: 13px; font-weight: 800; color: #9a3412; line-height: 1.45;
+    }
+    .note-ruling {
+      margin: 0; padding: 2px 0 0;
+      display: grid; gap: 14px;
+    }
+    .note-ruling .nr-h {
+      margin: 0 0 6px; font-size: 13px; font-weight: 900; color: var(--navy);
+    }
+    .note-ruling .nr-h span {
+      display: inline-block; margin-right: 6px; padding: 2px 8px;
+      border-radius: 999px; background: var(--navy); color: #fff;
+      font-size: 11px; vertical-align: 1px;
+    }
+    .nr-chart {
+      margin: 0; padding: 14px 12px 12px;
+      border-radius: 14px;
+      border: 1.5px solid var(--gold-bd);
+      background: #fff;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .nr-chart .nr-title {
+      margin: 0 0 12px; text-align: center;
+      font-size: 17px; font-weight: 900; color: var(--navy); letter-spacing: 0.02em;
+    }
+    .nr-chart .nr-hint {
+      margin: 0 0 10px; text-align: center;
+      font-size: 13px; font-weight: 800; color: #8a6418;
+    }
+    .nr-chart .nr-steps5 {
+      display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center;
+      gap: 12px; margin: 0 0 14px; padding: 0; list-style: none;
+    }
+    .nr-chart .nr-steps5 > li {
+      flex: 1 1 150px; max-width: 200px;
+      margin: 0; padding: 0;
+      position: relative;
+      list-style: none;
+    }
+    .nr-chart .nr-step-btn {
+      appearance: none; width: 100%; height: 100%;
+      margin: 0; padding: 18px 14px;
+      border-radius: 14px; border: 2px solid #d7deea; background: #f8fafc;
+      text-align: center; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      font: inherit; color: inherit;
+      transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+      min-height: 148px;
+    }
+    .nr-chart .nr-step-btn--title-only {
+      min-height: 112px;
+      justify-content: center;
+      gap: 10px;
+    }
+    .nr-chart .nr-go6-banner {
+      margin: 0;
+      padding: 18px 16px;
+      border-radius: 14px;
+      border: 2px solid var(--gold);
+      background: var(--gold-bg);
+      text-align: center;
+    }
+    .nr-chart .nr-go6-banner strong {
+      display: block;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--navy);
+      line-height: 1.35;
+    }
+    .nr-chart .nr-go6-banner p {
+      margin: 8px 0 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .nr-chart .nr-go6-banner button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 900;
+      background: var(--navy);
+      color: #fff;
+      cursor: pointer;
+    }
+    .nr-chart .nr-step-btn:hover {
+      border-color: #94a3b8;
+    }
+    .nr-chart .nr-step-btn.is-on {
+      border-color: var(--gold);
+      background: var(--gold-bg);
+      box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.22);
+    }
+    .nr-chart .nr-step-btn .nr-n {
+      display: grid; place-items: center;
+      width: 36px; height: 36px; border-radius: 999px;
+      background: var(--navy); color: #fff; font-size: 16px; font-weight: 900;
+    }
+    .nr-chart .nr-step-btn.is-on .nr-n { background: var(--gold); color: var(--navy); }
+    .nr-chart .nr-step-btn strong {
+      font-size: 16px; font-weight: 900; color: var(--navy); line-height: 1.3;
+    }
+    .nr-chart .nr-step-btn small {
+      font-size: 13px; font-weight: 700; color: var(--muted); line-height: 1.4;
+    }
+    .nr-chart .nr-step-btn .tap-mini {
+      margin: 2px 0 0; font-size: 12px; font-weight: 700; color: #8a6418;
+    }
+    .nr-chart .nr-steps5 > li:not(:last-child)::after {
+      content: '→';
+      position: absolute; right: -12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold); font-weight: 900; font-size: 22px;
+      z-index: 1; pointer-events: none;
+    }
+    @media (max-width: 640px) {
+      .nr-chart .nr-steps5 > li:not(:last-child)::after { content: none; }
+    }
+    .nr-chart .nr-detail {
+      display: none;
+      margin: 0 0 12px; padding: 12px 14px;
+      border-radius: 12px; border: 1.5px solid var(--gold-bd); background: #fffdf8;
+    }
+    .nr-chart .nr-detail.is-open { display: grid; gap: 10px; }
+    .nr-chart .nr-detail .why {
+      margin: 0; font-size: 14px; font-weight: 700; color: #334155; line-height: 1.5;
+    }
+    .nr-chart .nr-detail .why b { color: var(--navy); }
+    .nr-chart .nr-branch {
+      margin: 0; padding: 12px;
+      border-radius: 12px; border: 1px dashed var(--gold-bd); background: #fff;
+      display: grid; gap: 8px;
+    }
+    .nr-chart .nr-branch .nr-h2 {
+      margin: 0; font-size: 13px; font-weight: 900; color: var(--navy);
+    }
+    .nr-chart .nr-branch ol,
+    .nr-chart .nr-branch ul {
+      margin: 0; padding: 0 0 0 1.2em;
+      font-size: 12.5px; font-weight: 700; color: #44403c; line-height: 1.5;
+    }
+    .nr-chart .nr-branch li { margin: 0.25em 0; }
+    .nr-chart .nr-branch b { color: var(--navy); }
+    .nr-chart .nr-foot {
+      margin: 10px 0 0;
+      font-size: 12px; font-weight: 800; color: #8a6418; text-align: left;
+    }
+    .nr-chart .nr-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+    }
+    .nrpbox {
+      margin: 4px 0 0; padding: 14px 12px;
+      border-radius: 14px; border: 2px solid #192437;
+      background: linear-gradient(180deg, #eef2ff, #fff 36%);
+      display: grid; gap: 12px;
+    }
+    .nrpbox h3 {
+      margin: 0; font-size: 16px; font-weight: 900; color: #192437;
+    }
+    .nrpbox .nrp-tabs {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .nrpbox .nrp-tab {
+      appearance: none; border: 1.5px solid #94a3b8; background: #fff;
+      border-radius: 999px; padding: 8px 12px; cursor: pointer;
+      font: inherit; font-size: 13px; font-weight: 800; color: #334155;
+    }
+    .nrpbox .nrp-tab.is-on {
+      border-color: #192437; background: #192437; color: #fff;
+    }
+    .nrpbox .nrp-tip {
+      margin: 0; padding: 10px 12px; border-radius: 10px;
+      background: #fff7ed; border: 1px dashed #fdba74;
+      font-size: 15.5px; font-weight: 800; color: #9a3412; line-height: 1.55;
+    }
+    .nrpbox .nrp-field .nrp-tip {
+      font-size: 14px; font-weight: 700; padding: 8px 0;
+    }
+    .nrpbox .nrp-sec {
+      margin: 0; padding: 10px 12px; border-radius: 12px;
+      border: 1px solid #e2e8f0; background: #fff;
+      display: grid; gap: 8px;
+    }
+    .nrpbox .nrp-sec h4 {
+      margin: 0; font-size: 13px; font-weight: 900; color: #192437;
+    }
+    .nrpbox .nrp-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .nrpbox .nrp-field {
+      display: grid; gap: 4px; margin: 0;
+      font-size: 12px; font-weight: 700; color: #475569;
+    }
+    .nrpbox .nrp-field.span2 { grid-column: 1 / -1; }
+    .nrpbox .nrp-field .req { color: #b91c1c; }
+    .nrpbox .nrp-field input,
+    .nrpbox .nrp-field select {
+      width: 100%; padding: 8px 10px; border: 1px solid #94a3b8;
+      border-radius: 8px; font: inherit; font-size: 14px; background: #fff;
+      box-sizing: border-box;
+    }
+    .nrpbox .nrp-amt {
+      margin: 0; font-size: 13px; font-weight: 800; color: #334155;
+    }
+    .nrpbox .nrp-amt b { color: #9f1239; }
+    .nrpbox .nrp-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .nrpbox .nrp-actions button {
+      appearance: none; border: none; border-radius: 10px;
+      padding: 10px 14px; font: inherit; font-size: 14px; font-weight: 900;
+      background: #192437; color: #fff; cursor: pointer;
+    }
+    .nrpbox .nrp-actions button.soft {
+      background: #fff; color: #192437; border: 1.5px solid #94a3b8;
+    }
+    .nrpbox #nrp-btn-preview {
+      background: #1d4ed8;
+    }
+    .nrpbox #nrp-status {
+      margin: 0; flex: 1; min-width: 8rem;
+      font-size: 12.5px; font-weight: 700; color: #64748b;
+    }
+    .nrpbox .nrp-preview-wrap {
+      margin: 0; border: 2px solid #c9a227; border-radius: 12px;
+      overflow: hidden; background: #fff;
+    }
+    .nrpbox .nrp-preview-bar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 10px 12px;
+      background: linear-gradient(180deg, #fffbeb, #fff);
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .nrpbox .nrp-preview-bar strong {
+      font-size: 14px; font-weight: 900; color: #192437;
+    }
+    .nrpbox .nrp-preview-actions { display: flex; gap: 8px; }
+    .nrpbox .nrp-preview-actions button {
+      appearance: none; border: 1.5px solid #cbd5e1; border-radius: 8px;
+      padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 800;
+      cursor: pointer; background: #fff; color: #192437;
+    }
+    .nrpbox .nrp-preview-wrap iframe {
+      display: block; width: 100%; height: min(72vh, 720px);
+      border: 0; background: #525659;
+    }
+    .nrpbox .nrp-foot {
+      margin: 0; font-size: 12px; font-weight: 700; color: #64748b; line-height: 1.45;
+    }
+    .nrpbox .nrp-foot a { color: #1d4ed8; font-weight: 800; }
+    .nrpbox .nrp-field.is-error input,
+    .nrpbox .nrp-field.is-error select { border-color: #dc2626; }
+    .nrpbox .field-error {
+      margin-top: 4px; font-size: 12px; font-weight: 800; color: #b91c1c;
+    }
+    .nrpbox .ep-arrears-head {
+      display: grid; grid-template-columns: 1fr 7.5rem 2.5rem; gap: 8px;
+      font-size: 12px; font-weight: 900; color: #9a3412;
+    }
+    .nrpbox .ep-arrears-list { display: grid; gap: 8px; }
+    .nrpbox .ep-arrears-row {
+      display: grid; grid-template-columns: 1fr 7.5rem 2.5rem; gap: 8px; align-items: end;
+    }
+    .nrpbox .ep-arrears-row .nrp-field { margin: 0; }
+    .nrpbox .ep-arrears-row .ep-ar-amt { text-align: right; }
+    .nrpbox .ep-debtors-list { display: grid; gap: 8px; }
+    .nrpbox .ep-debtor-row {
+      padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc;
+      display: grid; gap: 8px;
+    }
+    .nrpbox .ep-dyn-h {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 13px; font-weight: 900; color: #192437;
+    }
+    .nrpbox button.soft {
+      appearance: none; border: 1.5px solid #94a3b8; background: #fff;
+      border-radius: 10px; padding: 8px 12px; cursor: pointer;
+      font: inherit; font-size: 13px; font-weight: 800; color: #334155;
+    }
+    .nrpbox #ep-btn-add-arrears,
+    .nrpbox #ep-btn-add-debtor { justify-self: start; }
+    .nrpbox .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+    @media (max-width: 640px) {
+      .nrpbox .nrp-grid { grid-template-columns: 1fr; }
+      .nrpbox .ep-arrears-head,
+      .nrpbox .ep-arrears-row { grid-template-columns: 1fr 5.5rem 2.2rem; }
+      .nrpbox .nrp-field.span2 { grid-column: auto; }
+    }
+    .guide-shot,
+    .guide-shots,
+    .note-ruling,
+    .scriptbox,
+    .guide {
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .pflow {
+      max-width: 100%;
+      min-width: 0;
+    }
+    .nr-detail .lal-deck { margin-top: 10px; }
+    .nr-detail .lal-card-panel .nr-branch,
+    .nr-detail .lal-card-panel #note-fee-table {
+      margin: 0;
+    }
+    .nr-detail .nr-gen-slot {
+      margin-top: 14px;
+    }
+    .nr-gen-fold {
+      margin: 0;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 14px;
+      background: #f8fafc;
+      overflow: hidden;
+    }
+    .nr-gen-fold > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 900;
+      color: #0f172a;
+      background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%);
+      user-select: none;
+    }
+    .nr-gen-fold > summary::-webkit-details-marker { display: none; }
+    .nr-gen-fold > summary::after {
+      content: '▼';
+      margin-left: auto;
+      font-size: 12px;
+      color: #64748b;
+      transition: transform .15s ease;
+    }
+    .nr-gen-fold[open] > summary::after { transform: rotate(180deg); }
+    .nr-gen-fold-hint {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .nr-gen-fold-body {
+      padding: 10px 12px 14px;
+      border-top: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    .nr-gen-fold-body .nrpbox {
+      margin: 0;
+      border: 0;
+      box-shadow: none;
+    }
+    .note-ruling .nr-check {
+      margin: 0; padding: 0; list-style: none; display: grid; gap: 6px;
+    }
+    .note-ruling .nr-check li {
+      margin: 0; padding: 8px 10px 8px 12px;
+      border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff;
+      font-size: 13px; font-weight: 800; color: #334155;
+    }
+    .note-ruling .nr-check li::before {
+      content: '□ '; color: #0f766e; font-weight: 900;
+    }
+    .note-ruling .nr-fee {
+      width: 100%; border-collapse: collapse; font-size: 15px;
+    }
+    .note-ruling .nr-fee th,
+    .note-ruling .nr-fee td {
+      border: 1px solid #e2e8f0; padding: 12px 14px; text-align: left;
+      font-weight: 700; color: #334155;
+    }
+    .note-ruling .nr-fee th {
+      background: #f1f5f9; font-weight: 900; color: var(--navy); font-size: 15px;
+    }
+    .note-ruling .nr-fee td:last-child { font-weight: 900; color: #9a3412; white-space: nowrap; font-size: 16px; }
+    .note-ruling #note-fee-table .nr-h {
+      font-size: 16px;
+    }
+    .note-ruling #note-fee-table .nr-h span {
+      font-size: 14px;
+    }
+    .note-ruling .nr-warn {
+      margin: 0; padding: 12px 14px; border-radius: 14px;
+      background: var(--gold-bg); border: 1px solid var(--gold-bd);
+      font-size: 13px; font-weight: 600; color: var(--focus-text); line-height: 1.5;
+    }
+    .note-ruling .nr-time {
+      display: grid; grid-template-columns: 1fr; gap: 8px;
+    }
+    @media (min-width: 560px) {
+      .note-ruling .nr-time { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 860px) {
+      .note-ruling .nr-time { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .note-ruling .nr-time div {
+      padding: 10px 12px; border-radius: 12px;
+      border: 1.5px solid #fecdd3; background: #fff1f2;
+    }
+    .note-ruling .nr-time strong {
+      display: block; font-size: 13px; font-weight: 900; color: #9f1239;
+    }
+    .note-ruling .nr-time small {
+      display: block; margin-top: 3px;
+      font-size: 12px; font-weight: 700; color: #64748b; line-height: 1.4;
+    }
+    .guide-shot-split {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin: -4px 0;
+      color: #94a3b8; font-size: 12px; font-weight: 800;
+    }
+    .guide-shot-split::before,
+    .guide-shot-split::after {
+      content: ''; flex: 1; height: 1px; background: #cbd5e1;
+    }
+    .focus-lg {
+      margin: 0; padding: 12px 14px;
+      position: relative;
+      background: #FFF7F7;
+      border: 1px solid #FECACA; border-radius: 14px;
+      color: #B91C1C; font-size: 17px; font-weight: 800; text-align: center;
+      letter-spacing: -0.01em; line-height: 1.4;
+    }
+    .focus-lg .focus-pill {
+      display: inline-block; position: static; transform: none;
+      margin: 0 6px 0 0; padding: 0; border: 0; background: none;
+      color: #B91C1C; font-size: 13px; font-weight: 800; letter-spacing: 0.06em;
+    }
+    .focus-lg .focus-pill::after { content: '｜'; margin-left: 4px; color: #FCA5A5; }
+    .focus-lg .fl { display: inline; color: #B91C1C; }
+    .focus-lg .fl + .fl::before { content: ' · '; color: #B91C1C; }
+
+    .mf-doc-groups {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 6px;
+      align-items: stretch;
+    }
+    .mf-doc-groups--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mf-doc-groups--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @media (max-width: 900px) {
+      .mf-doc-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .mf-doc-groups,
+      .mf-doc-groups--2,
+      .mf-doc-groups--3 { grid-template-columns: 1fr; }
+    }
+    .mf-doc-group {
+      margin: 0; padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      display: flex; flex-direction: column; gap: 10px;
+      min-width: 0;
+    }
+    .mf-doc-group-h {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; flex-wrap: wrap;
+      margin: 0; padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f1f5f9;
+      text-align: center;
+    }
+    .mf-doc-group-h strong {
+      font-size: 16px; font-weight: 800; color: var(--navy);
+      letter-spacing: -0.01em;
+    }
+    .mf-doc-group-note {
+      margin: 0; padding: 8px 10px 0;
+      font-size: 12.5px; font-weight: 700; line-height: 1.4;
+      color: #92400E; text-align: center;
+    }
+    .mf-doc--plain {
+      cursor: default; pointer-events: none;
+      background: #F7F8FA; color: var(--navy);
+      border-style: dashed;
+    }
+    .mf-doc--plain:hover {
+      border-color: var(--line); background: #F7F8FA;
+      box-shadow: none;
+    }
+    .mf-doc--plain small {
+      display: block; margin-top: 4px;
+      font-size: 12px; font-weight: 600; color: var(--muted);
+    }
+    .mf-doc-group-h span {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 2.75em; padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px; font-weight: 800;
+      color: #475569; background: #e2e8f0;
+      line-height: 1.3;
+    }
+    .mf-doc-group--must .mf-doc-group-h {
+      background: #fef2f2;
+      border-bottom-color: #fecaca;
+    }
+    .mf-doc-group--must .mf-doc-group-h span {
+      color: #fff; background: #b91c1c;
+    }
+    .mf-doc-group--opt .mf-doc-group-h {
+      background: #eff6ff;
+      border-bottom-color: #bfdbfe;
+    }
+    .mf-doc-group--opt .mf-doc-group-h span {
+      color: #fff; background: #1d4ed8;
+    }
+    .mf-doc-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      flex: 1 1 auto;
+    }
+    .mf-doc-grid--2 { grid-template-columns: 1fr; }
+    .mf-doc-grid--1 { grid-template-columns: 1fr; }
+    .mf-doc {
+      appearance: none; border: 1px solid var(--line); background: #FAFBFD;
+      border-radius: 12px; padding: 14px 12px;
+      cursor: pointer; min-height: 56px;
+      font: inherit; font-size: 16px; font-weight: 700; color: var(--navy);
+      text-align: center; line-height: 1.35;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: none;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .mf-doc:hover { border-color: rgba(201,168,76,0.55); background: #FFF9ED; }
+    .mf-doc.is-on {
+      border-color: var(--gold); background: #FFF4D6;
+      box-shadow: 0 0 0 2px rgba(201,168,76,0.18);
+      color: #8A6A1E;
+    }
+    .mf-doc b { color: var(--blue); }
+    .mf-doc-preview {
+      margin-top: 12px; border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--line); background: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+    .mf-doc-preview[hidden] { display: none !important; }
+    .mf-doc-preview-bar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 10px 12px;
+      background: linear-gradient(180deg, #FAFBFD, #fff);
+      border-bottom: 1px solid var(--line);
+    }
+    .mf-doc-preview-bar strong {
+      font-size: 15px; font-weight: 700; color: var(--navy);
+    }
+    .mf-doc-preview-actions { display: flex; gap: 8px; align-items: center; }
+    .mf-doc-preview-ext,
+    .mf-doc-preview-close {
+      appearance: none; border: 1px solid var(--line); background: #F2F2F7;
+      border-radius: 980px; padding: 6px 12px; cursor: pointer;
+      font: inherit; font-size: 13px; font-weight: 600; color: var(--blue);
+      text-decoration: none;
+    }
+    .mf-doc-preview-close { color: var(--muted); }
+    .mf-doc-preview-body { background: #525659; }
+    .mf-doc-frame {
+      display: block; width: 100%; height: min(70vh, 720px);
+      border: 0; background: #525659;
+    }
+    .mf-doc-sub {
+      margin: 0; padding: 8px 12px;
+      background: #FAFBFD; color: var(--navy);
+      font-size: 13px; font-weight: 700; border-top: 1px solid var(--line);
+    }
+    .mf-doc-note {
+      margin: 0; padding: 16px 14px;
+      background: #FFF7F7; color: #B91C1C;
+      font-size: 15px; font-weight: 600; line-height: 1.55;
+    }
+    .mf-apply {
+      margin: 12px 0 0; padding: 14px;
+      border-radius: 14px; border: 1.5px solid rgba(25, 36, 55, 0.12);
+      background: #FAFBFD;
+    }
+    .mf-apply > h4 {
+      margin: 0 0 8px; font-size: 15px; font-weight: 900; color: var(--navy);
+    }
+    .mf-apply > .mf-apply-note {
+      margin: 0 0 12px; padding: 10px 12px; border-radius: 10px;
+      background: #FFF7ED; border: 1px solid #FDE68A;
+      font-size: 13.5px; font-weight: 700; color: #92400E; line-height: 1.45;
+    }
+    .mf-apply-block { margin: 0 0 12px; }
+    .mf-apply-block:last-child { margin-bottom: 0; }
+    .mf-apply-block h5 {
+      margin: 0 0 6px; font-size: 13px; font-weight: 900; color: var(--navy);
+    }
+    .mf-apply-block h5.ok { color: #166534; }
+    .mf-apply-block h5.partial { color: #9A3412; }
+    .mf-apply-block h5.no { color: #991B1B; }
+    .mf-apply-btns {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+      margin: 0; padding: 0; list-style: none;
+    }
+    @media (max-width: 560px) {
+      .mf-apply-btns { grid-template-columns: 1fr; }
+    }
+    .mf-apply-btn {
+      display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+      gap: 2px; min-height: 48px; padding: 10px 12px;
+      border-radius: 12px; border: 1.5px solid #bfdbfe;
+      background: linear-gradient(180deg, #EFF6FF, #fff);
+      color: #1e3a8a; text-decoration: none;
+      font: inherit; font-size: 14px; font-weight: 900; line-height: 1.3;
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+      transition: border-color 0.15s, background 0.15s, transform 0.12s;
+    }
+    .mf-apply-btn:hover {
+      border-color: #3b82f6; background: #DBEAFE; color: #1d4ed8;
+      transform: translateY(-1px);
+    }
+    .mf-apply-btn small {
+      font-size: 11.5px; font-weight: 700; color: #64748b; line-height: 1.3;
+    }
+    .mf-apply-block.partial .mf-apply-btn {
+      border-color: #fed7aa; background: linear-gradient(180deg, #FFF7ED, #fff); color: #9A3412;
+    }
+    .mf-apply-block.partial .mf-apply-btn:hover {
+      border-color: #f97316; background: #FFEDD5; color: #c2410c;
+    }
+    .mf-apply-block p {
+      margin: 0; font-size: 13px; font-weight: 600; color: var(--muted); line-height: 1.5;
+    }
+    .ef-flow {
+      display: flex; flex-direction: column; align-items: center; gap: 0;
+      max-width: 28rem; margin: 0 auto;
+    }
+    .ef-step {
+      width: 100%; margin: 0; padding: 14px 16px;
+      border-radius: 16px; border: 2px solid var(--line);
+      background: #fff; text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .ef-step strong {
+      display: block; margin: 0 0 4px;
+      font-size: 16px; font-weight: 900; color: var(--navy); line-height: 1.35;
+    }
+    .ef-step > span {
+      display: block; font-size: 13.5px; font-weight: 600; color: var(--muted); line-height: 1.45;
+    }
+    .ef-arrow {
+      color: var(--gold); font-size: 18px; font-weight: 900; line-height: 1.4; padding: 2px 0;
+    }
+    .ef-btns {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px;
+    }
+    .ef-btn {
+      appearance: none; display: inline-flex; align-items: center; justify-content: center;
+      padding: 8px 14px; border-radius: 10px; border: 1.5px solid #1d4ed8;
+      background: #1d4ed8; color: #fff; text-decoration: none;
+      font: inherit; font-size: 13px; font-weight: 900; line-height: 1.2;
+    }
+    .ef-btn.soft {
+      background: #fff; color: #1d4ed8; border-color: #93c5fd;
+    }
+    .ef-btn:hover { filter: brightness(1.05); }
+    .ef-step--evidence {
+      text-align: left;
+      border-color: rgba(201,168,76,0.55);
+      background: linear-gradient(180deg, #FFF8E8 0%, #fff 72%);
+    }
+    .ef-step--evidence > span:first-of-type { text-align: center; margin-bottom: 8px; }
+    .ef-evidence {
+      margin: 0; padding: 0 0 0 1.2em;
+      font-size: 13.5px; font-weight: 700; color: var(--ink); line-height: 1.55;
+    }
+    .ef-evidence li + li { margin-top: 3px; }
+    .ef-check-list {
+      margin: 0; padding: 0; list-style: none; display: grid; gap: 10px;
+    }
+    .ef-check-list label {
+      display: flex; align-items: flex-start; gap: 12px;
+      margin: 0; padding: 12px 14px; border-radius: 12px;
+      border: 1.5px solid #e2e8f0; background: #fff;
+      font-size: 17px; font-weight: 800; color: var(--navy); line-height: 1.45;
+      cursor: pointer;
+    }
+    .ef-check-list label:has(input:checked) {
+      border-color: var(--gold);
+      background: var(--gold-bg);
+    }
+    .ef-check-list input[type="checkbox"] {
+      appearance: auto;
+      width: 22px; height: 22px; margin: 2px 0 0; flex-shrink: 0;
+      accent-color: var(--navy);
+      cursor: pointer;
+    }
+    .ef-note {
+      margin: 10px 0 0; padding-top: 10px;
+      border-top: 1px dashed rgba(201,168,76,0.55);
+      font-size: 12.5px; font-weight: 700; color: #64748b; line-height: 1.45; text-align: center;
+    }
+    .ef-step--hl {
+      border-color: #c9a227;
+      background: linear-gradient(180deg, #FFF4D6 0%, #fff 80%);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.16), var(--shadow-sm);
+    }
+    .ef-court-box {
+      margin: 10px 0 0; padding: 14px 12px; border-radius: 14px;
+      border: 2px solid #192437;
+      background: linear-gradient(180deg, #eef2ff, #fff 40%);
+      display: grid; gap: 4px;
+    }
+    .ef-court-box .ef-court-label {
+      margin: 0 0 4px; font-size: 15px; font-weight: 900; color: #192437;
+    }
+    .ef-court-box .nrp-tip {
+      margin: 0; padding: 10px 12px; border-radius: 10px;
+      background: #fff7ed; border: 1px dashed #fdba74;
+      font-size: 13.5px; font-weight: 800; color: #9a3412; line-height: 1.55;
+    }
+    .ef-court-box .nrp-field input,
+    .ef-court-box .nrp-field select {
+      width: 100%; box-sizing: border-box;
+      border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 10px 12px; font: inherit; font-size: 14px; font-weight: 700;
+      background: #fff; color: var(--ink);
+    }
+    .ef-court-box .nrp-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    @media (max-width: 640px) {
+      .ef-court-box .nrp-grid { grid-template-columns: 1fr; }
+    }
+    .ef-court-result {
+      margin: 4px 0 0; padding: 12px 14px; border-radius: 12px;
+      border: 1.5px solid #fdba74; background: #fffdf8;
+    }
+    .ef-court-result.is-ok {
+      border-color: #86efac; background: #f0fdf4;
+    }
+    .ef-court-result.is-warn {
+      border-color: #fca5a5; background: #fef2f2;
+      font-size: 14px; font-weight: 800; color: #9a3412; line-height: 1.5;
+    }
+    .ef-court-match {
+      margin: 0 0 8px; font-size: 13.5px; font-weight: 700; color: #44403c; line-height: 1.45;
+    }
+    .ef-court-match b { color: #9a3412; }
+    .ef-court-match .muted { color: #78716c; font-weight: 600; }
+    .ef-court-name {
+      margin: 0 0 6px; font-size: 18px; font-weight: 900; color: #192437; line-height: 1.35;
+    }
+    .ef-court-name small {
+      display: block; margin-top: 2px;
+      font-size: 13px; font-weight: 800; color: #c2410c;
+    }
+    .ef-court-addr, .ef-court-phone {
+      margin: 0 0 4px; font-size: 14px; font-weight: 800; color: #1e293b; line-height: 1.45;
+    }
+    .ef-court-note {
+      margin: 8px 0 0; padding: 8px 10px; border-radius: 8px;
+      background: #fff7ed; border: 1px dashed #fdba74;
+      font-size: 13px; font-weight: 800; color: #9a3412; line-height: 1.45;
+    }
+    .ef-court-tips {
+      margin: 10px 0 0; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid #e2e8f0; background: #fff;
+      font-size: 13px; font-weight: 700; color: #44403c; line-height: 1.5;
+    }
+    .ef-court-tips summary {
+      cursor: pointer; font-weight: 900; color: #9a3412;
+    }
+    .ef-court-tips ul { margin: 8px 0 0; padding-left: 1.15em; }
+    .ef-court-tips li + li { margin-top: 4px; }
+    .ef-court-tips b { color: #192437; }
+    .mf-goals {
+      margin: 0; padding: 0; list-style: none; display: grid; gap: 10px;
+    }
+    .mf-goals > li {
+      margin: 0; padding: 14px 14px 12px; border-radius: 14px;
+      border: 1.5px solid rgba(201,168,76,0.45); background: #fff;
+      font-size: 13.5px; font-weight: 600; color: var(--ink); line-height: 1.5;
+    }
+    .mf-goals > li > strong {
+      display: block; margin-bottom: 6px;
+      font-size: 15px; font-weight: 900; color: var(--navy);
+    }
+    .mf-goals > li > p {
+      margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); line-height: 1.45;
+    }
+    .mf-goals .mf-goal-pts,
+    .mf-goal-detail .mf-goal-pts {
+      margin: 0; padding: 0 0 0 1.15em; list-style: disc;
+      font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.5;
+    }
+    .mf-goals .mf-goal-pts li + li,
+    .mf-goal-detail .mf-goal-pts li + li { margin-top: 4px; }
+    .mf-goals .mf-goal-pts b,
+    .mf-goal-detail .mf-goal-pts b { color: var(--navy); font-weight: 800; }
+
+    .mf-goal-chart { margin: 10px 0 0; }
+    .mf-goal-chart .mf-goal-hint {
+      margin: 0 0 10px; text-align: center;
+      font-size: 13px; font-weight: 800; color: #9a3412;
+    }
+    .mf-goal-chart .mf-goal-steps {
+      display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center;
+      gap: 12px; margin: 0 0 12px; padding: 0; list-style: none;
+    }
+    .mf-goal-chart .mf-goal-steps > li {
+      flex: 1 1 160px; max-width: 220px;
+      margin: 0; padding: 0; list-style: none; position: relative;
+    }
+    .mf-goal-chart .mf-goal-btn {
+      appearance: none; width: 100%; height: 100%;
+      margin: 0; padding: 16px 12px;
+      border-radius: 14px; border: 2px solid #f0d48a; background: #fff8e7;
+      text-align: center; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      font: inherit; color: inherit; min-height: 132px;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .mf-goal-chart .mf-goal-btn:hover {
+      border-color: #ea580c; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.12);
+    }
+    .mf-goal-chart .mf-goal-btn.is-on {
+      border-color: #c2410c;
+      background: linear-gradient(180deg, #ffedd5, #fff7ed);
+      box-shadow: 0 4px 14px rgba(194, 65, 12, 0.16);
+    }
+    .mf-goal-chart .mf-goal-btn .nr-n {
+      display: grid; place-items: center;
+      width: 34px; height: 34px; border-radius: 999px;
+      background: #ea580c; color: #fff; font-size: 15px; font-weight: 900;
+    }
+    .mf-goal-chart .mf-goal-btn.is-on .nr-n { background: #c2410c; color: #fff; }
+    .mf-goal-chart .mf-goal-btn strong {
+      font-size: 15px; font-weight: 900; color: #9a3412; line-height: 1.3;
+    }
+    .mf-goal-chart .mf-goal-btn small {
+      font-size: 12.5px; font-weight: 700; color: #78716c; line-height: 1.35;
+    }
+    .mf-goal-chart .mf-goal-btn .tap-mini {
+      margin: 2px 0 0; font-size: 12.5px; font-weight: 800; color: #c2410c;
+    }
+    .mf-goal-chart .mf-goal-steps > li:not(:last-child)::after {
+      content: '→';
+      position: absolute; right: -12px; top: 50%;
+      transform: translateY(-50%);
+      color: #ea580c; font-weight: 900; font-size: 20px;
+      z-index: 1; pointer-events: none;
+    }
+    @media (max-width: 640px) {
+      .mf-goal-chart .mf-goal-steps > li:not(:last-child)::after { content: none; }
+    }
+    .mf-goal-detail {
+      display: none;
+      margin: 0 0 8px; padding: 12px 14px;
+      border-radius: 12px; border: 1.5px solid var(--gold-bd); background: #fffdf8;
+    }
+    .mf-goal-detail.is-open { display: block; }
+    .mf-goal-detail .guide-fig { margin: 10px 0 0; }
+    .mf-goal-detail .guide-fig img {
+      width: 100%; height: auto; border-radius: 10px;
+      border: 1px solid rgba(201,168,76,0.35); background: #fff;
+    }
+    .mf-goal-detail .mf-doc-frame {
+      width: 100%; min-height: 420px; border: 0; border-radius: 10px;
+      background: #fff; box-shadow: inset 0 0 0 1px rgba(201,168,76,0.35);
+    }
+    .mf-anno-legend {
+      margin: 10px 0 0; padding: 10px 12px; border-radius: 10px;
+      background: #fff7ed; border: 1px solid #fdba74;
+      font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.55;
+    }
+    .mf-anno-legend .tag {
+      display: inline-block; min-width: 1.4em; padding: 0 5px; margin-right: 4px;
+      border-radius: 6px; font-weight: 900; color: #fff; text-align: center;
+    }
+    .mf-anno-legend .tag.a { background: #ea580c; }
+    .mf-anno-legend .tag.b { background: #dc2626; }
+    .mf-anno-legend li + li { margin-top: 4px; }
+    .mf-anno-points {
+      margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 8px;
+    }
+    .mf-anno-points > li {
+      margin: 0; padding: 12px 12px 10px; border-radius: 12px;
+      border: 1.5px solid #e2e8f0; background: #fff;
+      font-size: 13.5px; font-weight: 600; color: var(--ink); line-height: 1.5;
+    }
+    .mf-anno-points > li .tag {
+      display: inline-grid; place-items: center;
+      min-width: 1.6em; height: 1.6em; margin-right: 6px; padding: 0 6px;
+      border-radius: 8px; font-size: 13px; font-weight: 900; color: #fff;
+      vertical-align: middle;
+    }
+    .mf-anno-points > li strong {
+      font-size: 14.5px; font-weight: 900; color: var(--navy); vertical-align: middle;
+    }
+    .mf-anno-points > li p {
+      margin: 6px 0 0; font-size: 13px; font-weight: 600; color: #44403c; line-height: 1.5;
+    }
+    .mf-anno-points > li p b { color: var(--navy); font-weight: 800; }
+    .mf-anno-points > li.a1 { border-color: #fb923c; background: #fff7ed; }
+    .mf-anno-points > li.a1 .tag { background: #ea580c; }
+    .mf-anno-points > li.a2 { border-color: #f87171; background: #fef2f2; }
+    .mf-anno-points > li.a2 .tag { background: #dc2626; }
+    .mf-anno-points > li.a3 { border-color: #60a5fa; background: #eff6ff; }
+    .mf-anno-points > li.a3 .tag { background: #2563eb; }
+    .mf-anno-points > li.a4 { border-color: #4ade80; background: #f0fdf4; }
+    .mf-anno-points > li.a4 .tag { background: #16a34a; }
+
+    .tips {
+      margin: 0; padding: 12px 14px; border-radius: 14px;
+      background: var(--gold-bg); border: 1px solid var(--gold-bd);
+      font-size: 16px; color: var(--ink); font-weight: 500;
+    }
+    .tips strong { color: var(--navy); font-weight: 700; }
+    .tips ul { margin: 4px 0 0; padding-left: 1.15em; }
+    .tips li + li { margin-top: 3px; }
+
+    @media (max-width: 720px) {
+      .msg-fields { grid-template-columns: 1fr; }
+    }
+
+    .split {
+      margin: 14px 20px 0;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .split::before,
+    .split::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(201,168,76,0.4) 25%, rgba(26,75,140,0.3) 50%, rgba(201,168,76,0.4) 75%, transparent);
+    }
+    .split span {
+      flex: 0 0 auto;
+      padding: 7px 16px;
+      border-radius: 980px;
+      background: var(--navy);
+      color: var(--gold-bright);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: 0 6px 16px rgba(11, 31, 58, 0.18);
+      border: 1px solid rgba(201,168,76,0.4);
+    }
+
+    .after {
+      margin: 14px 16px 16px;
+      padding: 18px 16px 16px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      display: grid; gap: 14px;
+    }
+    .after-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    }
+    .after-head h3 {
+      margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--navy); letter-spacing: -0.02em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .after-head h3 svg { width: 26px; height: 26px; flex-shrink: 0; }
+    .after-head p { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+
+    .pillrow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .pill {
+      margin: 0; padding: 14px 12px 12px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      box-shadow: var(--shadow-sm);
+    }
+    .pill .ico {
+      width: 52px; height: 52px; border-radius: 16px;
+      display: grid; place-items: center;
+      background: linear-gradient(160deg, #fff, var(--blue-soft) 70%, var(--gold-bg));
+      border: 1px solid rgba(26,75,140,0.1);
+    }
+    .pill .ico svg { width: 34px; height: 34px; display: block; }
+    .pill strong {
+      display: block; font-size: 15px; font-weight: 700; color: var(--navy); line-height: 1.3;
+    }
+    .pill span {
+      display: block; font-size: 13.5px; font-weight: 500; color: var(--muted); line-height: 1.35;
+    }
+
+    .redline {
+      padding: 16px;
+      border-radius: 18px;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-bd);
+    }
+    .redline h4 {
+      margin: 0 0 10px; font-size: 15px; font-weight: 700; color: var(--danger);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .redline h4 svg { width: 26px; height: 26px; }
+    .ban-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .ban {
+      margin: 0; padding: 12px 10px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid #fecaca;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .ban .ico {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: #fee2e2;
+      border: 2px solid #fca5a5;
+      position: relative;
+    }
+    .ban .ico svg { width: 32px; height: 32px; }
+    .ban .ico::after {
+      content: '';
+      position: absolute; inset: -2px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, transparent 46%, #dc2626 46%, #dc2626 54%, transparent 54%);
+      pointer-events: none;
+    }
+    .ban strong {
+      font-size: 14px; font-weight: 900; color: #991b1b; line-height: 1.3;
+    }
+    .ban p {
+      margin: 0; font-size: 12.5px; font-weight: 600; color: #7f1d1d; line-height: 1.4;
+    }
+    .redline .refs-inline {
+      margin: 10px 0 0; padding-top: 8px;
+      border-top: 1px dashed #fecaca;
+      font-size: 13px; font-weight: 600; color: #9f1239; text-align: center;
+    }
+    .redline .refs-inline a { color: #1d4ed8; font-weight: 800; }
+
+    .toolrail {
+      padding: 14px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #192437 0%, #243556 55%, #3d2e12 140%);
+      color: #fff;
+      border: 1px solid #2a3d5c;
+    }
+    .toolrail h4 {
+      margin: 0 0 12px; font-size: 15px; font-weight: 900; color: var(--gold-bright);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toolrail h4 svg { width: 24px; height: 24px; }
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .tool-grid a {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 8px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: #fff; text-decoration: none; text-align: center;
+      font-size: 13px; font-weight: 800; line-height: 1.25;
+    }
+    .tool-grid a:hover { background: rgba(255,255,255,0.2); transform: translateY(-1px); }
+    .tool-grid a .tico {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: #fff; display: grid; place-items: center;
+    }
+    .tool-grid a .tico svg { width: 30px; height: 30px; }
+
+    .foot {
+      display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+      padding: 10px 18px; background: #192437; border-top: 2px solid var(--gold);
+      font-size: 12px; color: #d6c49a; font-weight: 700;
+    }
+
+    @media (max-width: 1100px) {
+      .flow {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        min-height: 0;
+      }
+      .cell { grid-template-columns: 1fr; }
+      .arrow { display: none; }
+      .body ul { min-height: 0; }
+      .tool-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .pillrow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 900px) {
+      .pflow { flex-wrap: wrap; gap: 8px; }
+      .pnode { min-width: 0; flex: 1 1 calc(50% - 12px); }
+      .parrow { display: none; }
+      .head {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 10px;
+      }
+      .brand { justify-content: center; }
+      .right { text-align: center; }
+    }
+    @media (max-width: 720px) {
+      .flow { grid-template-columns: 1fr; gap: 8px; }
+      .ttl { min-height: 0; }
+      .focus .fl { white-space: normal; }
+      .pillrow { grid-template-columns: 1fr 1fr; }
+      .ban-grid { grid-template-columns: 1fr; }
+      .tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .detail-bar { align-items: flex-start; }
+      .detail-bar .close-btn { margin-left: 0; }
+      .pnode { flex: 1 1 100%; }
+      .pnode-btn { min-height: 96px; }
+      .card-foot { padding: 10px 12px 12px; }
+      .after { margin-inline: 8px; }
+      .center h1 { font-size: 1.35rem; }
+    }
+    @media (max-width: 420px) {
+      .pillrow { grid-template-columns: 1fr; }
+      .tool-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="back" href="../../index.html#termination">← 回催收解約專區</a>
+    </div>
+
+    <article class="poster">
+      <header class="head">
+        <div class="brand">
+          <div class="logo">
+            <img src="./assets/skyfun-logo.png" alt="星鴻租管" width="160" height="100" decoding="async" />
+          </div>
+          <div>
+            <strong>星鴻股份有限公司</strong>
+            <em>SKY FUN　GROUP OF ASSET MANAGEMENT</em>
+          </div>
+        </div>
+        <div class="center">
+          <div class="eyebrow">STANDARD OPERATING PROCEDURE</div>
+          <h1>租賃欠租催收流程</h1>
+          <p class="sop">標準作業流程 SOP</p>
+          <p class="sub">及時處理　·　完整紀錄　·　保障公司權益</p>
+        </div>
+        <div class="right">專業管理<br>創造更好的租賃生活</div>
+      </header>
+
+      <p class="hint">👉 點圖卡看「怎麼做＋為什麼」（上方六張圖卡位置固定）</p>
+      <div class="flow" id="flow" role="list"></div>
+      <div class="detail-slot" id="detail-slot"></div>
+
+      <footer class="foot">
+        <span>星鴻租管　|　SKY FUN GROUP OF ASSET MANAGEMENT</span>
+        <span>催收 SOP</span>
+      </footer>
+    </article>
+  </div>
+
+  <script>
+    window.CARE_VISIT_ASSET_BASE = '../../';
+    window.NOTE_PETITION_ASSET_BASE = '../../';
+    window.ENFORCEMENT_PETITION_ASSET_BASE = '../../';
+    window.LAL_ASSET_BASE = '../../';
+    window.LAL_TEMPLATE_ALLOWLIST = ['arrears-under-2m'];
+    window.LAL_TEMPLATE_DEFAULT = 'arrears-under-2m';
+    window.LAL_CASE_MODE_UI = true;
+  </script>
+  <script src="../../js/vendor/pdf-lib.min.js"></script>
+  <script src="../../js/vendor/fontkit.umd.js"></script>
+  <script src="../../js/lal-template-b64.js"></script>
+  <script src="../../js/lal-letter-templates.js"></script>
+  <script src="../../js/enforcement-petition-regions.js?v=20261018-62"></script>
+  <script src="../../js/enforcement-petition-draw.js?v=20261018-33"></script>
+  <script src="../../js/enforcement-petition.js?v=20261018-65"></script>
+  <script src="../../js/enforcement-court-lookup.js?v=20261018-63"></script>
+  <script src="../../js/note-ruling-petition.js?v=20261018-40"></script>
+  <script src="../../js/household-poa.js?v=20261018-37"></script>
+  <script src="../../js/mediation-poa.js?v=20261018-31"></script>
+  <script src="../../js/civil-supplement-petition.js?v=20261018-42"></script>
+  <script src="../../js/care-visit-notice.js?v=20261018-29"></script>
+  <script src="../../js/lal-generator.js?v=20261018-29"></script>
+  <script>
+    (function () {
+      const N = '#192437';
+      const G = '#c9a227';
+      const ICONS = {
+        1: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="18" y="8" width="22" height="40" rx="3.5" fill="none" stroke="' + N + '" stroke-width="2.4"/><rect x="21" y="13" width="16" height="26" rx="1.5" fill="#e8eef7"/><circle cx="29" cy="22" r="6.2" fill="#06c755"/><path d="M26.2 22.1c0-1.1.7-2 1.9-2.3.7-.2 1.5 0 2 .5.3.3.5.7.5 1.1v.3c0 .9-.5 1.4-1.1 1.8l-.7.5v.7h-1.4v-1.3l1.1-.7c.4-.3.6-.5.6-.9 0-.4-.3-.7-.8-.7-.5 0-.8.3-.8.8H26.2zm2.2 5.2h1.5v1.5h-1.5V27.3z" fill="#fff"/><rect x="36" y="16" width="14" height="10" rx="2.5" fill="' + G + '"/><rect x="39" y="19" width="8" height="1.6" rx=".8" fill="#fff"/><rect x="39" y="22" width="6" height="1.6" rx=".8" fill="#fff"/><path d="M38 34c4.5 3.2 8.2 3.4 12.5 0" fill="none" stroke="' + N + '" stroke-width="2.6" stroke-linecap="round"/><circle cx="37.2" cy="33.2" r="2.2" fill="' + N + '"/><circle cx="51" cy="33.2" r="2.2" fill="' + N + '"/></svg>',
+        2: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="10" width="32" height="44" rx="2" fill="#8b5a3c"/><rect x="19" y="13" width="26" height="38" rx="1" fill="#a66b47"/><rect x="28" y="20" width="14" height="18" rx="1" fill="#f7f3ec" stroke="' + N + '" stroke-width="1.2"/><path d="M30 24h10M30 28h10M30 32h7" stroke="' + N + '" stroke-width="1.4" stroke-linecap="round"/><circle cx="40" cy="40" r="1.8" fill="#f1d38a"/><path d="M22 14h8v6l-4-2-4 2z" fill="#efe4d4"/></svg>',
+        3: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M10 22l22-10 22 10v24c0 2-1.5 3.5-3.5 3.5H13.5C11.5 49.5 10 48 10 46V22z" fill="' + N + '"/><path d="M12 24l20 11 20-11v20H12V24z" fill="#2c4066"/><path d="M12 24l20 11 20-11-20-9z" fill="#3d5680"/><rect x="22" y="28" width="20" height="14" rx="1" fill="#f7f3ec"/><text x="32" y="37" text-anchor="middle" font-size="5.5" font-weight="800" fill="' + N + '" font-family="Microsoft JhengHei,sans-serif">存證信函</text><circle cx="46" cy="40" r="8" fill="#c0392b"/><text x="46" y="42.5" text-anchor="middle" font-size="7" font-weight="900" fill="#fff" font-family="Microsoft JhengHei,sans-serif">郵</text></svg>',
+        4: '<svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="42" rx="22" ry="6" fill="#e8e0d4"/><rect x="12" y="34" width="40" height="8" rx="1" fill="#d4c4a8"/><circle cx="20" cy="24" r="5" fill="' + N + '"/><path d="M13 34c1-6 4-9 7-9s6 3 7 9" fill="' + N + '"/><circle cx="32" cy="20" r="5.5" fill="' + G + '"/><path d="M24 34c1.5-7 5-11 8-11s6.5 4 8 11" fill="' + G + '"/><circle cx="44" cy="24" r="5" fill="' + N + '"/><path d="M37 34c1-6 4-9 7-9s6 3 7 9" fill="' + N + '"/><rect x="18" y="46" width="28" height="6" rx="1" fill="' + N + '"/><text x="32" y="50.5" text-anchor="middle" font-size="4.5" font-weight="800" fill="#fff" font-family="Microsoft JhengHei,sans-serif">調解委員會</text></svg>',
+        5: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="12" y="12" width="28" height="38" rx="2" fill="#f7f3ec" stroke="' + N + '" stroke-width="2"/><text x="26" y="22" text-anchor="middle" font-size="6" font-weight="800" fill="' + N + '" font-family="Microsoft JhengHei,sans-serif">本票聲請</text><path d="M18 28h16M18 33h16M18 38h12" stroke="' + N + '" stroke-width="1.6" stroke-linecap="round"/><rect x="34" y="30" width="18" height="22" rx="1.5" fill="#fff" stroke="' + G + '" stroke-width="2" transform="rotate(-8 43 41)"/><text x="43" y="43" text-anchor="middle" font-size="7" font-weight="900" fill="' + N + '" font-family="Microsoft JhengHei,sans-serif" transform="rotate(-8 43 41)">本票</text><path d="M40 18l8 14" stroke="' + N + '" stroke-width="2.2" stroke-linecap="round"/><path d="M46 30l4 2-3 1z" fill="' + G + '"/></svg>',
+        6: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="14" y="28" width="36" height="22" fill="' + N + '"/><rect x="18" y="18" width="28" height="12" fill="#2c4066"/><polygon points="32,8 10,18 54,18" fill="' + N + '"/><rect x="28" y="34" width="8" height="16" fill="#f7f3ec"/><circle cx="32" cy="24" r="7" fill="' + G + '"/><path d="M32 19v10M27 22h10" stroke="' + N + '" stroke-width="1.8" stroke-linecap="round"/><path d="M24 24h-5M40 24h5" stroke="' + N + '" stroke-width="1.6"/><circle cx="18" cy="24" r="2.5" fill="' + N + '"/><circle cx="46" cy="24" r="2.5" fill="' + N + '"/><rect x="12" y="50" width="40" height="4" fill="#3d5680"/></svg>'
+      };
+
+      const STEPS = [
+        {
+          n: 1,
+          day: '逾期 7 日內',
+          act: '提醒 + 電話催繳',
+          items: ['透過 LINE、簡訊及電話聯繫房客', '確認欠租原因及繳款時間', '完整留下催繳紀錄'],
+          focus: '記錄還款時間|填寫當月催收紀錄',
+          when: '此階段是<strong>提醒繳款</strong>，建議逾期 <b>1～3 天內</b>就動手，越早越好。',
+          process: [
+            {
+              title: 'LINE／簡訊通知',
+              why: '用下方「產生訊息範本」傳給租客。目的：<b>證明我們有通知要繳款</b>，並留下催繳時間與內容截圖；訊息有紀錄，之後升級才站得住。',
+              focus: '留截圖存證|證明已通知繳款',
+              msgTpl: true
+            },
+            {
+              title: '電話催繳／紀錄還款時間',
+              why: '有的租客不回訊息；有的在訊息說「過兩天」卻一直沒處理。電話才能直接面對、確認欠租原因，並問出<b>確定還款日期</b>（幾月幾號）。重點不是「有沒有打過」，而是拿到<b>租客承諾的還款時間</b>與對談內容（原因、態度、能否短期緩衝），當場記下來。',
+              focus: '問出確定日期|寫下承諾還款日',
+              talkScript: true
+            },
+            {
+              title: '星鴻系統／填當月催收紀錄',
+              why: '有結果就要到<b>星鴻系統 → 催收管理</b>填寫<b>當月催收紀錄</b>（催繳時間、對談內容、承諾還款日）。主管與後續接手才看得到，這階段才算做完。',
+              focus: '星鴻系統入檔|按「儲存備註」',
+              recordGuide: true
+            }
+          ],
+          tips: [
+            '要留下：欠租金額、催繳時間、對方回覆；LINE／簡訊截圖、通話紀錄都要存。',
+            '判斷類型：週轉型（有說明、有時程）可短期緩衝；拖延型（已讀不回）加速升級；垮台型宜停損。'
+          ]
+        },
+        {
+          n: 2,
+          day: '逾期 7～14 日',
+          act: '面訪貼單',
+          items: ['家訪務必攜帶合約書', '未遇人：家訪通知單貼門縫', '拍照存證並留下面訪紀錄'],
+          focus: '攜帶合約書|門縫貼家訪單',
+          when: '訊息／電話仍無結果時，到現場確認人在不在、屋況與是否仍居住。建議逾期 <b>7～14 日</b>內完成面訪或貼單。家訪請依催收流程，並攜帶必要文件。',
+          process: [
+            {
+              title: '現場面訪／貼單',
+              why: '出發前務必帶<b>合約書</b>（避免管理員／鄰居以為是陌生人、不同意進入社區）。未遇人或不開門時，將<b>家訪通知單</b>貼在<b>門縫處</b>（開門必會碰到／看到，較不易被風吹走或路人撕掉，也能證明有到過現場）。可用下方家訪單產生器。遇人時一樣要問清<b>確定還款日</b>。',
+              focus: '帶合約書進社區|家訪單貼門縫',
+              visitScript: true
+            },
+            {
+              title: '拍照＋LINE 告知',
+              why: '張貼後務必<b>拍照／錄影</b>（含門牌、門縫處通知單、時間地點可辨識），再用 LINE 告知已張貼。照片＋訊息＝雙重留證，之後升級才站得住。',
+              focus: '門縫貼單拍照|LINE 告知已張貼',
+              postLineTpl: true
+            },
+            {
+              title: '星鴻系統／填催收紀錄',
+              why: '面訪後到星鴻系統：先點「<b>此次明細</b>」展開案件 → 填「<b>當月催收紀錄</b>」並按「儲存備註」→ 在催收流程 Step 2 填「<b>實地訪查日</b>」並上傳「<b>實地訪查照片</b>」。沒入檔＝這階段還沒做完。',
+              focus: '此次明細＋儲存備註|訪查日＋上傳照片',
+              recordGuideVisit: true
+            }
+          ],
+          tips: [
+            '出發帶合約書：進社區較不易被擋。',
+            '未遇人：改貼「家訪通知單」於門縫處——開門必會碰到／看到，較不易被風吹走或路人撕掉，也能證明有到過現場。',
+            '要留下：面訪時間、是否遇人、門縫貼單照片與 LINE 截圖。紅線：不可換鎖、斷水斷電、清空物品、擅自闖入。'
+          ]
+        },
+        {
+          n: 3,
+          day: '逾期 14～21 日',
+          act: '存證信函',
+          items: ['產出存證信函並蓋章寄出', '追蹤回執、保留退件信封', '結果寫進催收流程'],
+          focus: '正式催告|回執入檔',
+          when: '友善提醒無效後，改走正式書面催告。建議逾期 <b>14～21 日</b>完成寄出並追蹤回執。<br><b>為什麼要寄？</b>LINE／電話容易事後否認；存證信函由郵局留存內容與送達紀錄，能證明「公司有正式催告、對方已知或依法視為已知」，後續協議、調解、強制執行才站得住。',
+          process: [
+            {
+              title: '產出存證信函／蓋章寄出',
+              why: '',
+              focus: '先選案件與寄送|掛號附回執',
+              lalGuide: true
+            },
+            {
+              title: '追蹤回執／保存證據',
+              why: '拿回副本與收據；回執聯務必保管（郵局亦保存副本 3 年）。租客拒收或不去領：寄到實際住居所且郵差留招領通知，依最高法院見解可視為已送達。退回信<b>不要拆</b>，連同信封留存，並用 LINE／簡訊通知＋截圖。',
+              focus: '回執必留|退件勿拆',
+              lalTrack: true
+            },
+            {
+              title: '星鴻系統／填催收流程',
+              why: '寄出後到星鴻系統：先點「<b>此次明細</b>」展開案件 →「<b>催收流程</b>」填「<b>第一封存證信函寄出日</b>」並上傳「<b>第一封存證信函</b>」（<b>連同回執聯</b>）。沒入檔＝這階段還沒做完。',
+              focus: '此次明細＋催收流程|寄出日＋存證／回執聯',
+              recordGuideLetter: true
+            }
+          ],
+          tips: [
+            '為什麼寄：證明已正式催告，對方難以事後否認；郵局留存內容與送達紀錄，利於後續法務。',
+            '費用：第一頁 50 元，每多一頁 30 元，附件每張 30 元，另加掛號附回執郵資。建議同時寄租屋處與戶籍地。'
+          ]
+        },
+        {
+          n: 4,
+          day: '逾期 21～30 日',
+          act: '申請調解',
+          items: ['備齊資料向調解會申請', '三大目的：本票／協議書／搬遷日', '結果寫進當月催收紀錄'],
+          focus: '三大目的|結果入檔',
+          when: '自行催收無效時先走調解（費用低、相對快）。調解三大目的：<b>① 簽立本票　② 簽署還款協議書　③ 約定搬遷日</b>。建議逾期 <b>21～30 日</b>內申請並完成入檔。',
+          process: [],
+          directMediationFlow: true,
+          tips: [
+            '調解三大目的：簽立本票、簽署還款協議書、約定搬遷日。',
+            '調解成立＝依約定執行；跳票或不成立＝保留證明，進入第 5 階段本票聲請。'
+          ]
+        },
+        {
+          n: 5,
+          day: '逾期 30 日以上',
+          act: '本票裁定',
+          items: ['提交本票＋聲請狀', '戶籍謄本／民事補正狀', '核發裁定後強執或債權憑證'],
+          focus: '本票聲請|聲請狀產生器',
+          when: '本票到期未獲付款（或調解／協議跳票）時，向法院聲請准予本票強制執行（非訟）。建議逾期 <b>30 日以上</b>或跳票後盡速辦理。',
+          process: [],
+          directNoteRuling: true,
+          tips: [
+            '提出聲請後約 2～3 週可取得裁定（各法院不同）。',
+            '取得確定證明書後再另聲請強制執行；無財產可換債權憑證。'
+          ]
+        },
+        {
+          n: 6,
+          day: '調解不成立／仍未還款',
+          act: '聲請強制執行',
+          items: ['確認執行名義並備齊資料', '向法院聲請強制執行', '進度寫進當月催收紀錄'],
+          focus: '依法執行|進度入檔',
+          when: '已有執行名義（公證可逕執、調解書或確定判決），對方仍不還時才進強制執行。',
+          process: [],
+          directEnforceFlow: true,
+          tips: [
+            '執行前可先查財產再選標的；租約若已公證載明逕受強制執行通常更快。',
+            '紅線依舊：不可自行換鎖、斷水斷電、清空物品或擅自闖入。'
+          ]
+        }
+      ];
+
+      const flow = document.getElementById('flow');
+      const slot = document.getElementById('detail-slot');
+      let open = null;
+      let stepOpen = null;
+
+      const REGIONS = [
+        { id: 'taipei', label: '台北', prefix: '10491' },
+        { id: 'keelung', label: '基隆', prefix: '60400' },
+        { id: 'yilan', label: '宜蘭', prefix: '76550' },
+        { id: 'hsinchu-city', label: '新竹市', prefix: '76551' },
+        { id: 'hsinchu-county', label: '新竹縣', prefix: '76552' },
+        { id: 'chiayi', label: '嘉義', prefix: '23567' },
+        { id: 'skyfun-chiayi', label: '星鴻嘉義', prefix: '76553' },
+        { id: 'ntpc', label: '新北', prefix: '60402' },
+        { id: 'taoyuan', label: '桃園', prefix: '60403' },
+        { id: 'taichung', label: '台中', prefix: '60404' },
+        { id: 'tainan', label: '台南', prefix: '60405' },
+        { id: 'kaohsiung', label: '高雄', prefix: '60406' },
+        { id: 'nantou', label: '南投', prefix: '60408' },
+        { id: 'changhua', label: '彰化', prefix: '60409' }
+      ];
+
+      function renderTips(tips) {
+        if (!tips || !tips.length) return '';
+        return '<div class="tips"><strong>順便記住</strong><ul>' +
+          tips.map(function (t) { return '<li>' + t + '</li>'; }).join('') +
+          '</ul></div>';
+      }
+
+      /** 重點拆成兩行置中（去掉中間大點） */
+      function focusLinesHtml(focus) {
+        var parts = String(focus || '')
+          .split(/[|｜]|[\s\u3000]*[·・‧•][\s\u3000]*/)
+          .map(function (s) { return s.replace(/\u3000/g, '').trim(); })
+          .filter(Boolean);
+        if (parts.length >= 2) {
+          return parts.map(function (p) { return '<span class="fl">' + p + '</span>'; }).join('');
+        }
+        return '<span class="fl">' + (focus || '') + '</span>';
+      }
+
+      function stepTitleHtml(title) {
+        var parts = String(title || '').split(/[／/]/).map(function (s) { return s.trim(); }).filter(Boolean);
+        if (parts.length >= 2) {
+          return parts.map(function (t) { return '<span class="tl">' + t + '</span>'; }).join('');
+        }
+        return '<span class="tl">' + (title || '') + '</span>';
+      }
+
+      function renderFlowchart(steps) {
+        var wide = steps.length <= 3 ? ' is-wide' : '';
+        var nodes = steps.map(function (p, i) {
+          var arrow = i < steps.length - 1 ? '<div class="parrow" aria-hidden="true">›</div>' : '';
+          return '<div class="pnode">' +
+            '<button type="button" class="pnode-btn" data-step="' + i + '" aria-expanded="false">' +
+              '<span class="sn">' + (i + 1) + '</span>' +
+              '<p class="ttl">' + stepTitleHtml(p.title) + '</p>' +
+              '<p class="tap-mini">點看說明</p>' +
+            '</button>' + arrow +
+          '</div>';
+        }).join('');
+        return '<p class="flow-hint">點步驟標題看原因與操作（左 → 右）</p>' +
+          '<div class="pflow' + wide + '">' + nodes + '</div>' +
+          '<div class="pdetail" id="step-detail" hidden></div>';
+      }
+
+      function renderMsgBox() {
+        var opts = REGIONS.map(function (r) {
+          return '<option value="' + r.id + '">' + r.label + '（' + r.prefix + '）</option>';
+        }).join('');
+        return '<div class="msgbox" id="cf-msgbox">' +
+          '<h3>💬 產生訊息範本（提醒繳款）</h3>' +
+          '<div class="msg-fields">' +
+            '<label>每月繳款日（號）<input type="number" id="cf-due" placeholder="例如 5" min="1" max="31"></label>' +
+            '<label>承租人身分證字號<input type="text" id="cf-id" placeholder="A123456789" maxlength="10" class="uppercase"></label>' +
+            '<label class="full">案件區域（虛擬帳號前綴）' +
+              '<select id="cf-region"><option value="">請選擇區域</option>' + opts + '</select>' +
+            '</label>' +
+          '</div>' +
+          '<div class="msg-actions">' +
+            '<button type="button" id="cf-gen">產生文字</button>' +
+            '<button type="button" class="soft" id="cf-copy">複製內容</button>' +
+          '</div>' +
+          '<textarea id="cf-out" readonly placeholder="填寫後按「產生文字」"></textarea>' +
+          '<p class="msg-status" id="cf-status"></p>' +
+        '</div>';
+      }
+
+      function buildRemindText() {
+        var due = (document.getElementById('cf-due').value || '').trim() || 'XX';
+        var id = (document.getElementById('cf-id').value || '').trim().toUpperCase() || '承租人身份證字號';
+        var rid = document.getElementById('cf-region').value;
+        var region = REGIONS.find(function (r) { return r.id === rid; });
+        var account = region
+          ? (region.prefix + '＋' + id)
+          : ('【請選擇區域】＋' + id);
+        return [
+          '親愛的房客您好：',
+          '我們是星鴻社會住宅，提醒您，因尚未核實到您的當月租金',
+          '需請您將租金於每月【' + due + '】號 匯入以下帳戶：',
+          '戶 名：星鴻股份有限公司',
+          '金融機構：國泰帳號(西門分行)',
+          '帳 戶：' + account,
+          '再請於匯款後提供憑證於此,以利後續確認,謝謝'
+        ].join('\n');
+      }
+
+      function bindMsgBox() {
+        var gen = document.getElementById('cf-gen');
+        var copy = document.getElementById('cf-copy');
+        var out = document.getElementById('cf-out');
+        var status = document.getElementById('cf-status');
+        if (!gen || !out) return;
+        function refresh() { out.value = buildRemindText(); status.textContent = ''; }
+        gen.onclick = refresh;
+        ['cf-due', 'cf-id', 'cf-region'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.addEventListener('input', refresh);
+          if (el) el.addEventListener('change', refresh);
+        });
+        copy.onclick = function () {
+          if (!out.value) refresh();
+          navigator.clipboard.writeText(out.value).then(function () {
+            status.textContent = '已複製，可直接貼到 LINE';
+          }).catch(function () {
+            out.select();
+            document.execCommand('copy');
+            status.textContent = '已複製，可直接貼到 LINE';
+          });
+        };
+        refresh();
+      }
+
+      function renderTalkScript() {
+        var lines = [
+          {
+            t: '開場＋說明來電原因',
+            s: '您好，我是星鴻社會住宅○○，關於您本月租金還沒入帳，想跟您確認一下狀況。'
+          },
+          {
+            t: '先問欠租原因（聽態度）',
+            s: '方便跟我說一下，這次是什麼原因還沒繳嗎？'
+          },
+          {
+            t: '對方說「過兩天／這幾天」→ 立刻釘死日期',
+            s: '了解。您剛說大概過兩天——方便跟我確認一個<b>明確日期</b>嗎？例如這週五幾號之前會匯進來？「過兩天」我們比較難追蹤，麻煩告訴我<b>幾月幾號、大概幾點前</b>會處理，我幫您記在催收紀錄。'
+          },
+          {
+            t: '仍模糊時：給選項、請對方選一天',
+            s: '那我先跟您對一下：是<b>○月○日</b>前，還是<b>○月○日</b>前會處理？您選一個我可以記的日期就好。'
+          },
+          {
+            t: '收尾：複述承諾＋請傳憑證',
+            s: '好的，我這邊記錄您承諾 <b>○月○日</b> 前匯入；匯完請傳憑證給我。若當天還沒入帳，我們會再聯繫並進入下一階段處理，謝謝。'
+          }
+        ];
+        return '<div class="scriptbox">' +
+          '<h3>📞 業務話術（電話催繳／紀錄還款時間）</h3>' +
+          '<p class="script-note">目標：問出「確定還款日」並當場記下。對方越模糊，越要用下面第 3、4 句釘死。</p>' +
+          '<ol>' + lines.map(function (x, i) {
+            return '<li><span class="sn">' + (i + 1) + '</span><div><div>' + x.t + '</div><p class="say">' + x.s + '</p></div></li>';
+          }).join('') + '</ol>' +
+        '</div>';
+      }
+
+      function renderVisitScript() {
+        var lines = [
+          {
+            t: '出發前＋到場：帶合約書、對址再敲門',
+            s: '攜帶<b>合約書</b>（避免被當陌生人進不了社區）。核對地址與門牌無誤後再敲門／按鈴；全程禮貌，不可強行闖入或換鎖。'
+          },
+          {
+            t: '遇人：自我介紹＋釘死還款日',
+            s: '您好，我是星鴻社會住宅○○，租金尚未入帳特來關心，也確認您是否仍住此。方便說明未繳原因嗎？請給一個<b>明確還款日</b>（幾月幾號前），我幫您記入催收紀錄。'
+          },
+          {
+            t: '未遇人／不開門：通知單貼門縫',
+            s: '將<b>家訪通知單</b>貼在<b>門縫處</b>（開門必碰到／看到，較不易被風吹走或撕掉，也能證明到過現場）。勿遮門牌、勿破壞門窗。'
+          },
+          {
+            t: '收尾：當場記下＋拍照 LINE',
+            s: '無論遇人或未遇，記下到訪時間、是否遇人、是否貼單、對談內容、承諾還款日（若有），接著拍照並 LINE 告知。'
+          }
+        ];
+        var opsBody = '<div class="scriptbox">' +
+          '<h3>🏠 業務話術／操作（現場面訪／貼單）</h3>' +
+          '<p class="script-note">高專包租呆帳重點：務必依催收流程。家訪先帶合約書；不開門／不在家則家訪通知單貼門縫。</p>' +
+          '<ol>' + lines.map(function (x, i) {
+            return '<li><span class="sn">' + (i + 1) + '</span><div><div>' + x.t + '</div><p class="say">' + x.s + '</p></div></li>';
+          }).join('') + '</ol>' +
+        '</div>';
+        return '<div class="lal-deck" id="visit-deck">' +
+          '<div class="lal-deck-row">' +
+            renderLalFaceCard(
+              'visit-ops',
+              '🏠 業務話術／操作',
+              [
+                '出發前帶<b>合約書</b>，對址後再敲門',
+                '遇人：自我介紹並釘死<b>還款日</b>',
+                '未遇人／不開門：通知單貼<b>門縫</b>',
+                '當場記下結果，拍照並 LINE 告知'
+              ],
+              '點卡片展開完整步驟（顯示在下方）'
+            ) +
+            renderLalFaceCard(
+              'visit-cvn',
+              '🏠 家訪單產生器',
+              [
+                '未遇人時貼於門縫處使用',
+                '填地址與聯絡單位後產出 PDF',
+                '可先<strong>預覽</strong>再下載列印'
+              ],
+              '點卡片展開產生器（顯示在下方）'
+            ) +
+            '<div class="lal-card-panel" data-lal-panel="visit-ops">' + opsBody + '</div>' +
+            '<div class="lal-card-panel" data-lal-panel="visit-cvn">' + renderCareVisitNotice() + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function renderCareVisitNotice() {
+        return '<div class="cvnbox" id="cf-cvn">' +
+          '<h3>🏠 家訪單產生器（欠租關懷通知單）</h3>' +
+          '<p class="cvn-note">本頁直接填寫並產生 PDF，未遇人時貼於門縫處。首次產生若需載入標楷體，可能需等待十餘秒。</p>' +
+          '<div class="cvn-sec">' +
+            '<h4>案件資料</h4>' +
+            '<label class="cvn-field"><span>房屋地址<span class="req">*</span></span>' +
+              '<input id="cvn-address" type="text" placeholder="例：桃園市桃園區泰昌一街69號7樓" /></label>' +
+          '</div>' +
+          '<div class="cvn-sec">' +
+            '<h4>聯絡單位（選分公司後自動帶入電話）</h4>' +
+            '<div class="cvn-grid">' +
+              '<label class="cvn-field"><span>公司別</span>' +
+                '<select id="cvn-company">' +
+                  '<option value="">－ 請選擇公司別 －</option>' +
+                  '<option value="星鴻股份有限公司">星鴻股份有限公司</option>' +
+                  '<option value="星華股份有限公司">星華股份有限公司</option>' +
+                '</select></label>' +
+              '<label class="cvn-field"><span>營業處／分公司</span>' +
+                '<select id="cvn-branch" disabled><option value="">－ 請先選公司別 －</option></select></label>' +
+              '<label class="cvn-field"><span>聯絡單位<span class="req">*</span></span>' +
+                '<input id="cvn-unit" type="text" placeholder="選分公司後自動帶入，可再修改" /></label>' +
+              '<label class="cvn-field"><span>聯絡電話<span class="req">*</span></span>' +
+                '<input id="cvn-phone" type="tel" placeholder="選分公司後自動帶入" /></label>' +
+              '<label class="cvn-field span2"><span>聯絡人員</span>' +
+                '<input id="cvn-staff" type="text" /></label>' +
+            '</div>' +
+          '</div>' +
+          '<div class="cvn-sec">' +
+            '<h4>訪視紀錄</h4>' +
+            '<div class="cvn-date">' +
+              '<label class="cvn-field"><span>訪視民國年<span class="req">*</span></span>' +
+                '<input id="cvn-visit-y" type="number" /></label>' +
+              '<label class="cvn-field"><span>月<span class="req">*</span></span>' +
+                '<input id="cvn-visit-m" type="number" min="1" max="12" /></label>' +
+              '<label class="cvn-field"><span>日<span class="req">*</span></span>' +
+                '<input id="cvn-visit-d" type="number" min="1" max="31" /></label>' +
+            '</div>' +
+            '<div class="cvn-checks">' +
+              '<label><input id="cvn-flag-no-answer" type="checkbox" />本次已到訪但無人應門</label>' +
+              '<label><input id="cvn-flag-call-missed" type="checkbox" />已撥打電話未接聽</label>' +
+              '<label><input id="cvn-flag-line-missed" type="checkbox" />已發送LINE／簡訊未回覆</label>' +
+              '<label><input id="cvn-flag-other" type="checkbox" /><span class="other-wrap">其他' +
+                '<input id="cvn-other-note" type="text" placeholder="補充說明（選填）" /></span></label>' +
+            '</div>' +
+          '</div>' +
+          '<div class="cvn-actions">' +
+            '<button type="button" id="cvn-btn-preview">預覽</button>' +
+            '<button type="button" id="cvn-btn-generate">產生 PDF（下載列印）</button>' +
+            '<button type="button" class="soft" id="cvn-btn-clear">清除欄位</button>' +
+            '<p id="cvn-status"></p>' +
+          '</div>' +
+          '<div id="cvn-preview-wrap" class="cvn-preview-wrap" hidden>' +
+            '<div class="cvn-preview-bar">' +
+              '<strong>📄 家訪單預覽</strong>' +
+              '<span class="cvn-preview-actions">' +
+                '<button type="button" id="cvn-btn-preview-tab" class="soft">另開分頁</button>' +
+                '<button type="button" id="cvn-btn-preview-close" class="soft">關閉預覽</button>' +
+              '</span>' +
+            '</div>' +
+            '<iframe id="cvn-preview-frame" title="家訪單預覽"></iframe>' +
+          '</div>' +
+          '<p class="cvn-foot">※ 僅協助產出關懷通知單，不構成法律意見。可先按「預覽」確認再下載。</p>' +
+        '</div>';
+      }
+
+      function renderPostLineTip() {
+        var sample = [
+          '親愛的房客您好：',
+          '我是星鴻社會住宅○○。',
+          '今日已至租屋處面訪／張貼家訪通知單（門縫處），請盡速處理欠租事宜。',
+          '若已繳款，請提供匯款憑證，謝謝。'
+        ].join('\n');
+        return '<div class="msgbox" id="cf-postline">' +
+          '<h3>💬 貼單後 LINE 告知範本</h3>' +
+          '<p class="script-note" style="margin:0 0 8px;font-size:14px;font-weight:600;color:#64748b;">拍照後可複製貼上，並一併留下截圖。</p>' +
+          '<div class="msg-actions">' +
+            '<button type="button" class="soft" id="cf-post-copy">複製內容</button>' +
+          '</div>' +
+          '<textarea id="cf-post-out" readonly>' + sample + '</textarea>' +
+          '<p class="msg-status" id="cf-post-status"></p>' +
+        '</div>';
+      }
+
+      function bindPostLineTip() {
+        var copy = document.getElementById('cf-post-copy');
+        var out = document.getElementById('cf-post-out');
+        var status = document.getElementById('cf-post-status');
+        if (!copy || !out) return;
+        copy.onclick = function () {
+          navigator.clipboard.writeText(out.value).then(function () {
+            status.textContent = '已複製，可直接貼到 LINE';
+          }).catch(function () {
+            out.select();
+            document.execCommand('copy');
+            status.textContent = '已複製，可直接貼到 LINE';
+          });
+        };
+      }
+
+      function renderScriptSteps(title, note, lines, links) {
+        var html = '<div class="scriptbox">' +
+          '<h3>' + title + '</h3>' +
+          (note ? '<p class="script-note">' + note + '</p>' : '') +
+          '<ol>' + lines.map(function (x, i) {
+            return '<li><span class="sn">' + (i + 1) + '</span><div><div>' + x.t + '</div>' +
+              (x.s ? '<p class="say">' + x.s + '</p>' : '') + '</div></li>';
+          }).join('') + '</ol>';
+        if (links && links.length) {
+          html += '<div class="msg-actions" style="margin-top:12px">' + links.map(function (L) {
+            return '<a class="plink' + (L.soft ? ' soft' : '') + '" href="' + L.href + '" style="margin-top:0">' + L.label + '</a>';
+          }).join('') + '</div>';
+        }
+        return html + '</div>';
+      }
+
+      function renderLalEmbed() {
+        return '<div class="lalbox" id="cf-lal">' +
+          '<h3>📮 存證信函產生器</h3>' +
+          '<p class="lal-note" id="lal-embed-note">請先選擇案件類型與寄送地址，再填資料產生 PDF。</p>' +
+          '<div class="lal-case-setup">' +
+            '<div class="lal-case-row">' +
+              '<span class="lal-case-label">① 案件類型（決定蓋哪種章）</span>' +
+              '<div class="lal-choice">' +
+                '<label><input type="radio" name="lal-case-type" value="bao" checked />包租案件 → 大小章蓋在<strong>存證信函右上角</strong></label>' +
+                '<label><input type="radio" name="lal-case-type" value="dai" />代管案件 → 房東印章蓋在<strong>存證信函右上角</strong></label>' +
+              '</div>' +
+            '</div>' +
+            '<div class="lal-case-row">' +
+              '<span class="lal-case-label">② 寄送地址（決定份數／有無副本）</span>' +
+              '<div class="lal-choice">' +
+                '<label><input type="radio" name="lal-mail-target" value="rent" checked />僅租屋地 → 印 <b>3</b> 份，無副本收件人</label>' +
+                '<label><input type="radio" name="lal-mail-target" value="both" />租屋地＋戶籍地 → 印 <b>4</b> 份（含副本）</label>' +
+              '</div>' +
+            '</div>' +
+            '<div class="lal-case-row" id="lal-office-row">' +
+              '<span class="lal-case-label">③ 營業處（包租寄件人）</span>' +
+              '<select id="lal-office-select" aria-label="選擇營業處"></select>' +
+              '<p id="lal-office-tip">選營業處後自動帶入：星鴻股份有限公司＋該處地址。</p>' +
+            '</div>' +
+            '<p id="lal-case-hint"></p>' +
+          '</div>' +
+          '<div class="lal-toolbar">' +
+            '<button type="button" class="soft" id="btn-lal-clear-parties">清除收件資訊</button>' +
+            '<button type="button" class="soft" id="btn-lal-clear-content">清除內文</button>' +
+            '<button type="button" class="warn" id="btn-lal-clear-all">全部清除</button>' +
+          '</div>' +
+          '<div id="lal-tpl-panel">' +
+            '<div class="lal-tpl-toolbar">' +
+              '<div style="flex:1;min-width:14rem">' +
+                '<label for="lal-tpl-select">內文範本</label>' +
+                '<select id="lal-tpl-select"></select>' +
+              '</div>' +
+              '<button type="button" id="btn-lal-apply-tpl">產生內文</button>' +
+            '</div>' +
+            '<p class="lal-note" style="margin:0 0 8px">填寫契約資訊 → 內文會自動帶入（亦可手動微調）→ 先按「預覽」確認 → 再按「產生 PDF 文件」。</p>' +
+            '<div id="lal-tpl-fields"></div>' +
+          '</div>' +
+          '<div class="lal-parties is-no-cc">' +
+            '<div class="lal-party-col"><h4 id="lal-sender-title">寄件人（選營業處自動帶入）</h4><div id="lal-list-sender" class="lal-party-list"></div>' +
+              '<button type="button" id="btn-lal-add-sender">＋ 新增寄件人</button></div>' +
+            '<div class="lal-party-col"><h4>收件人（租屋處）</h4><div id="lal-list-receiver" class="lal-party-list"></div>' +
+              '<button type="button" id="btn-lal-add-receiver">＋ 新增收件人</button></div>' +
+            '<div class="lal-party-col" id="lal-cc-col" hidden><h4>副本收件人（戶籍地）</h4><div id="lal-list-cc" class="lal-party-list"></div>' +
+              '<button type="button" id="btn-lal-add-cc">＋ 新增副本</button></div>' +
+          '</div>' +
+          '<label class="cvn-field" style="display:grid;gap:4px;margin:0 0 4px;font-size:13px;font-weight:800;color:#475569">' +
+            '<span>內文</span></label>' +
+          '<textarea id="lal-content" placeholder="選範本並填寫上方欄位後會自動帶入；亦可手動貼上或修改…"></textarea>' +
+          '<div class="lal-actions">' +
+            '<button type="button" id="btn-lal-preview">預覽</button>' +
+            '<button type="button" id="btn-lal-generate">產生 PDF 文件</button>' +
+            '<p id="lal-status"></p>' +
+          '</div>' +
+          '<div id="lal-preview-wrap" class="lal-preview-wrap" hidden>' +
+            '<div class="lal-preview-bar">' +
+              '<strong>📄 存證信函預覽</strong>' +
+              '<span class="lal-preview-actions">' +
+                '<button type="button" id="btn-lal-preview-tab" class="soft">另開分頁</button>' +
+                '<button type="button" id="btn-lal-preview-close" class="soft">關閉預覽</button>' +
+              '</span>' +
+            '</div>' +
+            '<iframe id="lal-preview-frame" title="存證信函預覽"></iframe>' +
+          '</div>' +
+          '<p class="lal-foot" id="lal-foot-seal">※ 可先預覽再下載。產出後請依案件蓋章（右上角）、填回執聯（出租人欄），至郵局寄發。僅協助套印格式，不構成法律意見。</p>' +
+        '</div>';
+      }
+
+      function renderLalReceipt() {
+        return '<div class="lal-receipt-tpl" id="lal-receipt-tpl">' +
+          '<h4>🧾 回執聯範本（掛號附回執正面）</h4>' +
+          '<p class="lal-receipt-note">下方原「回執收件人」請填<strong>出租人</strong>（包租＝公司；代管＝房東）。上方填租客。對照下圖填寫後貼信封寄出。</p>' +
+          '<figure class="guide-fig" style="margin:0">' +
+            '<img src="./assets/lal-receipt-stub-guide.jpg?v=20261018-4" alt="回執聯填寫範本：上方掛號郵件收件人（租客），下方回執收件人＝出租人" loading="lazy" />' +
+            '<figcaption>紅框／標籤＝「回執收件人＝出租人」（包租＝公司、代管＝房東）· 上方＝掛號郵件收件人（租客）</figcaption>' +
+          '</figure>' +
+        '</div>';
+      }
+
+      function renderLalFoldCard(kind, title, keys, bodyHtml, hint) {
+        return '<div class="lal-card lal-card--' + kind + '" data-lal-card="' + kind + '">' +
+          '<button type="button" class="lal-card-sum" aria-expanded="false">' +
+            '<h3 class="lal-card-title">' + title + '</h3>' +
+            '<span class="lal-card-chev" aria-hidden="true">▼</span>' +
+          '</button>' +
+          '<ul class="lal-card-keys">' + keys.map(function (k) { return '<li>' + k + '</li>'; }).join('') + '</ul>' +
+          (hint ? '<p class="lal-card-hint">' + hint + '</p>' : '') +
+          '<div class="lal-card-body">' + bodyHtml + '</div>' +
+        '</div>';
+      }
+
+      function renderLalFaceCard(kind, title, keys, hint) {
+        return '<div class="lal-card-face lal-card--' + kind + '" data-lal-card="' + kind + '">' +
+          '<button type="button" class="lal-card-sum" aria-expanded="false" data-lal-toggle="' + kind + '">' +
+            '<h3 class="lal-card-title">' + title + '</h3>' +
+            '<span class="lal-card-chev" aria-hidden="true">▼</span>' +
+          '</button>' +
+          '<ul class="lal-card-keys">' + keys.map(function (k) { return '<li>' + k + '</li>'; }).join('') + '</ul>' +
+          (hint ? '<p class="lal-card-hint">' + hint + '</p>' : '') +
+        '</div>';
+      }
+
+      function bindFoldDeck(deckId, onToggle) {
+        var deck = document.getElementById(deckId);
+        if (!deck || deck.getAttribute('data-bound') === '1') return;
+        deck.setAttribute('data-bound', '1');
+        deck.addEventListener('click', function (e) {
+          /* 展開內容內的操作不觸發收合 */
+          if (e.target.closest('.lal-card-body') || e.target.closest('.lal-card-panel')) return;
+
+          /* 上方業務操作（存證）：整卡可點、卡片內展開 */
+          var inlineCard = e.target.closest('.lal-card');
+          if (inlineCard && deck.contains(inlineCard) && !inlineCard.classList.contains('lal-card-face')) {
+            var sumInline = inlineCard.querySelector('.lal-card-sum');
+            var openInline = inlineCard.classList.toggle('is-open');
+            if (sumInline) sumInline.setAttribute('aria-expanded', openInline ? 'true' : 'false');
+            return;
+          }
+
+          /* 左右卡片：整卡可點，內容在下方全寬；互斥展開 */
+          var face = e.target.closest('.lal-card-face');
+          if (!face || !deck.contains(face)) return;
+          var kind = face.getAttribute('data-lal-card');
+          var panel = deck.querySelector('.lal-card-panel[data-lal-panel="' + kind + '"]');
+          if (!kind || !panel) return;
+          var open = !panel.classList.contains('is-open');
+          deck.querySelectorAll('.lal-card-face[data-lal-card]').forEach(function (f) {
+            var k = f.getAttribute('data-lal-card');
+            var on = open && k === kind;
+            f.classList.toggle('is-open', on);
+            var btn = f.querySelector('.lal-card-sum');
+            if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+          });
+          deck.querySelectorAll('.lal-card-panel[data-lal-panel]').forEach(function (p) {
+            p.classList.toggle('is-open', open && p.getAttribute('data-lal-panel') === kind);
+          });
+          if (open && typeof onToggle === 'function') onToggle(kind);
+        });
+      }
+
+      function bindLalFoldCards() { bindFoldDeck('lal-deck'); }
+      function bindVisitFoldCards() {
+        bindFoldDeck('visit-deck', function (kind) {
+          if (kind === 'visit-cvn' && typeof window.initCareVisitNotice === 'function') {
+            /* 展開後再綁定，避免收合狀態下事件未接上 */
+            setTimeout(function () { window.initCareVisitNotice(); }, 0);
+          }
+        });
+      }
+
+      function renderLalGuide() {
+        var opsBody = renderScriptSteps(
+          '📮 業務操作（產出存證信函／寄出）',
+          '為什麼要寄：LINE／電話容易被否認；存證信函由郵局留存內容與送達紀錄，能證明正式催告。寄出＋回執（或視同送達）才算這步做完。',
+          [
+            { t: '為什麼要寄', s: '把催繳升級成有公信力的書面；郵局可證明寄出／送達，對方較難否認，後續調解／強執才站得住。' },
+            { t: '產出 PDF', s: '下方產生器先選<b>包租／代管</b>與寄送份數（僅租屋地 3 份／加戶籍地 4 份），填寫後先<strong>預覽</strong>再下載 PDF。' },
+            { t: '蓋章寄出', s: '<span id="lal-pack-tip">帶 <b>存證信函 3 份或 4 份、信封、回執聯</b>；大小章蓋<strong>右上角</strong>。回執聯上方填租客、下方填<strong>出租人</strong>（包租＝公司、代管＝房東）。以<b>掛號附回執</b>寄出並保管回執（郵局副本保存 3 年）。</span>' },
+            { t: '費用怎麼算', s: '第一頁 <b>50</b> 元，每多一頁 <b>30</b> 元，附件每張 <b>30</b> 元，另加掛號附回執郵資。' }
+          ]
+        );
+        return '<div class="lal-deck" id="lal-deck">' +
+          renderLalFoldCard(
+            'ops',
+            '📮 業務操作',
+            [
+              '書面催告才能證明「有正式通知」',
+              '先選 <b>包租／代管</b> 與寄送份數（3 或 4 份）',
+              '大小章蓋<strong>右上角</strong>，以<b>掛號附回執</b>寄出',
+              '費用：首頁 <b>50</b>、加頁／附件各 <b>30</b>＋郵資'
+            ],
+            opsBody,
+            '點卡片展開完整步驟'
+          ) +
+          '<div class="lal-deck-row">' +
+            renderLalFaceCard(
+              'gen',
+              '📮 存證信函產生器',
+              [
+                '先選案件類型與寄送地址',
+                '填資料 → <b>預覽</b> → 再下載 PDF',
+                '僅租屋地 3 份／加戶籍地 4 份'
+              ],
+              '點卡片展開產生器（顯示在下方）'
+            ) +
+            renderLalFaceCard(
+              'receipt',
+              '🧾 回執聯',
+              [
+                '上方＝掛號收件人（<b>租客</b>）',
+                '下方＝回執收件人（<b>出租人</b>）',
+                '包租＝公司　／　代管＝房東'
+              ],
+              '點卡片展開填寫範本（顯示在下方）'
+            ) +
+            '<div class="lal-card-panel" data-lal-panel="gen">' + renderLalEmbed() + '</div>' +
+            '<div class="lal-card-panel" data-lal-panel="receipt">' + renderLalReceipt() + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function renderLalTrack() {
+        return renderScriptSteps(
+          '📦 業務操作（追蹤回執／保存）',
+          '目標：證明「已合法催告」。回執、退件信封、信函副本都是後續法務的命脈。',
+          [
+            { t: '保管回執聯', s: '記下回執送達日；回執聯務必留存。若逾期未回，向郵局查詢並截圖。郵局亦保存副本 3 年。' },
+            { t: '租客拒收或不去領', s: '依最高法院見解：信寄到租客<b>實際住的地方</b>，郵差留了招領通知，就算租客沒去領，也視為已經送到。' },
+            { t: '退回信怎麼處理', s: '退回的信<b>不要拆</b>，連同信封留著；再用 LINE 或簡訊通知並截圖留證。' },
+            { t: '轉法務前自檢', s: '通常要：兩封正本＋兩件回執＋已逾送達／催告期限；有還款協議一併檢附。' }
+          ]
+        );
+      }
+
+      function renderAgreeScript() {
+        return renderScriptSteps(
+          '✍️ 業務話術／操作（還款協議書）',
+          '目標：把口頭承諾變成可執行的書面。分期建議最多 3 期，並寫清違約加速條款。',
+          [
+            { t: '開場：說明為何要簽書面', s: '先前約定的還款日沒有兌現，為保障雙方、也讓您有明確分期空間，需要簽<b>還款協議書</b>把期日寫清楚。' },
+            { t: '談清期數與金額', s: '分期建議最多 <b>3 期</b>。請對方親自確認每一期金額與日期，避免再出現「過兩天」。' },
+            { t: '寫清違約條款', s: '建議載明：一期未繳視同全部到期、利息、以本票擔保；違約得加速進入調解／法務。' },
+            { t: '當場簽名並複印', s: '雙方簽名用印後，影本留公司、正本依規定保管；接著辦理本票。' }
+          ],
+          [
+            { label: '📄 還款協議書公版', href: '../../docs/forms/星鴻租管部_房租欠款還款協議書_正式公版.pdf' }
+          ]
+        );
+      }
+
+      var noteRulingOpen = null;
+
+      function noteRulingFeeTableHtml() {
+        return '<div id="note-fee-table">' +
+          '<p class="nr-h"><span>費用</span>本票裁定聲請費（2025/1/2 起）</p>' +
+          '<table class="nr-fee">' +
+            '<thead><tr><th>本票金額</th><th>聲請費用</th></tr></thead>' +
+            '<tbody>' +
+              '<tr><td>未滿 10 萬元</td><td>750 元</td></tr>' +
+              '<tr><td>10 萬～未滿 100 萬</td><td>1,500 元</td></tr>' +
+              '<tr><td>100 萬～未滿 1,000 萬</td><td>3,000 元</td></tr>' +
+              '<tr><td>1,000 萬～未滿 5,000 萬</td><td>4,500 元</td></tr>' +
+              '<tr><td>5,000 萬～未滿 1 億</td><td>6,000 元</td></tr>' +
+              '<tr><td>1 億元以上</td><td>7,500 元</td></tr>' +
+            '</tbody>' +
+          '</table>' +
+          '<p class="nr-warn" style="margin-top:8px">抗告費另計（通常 1,000 元）。遞狀前仍請向法院確認最新費用。</p>' +
+        '</div>';
+      }
+
+      function noteRulingStepHtml(idx) {
+        if (idx === 0) {
+          var genHtml = (typeof window.noteRulingPetitionFormHtml === 'function')
+            ? window.noteRulingPetitionFormHtml()
+            : '<p class="why">聲請狀產生器載入中…請重新點開本步驟。</p>';
+          var bringBody = '<div class="nr-branch">' +
+            '<p class="nr-h2">要帶什麼</p>' +
+            '<ul class="nr-check">' +
+              '<li>本票裁定聲請狀（下方產生器／司法院範本）</li>' +
+              '<li><b>本票正本</b></li>' +
+              '<li><b>公司變更登記表正本</b></li>' +
+              '<li>裁定費（見右卡費用表）</li>' +
+            '</ul>' +
+          '</div>';
+          return '<p class="why"><b>遞狀＋繳費</b>：向法院遞本票聲請狀，連同<b>本票正本</b>。管轄：付款地 → 發票地 → 發票人住居所地法院。依下方級距繳裁定費。</p>' +
+            '<div class="lal-deck" id="nr-inner-deck">' +
+              '<div class="lal-deck-row">' +
+                renderLalFaceCard(
+                  'nr-bring',
+                  '📋 要帶什麼',
+                  [
+                    '本票裁定聲請狀',
+                    '<b>本票正本</b>＋公司變更登記表正本',
+                    '裁定費（見右卡）'
+                  ],
+                  '點卡片展開清單'
+                ) +
+                renderLalFaceCard(
+                  'nr-fee',
+                  '💰 費用級距',
+                  [
+                    '2025/1/2 起適用',
+                    '未滿 10 萬 → <b>750</b> 元起',
+                    '抗告費另計（通常 1,000 元）'
+                  ],
+                  '點卡片展開費用表'
+                ) +
+                '<div class="lal-card-panel" data-lal-panel="nr-bring">' + bringBody + '</div>' +
+                '<div class="lal-card-panel" data-lal-panel="nr-fee">' + noteRulingFeeTableHtml() + '</div>' +
+              '</div>' +
+              '<div class="lal-deck-row lal-deck-row--1">' +
+                renderLalFaceCard(
+                  'nr-gen',
+                  '⚖️ 本票聲請狀產生器',
+                  [
+                    '填寫本票／債務人資料',
+                    '先<strong>預覽</strong>再下載 PDF',
+                    '連同本票正本遞法院'
+                  ],
+                  '點卡片展開產生器（顯示在下方）'
+                ) +
+                '<div class="lal-card-panel" data-lal-panel="nr-gen">' + genHtml + '</div>' +
+              '</div>' +
+            '</div>';
+        }
+        if (idx === 1) {
+          var poaHtml = (typeof window.householdPoaFormHtml === 'function')
+            ? window.householdPoaFormHtml()
+            : '<p class="why">委託書產生器載入中…請重新點開本步驟。</p>';
+          var whyBody = '<div class="nr-branch">' +
+            '<p class="nr-h2">為什麼一定要拿法院公文去申請？</p>' +
+            '<ol>' +
+              '<li>戶籍謄本是個資。實務上，債務人（房客）通常<b>不會授權</b>債權人（公司）代為申請。</li>' +
+              '<li>若沒有合法依據、只憑身分證或口頭授權去領，日後房客可能主張個資遭不當取得而反告，公司風險高。</li>' +
+              '<li>因此一定要持<b>法院補正裁定／通知書正本</b>向戶政申請：公文可證明是依法查址／補正，既合規也保護公司與業務。</li>' +
+              '<li>沒帶公文常被拒辦；驗完公文通常會退還，不是只帶本票或房客身分證。</li>' +
+            '</ol>' +
+          '</div>';
+          var packBody = '<div class="nr-branch">' +
+            '<p class="nr-h2">去戶政要帶</p>' +
+            '<ul class="nr-check">' +
+              '<li><b>法院公文</b>正本</li>' +
+              '<li>業務身分證＋公司變更登記表影本（請註記「與正本相符」並蓋大小章）＋委託書</li>' +
+              '<li>規費約每張 15 元</li>' +
+            '</ul>' +
+          '</div>';
+          return '<p class="why"><b>申請戶籍謄本</b>：收到裁定或補正函後，依期限持公文向戶政請領債務人最新現戶戶籍謄本正本。</p>' +
+            '<div class="lal-deck" id="nr-inner-deck">' +
+              '<div class="lal-deck-row">' +
+                renderLalFaceCard(
+                  'nr-why',
+                  '⚠️ 為什麼要帶公文',
+                  [
+                    '戶籍謄本是個資，房客通常不授權',
+                    '沒公文可能被拒辦或有爭議風險',
+                    '持法院公文才合規'
+                  ],
+                  '點卡片展開說明'
+                ) +
+                renderLalFaceCard(
+                  'nr-pack',
+                  '👜 去戶政要帶',
+                  [
+                    '<b>法院公文</b>正本',
+                    '身分證＋變更登記表影本＋委託書',
+                    '規費約每張 15 元'
+                  ],
+                  '點卡片展開清單'
+                ) +
+                '<div class="lal-card-panel" data-lal-panel="nr-why">' + whyBody + '</div>' +
+                '<div class="lal-card-panel" data-lal-panel="nr-pack">' + packBody + '</div>' +
+              '</div>' +
+              '<div class="lal-deck-row lal-deck-row--1">' +
+                renderLalFaceCard(
+                  'nr-poa',
+                  '📄 戶籍謄本委託書產生器',
+                  [
+                    '套印戶政委託書',
+                    '填妥後列印用印',
+                    '連同法院公文向戶政申請'
+                  ],
+                  '點卡片展開產生器（顯示在下方）'
+                ) +
+                '<div class="lal-card-panel" data-lal-panel="nr-poa">' + poaHtml + '</div>' +
+              '</div>' +
+            '</div>';
+        }
+        if (idx === 2) {
+          var cspHtml = (typeof window.civilSupplementPetitionFormHtml === 'function')
+            ? window.civilSupplementPetitionFormHtml()
+            : '<p class="why">民事補正狀產生器載入中…請重新點開本步驟。</p>';
+          var docsBody = '<div class="nr-branch">' +
+            '<p class="nr-h2">要什麼資料</p>' +
+            '<ul class="nr-check">' +
+              '<li><b>民事補正狀</b>（下方產生器；蓋公司大章＋負責人小章）</li>' +
+              '<li><b>戶籍謄本正本</b>（最新現戶，記事勿省略）</li>' +
+            '</ul>' +
+          '</div>';
+          return '<p class="why"><b>民事補正狀</b>：陳報法院時要帶齊下列資料。</p>' +
+            '<div class="lal-deck" id="nr-inner-deck">' +
+              '<div class="lal-deck-row">' +
+                renderLalFaceCard(
+                  'nr-docs',
+                  '📋 要什麼資料',
+                  [
+                    '<b>民事補正狀</b>（蓋大小章）',
+                    '<b>戶籍謄本正本</b>（記事勿省略）'
+                  ],
+                  '點卡片展開清單'
+                ) +
+                renderLalFaceCard(
+                  'nr-csp',
+                  '📮 補正狀產生器',
+                  [
+                    '套印民事補正狀',
+                    '填妥後列印用印',
+                    '連同謄本陳報法院'
+                  ],
+                  '點卡片展開產生器'
+                ) +
+                '<div class="lal-card-panel" data-lal-panel="nr-docs">' + docsBody + '</div>' +
+                '<div class="lal-card-panel" data-lal-panel="nr-csp">' + cspHtml + '</div>' +
+              '</div>' +
+            '</div>';
+        }
+        if (idx === 3) {
+          return '<p class="why"><b>核發裁定</b>：法院形式審查通過後核發本票裁定。樣張如下（案號在右上「司票字第○○○號」；股別多在收文章／右上方）。</p>' +
+            '<div class="guide-shot" style="margin-top:8px">' +
+              '<figure class="guide-fig">' +
+                '<img src="./assets/note-ruling-sample.webp?v=20261018-43" alt="本票准予強制執行民事裁定樣張" loading="lazy" />' +
+                '<figcaption>本票准予強制執行民事裁定樣張（個資已遮）· 核發後可持裁定向國稅局申請財所清</figcaption>' +
+              '</figure>' +
+            '</div>';
+        }
+        return '<div class="nr-go6-banner">' +
+          '<strong>請看步驟六</strong>' +
+          '<p>強執／債權憑證改在催收流程第 6 階段說明，請點下方前往。</p>' +
+          '<button type="button" id="nr-btn-go-stage6">前往第 6 階段｜聲請強制執行</button>' +
+        '</div>';
+      }
+
+      function showNoteRulingStep(idx) {
+        var panel = document.getElementById('nr-step-detail');
+        var chart = document.getElementById('nr-chart');
+        if (!panel || !chart) return;
+        var buttons = chart.querySelectorAll('.nr-step-btn');
+        if (noteRulingOpen === idx) {
+          noteRulingOpen = null;
+          buttons.forEach(function (btn) {
+            btn.classList.remove('is-on');
+            btn.setAttribute('aria-expanded', 'false');
+          });
+          panel.classList.remove('is-open');
+          panel.hidden = true;
+          panel.innerHTML = '';
+          return;
+        }
+        noteRulingOpen = idx;
+        buttons.forEach(function (btn) {
+          var on = Number(btn.getAttribute('data-nr')) === idx;
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        });
+        panel.innerHTML = noteRulingStepHtml(idx);
+        panel.hidden = false;
+        panel.classList.add('is-open');
+        var innerDeck = document.getElementById('nr-inner-deck');
+        if (innerDeck) {
+          innerDeck.removeAttribute('data-bound');
+          bindFoldDeck('nr-inner-deck', function (kind) {
+            if (kind === 'nr-gen' && typeof window.initNoteRulingPetition === 'function') {
+              setTimeout(function () { window.initNoteRulingPetition(); }, 0);
+            }
+            if (kind === 'nr-poa' && typeof window.initHouseholdPoa === 'function') {
+              setTimeout(function () { window.initHouseholdPoa(); }, 0);
+            }
+            if (kind === 'nr-csp' && typeof window.initCivilSupplementPetition === 'function') {
+              setTimeout(function () { window.initCivilSupplementPetition(); }, 0);
+            }
+          });
+        }
+        if (idx === 0 && typeof window.initNoteRulingPetition === 'function') {
+          window.initNoteRulingPetition();
+        }
+        if (idx === 1 && typeof window.initHouseholdPoa === 'function') {
+          window.initHouseholdPoa();
+        }
+        if (idx === 2 && typeof window.initCivilSupplementPetition === 'function') {
+          /* 產生器在右卡面板內，展開時再 init；先試一次若已在 DOM */
+          window.initCivilSupplementPetition();
+        }
+        if (idx === 4) {
+          var go6 = document.getElementById('nr-btn-go-stage6');
+          if (go6) {
+            go6.onclick = function () {
+              setOpen(6);
+            };
+          }
+        }
+      }
+
+      function bindNoteRulingSteps() {
+        noteRulingOpen = null;
+        var chart = document.getElementById('nr-chart');
+        if (!chart || chart.getAttribute('data-bound') === '1') return;
+        chart.setAttribute('data-bound', '1');
+        chart.addEventListener('click', function (e) {
+          var btn = e.target.closest('.nr-step-btn');
+          if (!btn || !chart.contains(btn)) return;
+          showNoteRulingStep(Number(btn.getAttribute('data-nr')));
+        });
+      }
+
+      function renderNoteScript() {
+        return renderScriptSteps(
+          '🧾 業務操作（本票＋終止協議）',
+          '目標：依<b>0914 業務周會</b>教材正確簽立本票當擔保；若跳票則簽終止協議書並約定搬離時間。',
+          [
+            { t: '本票：調解現場簽', s: '於<b>調解現場</b>簽妥本票並由公司保管正本。房客有還錢後，才到辦公室領回正本。' },
+            { t: '照周會範本填票面', s: '必填：票面有「本票／無條件擔任支付」、金額（國字大寫、勿塗改）、發票日、發票人親簽（蓋章可；指印須兩見證人）。建議補：身分證字號、戶籍地址、受款人（星鴻股份有限公司）、到期日、欠款事由。注意：發票日≠付款日；未填付款日＝見票即付。' },
+            { t: '核對後影本入檔', s: '確認金額、發票人、到期日與還款協議一致；影本入檔、正本依規保管。自到期日起 <b>3 年</b>內要完成聲請裁定＋強制執行（見票即付自發票日起算），逾時本票失效。' },
+            { t: '未依約清償 → 終止協議書', s: '若未依協議還款，應簽<b>終止協議書</b>，並約定搬離時間；逾期未搬則進入第 5 階段本票聲請／強制執行。' },
+            { t: '紅線提醒', s: '即使違約，仍不可自行換鎖、斷水斷電、清空物品或擅自闖入。' }
+          ],
+          [
+            { label: '📂 開啟 0914 業務周會（本票教材）', href: '../weekly-meeting/?q=%E6%9C%AC%E7%A5%A8', soft: true }
+          ]
+        ) +
+          '<div class="guide" style="margin-top:14px">' +
+            '<div class="guide-head"><h3>📖 業務周會教材｜本票怎麼簽（有圖）</h3></div>' +
+            '<div class="guide-shots">' +
+              '<div class="guide-shot">' +
+                '<div class="guide-shot-label"><b>1</b>圖一｜本票正確寫法與使用重點</div>' +
+                '<figure class="guide-fig">' +
+                  '<img src="./assets/note-fill-guide.jpg?v=20261018-19" alt="0914業務周會：本票正確寫法與使用重點（填寫範例）" loading="lazy" />' +
+                  '<figcaption>來源：0914 業務周會《本票正確寫法與使用》· 紅框＝發票人姓名／身分證／地址／電話務必填齊</figcaption>' +
+                '</figure>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      }
+
+      function renderNoteRulingFlow() {
+        return '<div class="guide">' +
+          '<div class="guide-head"><h3>📖 本票裁定聲請流程</h3></div>' +
+          '<div class="note-ruling">' +
+            '<div class="nr-chart" id="nr-chart">' +
+              '<p class="nr-title">本票裁定流程</p>' +
+              '<p class="nr-hint">點步驟看細節（左 → 右）</p>' +
+              '<ol class="nr-steps5">' +
+                '<li><button type="button" class="nr-step-btn" data-nr="0" aria-expanded="false"><span class="nr-n">1</span><strong>提交聲請</strong><small>本票＋聲請狀交法院</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-nr="1" aria-expanded="false"><span class="nr-n">2</span><strong>申請戶籍謄本</strong><small>持公文向戶政請領</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-nr="2" aria-expanded="false"><span class="nr-n">3</span><strong>民事補正狀</strong><small>謄本陳報法院</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-nr="3" aria-expanded="false"><span class="nr-n">4</span><strong>核發裁定</strong><small>樣張／可申請財所清</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-nr="4" aria-expanded="false"><span class="nr-n">5</span><strong>請看步驟六</strong><small>強執／債權憑證</small><span class="tap-mini">點看說明</span></button></li>' +
+              '</ol>' +
+              '<div class="nr-detail" id="nr-step-detail" hidden></div>' +
+              '<p class="nr-foot">※提出聲請後約 <b>2～3 週</b>可取得本票裁定（各法院作業時間可能不同）</p>' +
+              '<p class="script-note" style="margin:8px 0 0;font-size:12px;color:#64748b">延伸閱讀：<a href="https://moneyback.co/blog/free-promissory-note/" target="_blank" rel="noopener">本票正確寫法</a> · <a href="https://moneyback.co/blog/promissory_notes_sign/" target="_blank" rel="noopener">本票裁定流程</a></p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      var MEDIATION_DOC_URLS = {
+        'docs-overview': '../mediation/01-docs-overview.pdf',
+        'mediation-notice': '../mediation/02-mediation-notice.pdf',
+        'business-registration': '../mediation/05-business-registration.pdf',
+        'company-change': '../mediation/06-company-change.pdf',
+        'building-transcript': '../mediation/07-building-transcript.pdf',
+        'repayment-agreement': '../mediation/08-repayment-agreement.pdf',
+        'cert-success': '../mediation/09-cert-success.pdf',
+        'cert-fail': '../mediation/10-cert-fail.pdf'
+      };
+      var MEDIATION_DOC_LABELS = {
+        'id-hint': '負責人身分證影本（說明）',
+        'docs-overview': '調解所需文件說明',
+        'mediation-notice': '調解通知書',
+        'business-registration': '營業事業登記證影本',
+        'company-change': '公司變更登記表',
+        'building-transcript': '建物登記第一類謄本',
+        'repayment-agreement': '房租欠款還款協議書',
+        'cert-success': '調解成立證明書',
+        'cert-fail': '調解不成立證明書'
+      };
+      var mediationOpen = null;
+      var mfGoalOpen = null;
+      var MF_NOTE_GUIDE = './assets/note-fill-guide.jpg?v=20261018-19';
+      var MF_REPAY_PDF = '../../docs/forms/星鴻租管部_房租欠款還款協議書_正式公版.pdf';
+      var MF_MOVEOUT_IMG = './assets/mediation-record/moveout-annotated.png?v=20261019-08';
+      var MF_MOVEOUT_PDF = './assets/mediation-record/moveout-annotated.jpg?v=20261019-08';
+
+      function mfGoalHtml(idx) {
+        if (idx === 0) {
+          return '<p class="why"><b>① 簽立本票</b>：本票作擔保，跳票可進第 5 階段本票裁定。於<b>調解現場</b>簽妥，由公司保管正本。</p>' +
+            '<ul class="mf-goal-pts">' +
+              '<li>金額（國字大寫）、發票日、到期日、受款人（星鴻股份有限公司）核對無誤。</li>' +
+              '<li>發票人姓名、身分證字號、戶籍地址、電話務必填齊並親簽。</li>' +
+              '<li>房客還清後，才到辦公室領回正本。</li>' +
+            '</ul>' +
+            '<div class="guide-shot" style="margin-top:10px">' +
+              '<div class="guide-shot-label"><b>範本</b>本票正確寫法與使用重點</div>' +
+              '<figure class="guide-fig">' +
+                '<img src="' + MF_NOTE_GUIDE + '" alt="本票正確寫法與使用重點（填寫範本）" loading="lazy" />' +
+                '<figcaption>來源：0914 業務周會 · 紅框＝發票人姓名／身分證／地址／電話務必填齊</figcaption>' +
+              '</figure>' +
+            '</div>';
+        }
+        if (idx === 1) {
+          return '<p class="why"><b>② 簽署還款協議書</b>：把還款條件落到白紙黑字；建議載明<b>一期未付視同全部到期</b>。</p>' +
+            '<ul class="mf-goal-pts">' +
+              '<li>寫明欠租總額、每期金額與期數（<b>最多三期</b>）。</li>' +
+              '<li>載明匯款帳戶與每月繳款期限。</li>' +
+              '<li>影本留公司、正本依規保管。</li>' +
+            '</ul>' +
+            '<p class="mf-doc-sub" style="margin:10px 0 6px;font-weight:900;color:var(--navy)">房租欠款還款協議書｜正式公版</p>' +
+            '<iframe class="mf-doc-frame" src="' + MF_REPAY_PDF + '#view=FitH" title="還款協議書範本"></iframe>' +
+            '<p class="script-note" style="margin:8px 0 0;font-size:12px">' +
+              '<a href="' + MF_REPAY_PDF + '" target="_blank" rel="noopener noreferrer">另開分頁下載／列印</a>' +
+            '</p>';
+        }
+        return '<p class="why"><b>③ 約定搬遷日</b>：調解書「事實及內容」一～三點（範例：新店區調解成立書）。紅框＝一～三重點條款。</p>' +
+          '<ol class="mf-anno-points" style="margin-top:8px">' +
+            '<li class="a1"><span class="tag">一</span><strong>終止租約日</strong>' +
+              '<p>寫明兩造已於何年何月何日<strong>終止系爭合約</strong>（例：115 年 6 月 30 日）。租約關係正式結束，後續搬遷／還款才站得住。</p></li>' +
+            '<li class="a2"><span class="tag">二</span><strong>約定搬遷日＋遺留物</strong>' +
+              '<p>釘死<strong>騰空返還</strong>期限（例：115 年 10 月 15 日前）。並載明屆期未遷出物品<strong>視同廢棄物</strong>，由公司處理——這是本目的最關鍵條款。</p></li>' +
+            '<li class="a3"><span class="tag">三</span><strong>欠租分期還款</strong>' +
+              '<p>寫清總額、期數、每月金額與繳款日、匯款帳戶；並加<strong>加速條款</strong>（一期未付視同全部到期）。與「還款協議書」對齊。</p></li>' +
+          '</ol>' +
+          '<figure class="guide-fig" style="margin-top:10px">' +
+            '<img src="' + MF_MOVEOUT_IMG + '" alt="調解成立書樣張（紅框標注一至三點）" loading="lazy" />' +
+            '<figcaption>紅框＝終止租約／搬遷日／分期還款　·　<a href="' + MF_MOVEOUT_PDF + '" target="_blank" rel="noopener noreferrer">開啟原圖</a></figcaption>' +
+          '</figure>';
+      }
+
+      function showMfGoal(idx) {
+        var panel = document.getElementById('mf-goal-detail');
+        var chart = document.getElementById('mf-goal-chart');
+        if (!panel || !chart) return;
+        var buttons = chart.querySelectorAll('.mf-goal-btn');
+        if (mfGoalOpen === idx) {
+          mfGoalOpen = null;
+          buttons.forEach(function (btn) {
+            btn.classList.remove('is-on');
+            btn.setAttribute('aria-expanded', 'false');
+          });
+          panel.classList.remove('is-open');
+          panel.hidden = true;
+          panel.innerHTML = '';
+          return;
+        }
+        mfGoalOpen = idx;
+        buttons.forEach(function (btn) {
+          var on = Number(btn.getAttribute('data-mf-goal')) === idx;
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        });
+        panel.innerHTML = mfGoalHtml(idx);
+        panel.hidden = false;
+        panel.classList.add('is-open');
+      }
+
+      function mfDocPreviewHtml() {
+        return '<div class="mf-doc-preview" id="mf-doc-preview" hidden>' +
+          '<div class="mf-doc-preview-bar">' +
+            '<strong id="mf-doc-preview-title">文件預覽</strong>' +
+            '<span class="mf-doc-preview-actions">' +
+              '<a class="mf-doc-preview-ext" id="mf-doc-preview-ext" href="#" target="_blank" rel="noopener noreferrer" hidden>另開分頁</a>' +
+              '<button type="button" class="mf-doc-preview-close" id="mf-doc-preview-close">關閉</button>' +
+            '</span>' +
+          '</div>' +
+          '<div class="mf-doc-preview-body" id="mf-doc-preview-body"></div>' +
+        '</div>';
+      }
+
+      function closeMediationDocPreview() {
+        var preview = document.getElementById('mf-doc-preview');
+        var body = document.getElementById('mf-doc-preview-body');
+        if (preview) {
+          preview.hidden = true;
+          preview.removeAttribute('data-key');
+        }
+        if (body) body.innerHTML = '';
+        document.querySelectorAll('.mf-doc.is-on').forEach(function (b) {
+          b.classList.remove('is-on');
+        });
+      }
+
+      function openMediationDoc(key) {
+        var preview = document.getElementById('mf-doc-preview');
+        var titleEl = document.getElementById('mf-doc-preview-title');
+        var body = document.getElementById('mf-doc-preview-body');
+        var ext = document.getElementById('mf-doc-preview-ext');
+        var closeBtn = document.getElementById('mf-doc-preview-close');
+        if (!preview || !body) return;
+
+        if (preview.getAttribute('data-key') === key && !preview.hidden) {
+          closeMediationDocPreview();
+          return;
+        }
+
+        document.querySelectorAll('.mf-doc[data-mdoc]').forEach(function (b) {
+          b.classList.toggle('is-on', b.getAttribute('data-mdoc') === key);
+        });
+
+        if (titleEl) titleEl.textContent = MEDIATION_DOC_LABELS[key] || '文件預覽';
+        preview.setAttribute('data-key', key);
+        preview.hidden = false;
+
+        if (key === 'id-hint') {
+          if (ext) ext.hidden = true;
+          body.innerHTML = '<div class="mf-doc-note">負責人身分證影本請洽<strong>各地區協理</strong>取得。</div>';
+        } else if (key === 'power-of-attorney' || key === 'legal-rep-attorney') {
+          closeMediationDocPreview();
+          return;
+        } else {
+          var url = MEDIATION_DOC_URLS[key];
+          if (!url) return;
+          if (ext) { ext.hidden = false; ext.href = url; }
+          body.innerHTML = '<iframe class="mf-doc-frame" src="' + url + '#view=FitH" title="文件預覽"></iframe>';
+        }
+
+        if (closeBtn) closeBtn.onclick = closeMediationDocPreview;
+      }
+
+      function mfDoc(key, label) {
+        return '<button type="button" class="mf-doc" data-mdoc="' + key + '">' + label + '</button>';
+      }
+
+      function mfDocPlain(label, hint) {
+        return '<div class="mf-doc mf-doc--plain">' + label +
+          (hint ? '<small>' + hint + '</small>' : '') +
+          '</div>';
+      }
+
+      function mfDocGroup(title, tag, kind, gridClass, buttonsHtml, noteHtml) {
+        return '<div class="mf-doc-group mf-doc-group--' + kind + '">' +
+          '<div class="mf-doc-group-h"><strong>' + title + '</strong><span>' + tag + '</span></div>' +
+          (noteHtml ? '<p class="mf-doc-group-note">' + noteHtml + '</p>' : '') +
+          '<div class="mf-doc-grid' + (gridClass ? ' ' + gridClass : '') + '">' + buttonsHtml + '</div>' +
+        '</div>';
+      }
+
+      function mediationStepHtml(idx) {
+        if (idx === 0) {
+          return '<p class="why"><b>備齊文件</b>：向<b>租屋處所在地</b>鄉鎮市區調解委員會聲請（非戶籍地）。資料一次備齊，避免補件延誤。</p>' +
+            '<div class="nr-branch">' +
+              '<p class="nr-h2">應附文件（點開看範例）</p>' +
+              '<div class="mf-doc-groups">' +
+                mfDocGroup(
+                  '公司資格',
+                  '必備',
+                  'must',
+                  '',
+                  mfDoc('id-hint', '負責人身分證影本') +
+                  mfDoc('business-registration', '營業事業登記證影本') +
+                  mfDoc('company-change', '公司變更登記表'),
+                  '請依照各地營業處所文件'
+                ) +
+                mfDocGroup(
+                  '建物證明',
+                  '必備',
+                  'must',
+                  '',
+                  mfDoc('building-transcript', '建物登記第一類謄本')
+                ) +
+                mfDocGroup(
+                  '委任代理',
+                  '必備',
+                  'must',
+                  '',
+                  mfDocPlain('委任書＋法定代理人委任書', '請用下方套版產生')
+                ) +
+                mfDocGroup(
+                  '總覽說明',
+                  '參考',
+                  'opt',
+                  '',
+                  mfDoc('docs-overview', '調解所需文件說明')
+                ) +
+              '</div>' +
+            '</div>' +
+            mfDocPreviewHtml() +
+            ((typeof window.mediationPoaFormHtml === 'function')
+              ? window.mediationPoaFormHtml()
+              : '<p class="why">委任書套版產生器載入中…請重新點開本步驟。</p>');
+        }
+        if (idx === 1) {
+          return '<p class="why"><b>送件聲請</b>：備妥文件送調解會，受理後會編列民調字案號並核發調解通知書、訂定開庭日。</p>' +
+            '<div class="mf-apply">' +
+              '<h4>線上申請調解網址（依縣市）</h4>' +
+              '<p class="mf-apply-note">備註：調解要向<b>被申請人住所地</b>的調解會申請（非公司所在地）。</p>' +
+              '<div class="mf-apply-block">' +
+                '<h5 class="ok">可以線上申請（全市）</h5>' +
+                '<div class="mf-apply-btns">' +
+                  '<a class="mf-apply-btn" href="https://webm.law.ntpc.gov.tw/apply/" target="_blank" rel="noopener noreferrer">新北市<small>點擊開啟線上申請</small></a>' +
+                  '<a class="mf-apply-btn" href="https://taichungmd.taichung.gov.tw/mediationUnit.aspx" target="_blank" rel="noopener noreferrer">臺中市<small>點擊開啟線上申請</small></a>' +
+                  '<a class="mf-apply-btn" href="https://easy.tainan.gov.tw/" target="_blank" rel="noopener noreferrer">臺南市<small>點擊開啟線上申請</small></a>' +
+                  '<a class="mf-apply-btn" href="https://cabu3.kcg.gov.tw/MediationApply.aspx" target="_blank" rel="noopener noreferrer">高雄市<small>網址未驗證</small></a>' +
+                '</div>' +
+              '</div>' +
+              '<div class="mf-apply-block partial">' +
+                '<h5 class="partial">部分鄉鎮可以，其他鄉鎮不行</h5>' +
+                '<div class="mf-apply-btns">' +
+                  '<a class="mf-apply-btn" href="https://forms.gle/ezmwsf84K5p5A3DaA" target="_blank" rel="noopener noreferrer">雲林縣大埤鄉<small>Google 表單預約</small></a>' +
+                  '<a class="mf-apply-btn" href="https://jhongpu-medation.azurewebsites.net/ap/index.aspx" target="_blank" rel="noopener noreferrer">嘉義縣中埔鄉<small>點擊開啟線上申請</small></a>' +
+                  '<a class="mf-apply-btn" href="https://minxiong-mediation.azurewebsites.net/ap/index.aspx" target="_blank" rel="noopener noreferrer">嘉義縣民雄鄉<small>點擊開啟線上申請</small></a>' +
+                  '<a class="mf-apply-btn" href="https://www.suao.gov.tw/Message.aspx?n=10648&sms=13425" target="_blank" rel="noopener noreferrer">宜蘭縣蘇澳鎮<small>調解訊息頁</small></a>' +
+                '</div>' +
+              '</div>' +
+              '<div class="mf-apply-block">' +
+                '<h5 class="no">不行（須親送／郵寄；或僅能網路預約仍須親送）</h5>' +
+                '<p>桃園市、臺北市（只能網路預約，仍須親自或郵寄）、基隆市、新竹市、新竹縣、苗栗縣、彰化縣、南投縣、嘉義市、屏東縣、花蓮縣、臺東縣、澎湖縣、金門縣、連江縣。</p>' +
+              '</div>' +
+            '</div>' +
+            '<div class="mf-doc-groups mf-doc-groups--2">' +
+              mfDocGroup(
+                '送件相關範例',
+                '點開預覽',
+                'opt',
+                '',
+                mfDoc('docs-overview', '文件說明範例')
+              ) +
+              mfDocGroup(
+                '通知書',
+                '點開預覽',
+                'opt',
+                '',
+                mfDoc('mediation-notice', '調解通知書範例')
+              ) +
+            '</div>' +
+            mfDocPreviewHtml();
+        }
+        if (idx === 2) {
+          return '<p class="why"><b>出席調解</b>：務必親自出席。點選三大目的（左 → 右）查看範本／標注。</p>' +
+            '<div class="mf-goal-chart" id="mf-goal-chart">' +
+              '<p class="mf-goal-hint">點按鈕看範本（左 → 右）</p>' +
+              '<ol class="mf-goal-steps">' +
+                '<li><button type="button" class="mf-goal-btn" data-mf-goal="0" aria-expanded="false"><span class="nr-n">1</span><strong>簽立本票</strong><small>本票填寫範本</small><span class="tap-mini">點看範本</span></button></li>' +
+                '<li><button type="button" class="mf-goal-btn" data-mf-goal="1" aria-expanded="false"><span class="nr-n">2</span><strong>簽署還款協議書</strong><small>正式公版範本</small><span class="tap-mini">點看範本</span></button></li>' +
+                '<li><button type="button" class="mf-goal-btn" data-mf-goal="2" aria-expanded="false"><span class="nr-n">3</span><strong>約定搬遷日</strong><small>調解書標注</small><span class="tap-mini">點看標注</span></button></li>' +
+              '</ol>' +
+              '<div class="mf-goal-detail" id="mf-goal-detail" hidden></div>' +
+            '</div>' +
+            '<p class="nr-warn">不成則請領<b>調解不成立證明</b>，作為進入第 5 階段本票聲請的依據。</p>';
+        }
+        if (idx === 3) {
+          return '<p class="why"><b>調解成立</b>：核對已簽本票、還款協議書與搬遷日；依約分期清償，一期未付視同全部到期。</p>' +
+            '<div class="mf-doc-groups mf-doc-groups--2">' +
+              mfDocGroup(
+                '成立後文件',
+                '點開預覽',
+                'must',
+                '',
+                mfDoc('repayment-agreement', '房租欠款還款協議書') +
+                mfDoc('cert-success', '調解成立證明書')
+              ) +
+              mfDocGroup(
+                '若違約跳票',
+                '下一步',
+                'opt',
+                '',
+                '<a class="mf-doc" href="../../index.html#enforcement-flow" style="text-decoration:none">強制執行流程</a>' +
+                '<button type="button" class="mf-doc" id="mf-btn-go-stage5">前往第 5 階段｜本票裁定</button>'
+              ) +
+            '</div>' +
+            mfDocPreviewHtml();
+        }
+        return '<p class="why"><b>調解不成立</b>：意見不一致時請領不成立證明，再依法追償或進本票裁定。</p>' +
+          '<div class="nr-branch">' +
+            '<p class="nr-h2">下一步</p>' +
+            '<ol>' +
+              '<li>請領並保留<b>調解不成立證明書</b>。</li>' +
+              '<li>有本票 → 進第 5 階段本票裁定。</li>' +
+              '<li>亦可提起訴訟、聲請支付命令或其他程序。</li>' +
+            '</ol>' +
+          '</div>' +
+          '<div class="mf-doc-groups mf-doc-groups--2" style="margin-top:12px">' +
+            mfDocGroup(
+              '不成立證明',
+              '點開預覽',
+              'opt',
+              '',
+              mfDoc('cert-fail', '調解不成立證明書')
+            ) +
+            mfDocGroup(
+              '本票裁定',
+              '下一步',
+              'opt',
+              '',
+              '<button type="button" class="mf-doc" id="mf-btn-go-stage5b">前往第 5 階段</button>'
+            ) +
+          '</div>' +
+          mfDocPreviewHtml();
+      }
+
+      function showMediationStep(idx) {
+        var panel = document.getElementById('mf-step-detail');
+        var chart = document.getElementById('mf-chart');
+        if (!panel || !chart) return;
+        var buttons = chart.querySelectorAll('.nr-step-btn');
+        if (mediationOpen === idx) {
+          mediationOpen = null;
+          mfGoalOpen = null;
+          buttons.forEach(function (btn) {
+            btn.classList.remove('is-on');
+            btn.setAttribute('aria-expanded', 'false');
+          });
+          panel.classList.remove('is-open');
+          panel.hidden = true;
+          panel.innerHTML = '';
+          return;
+        }
+        mediationOpen = idx;
+        mfGoalOpen = null;
+        buttons.forEach(function (btn) {
+          var on = Number(btn.getAttribute('data-mf')) === idx;
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        });
+        panel.innerHTML = mediationStepHtml(idx);
+        panel.hidden = false;
+        panel.classList.add('is-open');
+        var go5 = document.getElementById('mf-btn-go-stage5') || document.getElementById('mf-btn-go-stage5b');
+        if (go5) go5.onclick = function () { setOpen(5); };
+        if (idx === 0 && typeof window.initMediationPoa === 'function') {
+          setTimeout(function () { window.initMediationPoa(); }, 0);
+        }
+      }
+
+      function bindMediationSteps() {
+        mediationOpen = null;
+        mfGoalOpen = null;
+        var chart = document.getElementById('mf-chart');
+        if (!chart || chart.getAttribute('data-bound') === '1') return;
+        chart.setAttribute('data-bound', '1');
+        chart.addEventListener('click', function (e) {
+          var goal = e.target.closest('[data-mf-goal]');
+          if (goal && chart.contains(goal)) {
+            showMfGoal(Number(goal.getAttribute('data-mf-goal')));
+            return;
+          }
+          var doc = e.target.closest('[data-mdoc]');
+          if (doc && chart.contains(doc)) {
+            openMediationDoc(doc.getAttribute('data-mdoc'));
+            return;
+          }
+          var btn = e.target.closest('.nr-step-btn');
+          if (!btn || !chart.contains(btn)) return;
+          showMediationStep(Number(btn.getAttribute('data-mf')));
+        });
+      }
+
+      function renderMediationFlow() {
+        return '<div class="guide">' +
+          '<div class="guide-head"><h3>⚖️ 欠租調解流程</h3></div>' +
+          '<div class="mf-goals-hero" role="region" aria-label="調解三大重點">' +
+            '<p class="mf-goals-label">MUST DO</p>' +
+            '<p class="mf-goals-title">調解三大重點</p>' +
+            '<div class="mf-goals-grid">' +
+              '<div class="mf-goal"><span class="n">1</span><strong>簽立本票</strong></div>' +
+              '<div class="mf-goal"><span class="n">2</span><strong>簽署還款協議書</strong></div>' +
+              '<div class="mf-goal"><span class="n">3</span><strong>約定搬遷日</strong></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="note-ruling">' +
+            '<div class="nr-chart" id="mf-chart">' +
+              '<p class="nr-title">調解流程</p>' +
+              '<p class="nr-hint">點步驟看細節（左 → 右）</p>' +
+              '<ol class="nr-steps5">' +
+                '<li><button type="button" class="nr-step-btn" data-mf="0" aria-expanded="false"><span class="nr-n">1</span><strong>備齊文件</strong><small>調解會應附文件</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-mf="1" aria-expanded="false"><span class="nr-n">2</span><strong>送件聲請</strong><small>案號／線上申請</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-mf="2" aria-expanded="false"><span class="nr-n">3</span><strong>出席調解</strong><small>三大目的</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn nr-step-btn--title-only" data-mf="3" aria-expanded="false"><span class="nr-n">4</span><strong>調解成立</strong></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-mf="4" aria-expanded="false"><span class="nr-n">5</span><strong>不成立／跳票</strong><small>進本票裁定</small><span class="tap-mini">點看說明</span></button></li>' +
+              '</ol>' +
+              '<div class="nr-detail" id="mf-step-detail" hidden></div>' +
+              '<p class="nr-foot">※建議逾期 <b>21～30 日</b>內申請；範例文件僅供內部參考，實際送件依當地調解會規定。</p>' +
+              '<p class="script-note" style="margin:8px 0 0;font-size:12px;color:#64748b">延伸：<a href="../../index.html#mediation-flow">完整調解流程頁</a></p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function renderMediatePrep() {
+        return renderScriptSteps(
+          '⚖️ 業務操作（申請調解）',
+          '目標：向所轄調解會正式聲請，資料一次備齊，避免補件延誤。',
+          [
+            { t: '確認管轄', s: '向<b>被申請人住所地</b>鄉鎮市區調解委員會申請（非公司所在地）。可線上申請之縣市見「送件聲請」步驟清單。' },
+            { t: '備齊文件', s: '租約／公證書、欠租明細、催繳紀錄、存證信函與回執、身分與地址證明、還款協議（若有）。' },
+            { t: '送件並記下案號', s: '依當地規定線上／親送／郵寄；送件後記下受理案號與預計開庭日，並通知房客出席。' }
+          ],
+          [
+            { label: '⚖️ 調解流程圖', href: '../../index.html#mediation-flow' }
+          ]
+        );
+      }
+
+      function renderMediateScript() {
+        return renderScriptSteps(
+          '🗣️ 業務話術／操作（出席調解）',
+          '目標：調解三大目的——① 簽立本票　② 簽署還款協議書　③ 約定搬遷日。不成則取得不成立證明。',
+          [
+            { t: '開庭前自檢', s: '帶齊正本／影本、欠租試算、公司用印文件、空白還款協議書與本票；提早到場報到。' },
+            { t: '目的① 簽立本票', s: '於<b>調解現場</b>簽妥本票並由公司保管；房客有還錢後，才到辦公室領回正本。本票作擔保，跳票可進第 5 階段。' },
+            { t: '目的② 簽署還款協議書', s: '談清金額、期數、匯款帳戶；<b>一期未付視同全部到期</b>；落到白紙黑字並用印。' },
+            { t: '目的③ 約定搬遷日', s: '寫明搬離／交屋日；載明逾期未遷出物品視同廢棄物；逾期未搬則進入下一階段（本票聲請／強執）。' },
+            { t: '不成立：帶走證明', s: '請領<b>調解不成立證明</b>，作為進入本票聲請／強制執行的依據。' }
+          ]
+        );
+      }
+
+      var enforceOpen = null;
+
+      function enforceStepHtml(idx) {
+        if (idx === 0) {
+          var genHtml = (typeof window.enforcementPetitionFormHtml === 'function')
+            ? window.enforcementPetitionFormHtml()
+            : '<p class="why">聲請狀產生器載入中…請重新點開本步驟。</p>';
+          return '<p class="why"><b>撰寫民事聲請狀</b>：向法院提出聲請強制執行。核對當事人、金額、執行標的後再遞狀。</p>' +
+            genHtml;
+        }
+        if (idx === 1) {
+          return '<p class="why"><b>備齊隨狀證物</b>：遞狀前請確認下列文件已備妥。</p>' +
+            '<div class="nr-branch">' +
+              '<ul class="ef-check-list">' +
+                '<li><label><input type="checkbox" />公證書正本</label></li>' +
+                '<li><label><input type="checkbox" />租賃（轉租）契約正本</label></li>' +
+                '<li><label><input type="checkbox" />欠租明細表（金流表）</label></li>' +
+                '<li><label><input type="checkbox" />催告紀錄（LINE 對話、催繳通知等）</label></li>' +
+                '<li><label><input type="checkbox" />存證信函</label></li>' +
+                '<li><label><input type="checkbox" />其他相關證明文件（依需要）</label></li>' +
+              '</ul>' +
+            '</div>' +
+            '<p class="nr-warn">使用<strong>聲請狀產生器</strong>產生 PDF 時，第 3 頁附<strong>證物清單</strong>供內部勾選、主管簽名，無須隨狀繳法院。</p>';
+        }
+        if (idx === 2) {
+          var courtHtml = (typeof window.enforcementCourtLookupHtml === 'function')
+            ? window.enforcementCourtLookupHtml()
+            : '<p class="why">法院查詢載入中…請重新點開本步驟。</p>';
+          return '<p class="why"><b>親自至法院遞狀</b>：現場提交聲請文件及證物（或依實務郵寄／電子方式）。先查物件地址對應哪一間法院。</p>' +
+            courtHtml;
+        }
+        if (idx === 3) {
+          return '<p class="why"><b>等候書記官來函</b>：法院會寄「執行命令／導往執行」通知查封期日與地點；請依函到場，不得自行查封。</p>' +
+            '<ul class="mf-goal-pts" style="margin:8px 0 0">' +
+              '<li>收到後記下<strong>查封日期、時間、地址</strong>與承辦股／電話。</li>' +
+              '<li>須依函<strong>電話向法院確認會到場</strong>；未到可能改期。</li>' +
+              '<li>到場前確認債務人是否實際居住；必要時備妥警力、鎖匠、搬運／保管（見函說明）。</li>' +
+            '</ul>' +
+            '<details class="nr-gen-fold" style="margin-top:10px" open>' +
+              '<summary><b>樣張</b>桃園地院｜執行命令（導往執行／動產）<span class="nr-gen-fold-hint">點可收合</span></summary>' +
+              '<div class="nr-gen-fold-body">' +
+                '<div class="guide-shot" style="margin:0;border:0;box-shadow:none">' +
+                  '<figure class="guide-fig">' +
+                    '<img src="./assets/clerk-notice-sample.png?v=20261019-08" alt="法院執行命令樣張" loading="lazy" style="width:100%;height:auto;display:block" />' +
+                    '<figcaption>僅供內部對照格式　·　<a href="./assets/clerk-notice-sample.jpg?v=20261019-08" target="_blank" rel="noopener noreferrer">開啟原圖</a></figcaption>' +
+                  '</figure>' +
+                '</div>' +
+              '</div>' +
+            '</details>';
+        }
+        return '<p class="why"><b>到租屋處執行動產查封</b>：依法院通知至承租房屋，就屋內動產辦理查封。紅線：不可換鎖、斷水斷電、清空物品或擅自闖入。</p>' +
+          '<p class="nr-warn">遞狀日、案號、執行標的與進度請寫進星鴻「當月催收紀錄」並按「儲存備註」。</p>';
+      }
+
+      function showEnforceStep(idx) {
+        var panel = document.getElementById('ef-step-detail');
+        var chart = document.getElementById('ef-chart');
+        if (!panel || !chart) return;
+        var buttons = chart.querySelectorAll('.nr-step-btn');
+        if (enforceOpen === idx) {
+          enforceOpen = null;
+          buttons.forEach(function (btn) {
+            btn.classList.remove('is-on');
+            btn.setAttribute('aria-expanded', 'false');
+          });
+          panel.classList.remove('is-open');
+          panel.hidden = true;
+          panel.innerHTML = '';
+          return;
+        }
+        enforceOpen = idx;
+        buttons.forEach(function (btn) {
+          var on = Number(btn.getAttribute('data-ef')) === idx;
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        });
+        panel.innerHTML = enforceStepHtml(idx);
+        panel.hidden = false;
+        panel.classList.add('is-open');
+        if (idx === 0 && typeof window.initEnforcementPetition === 'function') {
+          setTimeout(function () { window.initEnforcementPetition(); }, 0);
+        }
+        if (idx === 2 && typeof window.initEnforcementCourtLookup === 'function') {
+          setTimeout(function () { window.initEnforcementCourtLookup(); }, 0);
+        }
+      }
+
+      function bindEnforceSteps() {
+        enforceOpen = null;
+        var chart = document.getElementById('ef-chart');
+        if (!chart || chart.getAttribute('data-bound') === '1') return;
+        chart.setAttribute('data-bound', '1');
+        chart.addEventListener('click', function (e) {
+          var btn = e.target.closest('.nr-step-btn');
+          if (!btn || !chart.contains(btn)) return;
+          showEnforceStep(Number(btn.getAttribute('data-ef')));
+        });
+      }
+
+      function renderEnforceFlow() {
+        return '<div class="guide">' +
+          '<div class="guide-head"><h3>⚖️ 強制執行｜整體流程</h3></div>' +
+          '<div class="note-ruling">' +
+            '<div class="nr-chart" id="ef-chart">' +
+              '<p class="nr-title">強制執行流程</p>' +
+              '<p class="nr-hint">點步驟看細節（左 → 右）</p>' +
+              '<ol class="nr-steps5">' +
+                '<li><button type="button" class="nr-step-btn" data-ef="0" aria-expanded="false"><span class="nr-n">1</span><strong>撰寫民事聲請狀</strong><small>套版產生器</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-ef="1" aria-expanded="false"><span class="nr-n">2</span><strong>備齊隨狀證物</strong><small>遞狀前確認</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-ef="2" aria-expanded="false"><span class="nr-n">3</span><strong>親自至法院遞狀</strong><small>地址查法院</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-ef="3" aria-expanded="false"><span class="nr-n">4</span><strong>等候書記官來函</strong><small>查封時間</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-ef="4" aria-expanded="false"><span class="nr-n">5</span><strong>執行動產查封</strong><small>到租屋處</small><span class="tap-mini">點看說明</span></button></li>' +
+              '</ol>' +
+              '<div class="nr-detail" id="ef-step-detail" hidden></div>' +
+              '<p class="nr-foot">※須以已公證且載明逕受強制執行之租約、調解書或確定判決為執行名義。</p>' +
+              '<p class="script-note" style="margin:8px 0 0;font-size:12px;color:#64748b">延伸：<a href="../../index.html#enforcement-flow">完整強制執行／聲請狀頁</a></p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function sysOpenBtn() {
+        return '<a class="sys-open" href="https://skyfunsystem.com/ArrearsManagement/Query" target="_blank" rel="noopener noreferrer">' +
+          '<span class="sys-ico" aria-hidden="true">↗</span>開啟催收管理</a>';
+      }
+
+      function renderRecordGuide() {
+        return '<div class="guide">' +
+          '<div class="guide-head">' +
+            '<h3>📖 星鴻系統｜怎麼填「當月催收紀錄」</h3>' +
+            sysOpenBtn() +
+          '</div>' +
+          '<ol class="guide-steps">' +
+            '<li><span class="gn">1</span><span>在案件列<b>最左邊</b>點藍色方塊（＋展開／－收合），把案件明細打開。</span></li>' +
+            '<li><span class="gn">2</span><span>往下找到「<b>當月催收紀錄</b>」，輸入催繳時間、對談內容、<b>租客承諾還款日</b>。</span></li>' +
+            '<li><span class="gn">3</span><span>按右下角「<b>儲存備註</b>」才算完成。</span></li>' +
+          '</ol>' +
+          '<figure class="guide-fig">' +
+            '<img src="./assets/monthly-record-guide.jpg?v=20261017-24" alt="星鴻系統催收管理：展開案件後填寫當月催收紀錄並儲存備註" loading="lazy" />' +
+            '<figcaption>紅框①＝左上角展開案件　·　紅框②＝「當月催收紀錄」輸入後按「儲存備註」</figcaption>' +
+          '</figure>' +
+        '</div>';
+      }
+
+      function renderRecordGuideVisit() {
+        return '<div class="guide">' +
+          '<div class="guide-head">' +
+            '<h3>📖 星鴻系統｜面訪後怎麼入檔（第 2 階段）</h3>' +
+            sysOpenBtn() +
+          '</div>' +
+          '<ol class="guide-steps">' +
+            '<li><span class="gn">1</span><span>找到案件後點右上角「<b>此次明細</b>」展開。</span></li>' +
+            '<li><span class="gn">2</span><span>往下找到「<b>當月催收紀錄</b>」，輸入面訪時間、是否遇人、貼單／對談內容、<b>承諾還款日</b>，再按「<b>儲存備註</b>」。</span></li>' +
+            '<li><span class="gn">3</span><span>到催收流程 <b>Step 2（訪查）</b>：填「<b>實地訪查日</b>」，並上傳「<b>實地訪查照片</b>」（可貼單／門牌／信箱照片，可多選）。<b>第一封存證信函</b>改到第 3 階段再填。</span></li>' +
+          '</ol>' +
+          '<div class="guide-shots">' +
+            '<div class="guide-shot">' +
+              '<div class="guide-shot-label"><b>1</b>圖一｜點「此次明細」＋填當月催收紀錄</div>' +
+              '<figure class="guide-fig">' +
+                '<img src="./assets/stage2-case-detail-guide.jpg?v=20261017-48" alt="圖一：星鴻系統點此次明細展開案件，填寫當月催收紀錄並儲存備註" loading="lazy" />' +
+                '<figcaption>紅框＝點「此次明細」展開　·　下方填「當月催收紀錄」後按「儲存備註」</figcaption>' +
+              '</figure>' +
+            '</div>' +
+            '<div class="guide-shot-split" aria-hidden="true">以下為另一張畫面</div>' +
+            '<div class="guide-shot">' +
+              '<div class="guide-shot-label"><b>2</b>圖二｜填實地訪查日＋上傳訪查照片</div>' +
+              '<figure class="guide-fig">' +
+                '<img src="./assets/stage2-visit-upload-guide.jpg?v=20261017-48" alt="圖二：星鴻系統催收流程 Step 2，填實地訪查日並上傳實地訪查照片" loading="lazy" />' +
+                '<figcaption>紅框＝填「實地訪查日」　·　上傳「實地訪查照片」（可多選，最多 5 檔）。第一封存證信函請到第 3 階段再填。</figcaption>' +
+              '</figure>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function renderRecordGuideLetter() {
+        return '<div class="guide">' +
+          '<div class="guide-head">' +
+            '<h3>📖 星鴻系統｜第 3 階段怎麼填「催收流程」</h3>' +
+            sysOpenBtn() +
+          '</div>' +
+          '<ol class="guide-steps">' +
+            '<li><span class="gn">1</span><span>找到案件後點右上角「<b>此次明細</b>」展開，找到「<b>催收流程</b>」區塊。</span></li>' +
+            '<li><span class="gn">2</span><span>填「<b>第一封存證信函寄出日</b>」。</span></li>' +
+            '<li><span class="gn">3</span><span>上傳「<b>第一封存證信函</b>」檔案（PDF／掃描檔），<b>連同回執聯</b>一併入檔。這兩欄就是本階段必填入檔。</span></li>' +
+          '</ol>' +
+          '<div class="guide-shots">' +
+            '<div class="guide-shot">' +
+              '<div class="guide-shot-label"><b>1</b>圖一｜點「此次明細」展開案件</div>' +
+              '<figure class="guide-fig">' +
+                '<img src="./assets/stage3-case-detail-guide.jpg?v=20261018-4" alt="圖一：星鴻系統點此次明細展開案件" loading="lazy" />' +
+                '<figcaption>紅框＝點「此次明細」展開，再往下找「催收流程」</figcaption>' +
+              '</figure>' +
+            '</div>' +
+            '<div class="guide-shot-split" aria-hidden="true">以下為另一張畫面</div>' +
+            '<div class="guide-shot">' +
+              '<div class="guide-shot-label"><b>2</b>圖二｜填寄出日＋上傳存證信函（連同回執聯）</div>' +
+              '<figure class="guide-fig">' +
+                '<img src="./assets/stage3-letter-record-guide.jpg?v=20261018-4" alt="圖二：星鴻系統催收流程填第一封存證信函寄出日，上傳第一封存證信函連同回執聯" loading="lazy" />' +
+                '<figcaption>紅框＝「第一封存證信函寄出日」＋「第一封存證信函」上傳（連同回執聯）</figcaption>' +
+              '</figure>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function showStep(s, idx) {
+        stepOpen = idx;
+        var panel = document.getElementById('step-detail');
+        var steps = s.process;
+        slot.querySelectorAll('.pnode-btn').forEach(function (btn) {
+          var on = Number(btn.dataset.step) === idx;
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        });
+        if (idx == null || !panel) {
+          if (panel) {
+            panel.classList.remove('is-open');
+            panel.hidden = true;
+            panel.innerHTML = '';
+          }
+          var stageFocus = slot.querySelector('.focus-lg');
+          if (stageFocus) stageFocus.hidden = false;
+          return;
+        }
+        var p = steps[idx];
+        var extra = '';
+        if (p.msgTpl) extra = renderMsgBox();
+        else if (p.talkScript) extra = renderTalkScript();
+        else if (p.visitScript) extra = renderVisitScript();
+        else if (p.postLineTpl) extra = renderPostLineTip();
+        else if (p.lalGuide) extra = renderLalGuide();
+        else if (p.lalTrack) extra = renderLalTrack();
+        else if (p.agreeScript) extra = renderAgreeScript();
+        else if (p.noteScript) extra = renderNoteScript();
+        else if (p.noteRuling) extra = renderNoteRulingFlow();
+        else if (p.mediatePrep) extra = renderMediatePrep();
+        else if (p.mediateScript) extra = renderMediateScript();
+        else if (p.recordGuideVisit) extra = renderRecordGuideVisit();
+        else if (p.recordGuideLetter) extra = renderRecordGuideLetter();
+        else if (p.recordGuide) extra = renderRecordGuide();
+        else if (p.link) {
+          extra = '<a class="plink' + (p.link.soft ? ' soft' : '') + '" href="' + p.link.href + '">' + p.link.label + '</a>';
+        }
+        var focusHtml = p.focus
+          ? '<div class="step-focus"><span class="focus-pill">重點</span>' + focusLinesHtml(p.focus) + '</div>'
+          : '';
+        panel.innerHTML = (p.why ? '<p class="why">' + p.why + '</p>' : '') + focusHtml + extra;
+        panel.hidden = false;
+        panel.classList.add('is-open');
+        if (p.msgTpl) bindMsgBox();
+        if (p.postLineTpl) bindPostLineTip();
+        if (p.visitScript) {
+          bindVisitFoldCards();
+          /* 產生器在右卡面板內：展開時再 init；此處先試綁一次 */
+          if (typeof window.initCareVisitNotice === 'function') {
+            setTimeout(function () { window.initCareVisitNotice(); }, 0);
+          }
+        }
+        if (p.lalGuide) {
+          bindLalFoldCards();
+          if (typeof window.initLalGenerator === 'function') window.initLalGenerator();
+        }
+        if (p.noteScript || p.noteRuling) bindNoteRulingSteps();
+        var stageFocus = slot.querySelector('.focus-lg');
+        if (stageFocus) stageFocus.hidden = true;
+      }
+
+      function renderDetail(s) {
+        var mid = s.directMediationFlow
+          ? renderMediationFlow()
+          : s.directNoteRuling
+            ? renderNoteRulingFlow()
+            : s.directEnforceFlow
+              ? renderEnforceFlow()
+              : (renderFlowchart(s.process || []) +
+                '<div class="focus-lg"><span class="focus-pill">重點</span>' + focusLinesHtml(s.focus) + '</div>');
+        return (
+          '<div class="detail-split" role="separator" aria-label="以下為怎麼做與為什麼">' +
+            '<span>↓　怎麼做＋為什麼　↓</span>' +
+          '</div>' +
+          '<div class="detail is-open" id="detail-panel">' +
+            '<div class="detail-bar">' +
+              '<span class="tag">第 ' + s.n + ' 階段</span>' +
+              '<div class="mini-art">' + ICONS[s.n] + '</div>' +
+              '<h2><span class="day">' + s.day + '</span><span class="act">' + s.act + '</span></h2>' +
+              '<button type="button" class="close-btn" data-close>收合</button>' +
+            '</div>' +
+            '<div class="detail-body">' +
+              '<p class="when">' + s.when + '</p>' +
+              mid +
+              renderTips(s.tips) +
+            '</div>' +
+          '</div>'
+        );
+      }
+
+      function setOpen(n) {
+        open = n;
+        stepOpen = null;
+        flow.querySelectorAll('.card').forEach(function (btn) {
+          var on = Number(btn.dataset.n) === open;
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        });
+        if (open == null) {
+          slot.innerHTML = '';
+          return;
+        }
+        var s = STEPS.find(function (x) { return x.n === open; });
+        slot.innerHTML = renderDetail(s);
+        slot.querySelector('[data-close]').onclick = function () { setOpen(null); };
+        var pflow = slot.querySelector('.pflow');
+        if (pflow) {
+          pflow.addEventListener('click', function (e) {
+            var btn = e.target.closest('.pnode-btn');
+            if (!btn) return;
+            var idx = Number(btn.dataset.step);
+            showStep(s, stepOpen === idx ? null : idx);
+          });
+        }
+        if (s.directMediationFlow) bindMediationSteps();
+        if (s.directNoteRuling) bindNoteRulingSteps();
+        if (s.directEnforceFlow) bindEnforceSteps();
+      }
+
+      flow.innerHTML = STEPS.map(function (s, i) {
+        var card =
+          '<button type="button" class="card" role="listitem" data-n="' + s.n + '" aria-expanded="false">' +
+            '<div class="node">' +
+              '<span class="num">' + s.n + '</span>' +
+              '<div class="ttl"><span class="day">' + s.day + '</span><span class="act">' + s.act + '</span></div>' +
+              '<div class="art">' + ICONS[s.n] + '</div>' +
+            '</div>' +
+            '<div class="body">' +
+              '<ul>' + s.items.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' +
+            '</div>' +
+            '<div class="focus-wrap"><span class="focus-pill">重點</span><p class="focus">' + focusLinesHtml(s.focus) + '</p></div>' +
+            '<div class="card-foot">' +
+              '<p class="tap">點擊看怎麼做</p>' +
+            '</div>' +
+          '</button>';
+        var arrow = i < STEPS.length - 1 ? '<div class="arrow" aria-hidden="true">›</div>' : '';
+        return '<div class="cell" data-n="' + s.n + '">' + card + arrow + '</div>';
+      }).join('');
+
+      flow.addEventListener('click', function (e) {
+        var btn = e.target.closest('.card');
+        if (!btn) return;
+        var n = Number(btn.dataset.n);
+        setOpen(open === n ? null : n);
+      });
+    })();
+  </script>
+</body>
+</html>

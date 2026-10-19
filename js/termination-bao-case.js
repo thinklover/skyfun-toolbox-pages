@@ -1033,10 +1033,7 @@
         window.TerminationCase.showHandoverWorksheetPrompt();
       } else {
         const box = $('term-handover-pdf-confirm');
-        if (box) {
-          box.classList.remove('hidden');
-          box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+        if (box) box.classList.remove('hidden');
       }
       setLookupStatus('點交完成，暫存已清除。請確認後下載第 3、4 頁對照用解約單，手填紙本。', false);
     },

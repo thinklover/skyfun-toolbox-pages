@@ -17,6 +17,7 @@
         { page: 'collection-case', title: '聲請狀產生器', category: '催收解約專區', keywords: '強制執行 聲請狀 訴狀 欠租 查封 動產 公證 pdf 產生器' },
         { page: 'enforcement-flow', title: '強制執行流程', category: '催收解約專區', keywords: '強制執行 流程 案例 存證 查封 範例' },
         { page: 'lal-generator', title: '存證信函產生器', category: '催收解約專區', keywords: '存證 信函' },
+        { file: './docs/lal-howto/', title: '如何寄存證信函', category: '催收解約專區', keywords: '存證 怎麼寄 回執 催告' },
         { page: 'calculator', title: '房東稅務試算表', category: '房東專區', keywords: '稅務 試算' },
         { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 費用' },
         { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi' },
