@@ -1,6 +1,6 @@
 // 簽呈 AI 一鍵整理服務：工具箱登入者送來口述或表單內容，交給 Cursor（純文字、不開任何工具）整理成簽呈欄位；
 // 另提供 /api/cancel-note/polish：星鴻註銷物件申請的業務備註條列＋潤飾；
-// /api/improve-plan/polish：行政改善計畫的「本期要改善的項目」「具體做法」潤飾（300 字內）。
+// /api/improve-plan/polish：行政改善計畫的「本期要改善的項目」「具體做法」潤飾（具體做法 300 字內；改善項目不限）。
 // 環境變數：CURSOR_API_KEY（必填）、CURSOR_MODEL、ALLOWED_ORIGINS、PETITION_AI_MOCK=1（不呼叫 AI，只回假資料供畫面測試）
 import http from 'node:http';
 import fs from 'node:fs';
@@ -199,9 +199,10 @@ export function buildNotePrompt(text) {
     '3. 原文的每一個事實都要保留，不可遺漏（例如「到期不續約」這種短句也要寫進去）；數字、日期、地址、人名照抄。',
     '4. 每一點寫一個完整的事件，同一件事的短句要合併成一句；依時間順序或因果關係排列，通常 2～6 點。原文很短，條列就很短，不要硬湊。',
     '5. 主詞照原文；原文寫「我們」可改成「我方」，沒寫主詞時可沿用前文提到的人，但不要改成其他單位或人名。',
-    '6. points 每個元素只放一點的文字，不要自己加編號，不要寫「原文」「業務表示」之類的註解。',
-    '7. hasReason：原文是否說明了物件為什麼需要註銷（例如房東收回、不續約、出售、轉給他人處理）。',
-    '8. hasCare：原文是否說明了有沒有關懷、挽留、溝通或協調的過程（包含明確寫出「沒有挽留」）。',
+    '6. points 每個元素只放一點的文字，不要自己加編號（系統會自動加 1. 2. 3.），不要寫「原文」「業務表示」之類的註解。',
+    '7. 輸出至少要能對應「為何註銷」與「關懷／挽留」兩類資訊；若原文有寫挽留失敗或無法挽留，也要單獨成點。',
+    '8. hasReason：原文是否說明了物件為什麼需要註銷（例如房東收回、不續約、出售、不認同契約、轉給他人處理）。',
+    '9. hasCare：原文是否說明了有沒有關懷、挽留、溝通或協調的過程（包含明確寫出「沒有挽留」「無法挽留」）。',
     '',
     '【輸出】',
     '只輸出一個 JSON 物件，不要任何說明文字或 Markdown，格式：',
@@ -237,13 +238,21 @@ export function parseNoteReply(text) {
 /* ---------- 行政改善計畫：本期要改善的項目／具體做法潤飾 ---------- */
 
 const PLAN_MAX_CHARS = 300;
+const PLAN_FOCUS_MAX_CHARS = 5000;
 const PLAN_FIELDS = {
-  focus: { label: '本期要改善的項目', hint: '說明這兩週要改善哪些項目、為什麼要改善' },
-  actions: { label: '具體做法', hint: '說明每天或每週實際要做什麼來改善' }
+  focus: { label: '本期要改善的項目', hint: '說明這兩週要改善哪些項目、為什麼要改善', max: PLAN_FOCUS_MAX_CHARS, limited: false },
+  actions: { label: '具體做法', hint: '說明每天或每週實際要做什麼來改善', max: PLAN_MAX_CHARS, limited: true }
 };
+
+function planFieldMax(field) {
+  return PLAN_FIELDS[field]?.max || PLAN_MAX_CHARS;
+}
 
 export function buildPlanPrompt(field, text) {
   const f = PLAN_FIELDS[field];
+  const maxRule = f.limited
+    ? '5. 全文（含標點與編號）不得超過 ' + f.max + ' 字，也不要比原文長太多。'
+    : '5. 完整保留原文重點，不要為了精簡而刪掉內容；也不要比原文長太多。';
   return [
     '你是「星鴻」社會住宅包租代管公司的行政助理。行政人員因為績效評等偏低，要寫「改善計畫」，下面是他自己寫的「' + f.label + '」（' + f.hint + '）。請在不改變意思的前提下潤飾文字。',
     '',
@@ -252,7 +261,7 @@ export function buildPlanPrompt(field, text) {
     '2. 只能使用原文寫出的內容。不得新增原文沒寫的做法、目標、數字、日期、人名或承諾，也不要替他補充建議或延伸說明。',
     '3. 原文的每一個重點都要保留；數字、件數、百分比、日期照抄。',
     '4. 有兩件以上的事就用「1.」「2.」編號，每項一行；只有一件事就寫成一句，不要編號。',
-    '5. 全文（含標點與編號）不得超過 ' + PLAN_MAX_CHARS + ' 字，也不要比原文長太多。',
+    maxRule,
     '6. 不要寫「原文」「潤飾後」之類的說明或註解。',
     '',
     '【輸出】',
@@ -267,15 +276,16 @@ export function buildPlanPrompt(field, text) {
 }
 
 /** 超過上限時在最後一個完整句子或分項處截斷 */
-export function fitPlanText(s) {
+export function fitPlanText(s, field) {
+  const max = planFieldMax(field);
   const t = String(s || '').replace(/\r\n?/g, '\n').trim();
-  if (t.length <= PLAN_MAX_CHARS) return t;
-  const head = t.slice(0, PLAN_MAX_CHARS);
+  if (t.length <= max) return t;
+  const head = t.slice(0, max);
   const cut = Math.max(head.lastIndexOf('\n'), head.lastIndexOf('。'), head.lastIndexOf('；'));
-  return (cut > PLAN_MAX_CHARS * 0.5 ? head.slice(0, cut + (head[cut] === '\n' ? 0 : 1)) : head).trim();
+  return (cut > max * 0.5 ? head.slice(0, cut + (head[cut] === '\n' ? 0 : 1)) : head).trim();
 }
 
-export function parsePlanReply(text) {
+export function parsePlanReply(text, field) {
   const s = String(text || '');
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/);
   const body = fence ? fence[1] : s;
@@ -284,7 +294,7 @@ export function parsePlanReply(text) {
   if (a < 0 || b < a) throw new Error('AI 回覆格式不正確，請再按一次');
   let data;
   try { data = JSON.parse(body.slice(a, b + 1)); } catch { throw new Error('AI 回覆格式不正確，請再按一次'); }
-  const out = fitPlanText(data.text);
+  const out = fitPlanText(data.text, field);
   if (!out) throw new Error('AI 沒有產生內容，請再按一次');
   return { text: out };
 }
@@ -390,11 +400,12 @@ async function planPolish(req, res, origin) {
   try { body = JSON.parse(await readBody(req) || '{}'); } catch (e) { send(res, 400, { ok: false, error: e.message || '資料格式錯誤' }, origin); return; }
   const token = str(body.token, 200);
   const field = String(body.field || '');
-  const text = str(body.text, PLAN_MAX_CHARS + 1);
+  const fieldMax = planFieldMax(field);
+  const text = str(body.text, fieldMax + 1);
   if (!token) { send(res, 401, { ok: false, error: '請先登入工具箱' }, origin); return; }
   if (!PLAN_FIELDS[field]) { send(res, 400, { ok: false, error: '資料格式錯誤' }, origin); return; }
   if (Array.from(text.replace(/\s+/g, '')).length < 5) { send(res, 400, { ok: false, error: '請先用自己的話寫幾句，再按 AI 潤飾' }, origin); return; }
-  if (text.length > PLAN_MAX_CHARS) { send(res, 400, { ok: false, error: '內容超過 ' + PLAN_MAX_CHARS + ' 字，請先精簡' }, origin); return; }
+  if (text.length > fieldMax) { send(res, 400, { ok: false, error: '內容超過 ' + fieldMax + ' 字，請先精簡' }, origin); return; }
   if (busy >= MAX_BUSY) { send(res, 429, { ok: false, error: '目前使用的人比較多，請 10 秒後再按一次' }, origin); return; }
 
   busy += 1;
@@ -405,7 +416,7 @@ async function planPolish(req, res, origin) {
     const reply = MOCK
       ? { text: JSON.stringify({ text: '（測試）' + text }), usage: null }
       : await askCursor(buildPlanPrompt(field, text));
-    const out = parsePlanReply(reply.text);
+    const out = parsePlanReply(reply.text, field);
     console.log(JSON.stringify({ at: new Date().toISOString(), mode: 'plan-polish', field, chars: text.length, ms: Date.now() - started, ok: true, model: MODEL, usage: reply.usage }));
     send(res, 200, { ok: true, remaining: gate.remaining, ...out }, origin);
   } catch (err) {
