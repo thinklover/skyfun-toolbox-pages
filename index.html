@@ -5202,11 +5202,13 @@
                         </label>
                         <label class="acf-field">
                             <span class="acf-label">租約開始日期</span>
-                            <input type="date" name="leaseStart" required>
+                            <input type="date" name="leaseStart" required min="2010-01-01" max="2040-12-31">
+                            <span class="acf-hint">請填實際租約起日（西元）；勿留系統預設的不合理日期</span>
                         </label>
                         <label class="acf-field">
                             <span class="acf-label">租約到期日</span>
-                            <input type="date" name="leaseEnd" required>
+                            <input type="date" name="leaseEnd" required min="2010-01-01" max="2040-12-31">
+                            <span class="acf-hint">須晚於或等於起日，租期最長 20 年</span>
                         </label>
                         <label class="acf-field acf-field--wide">
                             <span class="acf-label">註銷物件地址</span>
@@ -5214,13 +5216,13 @@
                         </label>
                         <label class="acf-field acf-field--wide">
                             <span class="acf-label">業務備註</span>
-                            <textarea name="note" rows="4" required maxlength="2000"></textarea>
+                            <textarea name="note" rows="5" required maxlength="2000" placeholder="請寫：1) 為何要註銷　2) 中間有無關懷或挽留（或為何無法挽留）　3) 協調結果"></textarea>
                             <span class="acf-ai-bar">
                                 <button type="button" class="acf-ai-btn" id="acf-ai">✨ AI 條列＋潤飾</button>
                                 <button type="button" class="acf-ai-undo" id="acf-ai-undo" hidden>↶ 復原原文</button>
                                 <span class="acf-ai-msg" id="acf-ai-msg" role="status" aria-live="polite"></span>
                             </span>
-                            <span class="acf-hint">請詳細說明原因，前因後果如何導致物件需要註銷，中間是否有關懷還是無法挽留（至少 50 字）。可以先用口語隨意寫，再按「AI 條列＋潤飾」；AI 只會整理你寫的內容、不會新增事實，送出前請確認。</span>
+                            <span class="acf-hint">至少 <b>100 字</b>，必須寫到「有無關懷／挽留」（含無法挽留）。可先口語書寫；送出前會自動請 AI 整理成 1. 2. 3. 條列（只整理你寫的內容、不新增事實），請再確認後送出。</span>
                             <span class="acf-count" id="acf-note-count" aria-live="polite"></span>
                         </label>
                         <label class="acf-field">

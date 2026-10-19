@@ -120,24 +120,70 @@
         if (show) {
             setMsg('');
             prefill();
+            applyLeaseInputBounds(form);
             updateNoteCount(form);
             form.querySelector('select, input')?.focus();
         }
     }
 
     /** 業務備註最少字數：空白、換行不算字 */
-    const NOTE_MIN = 50;
+    const NOTE_MIN = 100;
+    const LEASE_MIN = '2010-01-01';
+    const LEASE_MAX_YEAR_AHEAD = 5;
+    const LEASE_MAX_YEARS = 20;
+    const CARE_RE = /關懷|挽留|慰留|協調|溝通|勸說|無法挽留|未挽留|沒挽留|沒有挽留|有挽留|未能挽留|無法協調/;
+    const BULLET_RE = /^\s*1\s*[.．、)]\s*\S/m;
     const noteLength = (v) => Array.from(String(v || '').replace(/\s+/g, '')).length;
+    const leaseMaxYmd = () => {
+        const d = new Date();
+        d.setFullYear(d.getFullYear() + LEASE_MAX_YEAR_AHEAD);
+        return d.toISOString().slice(0, 10);
+    };
 
     function updateNoteCount(form) {
         const el = $('acf-note-count');
         const note = form?.elements?.note;
         if (!el || !note) return;
         const n = noteLength(note.value);
-        el.textContent = n >= NOTE_MIN
+        const careOk = CARE_RE.test(note.value);
+        let msg = n >= NOTE_MIN
             ? '已寫 ' + n + ' 字 ✓'
             : '已寫 ' + n + ' 字，還差 ' + (NOTE_MIN - n) + ' 字才能送出';
-        el.classList.toggle('is-ok', n >= NOTE_MIN);
+        if (n >= NOTE_MIN && !careOk) msg += '　⚠️ 尚未寫到關懷／挽留';
+        el.textContent = msg;
+        el.classList.toggle('is-ok', n >= NOTE_MIN && careOk);
+    }
+
+    function applyLeaseInputBounds(form) {
+        const max = leaseMaxYmd();
+        ['leaseStart', 'leaseEnd'].forEach((name) => {
+            const el = form?.elements?.[name];
+            if (!el) return;
+            el.min = LEASE_MIN;
+            el.max = max;
+        });
+    }
+
+    function validateLease(startEl, endEl) {
+        const start = startEl?.value || '';
+        const end = endEl?.value || '';
+        const max = leaseMaxYmd();
+        if (!start || !end) return '請填寫租約起迄日期';
+        if (start < LEASE_MIN || end < LEASE_MIN) {
+            return '租約日期不合理（不可早於 2010/01/01）。請改填實際租約起迄日，勿使用系統空值／亂碼日期';
+        }
+        if (start > max || end > max) {
+            return '租約日期不合理（不可晚於 ' + max.replace(/-/g, '/') + '）';
+        }
+        if (end < start) return '租約到期日不能早於租約開始日期';
+        const a = new Date(start + 'T00:00:00');
+        const b = new Date(end + 'T00:00:00');
+        if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return '日期格式不正確';
+        const years = (b - a) / (365.25 * 24 * 3600 * 1000);
+        if (years > LEASE_MAX_YEARS) {
+            return '租期超過 ' + LEASE_MAX_YEARS + ' 年，請再確認起迄日是否填錯';
+        }
+        return '';
     }
 
     const aiNoteUrl = () => String(window.SKYFUN_PETITION_AI_URL || 'https://skyfun-petition-ai.onrender.com').replace(/\/$/, '') + '/api/cancel-note/polish';
@@ -157,16 +203,25 @@
         aiMsg('');
     }
 
-    async function aiBullets(form) {
+    /** @returns {{ ok: boolean, todo?: string[], error?: string }} */
+    async function aiBullets(form, opts) {
+        const silent = !!(opts && opts.silent);
         const note = form.elements.note;
         const text = note.value.trim();
-        if (ai.busy) return;
-        if (!token()) { aiMsg('請先登入工具箱', 'err'); return; }
-        if (noteLength(text) < 5) { aiMsg('先用口語寫幾句原因，再按 AI 整理', 'err'); note.focus(); return; }
+        if (ai.busy) return { ok: false, error: 'AI 正在整理中' };
+        if (!token()) {
+            if (!silent) aiMsg('請先登入工具箱', 'err');
+            return { ok: false, error: '請先登入工具箱' };
+        }
+        if (noteLength(text) < 5) {
+            if (!silent) aiMsg('先用口語寫幾句原因，再按 AI 整理', 'err');
+            note.focus();
+            return { ok: false, error: '備註太短' };
+        }
         ai.busy = true;
         const btn = $('acf-ai');
         if (btn) { btn.disabled = true; btn.textContent = '✨ AI 整理中…'; }
-        aiMsg('大約 5～20 秒；如果 AI 服務在休息，第一次要等 30～60 秒，請稍候…');
+        if (!silent) aiMsg('大約 5～20 秒；如果 AI 服務在休息，第一次要等 30～60 秒，請稍候…');
         try {
             const res = await fetch(aiNoteUrl(), {
                 method: 'POST',
@@ -182,10 +237,16 @@
             note.dispatchEvent(new Event('input', { bubbles: true }));
             const undo = $('acf-ai-undo');
             if (undo) undo.hidden = false;
-            if (data.todo?.length) aiMsg('⚠️ 還沒寫到：' + data.todo.join('、') + '，請補充後再送出', 'warn');
-            else aiMsg('✅ 已整理並潤飾成條列式，請確認內容正確再送出', 'ok');
+            if (data.todo?.length) {
+                aiMsg('⚠️ 還沒寫到：' + data.todo.join('、') + '，請補充後再送出', 'warn');
+                return { ok: true, todo: data.todo };
+            }
+            aiMsg('✅ 已整理並潤飾成 1. 2. 3. 條列，請確認內容正確再送出', 'ok');
+            return { ok: true, todo: [] };
         } catch (e) {
-            aiMsg(e.name === 'TimeoutError' ? 'AI 整理逾時，請再按一次' : e.message === 'Failed to fetch' ? '連不上 AI 服務，請稍後再試' : e.message, 'err');
+            const msg = e.name === 'TimeoutError' ? 'AI 整理逾時，請再按一次' : e.message === 'Failed to fetch' ? '連不上 AI 服務，請稍後再試' : e.message;
+            aiMsg(msg, 'err');
+            return { ok: false, error: msg };
         } finally {
             ai.busy = false;
             if (btn) { btn.disabled = false; btn.textContent = '✨ AI 條列＋潤飾'; }
@@ -213,20 +274,28 @@
             first.focus();
             return false;
         }
+        const start = form.elements.leaseStart;
+        const end = form.elements.leaseEnd;
+        const leaseErr = validateLease(start, end);
+        if (leaseErr) {
+            const badEl = (start.value < LEASE_MIN || start.value > leaseMaxYmd()) ? start : end;
+            badEl.closest('.acf-field')?.classList.add('is-invalid');
+            setMsg(leaseErr, 'err');
+            badEl.focus();
+            return false;
+        }
         const note = form.elements.note;
         const noteLen = noteLength(note.value);
         if (noteLen < NOTE_MIN) {
             note.closest('.acf-field')?.classList.add('is-invalid');
-            setMsg('業務備註至少要 ' + NOTE_MIN + ' 字（目前 ' + noteLen + ' 字），請把前因後果、是否有關懷挽留寫清楚', 'err');
+            setMsg('業務備註至少要 ' + NOTE_MIN + ' 字（目前 ' + noteLen + ' 字），請把前因後果、是否有關懷／挽留寫清楚', 'err');
             note.focus();
             return false;
         }
-        const start = form.elements.leaseStart;
-        const end = form.elements.leaseEnd;
-        if (end.value < start.value) {
-            end.closest('.acf-field')?.classList.add('is-invalid');
-            setMsg('租約到期日不能早於租約開始日期', 'err');
-            end.focus();
+        if (!CARE_RE.test(note.value)) {
+            note.closest('.acf-field')?.classList.add('is-invalid');
+            setMsg('業務備註必須寫到「有無關懷或挽留」（例如：有挽留／無法挽留／已協調）。請補充後再送出', 'err');
+            note.focus();
             return false;
         }
         return true;
@@ -237,6 +306,23 @@
         setMsg('');
         if (!token()) { setMsg('請先登入工具箱再送出', 'err'); return; }
         if (!validate(form)) return;
+
+        const note = form.elements.note;
+        if (!BULLET_RE.test(note.value)) {
+            setMsg('送出前先請 AI 整理成 1. 2. 3. 條列…', '');
+            const polished = await aiBullets(form, { silent: true });
+            if (!polished.ok) {
+                setMsg((polished.error || 'AI 整理失敗') + '。也可先按「AI 條列＋潤飾」後再送出', 'err');
+                return;
+            }
+            if (!validate(form)) return;
+            if (polished.todo?.length) {
+                setMsg('AI 整理後仍缺：' + polished.todo.join('、') + '。請補充後再送出', 'err');
+                note.focus();
+                return;
+            }
+        }
+
         if (!window.confirm('確定送出「星鴻註銷物件申請」？送出後大家都看得到，無法自行修改。')) return;
 
         const data = {};
@@ -583,8 +669,9 @@
         form.addEventListener('submit', (e) => { e.preventDefault(); submit(form); });
         $('acf-new')?.addEventListener('click', () => showForm(true));
         $('acf-cancel')?.addEventListener('click', () => { form.reset(); aiReset(); showForm(false); });
-        $('acf-ai')?.addEventListener('click', () => aiBullets(form));
+        $('acf-ai')?.addEventListener('click', () => { aiBullets(form); });
         $('acf-ai-undo')?.addEventListener('click', () => aiUndo(form));
+        applyLeaseInputBounds(form);
 
         $('acf-filters')?.addEventListener('click', (e) => {
             const chip = e.target.closest('[data-filter]');
