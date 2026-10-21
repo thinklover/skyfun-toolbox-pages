@@ -4478,10 +4478,15 @@
                     <option value="">請選擇處別</option>
                 </select>
             </div>
+            <div id="toolbox-auth-forgot-extra" class="hidden">
+                <label for="toolbox-auth-realname">姓名</label>
+                <input id="toolbox-auth-realname" type="text" maxlength="30" autocomplete="name" placeholder="請輸入本名（與註冊相同）" />
+            </div>
             <button type="button" id="toolbox-auth-submit">進入工具箱</button>
             <p id="toolbox-auth-msg" class="hidden"></p>
             <p class="lite-auth-switch">
                 <button type="button" id="toolbox-auth-switch" class="lite-auth-linkbtn" onclick="window.skyfunAuth&&window.skyfunAuth.toggleRegisterMode()">還沒有帳號？申請註冊</button>
+                <button type="button" id="toolbox-auth-forgot" class="lite-auth-linkbtn">忘記密碼？</button>
             </p>
             <a id="toolbox-auth-admin-link" href="./admin.html">管理員核准帳號</a>
         </div>
