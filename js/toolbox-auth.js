@@ -67,7 +67,9 @@
   }
 
   function submitLabel() {
-    return mode === 'register' ? '送出註冊申請' : '進入工具箱';
+    if (mode === 'register') return '送出註冊申請';
+    if (mode === 'forgot') return '重設密碼並登入';
+    return '進入工具箱';
   }
 
   function setGateLoading(on) {
@@ -195,10 +197,15 @@
         <label for="toolbox-auth-team">處別</label>
         <select id="toolbox-auth-team" required>${typeof window.buildSkyfunDepartmentSelectHtml === 'function' ? window.buildSkyfunDepartmentSelectHtml() : '<option value="">請選擇處別</option>'}</select>
       </div>
+      <div id="toolbox-auth-forgot-extra" class="hidden">
+        <label for="toolbox-auth-realname">姓名</label>
+        <input id="toolbox-auth-realname" type="text" maxlength="30" autocomplete="name" placeholder="請輸入本名（與註冊相同）" />
+      </div>
       <button type="button" id="toolbox-auth-submit">進入工具箱</button>
       <p id="toolbox-auth-msg" class="hidden"></p>
       <p class="lite-auth-switch">
         <button type="button" id="toolbox-auth-switch" class="lite-auth-linkbtn"></button>
+        <button type="button" id="toolbox-auth-forgot" class="lite-auth-linkbtn">忘記密碼？</button>
       </p>
       <a id="toolbox-auth-admin-link" href="./admin.html">管理員核准帳號</a>
     `;
@@ -239,7 +246,7 @@
   }
 
   function toggleRegisterMode() {
-    setMode(mode === 'register' ? 'login' : 'register');
+    setMode(mode === 'login' ? 'register' : 'login');
   }
 
   function wireRegisterSwitch() {
@@ -249,6 +256,7 @@
       gate.addEventListener('click', (e) => {
         const target = e.target instanceof Element ? e.target : null;
         if (target?.closest('#toolbox-auth-switch')) toggleRegisterMode();
+        if (target?.closest('#toolbox-auth-forgot')) setMode('forgot');
       });
     }
     const switchBtn = $('toolbox-auth-switch');
@@ -258,24 +266,35 @@
   }
 
   function setMode(next) {
-    mode = next === 'register' ? 'register' : 'login';
+    mode = next === 'register' || next === 'forgot' ? next : 'login';
     const extra = $('toolbox-auth-register-extra');
     if (extra) extra.classList.toggle('hidden', mode !== 'register');
+    const fextra = $('toolbox-auth-forgot-extra');
+    if (fextra) fextra.classList.toggle('hidden', mode !== 'forgot');
     const pwd = $('toolbox-auth-password');
-    if (pwd) pwd.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+    if (pwd) {
+      pwd.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+      const pwdLabel = document.querySelector('label[for="toolbox-auth-password"]');
+      if (pwdLabel) pwdLabel.style.display = mode === 'forgot' ? 'none' : '';
+      pwd.style.display = mode === 'forgot' ? 'none' : '';
+    }
+    const forgotBtn = $('toolbox-auth-forgot');
+    if (forgotBtn) forgotBtn.style.display = mode === 'login' ? '' : 'none';
     const hint = $('toolbox-auth-mode-hint');
     if (hint) {
       hint.textContent =
         mode === 'register'
           ? '帳號、密碼都輸入身分證字號（與公司系統相同），姓名請填本名。送出後需管理員核准。'
-          : '輸入帳號與密碼即可進入。第一次登入請先註冊。';
+          : mode === 'forgot'
+            ? '輸入帳號（身分證字號）與姓名，驗證後密碼會重設為身分證字號，並直接登入。'
+            : '輸入帳號與密碼即可進入。第一次登入請先註冊。';
     }
     const tag = document.querySelector('.lite-auth-tag');
-    if (tag) tag.textContent = mode === 'register' ? '申請帳號' : '帳號登入';
+    if (tag) tag.textContent = mode === 'register' ? '申請帳號' : mode === 'forgot' ? '忘記密碼' : '帳號登入';
     const switchBtn = $('toolbox-auth-switch');
     if (switchBtn) {
       switchBtn.textContent =
-        mode === 'register' ? '已有帳號？返回進入' : '還沒有帳號？申請註冊';
+        mode === 'register' ? '已有帳號？返回進入' : mode === 'forgot' ? '返回登入' : '還沒有帳號？申請註冊';
     }
     const btn = $('toolbox-auth-submit');
     if (btn && !btn.disabled) btn.textContent = submitLabel();
@@ -530,6 +549,122 @@
       if (btn) {
         btn.disabled = false;
         btn.textContent = '更新並進入';
+      }
+    }
+  }
+
+  /* ---------- 修改密碼（密碼維持身分證字號） ---------- */
+
+  function ensureChangePwGate() {
+    let gate = $('toolbox-chpw-gate');
+    if (gate) return gate;
+    gate = document.createElement('div');
+    gate.id = 'toolbox-chpw-gate';
+    gate.className = 'hidden';
+    gate.setAttribute('role', 'dialog');
+    gate.setAttribute('aria-modal', 'true');
+    gate.innerHTML =
+      '<div class="toolbox-auth-card toolbox-auth-card--lite">' +
+      '<h2>修改密碼</h2>' +
+      '<p class="lite-auth-hint">密碼與公司系統相同，請設定為你的身分證字號。</p>' +
+      '<label for="toolbox-chpw-current">目前密碼</label>' +
+      '<input id="toolbox-chpw-current" type="password" maxlength="72" autocomplete="current-password" placeholder="請輸入目前密碼" />' +
+      `<label for="toolbox-chpw-new">新密碼（身分證字號）</label>` +
+      `<input id="toolbox-chpw-new" type="password" maxlength="12" autocomplete="new-password" placeholder="${ID_PLACEHOLDER}" />` +
+      '<label for="toolbox-chpw-new2">確認新密碼</label>' +
+      `<input id="toolbox-chpw-new2" type="password" maxlength="12" autocomplete="new-password" placeholder="再輸入一次身分證字號" />` +
+      '<button type="button" id="toolbox-chpw-submit">更新密碼</button>' +
+      '<p id="toolbox-chpw-msg" class="hidden"></p>' +
+      '<button type="button" id="toolbox-chpw-cancel" class="tig-logout">取消</button>' +
+      '</div>';
+    document.body.appendChild(gate);
+    $('toolbox-chpw-submit')?.addEventListener('click', () => {
+      void submitChangePw();
+    });
+    $('toolbox-chpw-cancel')?.addEventListener('click', () => {
+      gate.classList.add('hidden');
+    });
+    ['toolbox-chpw-current', 'toolbox-chpw-new', 'toolbox-chpw-new2'].forEach((id) => {
+      $(id)?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') void submitChangePw();
+      });
+    });
+    if (!document.getElementById('toolbox-chpw-gate-style')) {
+      const st = document.createElement('style');
+      st.id = 'toolbox-chpw-gate-style';
+      st.textContent = [
+        '#toolbox-chpw-gate{position:fixed;inset:0;z-index:100004;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(2,6,23,.72);backdrop-filter:blur(4px)}',
+        '#toolbox-chpw-gate.hidden{display:none!important}',
+        '#toolbox-chpw-gate .toolbox-auth-card{max-width:21.5rem;width:100%}',
+        '#toolbox-chpw-gate h2{margin:0 0 .35rem;font-size:1.2rem;color:#0f172a}',
+        '#toolbox-chpw-gate input{width:100%}',
+        '#toolbox-chpw-submit{margin-top:1rem;width:100%;border:0;border-radius:.9rem;padding:.72rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#0f766e,#0d9488);cursor:pointer}',
+        '#toolbox-chpw-submit:disabled{opacity:.6;cursor:wait}',
+        '#toolbox-chpw-msg{margin-top:.65rem;font-size:.82rem;color:#0f766e}',
+        '#toolbox-chpw-msg.is-error{color:#b91c1c}',
+        '#toolbox-chpw-gate .tig-logout{display:block;margin:.8rem auto 0;border:0;background:transparent;color:#94a3b8;font-size:.78rem;text-decoration:underline;cursor:pointer}'
+      ].join('');
+      document.head.appendChild(st);
+    }
+    return gate;
+  }
+
+  function setChangePwMessage(msg, isError) {
+    const el = $('toolbox-chpw-msg');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('is-error', !!isError);
+    el.classList.toggle('hidden', !msg);
+  }
+
+  function showChangePwGate() {
+    if (!session?.supabaseToken) return;
+    const gate = ensureChangePwGate();
+    ['toolbox-chpw-current', 'toolbox-chpw-new', 'toolbox-chpw-new2'].forEach((id) => {
+      if ($(id)) $(id).value = '';
+    });
+    setChangePwMessage('');
+    gate.classList.remove('hidden');
+    $('toolbox-chpw-current')?.focus();
+  }
+
+  async function submitChangePw() {
+    const current = $('toolbox-chpw-current')?.value || '';
+    const next = normId($('toolbox-chpw-new')?.value);
+    const next2 = normId($('toolbox-chpw-new2')?.value);
+    if (!current) {
+      setChangePwMessage('請輸入目前密碼', true);
+      return;
+    }
+    if (!twIdOk(next)) {
+      setChangePwMessage('新密碼請輸入身分證字號（與公司系統相同）', true);
+      return;
+    }
+    if (next !== next2) {
+      setChangePwMessage('兩次新密碼不一致', true);
+      return;
+    }
+    const btn = $('toolbox-chpw-submit');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '更新中…';
+    }
+    setChangePwMessage('');
+    try {
+      const data = await rpc('toolbox_change_password', {
+        p_token: session?.supabaseToken || '',
+        p_current: current,
+        p_new: next
+      });
+      if (!data?.ok) throw new Error(data?.error || '更新失敗');
+      setChangePwMessage(data.message || '密碼已更新', false);
+      setTimeout(() => $('toolbox-chpw-gate')?.classList.add('hidden'), 900);
+    } catch (e) {
+      setChangePwMessage(e.message || '更新失敗', true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '更新密碼';
       }
     }
   }
@@ -848,6 +983,31 @@
         setGateMessage('請輸入帳號', true);
         return;
       }
+      if (mode === 'forgot') {
+        const realname = $('toolbox-auth-realname')?.value?.trim() || '';
+        if (!twIdOk(username)) {
+          setGateMessage('帳號請輸入身分證字號（與公司系統相同）', true);
+          return;
+        }
+        if (!realname) {
+          setGateMessage('請輸入姓名', true);
+          return;
+        }
+        setGateMessage('');
+        setGateLoading(true);
+        try {
+          const data = await rpc('toolbox_reset_password', { p_username: username, p_name: realname });
+          if (!data?.ok || !data.token) throw new Error(data?.error || '重設失敗');
+          applySupabaseSession(data.token, data.user);
+          setGateMessage(data.message || '密碼已重設，已直接登入', false);
+          await finishAuthEntry();
+        } catch (e) {
+          setGateMessage(e.message || '重設失敗', true);
+        } finally {
+          setGateLoading(false);
+        }
+        return;
+      }
       if (!password) {
         setGateMessage('請輸入密碼', true);
         return;
@@ -902,7 +1062,11 @@
       logout().catch(() => {});
     });
 
-    ['toolbox-auth-username', 'toolbox-auth-password', 'toolbox-auth-password2'].forEach((id) => {
+    $('toolbox-change-pw')?.addEventListener('click', () => {
+      showChangePwGate();
+    });
+
+    ['toolbox-auth-username', 'toolbox-auth-password', 'toolbox-auth-password2', 'toolbox-auth-realname'].forEach((id) => {
       $(id)?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') $('toolbox-auth-submit')?.click();
       });

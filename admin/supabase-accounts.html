@@ -85,7 +85,7 @@
       <h1>帳號核准後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">可看全員登入狀態 · 異常登入會 LINE 通知簡為倢 · 與 Render 完整版共用 Supabase 帳號</p>
+    <p class="lead">可看全員登入狀態 · 新註冊／異常登入會 LINE 通知簡為倢 · 與 Render 完整版共用 Supabase 帳號</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
@@ -101,7 +101,7 @@
     <div class="space-y-2 pb-2 border-b border-slate-200">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h2 class="section-h">全員登入狀態</h2>
-        <p class="text-xs text-slate-500">線上＝15 分鐘內有活動；密碼連錯／停用帳嘗試／1 小時登入≥4 次（疑似共用）會 LINE 通知簡為倢（同類型 30 分鐘內不重送）</p>
+        <p class="text-xs text-slate-500">線上＝15 分鐘內有活動；有人申請註冊、或密碼連錯／停用帳嘗試／1 小時登入≥4 次（疑似共用）會 LINE 通知簡為倢（同類型 30 分鐘內不重送）</p>
       </div>
       <div class="login-summary" id="login-summary">
         <div class="login-stat"><div class="login-stat-num" id="sum-online">—</div><div class="login-stat-label">線上</div></div>
@@ -494,6 +494,7 @@
           } else if (u.status === 'disabled' || u.status === 'rejected') {
             acts.push(`<button type="button" class="act-btn act-ok" data-act="active" data-id="${u.id}">重新核准</button>`);
           }
+          acts.push(`<button type="button" class="act-btn act-danger" data-act="delete" data-id="${u.id}" data-user="${esc(u.username)}" data-name="${esc(u.name)}">刪除</button>`);
           return `<tr class="${missing ? 'row-missing' : ''}${teamHit ? ' row-team-highlight' : ''}${abnormal ? ' row-abnormal' : ''}">
             <td>${esc(u.username) || '—'}${missing ? '<span class="badge-missing">缺處別</span>' : ''}${u.adminQaDoublePoints ? '<span class="badge-double">✓ 雙倍</span>' : ''}</td>
             <td>${esc(u.name) || '—'}</td>
@@ -560,6 +561,16 @@
         renderRows(allUsers);
         document.getElementById('msg').textContent =
           allUsers.length ? '' : '這篩選目前沒有帳號；可把「篩選狀態」改成「已核准」或「全部」。';
+      }
+
+      async function deleteUser(id, username, name) {
+        const label = (username || '') + (name ? '（' + name + '）' : '');
+        if (!confirm('確定要「完全刪除」帳號 ' + label + ' 嗎？\n\n刪除後無法復原，考試、點數等相關紀錄會一併刪除；好處是這個身分證之後可以重新註冊。\n（只想暫時擋登入請用「停用」）')) return;
+        if (!confirm('再確認一次：真的要刪除 ' + label + ' 嗎？')) return;
+        const data = await rpc('toolbox_admin_delete_user', { p_secret: secret, p_user_id: id });
+        if (!data?.ok) throw new Error(data?.error || '刪除失敗');
+        document.getElementById('msg').textContent = data.message || '已刪除帳號';
+        await loadList();
       }
 
       async function setStatus(id, status) {
@@ -651,6 +662,10 @@
         const msgEl = document.getElementById('msg');
         if (btn.dataset.act === 'save-team') {
           saveTeam(id).catch((err) => { msgEl.textContent = err.message; });
+          return;
+        }
+        if (btn.dataset.act === 'delete') {
+          deleteUser(id, btn.dataset.user, btn.dataset.name).catch((err) => { msgEl.textContent = err.message; });
           return;
         }
         setStatus(id, btn.dataset.act).catch((err) => {
