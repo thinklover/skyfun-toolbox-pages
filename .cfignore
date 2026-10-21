@@ -1,0 +1,6 @@
+# Cloudflare Pages 單檔上限 25 MiB
+assets/lal/TW-Kai-98_1.ttf
+assets/lal/*.ttf
+node_modules/
+services/*/node_modules/
+.git/

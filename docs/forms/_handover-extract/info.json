@@ -1,0 +1,51 @@
+{
+  "total": 4,
+  "info": {
+    "PDFFormatVersion": "1.4",
+    "Language": "zh-TW",
+    "EncryptFilterName": null,
+    "IsLinearized": false,
+    "IsAcroFormPresent": false,
+    "IsXFAPresent": false,
+    "IsCollectionPresent": false,
+    "IsSignaturesPresent": false,
+    "Title": "skyfunsystem.com/PrintContrat/LeaseTerminationHandover?contractId=1150843",
+    "Creator": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "Producer": "Skia/PDF m153",
+    "CreationDate": "D:20260918151429+00'00'",
+    "ModDate": "D:20260918151429+00'00'"
+  },
+  "metadata": null,
+  "fingerprints": [
+    "0792c32dfa38ae7121e0a3955799baea",
+    null
+  ],
+  "permission": null,
+  "outline": null,
+  "pages": [
+    {
+      "pageNumber": 1,
+      "links": [],
+      "width": 594.95996,
+      "height": 841.91998
+    },
+    {
+      "pageNumber": 2,
+      "links": [],
+      "width": 594.95996,
+      "height": 841.91998
+    },
+    {
+      "pageNumber": 3,
+      "links": [],
+      "width": 594.95996,
+      "height": 841.91998
+    },
+    {
+      "pageNumber": 4,
+      "links": [],
+      "width": 594.95996,
+      "height": 841.91998
+    }
+  ]
+}

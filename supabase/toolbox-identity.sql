@@ -239,6 +239,14 @@ begin
   returning id into v_id;
   insert into public.toolbox_login_events(user_id, name, team, ok, detail)
   values (v_id, v_name, v_team, true, 'register_pending');
+  perform public.toolbox_notify_login_alert(
+    'register:' || v_id::text,
+    format(
+      E'🆕 工具箱新註冊申請\n帳號：%s\n姓名：%s\n處別：%s\n狀態：待核准\n時間：%s\n請至帳號後台核准。',
+      v_user, v_name, coalesce(nullif(v_team, ''), '—'),
+      to_char(now() at time zone 'Asia/Taipei', 'YYYY-MM-DD HH24:MI')
+    )
+  );
   return json_build_object('ok', true, 'message', '註冊成功，請等待管理員核准後再登入', 'status', 'pending');
 end;
 $$;

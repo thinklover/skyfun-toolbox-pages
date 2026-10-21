@@ -71,10 +71,7 @@
         const pageEl = document.getElementById(pageId);
         if (!pageEl) return;
         const details = pageEl.querySelector(`details[data-nb-reading="${readingKey}"]`);
-        if (details) {
-            details.open = true;
-            details.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        if (details) details.open = true;
     }
 
     function runNavButtonAction(btn) {
@@ -993,7 +990,9 @@
                 }
                 if (anchor) {
                     setTimeout(() => {
-                        document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        const el = document.getElementById(anchor);
+                        if (el instanceof HTMLDetailsElement) el.open = true;
+                        else el?.querySelector?.('details') && (el.querySelector('details').open = true);
                     }, 140);
                 }
             });

@@ -723,6 +723,39 @@
     return hit ? hit[1] : '';
   }
 
+  /** 媒合編號後段代碼（如 F2M10500502、A2M10400196-2）；取不到回傳空字串。尾巴有「(寄居)」之類註記先拿掉再取 */
+  function opinionCaseCode(no) {
+    const s = String(no || '')
+      .replace(/\s+/g, '')
+      .replace(/臺/g, '台')
+      .replace(/鸿/g, '鴻')
+      .replace(/华/g, '華')
+      .toUpperCase()
+      .replace(/[（(][^（）()]*[）)]$/, '');
+    const m = s.match(/([A-Z]\d[A-Z]\d+(?:-\d+)?)$/);
+    return m ? m[1] : '';
+  }
+
+  /**
+   * 媒合編號固定格式：星鴻／星華＋後段代碼（例：星鴻F2M10500502），不帶縣市。
+   * 縣市另外存在 region 欄；貼上星鴻原始編號（星鴻高雄F2M…）會把縣市拿掉。
+   * 只打後段代碼、或貼上原始編號都組成同一種寫法。
+   * @returns {{value, code, region, letterRegion, company} | null}
+   */
+  function canonicalOpinionCaseNo(raw, region, company) {
+    const code = opinionCaseCode(raw);
+    if (!code) return null;
+    const rawN = String(raw || '').replace(/\s+/g, '').replace(/臺/g, '台').replace(/鸿/g, '鴻').replace(/华/g, '華');
+    const letterRegion = KPI_CASE_LETTER[code[0]] || '';
+    const want = String(region || '').replace(/臺/g, '台').trim();
+    /* 縣市不防呆：期數不同編號格式不一（有的帶縣市、有的沒有），推不出縣市也照常組成編號，region 存空字串 */
+    const reg = letterRegion || (KPI_REGIONS.includes(want) ? want : '');
+    const picked = String(company || '').trim();
+    /* 貼上的完整編號本身有星鴻／星華時以它為準；只打後段代碼時才用公司欄的選擇 */
+    const comp = rawN.includes('星華') ? '星華' : rawN.includes('星鴻') ? '星鴻' : picked === '星華' || picked === '星鴻' ? picked : '星鴻';
+    return { value: comp + code, code, region: reg, letterRegion, company: comp };
+  }
+
   /** 縣市（台北市、新竹縣…）→ KPI 地區；不在 12 區回傳空字串 */
   function kpiRegionOfCity(city) {
     const s = String(city || '').replace(/臺/g, '台').slice(0, 2);
@@ -758,6 +791,22 @@
    * 錯誤＝該公會期數的清冊／案件意見（沒填縣市的案件意見依媒合編號推地區）。
    * @returns { roster, audit：{ 全區|地區: { total, err } }, errors：意見加上 area }
    */
+  /** 錯誤件數認媒合編號：同 kind、同後段代碼只算第一筆（同點數「只認列第一筆」）；抓不到代碼的逐筆照算 */
+  function dedupeOpinionsByCase(opinions) {
+    const seen = new Set();
+    const out = [];
+    for (const o of opinions || []) {
+      const code = opinionCaseCode(o.caseNo);
+      const key = code ? `${o.kind}|${code}` : '';
+      if (key) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+      }
+      out.push(o);
+    }
+    return out;
+  }
+
   function kpiQuality(r04, r09, cases, opinions) {
     const regions = ['全區', ...KPI_REGIONS];
     const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
@@ -773,13 +822,55 @@
       audit['全區'].total += n;
       if (audit[region]) audit[region].total += n;
     }
-    const errors = (opinions || []).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
+    const errors = dedupeOpinionsByCase(opinions).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
     for (const o of errors) {
       const bucket = o.kind === 'roster' ? roster : audit;
       bucket['全區'].err += 1;
       if (o.area && bucket[o.area]) bucket[o.area].err += 1;
     }
     return { roster, audit, errors };
+  }
+
+  /**
+   * 清冊快照＋即時公會意見 → 與 kpiQuality 相同形狀。
+   * 審件總數優先用快照 cases；沒有則傳入 liveCases（舊 kpi part）。
+   */
+  function kpiQualityFromSnapshot(snap, opinions, liveCases) {
+    const regions = ['全區', ...KPI_REGIONS];
+    const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
+    const roster = blank();
+    const audit = blank();
+    const regTotals = snap?.totals?.region || {};
+    let allRoster = Number(snap?.totals?.all?.total) || 0;
+    if (!allRoster && Array.isArray(snap?.rows)) allRoster = snap.rows.length;
+    roster['全區'].total = allRoster;
+    for (const g of KPI_REGIONS) {
+      const n = Number(regTotals[g]?.total) || 0;
+      if (roster[g]) roster[g].total = n;
+    }
+    const cases = snap?.cases?.rows ? snap.cases : liveCases;
+    for (const [region, , n] of cases?.rows || []) {
+      audit['全區'].total += n;
+      if (audit[region]) audit[region].total += n;
+    }
+    if (!audit['全區'].total && snap?.cases?.total) audit['全區'].total = Number(snap.cases.total) || 0;
+    const errors = dedupeOpinionsByCase(opinions).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
+    for (const o of errors) {
+      const bucket = o.kind === 'roster' ? roster : audit;
+      bucket['全區'].err += 1;
+      if (o.area && bucket[o.area]) bucket[o.area].err += 1;
+    }
+    return {
+      roster,
+      audit,
+      errors,
+      snapMeta: {
+        builtAt: snap?.builtAt || '',
+        partial: !!snap?.partial,
+        unresolved: snap?.unresolved || null,
+        source: snap?.source || null
+      }
+    };
   }
 
   /** 人力明細的地區 → KPI 地區（舊資料寫「大台北」的算在台北） */
@@ -1664,10 +1755,14 @@
     rankBand,
     cityOf,
     KPI_REGIONS,
+    KPI_CASE_LETTER,
+    opinionCaseCode,
+    canonicalOpinionCaseNo,
     kpiRegionOfCaseNo,
     kpiRegionOfCity,
     kpiErrRate,
     kpiQuality,
+    kpiQualityFromSnapshot,
     OPINION_CATEGORIES,
     kpiRegionOfStaff,
     kpiRegionsOfAreas,

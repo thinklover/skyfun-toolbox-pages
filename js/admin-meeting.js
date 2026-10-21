@@ -5,6 +5,34 @@
 (function () {
     const MEETINGS = [
         {
+            id: '1151019',
+            course: 'meet1151019',
+            date: '115/10/19',
+            title: '行政會議紀錄',
+            slides: [
+                '系統公告｜手機上傳安全檢核表照片：前置作業與方法 A（尚未建立物件）',
+                '系統公告｜手機上傳：AI 預審、儲存草稿與電腦版查詢草稿（方法 A 續）',
+                '系統公告｜手機上傳方法 B：公司系統已建立物件資料',
+                '系統公告｜手機儲存草稿 ≠ 已送出審核，回電腦版完成送審',
+                '行政管理部公告｜包租契約解約退押款匯入專屬房東虛擬帳號',
+                '系統公告｜插件功能授權方式變更：由管理員勾選開啟'
+            ]
+        },
+        {
+            id: 'secproj',
+            course: null,
+            date: '115/10/12 版',
+            title: '秘書及專案任務管理辦法（業務主管權責）',
+            slides: [
+                '秘書及專案任務管理辦法｜一句話看懂分工',
+                '誰管誰？分工一次看懂（秘書歸處長、專案秘書歸區主管）',
+                '派件與跨營業處支援：誰決定、怎麼做',
+                '專案任務管理與人力增補流程',
+                '日常管理：請假加班、教育訓練、代理交接',
+                '異常處理、定期追蹤與主管紅線'
+            ]
+        },
+        {
             id: '1151012',
             course: 'meet1151012',
             date: '115/10/12',
@@ -120,23 +148,29 @@
         const picker = MEETINGS.length > 1
             ? `<select class="amt-pick" data-amt="pick">${MEETINGS.map((x) => `<option value="${x.id}"${x.id === m.id ? ' selected' : ''}>${esc(x.date)} ${esc(x.title)}</option>`).join('')}</select>`
             : `<span class="amt-date">${esc(m.date)} ${esc(m.title)}</span>`;
-        const tabs = [['slides', `📑 週會簡報（${m.slides.length} 張）`], ['exam', '📝 線上小考（20 題）']]
+        const n = examCount(m);
+        const tabList = [['slides', `📑 週會簡報（${m.slides.length} 張）`]];
+        if (n) tabList.push(['exam', `📝 線上小考（${n} 題）`]);
+        const tabs = tabList
             .map(([k, t]) => `<button type="button" class="amt-tab amt-tab--${k}${view.tab === k ? ' is-on' : ''}" data-amt="tab" data-tab="${k}">${t}</button>`)
             .join('');
         return `<div class="amt-head">${picker}<div class="amt-tabs">${tabs}</div></div>
-            ${view.tab === 'slides'
+            ${view.tab === 'slides' || !n
                 ? `${searchBarHtml()}${deckHtml(m)}<div class="amt-cta">
-                        <p class="amt-tip">用 ← → 方向鍵或點投影片左右兩側翻頁。看完簡報後請完成線上小考，全部答對才算通過。</p>
-                        <button type="button" class="amt-cta-btn" data-amt="tab" data-tab="exam">📝 開始線上小考（20 題）→</button>
+                        <p class="amt-tip">用 ← → 方向鍵或點投影片左右兩側翻頁。${n ? '看完簡報後請完成線上小考，全部答對才算通過。' : '這份簡報沒有線上小考。'}</p>
+                        ${n ? `<button type="button" class="amt-cta-btn" data-amt="tab" data-tab="exam">📝 開始線上小考（${n} 題）→</button>` : ''}
                     </div>`
                 : `<div class="amt-exam" data-cx-root></div>`}`;
     }
 
-    /** 最後一張的「下一張」換成直接去考試 */
+    const examCount = (m) => (m?.course ? window.COURSE_EXAM?.[m.course]?.questions?.length || 0 : 0);
+
+    /** 最後一張的「下一張」換成直接去考試（沒有小考的簡報就停用） */
     function nextBtn(last) {
-        return last
+        if (!last) return '<button type="button" class="amt-nav amt-next" data-amt="next">下一張 ›</button>';
+        return examCount(meeting())
             ? '<button type="button" class="amt-nav amt-next is-exam" data-amt="tab" data-tab="exam">📝 開始小考 →</button>'
-            : '<button type="button" class="amt-nav amt-next" data-amt="next">下一張 ›</button>';
+            : '<button type="button" class="amt-nav amt-next" disabled>已是最後一張</button>';
     }
 
     /** 翻頁只換大圖與縮圖狀態，不重畫整個區塊（避免閃爍、縮圖捲動位置跑掉） */
@@ -207,7 +241,6 @@
         } else if (act === 'hit') {
             if (b.dataset.id !== view.id) { view.id = b.dataset.id; view.slide = +b.dataset.i; render(); }
             else goSlide(+b.dataset.i);
-            document.querySelector('#admin-meeting-root [data-amt-stage]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else return;
         if (m && act !== 'tab') e.preventDefault();
     }
@@ -235,6 +268,7 @@
             if (e.target.matches('[data-amt="pick"]')) {
                 view.id = e.target.value;
                 view.slide = 0;
+                if (!examCount(meeting())) view.tab = 'slides';
                 render();
             }
         });

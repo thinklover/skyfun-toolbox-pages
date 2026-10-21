@@ -613,6 +613,24 @@
         aiMsg('已復原成整理前的內容');
     }
 
+    /** 預覽套版用：把畫布上已簽的簽名編成 printDocHtml 可吃的資料 */
+    function signaturePreviewEntries(form, me, extraSigns) {
+        const signs = Array.isArray(extraSigns) ? extraSigns.slice() : [];
+        const has = (role) => signs.some((s) => s.role === role);
+        const canvas = form?.querySelector?.('canvas[data-signature="applicant"]')
+            || (form || document).querySelector?.('canvas[data-signature="applicant"]');
+        if (canvas?.dataset.ink && !has('applicant')) {
+            signs.push({
+                role: 'applicant',
+                roleLabel: '承辦人',
+                userName: me?.name || me?.username || '',
+                url: canvas.toDataURL('image/png'),
+                createdAt: new Date().toISOString()
+            });
+        }
+        return signs;
+    }
+
     function previewForm(form) {
         const me = auth()?.getUser?.();
         const d = {
@@ -621,7 +639,8 @@
             createdAt: new Date().toISOString(),
             content: readFormContent(form)
         };
-        openPrintWindow(printDocHtml(d, [], true), (m) => setMsg(m, 'err'));
+        const signs = signaturePreviewEntries(form, me, []);
+        openPrintWindow(printDocHtml(d, signs, true), (m) => setMsg(m, 'err'));
     }
 
     async function submitForm(form) {
@@ -1083,7 +1102,7 @@
         return '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>' + esc(d.title || '簽呈預覽') + '</title><style>' + PRINT_CSS + '</style></head><body>' +
             '<div class="tools"><button onclick="window.print()">' + (preview ? '列印預覽稿' : '列印正式簽呈') + '</button></div>' +
             '<div class="paper">' +
-            (preview ? '<div class="preview">這是送出前的預覽稿，電子簽名欄會在各關簽完後自動帶入。</div>' : '') +
+            (preview ? '<div class="preview">這是送出前的預覽稿：已簽名的欄位會顯示目前內容；尚未簽核的關卡仍顯示「尚未簽名」。</div>' : '') +
             '<div class="top"><span>簽　於　' + esc(d.team || '未填部門') + '</span><span>中華民國' + esc(rocDate(d.createdAt)) + '</span></div>' +
             '<h1>主旨：' + esc(d.title) + '，' + esc(c.closing || '擬請核示') + '。</h1>' +
             section('一、案件摘要', c.summary) + section('二、時間歷程與證據狀態', c.timeline) +
@@ -1329,7 +1348,6 @@
                 if (state.tab !== 'new') state.backTab = state.tab;
                 state.tab = 'new';
                 renderPane();
-                page.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return;
             }
             if (e.target.closest('[data-back]')) {
@@ -1349,7 +1367,7 @@
             const btn = e.target.closest('[data-act]');
             if (btn) { act(btn.dataset.act, btn); return; }
             const jump = e.target.closest('[data-jump]');
-            if (jump) { jump.closest('.acf-detail')?.querySelector('.pt-act')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+            if (jump) { return; }
             const row = e.target.closest('[data-open]');
             if (!row) return;
             const id = Number(row.dataset.open);

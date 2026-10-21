@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261015-2"></script>
+  <script src="../js/admin-points-core.js?v=20261019-snap1"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -175,6 +175,13 @@
     .op-pt.is-no { border-color: #fca5a5; background: #fee2e2; color: #b91c1c; }
     .op-pt.is-no:hover { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
     .op-pt-why { display: block; margin-top: 0.2rem; max-width: 10rem; font-size: 0.7rem; color: #b91c1c; white-space: normal; }
+    .op-edit { width: 100%; min-width: 11rem; min-height: 3.2rem; padding: 0.35rem 0.45rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 0.82rem; line-height: 1.4; resize: vertical; background: #fff; }
+    .op-edit:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
+    .op-cat { max-width: 14rem; }
+    .op-guild, .op-odate { padding: 0.3rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 0.82rem; background: #fff; }
+    .op-guild { min-width: 5.5rem; }
+    .op-odate { min-width: 8.5rem; }
+    .op-guild:focus, .op-odate:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
     tr.op-nopts > td { background: #fef2f2; color: #94a3b8; }
     .op-sub { font-size: 0.72rem; font-weight: 700; color: #64748b; }
     tr.click { cursor: pointer; }
@@ -490,6 +497,7 @@
         <span class="muted pb-2" id="kpi-stamp"></span>
         <div class="push pb-1">
           <button type="button" class="btn btn-ghost btn-sm" id="btn-kpi">重新抓取</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-kpi-force">強制更新清冊快照</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-kpi-xlsx" disabled>下載 Excel</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-kpi-print" disabled>列印／存 PDF</button>
         </div>
@@ -546,7 +554,7 @@
     <div id="tab-opinion" class="space-y-4 hidden">
       <div class="page-head"><h2>公會意見</h2><p>行政在工具箱填的案件意見、清冊意見，全部期間都列在這裡，可以依公會期數、縣市、行政、組別分類</p></div>
       <details class="help"><summary>說明</summary>
-        <p>不受上方業績月限制，列出全部意見（最近 5000 筆）。先選案件／清冊，再選分類方式；篩選條件可以疊加。每筆 1 點，填錯可以按「刪除」，那位行政會少 1 點。「人工計點」頁最下面仍只列本業績月的意見。</p>
+        <p>不受上方業績月限制，列出全部意見（最近 5000 筆）。先選案件／清冊，再選分類方式；篩選條件可以疊加。每筆 1 點，填錯可以按「刪除」，那位行政會少 1 點。「人工計點」頁最下面仍只列本業績月的意見。<b>公會期數、意見時間、缺失類別、公會意見內容、行政檢討對策</b>可直接在表上修改（離開欄位即儲存）；督導邱奕棋、簡為倢、黃怡婷亦可在工具箱用帳號修改。</p>
       </details>
       <div class="toolbar">
         <div class="flex gap-2 pb-1" id="op-kinds">
@@ -643,7 +651,7 @@
     <div id="tab-training" class="space-y-4 hidden">
       <div class="page-head"><h2>教育訓練</h2><p>所有人的影片觀看進度與考試分數；系統自動判定，不用登錄</p></div>
       <details class="help"><summary>怎麼算通過？</summary>
-        <p>物審、房客、預審、複審：看完教學影片（看過 95% 以上）＋線上考試滿分＋實作完成，三項都完成才算通過。實作在模擬公司系統做：物審、房客、預審已開放，通過指定題數就算完成，題庫與作答明細看「審核模擬系統」；複審的模擬環境建置中，實作先顯示「準備中」。執行要點：線上考試全部題目都考過滿分就算通過，明細看「執行要點考試」。</p>
+        <p>物審、房客、預審、複審：看完教學影片（看過 95% 以上）＋線上考試滿分＋實作完成，三項都完成才算通過。實作在模擬公司系統做：物審、房客、預審已開放，通過指定題數就算完成，題庫與作答明細看「審核模擬系統」；複審的模擬環境建置中，實作先顯示「準備中」。執行要點：線上考試全部題目都考過滿分就算通過，明細看「執行要點考試」。行政週會小考（115/10/12、115/10/19 行政會議・09月審件錯誤考題 30 題）只有考試、沒有影片與實作，滿分才算通過，一併列在「每人進度」與「考試紀錄」。</p>
       </details>
       <div class="toolbar">
         <div class="flex gap-2 pb-1">
@@ -825,7 +833,7 @@
     <div id="tab-org" class="space-y-4 hidden">
       <div class="page-head"><h2>組織圖</h2><p>工具箱「行政專區」行事曆下方的「全台行政組織與人力配置」</p></div>
       <details class="help"><summary>怎麼改？</summary>
-        <p>直接改格子，改完按最下面「儲存組織圖」才會生效（工具箱重新整理就看得到）。狀態選「待補」是黃色待補列；營業處填「工讀生」算工讀生（另計）；現有、待補、規劃人數會自動算。主管姓名填「待補」會顯示成虛線待補框。這裡只管組織圖顯示，點數表、抽查用的組長仍以「人力明細」為準。</p>
+        <p>直接改格子，改完按最下面「儲存組織圖」才會生效（工具箱重新整理就看得到）。狀態選「待補」是黃色待補列；營業處填「工讀生」算工讀生（另計）；現有、待補、規劃人數會自動算。主管姓名填「待補」會顯示成虛線待補框。儲存時會把在職員工的<strong>部別／營業處</strong>同步到人力明細（個人點數）；組長仍以人力明細為準，需另改。</p>
         <p>邱奕棋、黃怡婷、簡為倢、李芷琳、侯思廷登入工具箱後，可以直接在行政專區的組織圖點人員修改、新增或刪除待補；改成離職要填離職日，會記在下面「離職紀錄」。工具箱上顯示時會依部別→營業處→到職日自動排序；到職日請填「115年10月01日」這種格式，工具箱表格只顯示到月份，點開才看得到日期。前台有人改過後，這裡要重新整理再改，以免蓋掉。</p>
       </details>
       <div id="org-editor" class="space-y-3"><p class="muted">讀取中…</p></div>
@@ -1415,12 +1423,35 @@
         return 'tk-r';
       }
 
+      const USE_ROSTER_SNAPSHOT = true;
+
       async function fetchKpiPart(m, part, refresh) {
         const res = await fetch(`${RPA_BASE}/admin-points/kpi?year=${m.year}&month=${m.month}&part=${part}${refresh ? '&refresh=1' : ''}`, {
           headers: { 'X-Skyfun-Session': toolboxToken() }
         });
         const payload = await res.json().catch(() => null);
         if (!res.ok || !payload?.ok) throw new Error(payload?.error || `${KPI_PARTS[part]}讀取失敗（HTTP ${res.status}）`);
+        return payload;
+      }
+
+      async function fetchRosterSnapshot(m, { lite } = {}) {
+        const res = await fetch(
+          `${RPA_BASE}/admin-points/roster-snapshot?year=${m.year}&month=${m.month}${lite ? '&lite=1' : ''}`,
+          { headers: { 'X-Skyfun-Session': toolboxToken() } }
+        );
+        const payload = await res.json().catch(() => null);
+        if (!res.ok || !payload?.ok) throw new Error(payload?.error || `清冊快照讀取失敗（HTTP ${res.status}）`);
+        return payload;
+      }
+
+      async function rebuildRosterSnapshot(m, cont) {
+        const res = await fetch(`${RPA_BASE}/admin-points/roster-snapshot/${cont ? 'step' : 'rebuild'}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Skyfun-Session': toolboxToken() },
+          body: JSON.stringify({ year: m.year, month: m.month, continue: !!cont })
+        });
+        const payload = await res.json().catch(() => null);
+        if (!res.ok || !payload?.ok) throw new Error(payload?.error || `清冊快照重建失敗（HTTP ${res.status}）`);
         return payload;
       }
 
@@ -1453,7 +1484,7 @@
         }
       }
 
-      function kpiBuild(m, r04, r09, cases, opinions, perf) {
+      function kpiBuild(m, r04, r09, cases, opinions, perf, snapMeta) {
         const { roster, audit, errors } = Core.kpiQuality(r04, r09, cases, opinions);
         const companies = new Map();
         for (const [form, d] of [['04', r04], ['09', r09]]) {
@@ -1465,8 +1496,48 @@
           }
         }
         const caseCities = (cases.rows || []).map(([region, city, n]) => ({ region, city, n }));
-        const fetched = [r04, r09, cases].map((d) => d.fetchedAt).filter(Boolean).sort()[0];
-        return { m, roster, audit, perf, companies: [...companies.values()], caseCities, errors, fetchedAt: fetched, cached: [r04, r09, cases].some((d) => d.cached) };
+        const fetched = [r04, r09, cases].map((d) => d?.fetchedAt).filter(Boolean).sort()[0];
+        return {
+          m,
+          roster,
+          audit,
+          perf,
+          companies: [...companies.values()],
+          caseCities,
+          errors,
+          fetchedAt: fetched,
+          cached: [r04, r09, cases].some((d) => d?.cached),
+          snapMeta: snapMeta || null
+        };
+      }
+
+      function kpiBuildFromSnapshot(m, snap, opinions, liveCases, perf) {
+        const q = Core.kpiQualityFromSnapshot(snap, opinions, liveCases);
+        const companies = new Map();
+        for (const [form, region, company, period] of snap.rows || []) {
+          const key = `${region}|${company}`;
+          const c = companies.get(key) || { region, company, n: {} };
+          const k = `${form}-${period}`;
+          c.n[k] = (c.n[k] || 0) + 1;
+          companies.set(key, c);
+        }
+        if (!snap.rows?.length && snap.source) {
+          /* lite：沒有逐件，至少顯示全區合計於 sources 用 roster totals */
+        }
+        const cases = snap.cases?.rows ? snap.cases : liveCases || { rows: [] };
+        const caseCities = (cases.rows || []).map(([region, city, n]) => ({ region, city, n }));
+        return {
+          m,
+          roster: q.roster,
+          audit: q.audit,
+          perf,
+          companies: [...companies.values()],
+          caseCities,
+          errors: q.errors,
+          fetchedAt: snap.builtAt || cases.fetchedAt,
+          cached: true,
+          snapMeta: q.snapMeta
+        };
       }
 
       /** col：'all' 整月，數字為週序號；回傳 null 表示沒有資料 */
@@ -1577,15 +1648,59 @@
         const liteKey = `${m.key}|lite`;
         if (lite && !force && kpi.cache.has(liteKey)) return kpi.cache.get(liteKey);
         if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料');
-        const [r04, r09, cases, op, perf] = await Promise.all([
-          fetchKpiPart(m, 'roster04', force),
-          fetchKpiPart(m, 'roster09', force),
-          fetchKpiPart(m, 'cases', force),
-          rpc('admin_points_kpi_opinions', { p_guild_period: m.guild }),
-          lite ? { missing: '未計算' } : kpiPerf(m, force)
+
+        const loadLive = async (perf) => {
+          const [r04, r09, cases, op] = await Promise.all([
+            fetchKpiPart(m, 'roster04', false),
+            fetchKpiPart(m, 'roster09', false),
+            fetchKpiPart(m, 'cases', false),
+            rpc('admin_points_kpi_opinions', { p_guild_period: m.guild })
+          ]);
+          return kpiBuild(m, r04, r09, cases, op.opinions, perf);
+        };
+
+        if (!USE_ROSTER_SNAPSHOT) {
+          const [r04, r09, cases, op, perf] = await Promise.all([
+            fetchKpiPart(m, 'roster04', force),
+            fetchKpiPart(m, 'roster09', force),
+            fetchKpiPart(m, 'cases', force),
+            rpc('admin_points_kpi_opinions', { p_guild_period: m.guild }),
+            lite ? { missing: '未計算' } : kpiPerf(m, force)
+          ]);
+          const k = kpiBuild(m, r04, r09, cases, op.opinions, perf);
+          kpi.cache.set(lite ? liteKey : m.key, k);
+          return k;
+        }
+
+        /* 第一段：快照＋意見（＋必要時 cases）→ 立刻有清冊／審件數字 */
+        const [snap, op] = await Promise.all([
+          fetchRosterSnapshot(m, { lite: false }).catch(() => null),
+          rpc('admin_points_kpi_opinions', { p_guild_period: m.guild })
         ]);
-        const k = kpiBuild(m, r04, r09, cases, op.opinions, perf);
-        kpi.cache.set(lite ? liteKey : m.key, k);
+        let k;
+        const perfPlaceholder = lite ? { missing: '未計算' } : { missing: '計算中…' };
+        if (snap?.ok && !snap.missing && !snap.building && (snap.rows || snap.totals)) {
+          let liveCases = null;
+          if (!snap.cases?.rows?.length && !snap.cases?.total) {
+            liveCases = await fetchKpiPart(m, 'cases', false).catch(() => ({ rows: [], total: 0 }));
+          }
+          k = kpiBuildFromSnapshot(m, snap, op.opinions, liveCases, perfPlaceholder);
+        } else {
+          k = await loadLive(perfPlaceholder);
+          k.snapMeta = {
+            builtAt: '',
+            status: snap?.building
+              ? `快照建立中（${snap.phase || ''} ${snap.progress?.done || 0}/${snap.progress?.total || '?'}）`
+              : '快照尚未建立（已改即時查詢）'
+          };
+        }
+        if (lite) {
+          kpi.cache.set(liteKey, k);
+          return k;
+        }
+        /* 第二段：補第一階段達成率、行政承接率 */
+        k.perf = await kpiPerf(m, force);
+        kpi.cache.set(m.key, k);
         return k;
       }
 
@@ -1599,12 +1714,22 @@
           return;
         }
         kpi.busy = true;
-        for (const id of ['btn-kpi', 'btn-kpi-xlsx', 'btn-kpi-print']) $(id).disabled = true;
-        $('kpi-sheet').innerHTML = `<p class="muted">讀取星鴻表單04、表單09、媒合管理與審核紀錄中…第一次約 10～30 秒</p>`;
+        for (const id of ['btn-kpi', 'btn-kpi-force', 'btn-kpi-xlsx', 'btn-kpi-print']) {
+          if ($(id)) $(id).disabled = true;
+        }
+        $('kpi-sheet').innerHTML = `<p class="muted">讀取清冊快照與公會意見中…</p>`;
         $('kpi-errors').innerHTML = '';
         $('kpi-sources').innerHTML = '';
         try {
-          const k = await kpiLoad(m, force);
+          /* 先畫第一段（清冊／審件），再補 perf */
+          if (USE_ROSTER_SNAPSHOT) {
+            const lite = await kpiLoad(m, force, true);
+            if (kpiMonth().key !== m.key) return;
+            kpi.cur = lite;
+            renderKpi();
+            kpiStamp();
+          }
+          const k = await kpiLoad(m, force, false);
           if (kpiMonth().key !== m.key) return;
           kpi.cur = k;
           renderKpi();
@@ -1616,21 +1741,58 @@
           $('kpi-sheet').innerHTML = `<p class="err text-sm">${esc(err.message)}</p>`;
         } finally {
           kpi.busy = false;
-          $('btn-kpi').disabled = false;
+          if ($('btn-kpi')) $('btn-kpi').disabled = false;
+          if ($('btn-kpi-force')) $('btn-kpi-force').disabled = false;
           if (kpiMonth().key !== m.key) makeKpi(false);
         }
       }
       function kpiStamp() {
         const k = kpi.cur;
-        $('kpi-stamp').textContent = k ? `星鴻資料時間 ${fmtTime(k.fetchedAt)}${k.cached ? '（快取）' : ''}` : '';
+        if (!k) {
+          $('kpi-stamp').textContent = '';
+        } else {
+          const snap = k.snapMeta?.builtAt
+            ? `清冊快照 ${fmtTime(k.snapMeta.builtAt)}　公會意見：即時`
+            : k.snapMeta?.status || `星鴻資料時間 ${fmtTime(k.fetchedAt)}${k.cached ? '（快取）' : ''}`;
+          $('kpi-stamp').textContent = snap;
+        }
         $('btn-kpi-xlsx').disabled = !k;
         $('btn-kpi-print').disabled = !k;
+      }
+
+      async function forceKpiSnapshot() {
+        const m = kpiMonth();
+        const btn = $('btn-kpi-force');
+        if (!btn || btn.disabled) return;
+        btn.disabled = true;
+        try {
+          let r = await rebuildRosterSnapshot(m, false);
+          for (let i = 0; i < 80 && r && !r.done && !r.skipped; i++) {
+            btn.textContent = `建置 ${r.progress?.done || 0}/${r.progress?.total || '?'}…`;
+            await new Promise((ok) => setTimeout(ok, 3500));
+            r = await rebuildRosterSnapshot(m, true);
+          }
+          kpi.cache.delete(m.key);
+          kpi.cache.delete(`${m.key}|lite`);
+          await makeKpi(true);
+        } catch (err) {
+          alert(err.message || String(err));
+        } finally {
+          btn.textContent = '強制更新清冊快照';
+          btn.disabled = false;
+        }
       }
 
       $('kpi-month').innerHTML = kpiMonths().map((x) => `<option value="${x.year}-${x.month}">${x.year} 年 ${x.month} 月</option>`).join('');
       $('kpi-month').selectedIndex = 1;
       $('kpi-month').addEventListener('change', () => makeKpi(false));
-      $('btn-kpi').addEventListener('click', () => makeKpi(true));
+      $('btn-kpi').addEventListener('click', () => {
+        const m = kpiMonth();
+        kpi.cache.delete(m.key);
+        kpi.cache.delete(`${m.key}|lite`);
+        makeKpi(true);
+      });
+      $('btn-kpi-force')?.addEventListener('click', () => forceKpiSnapshot());
       $('btn-kpi-print').addEventListener('click', () => printTab('kpi'));
       document.querySelectorAll('[data-kpi-view]').forEach((b) => b.addEventListener('click', () => {
         kpi.view = b.dataset.kpiView;
@@ -1930,7 +2092,11 @@
 
       ['op-case-list', 'op-roster-list'].forEach((id) => $(id).addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-del-opinion]');
-        if (!btn || !confirm('確定刪除這筆意見？這位行政會少 1 點。')) return;
+        if (!btn) return;
+        const delOp = (data.opinions || []).find((o) => String(o.id) === btn.dataset.delOpinion);
+        if (!confirm(delOp?.noPoints
+          ? '確定刪除這筆意見？這筆本來就是 0 點。'
+          : '確定刪除這筆意見？若同一個媒合編號還有別筆，點數會改算到剩下最早的一筆。')) return;
         try {
           await rpc('admin_points_opinion_admin_delete', { p_id: Number(btn.dataset.delOpinion) });
           op.loaded = false;
@@ -2027,7 +2193,11 @@
       /* ---------- 教育訓練：看完影片＋考試滿分＋實作完成，系統自動判定 ---------- */
 
       const COURSES = Core.VIDEO_COURSES.map((key) => ({ key, label: Core.SKILL_NODES.find((n) => n.key === key)?.label || key }));
-      const COURSE_LABEL = new Map(COURSES.map((c) => [c.key, c.label]));
+      const MEET_COURSES = [
+        { key: 'meet1151019', label: '115/10/19 行政會議小考（30題）' },
+        { key: 'meet1151012', label: '115/10/12 行政週會小考' }
+      ];
+      const COURSE_LABEL = new Map([...COURSES, ...MEET_COURSES].map((c) => [c.key, c.label]));
       const train = { loaded: false, loading: false, view: 'people', people: new Map(), videos: new Map(), items: [], guide: new Map(), guideTotal: 0, sim: new Map(), simTarget: 3 };
       const PRACTICE_COURSES = Core.PRACTICE_COURSES || [];
 
@@ -2043,7 +2213,7 @@
         }
         return m;
       }
-      $('t-course').innerHTML += COURSES.map((c) => `<option value="${c.key}">${esc(c.label)}</option>`).join('');
+      $('t-course').innerHTML += [...COURSES, ...MEET_COURSES].map((c) => `<option value="${c.key}">${esc(c.label)}</option>`).join('');
 
       async function loadTraining() {
         if (train.loading) return;
@@ -2095,6 +2265,17 @@
       function trainCourses() {
         const c = $('t-course').value;
         return c ? COURSES.filter((x) => x.key === c) : COURSES;
+      }
+      function trainMeetCourses() {
+        const c = $('t-course').value;
+        return c ? MEET_COURSES.filter((x) => x.key === c) : MEET_COURSES;
+      }
+      /** 週會小考只有考試（沒有影片／實作） */
+      function meetCell(course, name) {
+        const ex = train.people.get(`${course}|${name}`);
+        if (!ex || !Number(ex.attempts)) return '<td class="train-cell">考試 還沒考</td>';
+        const best = examScore(ex.best, ex.total);
+        return `<td class="train-cell${ex.passed ? ' is-on' : ''}">${ex.passed ? '<b class="pass">✔ 通過</b><br>考試 ✅ 100 分' : `考試 最高 <span class="fail">${best} 分</span>`}（${ex.attempts} 次）</td>`;
       }
       function trainNames() {
         const leader = $('t-leader').value;
@@ -2155,18 +2336,20 @@
         ].map(([k, v]) => '<div class="stat"><b>' + v + '</b><span>' + esc(k) + '</span></div>').join('');
 
         if (train.view === 'people') {
+          const meets = trainMeetCourses();
           const guideHead = train.guideTotal ? '<th>執行要點考試</th>' : '';
-          $('t-head').innerHTML = '<tr><th>姓名</th><th>組長</th>' + courses.map((c) => `<th>${esc(c.label)}</th>`).join('') + guideHead + '<th>通過</th></tr>';
+          $('t-head').innerHTML = '<tr><th>姓名</th><th>組長</th>' + courses.map((c) => `<th>${esc(c.label)}</th>`).join('') + meets.map((c) => `<th>${esc(c.label)}</th>`).join('') + guideHead + '<th>通過</th></tr>';
           $('t-count').textContent = '共 ' + names.length + ' 人';
           $('t-rows').innerHTML = names.map((name) => {
             const g = guideOf(name);
             const guideCell = train.guideTotal
               ? `<td class="train-cell${g.done ? ' is-on' : ''}">${g.done ? '<b class="pass">✔ 通過</b>' : `<b>${Math.round(g.passed / train.guideTotal * 100)}%</b>`}<br>${g.passed}／${train.guideTotal} 題</td>`
               : '';
-            const passed = courses.filter((c) => courseOf(c.key, name).st.done).length + (train.guideTotal && g.done ? 1 : 0);
-            const total = courses.length + (train.guideTotal ? 1 : 0);
+            const meetPassed = meets.filter((c) => train.people.get(`${c.key}|${name}`)?.passed).length;
+            const passed = courses.filter((c) => courseOf(c.key, name).st.done).length + meetPassed + (train.guideTotal && g.done ? 1 : 0);
+            const total = courses.length + meets.length + (train.guideTotal ? 1 : 0);
             return `<tr><td class="font-bold">${esc(name)}</td><td class="muted">${esc(staffLeader(name) || '—')}</td>` +
-              courses.map((c) => courseCell(c.key, name)).join('') + guideCell + `<td>${passed}／${total}</td></tr>`;
+              courses.map((c) => courseCell(c.key, name)).join('') + meets.map((c) => meetCell(c.key, name)).join('') + guideCell + `<td>${passed}／${total}</td></tr>`;
           }).join('') || `<tr><td colspan="${courses.length + 4}" class="muted">沒有人員</td></tr>`;
           return;
         }
@@ -2199,12 +2382,18 @@
         if (train.view === 'people') {
           const head = ['姓名', '組長'];
           courses.forEach((c) => head.push(c.label + '影片(%)', c.label + '影片看完', c.label + '考試最高分', c.label + '考試次數', c.label + '考試滿分', c.label + '實作', c.label + '通過'));
+          const meets = trainMeetCourses();
+          meets.forEach((c) => head.push(c.label + '考試最高分', c.label + '考試次數', c.label + '考試滿分'));
           if (train.guideTotal) head.push('執行要點已考滿分題數', '執行要點總題數');
           downloadCsv('教育訓練_每人進度_', head, trainNames().map((name) => {
             const row = [name, staffLeader(name)];
             courses.forEach((c) => {
               const { ex, v, p, st } = courseOf(c.key, name);
               row.push(v ? v.pct : 0, v && v.completedAt ? 'Y' : '', ex && Number(ex.attempts) ? examScore(ex.best, ex.total) : '', ex ? ex.attempts : 0, ex && ex.passed ? 'Y' : '', practiceText(c.key, p, st), st.done ? 'Y' : '');
+            });
+            meets.forEach((c) => {
+              const ex = train.people.get(`${c.key}|${name}`);
+              row.push(ex && Number(ex.attempts) ? examScore(ex.best, ex.total) : '', ex ? ex.attempts : 0, ex && ex.passed ? 'Y' : '');
             });
             if (train.guideTotal) row.push(guideOf(name).passed, train.guideTotal);
             return row;
@@ -3957,10 +4146,33 @@
         const i = OP_CATS_ALL.indexOf(c);
         return c === '其他' ? 98 : i < 0 ? 99 : i;
       };
+      const opGuildOptions = () => {
+        const now = new Date();
+        const set = new Set(op.all.map((o) => o.guildPeriod).filter(Boolean));
+        for (let i = 0; i < 18; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          set.add(`${d.getFullYear() - 1911}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+        }
+        return [...set].sort((a, b) => b.localeCompare(a));
+      };
+      const opGuildSelect = (o) => {
+        const cur = o.guildPeriod || '';
+        const opts = opGuildOptions();
+        if (cur && !opts.includes(cur)) opts.unshift(cur);
+        return `<select class="op-guild" data-op-guild="${o.id}" aria-label="公會期數">${opts.map((p) => `<option${p === cur ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>`;
+      };
+      const opDateInput = (o) =>
+        `<input type="date" class="op-odate" data-op-odate="${o.id}" value="${esc(o.opinionDate || '')}" aria-label="意見時間">`;
       const opCatSelect = (o) => `<select class="op-cat" data-op-cat="${o.id}" aria-label="缺失類別">
           <option value=""${o.category ? '' : ' selected'}>（未分類）</option>
           ${(Core.OPINION_CATEGORIES[o.kind] || []).map((c) => `<option${c === o.category ? ' selected' : ''}>${esc(c)}</option>`).join('')}
         </select>`;
+      const opContentArea = (o) =>
+        `<textarea class="op-edit" data-op-content="${o.id}" rows="2" aria-label="公會意見內容">${esc(o.content || '')}</textarea>`;
+      const opMeasureArea = (o) =>
+        o.kind === 'roster'
+          ? `<textarea class="op-edit" data-op-measure="${o.id}" rows="2" aria-label="行政檢討對策">${esc(o.measure || '')}</textarea>`
+          : '<span class="muted">—</span>';
       function opLeader(name) {
         const s = (data.staff || []).find((x) => x.name === name);
         return s && s.leader ? `${s.leader} 組` : '未對應組長';
@@ -4051,11 +4263,11 @@
           const noPts = list.filter((o) => o.noPoints).length;
           const body = list.map((o) => `<tr${o.noPoints ? ' class="op-nopts"' : ''}>
               ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
-              <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
-              <td>${esc(opRef(o))}${opItem(o)}</td><td>${esc(o.opinionDate || '')}</td>
+              <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${opGuildSelect(o)}</td><td>${esc(o.region || '—')}</td>
+              <td>${esc(opRef(o))}${opItem(o)}</td><td>${opDateInput(o)}</td>
               <td>${opCatSelect(o)}</td>
-              <td style="white-space:pre-wrap;min-width:14rem">${esc(o.content)}</td>
-              ${showMeasure ? `<td style="white-space:pre-wrap;min-width:12rem;${o.kind === 'roster' ? 'background:#fefce8' : ''}">${esc(o.kind === 'roster' ? o.measure : '')}</td>` : ''}
+              <td style="min-width:14rem">${opContentArea(o)}</td>
+              ${showMeasure ? `<td style="min-width:12rem;${o.kind === 'roster' ? 'background:#fefce8' : ''}">${opMeasureArea(o)}</td>` : ''}
               <td>${opPtsCell(o)}</td>
               <td><button type="button" class="btn btn-del" data-op-del="${o.id}">刪除</button></td>
             </tr>`).join('');
@@ -4077,23 +4289,71 @@
       ['op-group', 'op-f-guild', 'op-f-region', 'op-f-name', 'op-f-pts'].forEach((id) => $(id).addEventListener('change', renderOpinionTab));
       $('op-f-q').addEventListener('input', renderOpinionTab);
       $('op-reload').addEventListener('click', loadOpinions);
+      async function opSaveFields(id, patch, el, before) {
+        if (el) el.disabled = true;
+        try {
+          const res = await rpc('admin_points_opinion_admin_update', {
+            p_id: Number(id),
+            p_category: patch.category !== undefined ? patch.category : null,
+            p_content: patch.content !== undefined ? patch.content : null,
+            p_measure: patch.measure !== undefined ? patch.measure : null,
+            p_guild_period: patch.guildPeriod !== undefined ? patch.guildPeriod : null,
+            p_opinion_date: patch.opinionDate !== undefined ? patch.opinionDate : null
+          });
+          if (!res?.ok) throw new Error(res?.error || '更新失敗');
+          const o = op.all.find((x) => String(x.id) === String(id));
+          if (o && res.opinion) Object.assign(o, {
+            category: res.opinion.category,
+            content: res.opinion.content,
+            measure: res.opinion.measure,
+            guildPeriod: res.opinion.guildPeriod,
+            opinionDate: res.opinion.opinionDate
+          });
+          say('已儲存修改', true);
+          const regroup =
+            (patch.category !== undefined && $('op-group').value === 'category') ||
+            (patch.guildPeriod !== undefined && $('op-group').value === 'guild');
+          if (regroup || patch.guildPeriod !== undefined) {
+            opFillFilters();
+            renderOpinionTab();
+          }
+        } catch (err) {
+          if (el && before !== undefined) el.value = before;
+          say(err.message);
+        } finally {
+          if (el) el.disabled = false;
+        }
+      }
       $('op-groups').addEventListener('change', async (e) => {
+        const guild = e.target.closest('[data-op-guild]');
+        if (guild) {
+          const o = op.all.find((x) => String(x.id) === guild.dataset.opGuild);
+          await opSaveFields(guild.dataset.opGuild, { guildPeriod: guild.value }, guild, o?.guildPeriod || '');
+          return;
+        }
+        const odate = e.target.closest('[data-op-odate]');
+        if (odate) {
+          const o = op.all.find((x) => String(x.id) === odate.dataset.opOdate);
+          const prev = o?.opinionDate || '';
+          if (odate.value === prev) return;
+          await opSaveFields(odate.dataset.opOdate, { opinionDate: odate.value }, odate, prev);
+          return;
+        }
         const sel = e.target.closest('[data-op-cat]');
         if (!sel) return;
         const o = op.all.find((x) => String(x.id) === sel.dataset.opCat);
-        const before = o?.category || '';
-        sel.disabled = true;
-        try {
-          await rpc('admin_points_opinion_set_category', { p_id: Number(sel.dataset.opCat), p_category: sel.value });
-          if (o) o.category = sel.value;
-          say('已更新缺失類別', true);
-          if ($('op-group').value === 'category') renderOpinionTab();
-        } catch (err) {
-          sel.value = before;
-          say(err.message);
-        } finally {
-          sel.disabled = false;
-        }
+        await opSaveFields(sel.dataset.opCat, { category: sel.value }, sel, o?.category || '');
+      });
+      $('op-groups').addEventListener('focusout', async (e) => {
+        const ta = e.target.closest('[data-op-content], [data-op-measure]');
+        if (!ta) return;
+        const o = op.all.find((x) => String(x.id) === (ta.dataset.opContent || ta.dataset.opMeasure));
+        if (!o) return;
+        const isContent = !!ta.dataset.opContent;
+        const next = ta.value;
+        const prev = isContent ? o.content || '' : o.measure || '';
+        if (next === prev) return;
+        await opSaveFields(o.id, isContent ? { content: next } : { measure: next }, ta, prev);
       });
       $('op-groups').addEventListener('click', async (e) => {
         const ptBtn = e.target.closest('[data-op-pt]');
@@ -4122,11 +4382,13 @@
         const btn = e.target.closest('[data-op-del]');
         if (!btn) return;
         const delOp = op.all.find((x) => String(x.id) === btn.dataset.opDel);
-        if (!confirm(delOp?.noPoints ? '確定刪除這筆意見？' : '確定刪除這筆意見？這位行政會少 1 點。')) return;
+        if (!confirm(delOp?.noPoints
+          ? '確定刪除這筆意見？這筆本來就是 0 點。'
+          : '確定刪除這筆意見？若同一個媒合編號還有別筆，點數會改算到剩下最早的一筆。')) return;
         try {
           await rpc('admin_points_opinion_admin_delete', { p_id: Number(btn.dataset.opDel) });
-          op.all = op.all.filter((o) => String(o.id) !== btn.dataset.opDel);
-          renderOpinionTab();
+          op.loaded = false;
+          await loadOpinions();
           await afterEdit('已刪除');
         } catch (err) {
           say(err.message);
