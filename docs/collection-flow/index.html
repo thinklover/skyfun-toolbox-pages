@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>租賃欠租催收流程｜星鴻社宅工具箱</title>
+  <title>催收解約專區｜完整 SOP｜星鴻社宅工具箱</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -1481,11 +1481,35 @@
     .nrpbox .nrp-field.span2 { grid-column: 1 / -1; }
     .nrpbox .nrp-field .req { color: #b91c1c; }
     .nrpbox .nrp-field input,
-    .nrpbox .nrp-field select {
+    .nrpbox .nrp-field select,
+    .nrpbox .nrp-field textarea {
       width: 100%; padding: 8px 10px; border: 1px solid #94a3b8;
       border-radius: 8px; font: inherit; font-size: 14px; background: #fff;
       box-sizing: border-box;
     }
+    .nrpbox .nrp-field textarea {
+      min-height: 6.5rem; resize: vertical; line-height: 1.5;
+    }
+    .nrpbox .nrp-ai-bar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      margin-top: 6px;
+    }
+    .nrpbox .nrp-ai-bar button {
+      appearance: none; border: 1.5px solid #c4b5fd; border-radius: 8px;
+      padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 800;
+      cursor: pointer; background: #f5f3ff; color: #5b21b6;
+    }
+    .nrpbox .nrp-ai-bar button:disabled { opacity: 0.55; cursor: wait; }
+    .nrpbox .nrp-ai-bar button.soft {
+      background: #fff; color: #475569; border-color: #cbd5e1;
+    }
+    .nrpbox .nrp-ai-msg {
+      flex: 1; min-width: 10rem; margin: 0;
+      font-size: 12.5px; font-weight: 700; color: #64748b;
+    }
+    .nrpbox .nrp-ai-msg.is-ok { color: #047857; }
+    .nrpbox .nrp-ai-msg.is-err { color: #b91c1c; }
+    .nrpbox .nrp-ai-msg.is-warn { color: #b45309; }
     .nrpbox .nrp-amt {
       margin: 0; font-size: 13px; font-weight: 800; color: #334155;
     }
@@ -2419,7 +2443,7 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="topbar">
+    <div class="topbar" id="cf-topbar">
       <a class="back" href="../../index.html#termination">← 回催收解約專區</a>
     </div>
 
@@ -2436,7 +2460,7 @@
         </div>
         <div class="center">
           <div class="eyebrow">STANDARD OPERATING PROCEDURE</div>
-          <h1>租賃欠租催收流程</h1>
+          <h1>催收解約專區 · 完整 SOP</h1>
           <p class="sop">標準作業流程 SOP</p>
           <p class="sub">及時處理　·　完整紀錄　·　保障公司權益</p>
         </div>
@@ -2462,9 +2486,47 @@
     window.LAL_TEMPLATE_ALLOWLIST = ['arrears-under-2m'];
     window.LAL_TEMPLATE_DEFAULT = 'arrears-under-2m';
     window.LAL_CASE_MODE_UI = true;
+    /* 嵌在催收解約專區時：隱藏頂列、回報高度給父頁 */
+    (function () {
+      var embed = /(?:^|[?&])embed=1(?:&|$)/.test(location.search);
+      if (!embed || window === window.top) return;
+      document.documentElement.classList.add('cf-embed');
+      var bar = document.getElementById('cf-topbar');
+      if (bar) bar.hidden = true;
+      function postH() {
+        /* 只量實際內容（.wrap），避免 body min-height:100vh 把 iframe 撐出大塊留白 */
+        var wrap = document.querySelector('.wrap');
+        var poster = document.querySelector('.poster');
+        var h = 0;
+        if (wrap) h = Math.max(wrap.scrollHeight, wrap.offsetHeight);
+        if (poster) {
+          var wr = wrap ? wrap.getBoundingClientRect().top : 0;
+          h = Math.max(h, Math.ceil(poster.getBoundingClientRect().bottom - wr + 8));
+        }
+        if (h < 200) h = Math.max(document.body ? document.body.scrollHeight : 0, 200);
+        try { parent.postMessage({ type: 'skyfun-cf-height', height: h }, '*'); } catch (e) { /* ignore */ }
+      }
+      window.addEventListener('load', postH);
+      window.addEventListener('resize', postH);
+      var obs = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(postH) : null;
+      if (obs && document.body) obs.observe(document.body);
+      setInterval(postH, 800);
+      window.skyfunCfPostHeight = postH;
+    })();
   </script>
+  <style>
+    html.cf-embed, html.cf-embed body {
+      background: #f4f5f7;
+      min-height: 0 !important;
+      height: auto !important;
+      overflow: hidden;
+    }
+    html.cf-embed .wrap { max-width: none; padding: 0.4rem 0.65rem 0.35rem; }
+    html.cf-embed .topbar { display: none !important; }
+  </style>
   <script src="../../js/vendor/pdf-lib.min.js"></script>
   <script src="../../js/vendor/fontkit.umd.js"></script>
+  <script src="../../js/vendor/jszip.min.js"></script>
   <script src="../../js/lal-template-b64.js"></script>
   <script src="../../js/lal-letter-templates.js"></script>
   <script src="../../js/enforcement-petition-regions.js?v=20261018-62"></script>
@@ -2473,7 +2535,9 @@
   <script src="../../js/enforcement-court-lookup.js?v=20261018-63"></script>
   <script src="../../js/note-ruling-petition.js?v=20261018-40"></script>
   <script src="../../js/household-poa.js?v=20261018-37"></script>
-  <script src="../../js/mediation-poa.js?v=20261018-31"></script>
+  <script src="../../js/mediation-docx-fill.js?v=20261019-5"></script>
+  <script src="../../js/mediation-poa.js?v=20261019-5"></script>
+  <script src="../../js/mediation-petition.js?v=20261019-5"></script>
   <script src="../../js/civil-supplement-petition.js?v=20261018-42"></script>
   <script src="../../js/care-visit-notice.js?v=20261018-29"></script>
   <script src="../../js/lal-generator.js?v=20261018-29"></script>
@@ -3461,7 +3525,7 @@
         chart.addEventListener('click', function (e) {
           var btn = e.target.closest('.nr-step-btn');
           if (!btn || !chart.contains(btn)) return;
-          showNoteRulingStep(Number(btn.getAttribute('data-nr')));
+          keepView(function () { showNoteRulingStep(Number(btn.getAttribute('data-nr'))); });
         });
       }
 
@@ -3770,11 +3834,11 @@
             '</div>' +
             '<div class="mf-doc-groups mf-doc-groups--2">' +
               mfDocGroup(
-                '送件相關範例',
-                '點開預覽',
-                'opt',
+                '調解申請書',
+                '必備',
+                'must',
                 '',
-                mfDoc('docs-overview', '文件說明範例')
+                mfDocPlain('調解聲請書（申請書）', '請用下方套版產生')
               ) +
               mfDocGroup(
                 '通知書',
@@ -3784,7 +3848,10 @@
                 mfDoc('mediation-notice', '調解通知書範例')
               ) +
             '</div>' +
-            mfDocPreviewHtml();
+            mfDocPreviewHtml() +
+            ((typeof window.mediationPetitionFormHtml === 'function')
+              ? window.mediationPetitionFormHtml()
+              : '<p class="why">調解聲請書套版產生器載入中…請重新點開本步驟。</p>');
         }
         if (idx === 2) {
           return '<p class="why"><b>出席調解</b>：務必親自出席。點選三大目的（左 → 右）查看範本／標注。</p>' +
@@ -3797,30 +3864,9 @@
               '</ol>' +
               '<div class="mf-goal-detail" id="mf-goal-detail" hidden></div>' +
             '</div>' +
-            '<p class="nr-warn">不成則請領<b>調解不成立證明</b>，作為進入第 5 階段本票聲請的依據。</p>';
+            '<p class="nr-warn">不成則請領<b>調解不成立證明</b>，作為進入第 5 階段本票聲請的依據。成立則依約執行本票／還款協議／搬遷日。</p>';
         }
-        if (idx === 3) {
-          return '<p class="why"><b>調解成立</b>：核對已簽本票、還款協議書與搬遷日；依約分期清償，一期未付視同全部到期。</p>' +
-            '<div class="mf-doc-groups mf-doc-groups--2">' +
-              mfDocGroup(
-                '成立後文件',
-                '點開預覽',
-                'must',
-                '',
-                mfDoc('repayment-agreement', '房租欠款還款協議書') +
-                mfDoc('cert-success', '調解成立證明書')
-              ) +
-              mfDocGroup(
-                '若違約跳票',
-                '下一步',
-                'opt',
-                '',
-                '<a class="mf-doc" href="../../index.html#enforcement-flow" style="text-decoration:none">強制執行流程</a>' +
-                '<button type="button" class="mf-doc" id="mf-btn-go-stage5">前往第 5 階段｜本票裁定</button>'
-              ) +
-            '</div>' +
-            mfDocPreviewHtml();
-        }
+        /* idx === 3：不成立／跳票（原第 5 步；已移除「調解成立」步驟） */
         return '<p class="why"><b>調解不成立</b>：意見不一致時請領不成立證明，再依法追償或進本票裁定。</p>' +
           '<div class="nr-branch">' +
             '<p class="nr-h2">下一步</p>' +
@@ -3881,6 +3927,9 @@
         if (idx === 0 && typeof window.initMediationPoa === 'function') {
           setTimeout(function () { window.initMediationPoa(); }, 0);
         }
+        if (idx === 1 && typeof window.initMediationPetition === 'function') {
+          setTimeout(function () { window.initMediationPetition(); }, 0);
+        }
       }
 
       function bindMediationSteps() {
@@ -3892,17 +3941,17 @@
         chart.addEventListener('click', function (e) {
           var goal = e.target.closest('[data-mf-goal]');
           if (goal && chart.contains(goal)) {
-            showMfGoal(Number(goal.getAttribute('data-mf-goal')));
+            keepView(function () { showMfGoal(Number(goal.getAttribute('data-mf-goal'))); });
             return;
           }
           var doc = e.target.closest('[data-mdoc]');
           if (doc && chart.contains(doc)) {
-            openMediationDoc(doc.getAttribute('data-mdoc'));
+            keepView(function () { openMediationDoc(doc.getAttribute('data-mdoc')); });
             return;
           }
           var btn = e.target.closest('.nr-step-btn');
           if (!btn || !chart.contains(btn)) return;
-          showMediationStep(Number(btn.getAttribute('data-mf')));
+          keepView(function () { showMediationStep(Number(btn.getAttribute('data-mf'))); });
         });
       }
 
@@ -3926,8 +3975,7 @@
                 '<li><button type="button" class="nr-step-btn" data-mf="0" aria-expanded="false"><span class="nr-n">1</span><strong>備齊文件</strong><small>調解會應附文件</small><span class="tap-mini">點看說明</span></button></li>' +
                 '<li><button type="button" class="nr-step-btn" data-mf="1" aria-expanded="false"><span class="nr-n">2</span><strong>送件聲請</strong><small>案號／線上申請</small><span class="tap-mini">點看說明</span></button></li>' +
                 '<li><button type="button" class="nr-step-btn" data-mf="2" aria-expanded="false"><span class="nr-n">3</span><strong>出席調解</strong><small>三大目的</small><span class="tap-mini">點看說明</span></button></li>' +
-                '<li><button type="button" class="nr-step-btn nr-step-btn--title-only" data-mf="3" aria-expanded="false"><span class="nr-n">4</span><strong>調解成立</strong></button></li>' +
-                '<li><button type="button" class="nr-step-btn" data-mf="4" aria-expanded="false"><span class="nr-n">5</span><strong>不成立／跳票</strong><small>進本票裁定</small><span class="tap-mini">點看說明</span></button></li>' +
+                '<li><button type="button" class="nr-step-btn" data-mf="3" aria-expanded="false"><span class="nr-n">4</span><strong>不成立／跳票</strong><small>進本票裁定</small><span class="tap-mini">點看說明</span></button></li>' +
               '</ol>' +
               '<div class="nr-detail" id="mf-step-detail" hidden></div>' +
               '<p class="nr-foot">※建議逾期 <b>21～30 日</b>內申請；範例文件僅供內部參考，實際送件依當地調解會規定。</p>' +
@@ -4061,7 +4109,7 @@
         chart.addEventListener('click', function (e) {
           var btn = e.target.closest('.nr-step-btn');
           if (!btn || !chart.contains(btn)) return;
-          showEnforceStep(Number(btn.getAttribute('data-ef')));
+          keepView(function () { showEnforceStep(Number(btn.getAttribute('data-ef'))); });
         });
       }
 
@@ -4263,6 +4311,16 @@
         );
       }
 
+      /** 展開／收合時鎖住捲動，避免畫面跳來跳去 */
+      function keepView(fn) {
+        var y = window.scrollY;
+        fn();
+        requestAnimationFrame(function () {
+          if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+          if (typeof window.skyfunCfPostHeight === 'function') window.skyfunCfPostHeight();
+        });
+      }
+
       function setOpen(n) {
         open = n;
         stepOpen = null;
@@ -4277,14 +4335,14 @@
         }
         var s = STEPS.find(function (x) { return x.n === open; });
         slot.innerHTML = renderDetail(s);
-        slot.querySelector('[data-close]').onclick = function () { setOpen(null); };
+        slot.querySelector('[data-close]').onclick = function () { keepView(function () { setOpen(null); }); };
         var pflow = slot.querySelector('.pflow');
         if (pflow) {
           pflow.addEventListener('click', function (e) {
             var btn = e.target.closest('.pnode-btn');
             if (!btn) return;
             var idx = Number(btn.dataset.step);
-            showStep(s, stepOpen === idx ? null : idx);
+            keepView(function () { showStep(s, stepOpen === idx ? null : idx); });
           });
         }
         if (s.directMediationFlow) bindMediationSteps();
@@ -4316,8 +4374,32 @@
         var btn = e.target.closest('.card');
         if (!btn) return;
         var n = Number(btn.dataset.n);
-        setOpen(open === n ? null : n);
+        keepView(function () { setOpen(open === n ? null : n); });
       });
+
+      var _setOpen = setOpen;
+      setOpen = function (n) {
+        keepView(function () { _setOpen(n); });
+      };
+
+      /** 從催收解約專區深連結：#stage-4、#stage-4-petition、#stage-4-poa … */
+      function applyHash() {
+        var h = (location.hash || '').replace(/^#/, '');
+        if (!h) return;
+        var m = h.match(/^stage-([1-6])(?:-(petition|poa))?$/);
+        if (!m) return;
+        var n = Number(m[1]);
+        setOpen(n);
+        if (n === 4 && m[2]) {
+          var sub = m[2] === 'poa' ? 0 : 1;
+          setTimeout(function () {
+            mediationOpen = null;
+            showMediationStep(sub);
+          }, 80);
+        }
+      }
+      applyHash();
+      window.addEventListener('hashchange', applyHash);
     })();
   </script>
 </body>

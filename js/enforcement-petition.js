@@ -529,7 +529,6 @@
         }
         const details = document.querySelector('#ep-form details.ep-preview-details, #ep-form details');
         if (details) details.open = true;
-        wrap?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function openPreviewTab() {

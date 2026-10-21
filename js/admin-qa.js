@@ -548,8 +548,7 @@
     const back = currentQuestionId;
     currentQuestionId = null;
     showDetailPanel(false);
-    const item = back && document.querySelector('#aqa-list .aqa-item[data-id="' + back + '"]');
-    if (item) item.scrollIntoView({ block: 'center' });
+    if (back) setListActive(String(back));
   }
 
   async function openQuestion(id) {

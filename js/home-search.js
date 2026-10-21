@@ -182,9 +182,6 @@
         const major = details.closest('.rentmgr-major-details');
         if (major) major.open = true;
         details.open = true;
-        requestAnimationFrame(() => {
-            details.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
     }
 
     function searchItemFromButton(btn) {

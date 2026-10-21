@@ -327,7 +327,6 @@
       if (jump) {
         const el = document.getElementById(jump.getAttribute('data-tnf-jump'));
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
           const first = el.querySelector('details.tnf-card');
           if (first && !first.open) first.open = true;
         }

@@ -1535,6 +1535,154 @@
         .af-link:hover { background: #d1fae5; border-color: #34d399; }
         .af-link--sheet { border-color: #cbd5e1; background: #f1f5f9; color: #475569; }
         .af-link--sheet:hover { background: #e2e8f0; border-color: #94a3b8; }
+
+        /* 催收解約專區：六階段 SOP 首屏 */
+        .term-zone-shell { background: #f4f5f7; }
+        .term-cf-frame {
+            display: block; width: 100%; border: 0; background: #f4f5f7;
+            min-height: 0; height: 640px;
+        }
+        .term-below {
+            border-top: 1px solid #e2e8f0; background: #fff;
+            padding: 1rem 1rem 1.25rem;
+        }
+        .term-below-title {
+            margin: 0 0 0.65rem; font-size: 1.05rem; font-weight: 900; color: #192437;
+        }
+        .term-sop-head {
+            display: grid; grid-template-columns: 1fr; gap: 0.75rem; align-items: center;
+            padding: 1rem 1.1rem 0.85rem; background: #fff; border-bottom: 1px solid #e5e7eb;
+        }
+        @media (min-width: 900px) {
+            .term-sop-head { grid-template-columns: auto 1fr auto; padding: 1.1rem 1.4rem; }
+        }
+        .term-sop-logo { height: 2.4rem; width: auto; object-fit: contain; justify-self: start; }
+        .term-sop-head-main { text-align: center; }
+        .term-sop-head-main h2 {
+            margin: 0; font-size: clamp(1.25rem, 2.5vw, 1.75rem); font-weight: 900; color: #1e293b; letter-spacing: 0.02em;
+        }
+        .term-sop-head-main .term-sop-sub { margin: 0.2rem 0 0; font-size: 0.78rem; font-weight: 800; color: #b45309; }
+        .term-sop-head-main .term-sop-pillars {
+            margin: 0.35rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.35rem 0.85rem;
+            justify-content: center; font-size: 0.72rem; font-weight: 700; color: #64748b;
+        }
+        .term-sop-head-main .term-sop-pillars li::before { content: '· '; color: #c9a227; }
+        .term-sop-tagline { font-size: 0.72rem; font-weight: 700; color: #64748b; text-align: center; }
+        @media (min-width: 900px) { .term-sop-tagline { text-align: right; max-width: 9rem; line-height: 1.35; } }
+        .term-sop-hint {
+            margin: 0; padding: 0.55rem 1rem; background: #f8f1e3; border-bottom: 1px solid #e0c9a4;
+            font-size: 0.8rem; font-weight: 700; color: #7a5814; text-align: center;
+        }
+        .term-sop-board {
+            display: grid; grid-template-columns: 1fr; gap: 0.65rem; padding: 0.85rem 0.85rem 0.5rem;
+        }
+        @media (min-width: 640px) { .term-sop-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 1100px) { .term-sop-board { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; padding: 1rem 1rem 0.6rem; } }
+        .term-sop-card {
+            cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+            margin: 0; padding: 0.85rem 0.65rem 0.7rem; text-align: center; cursor: pointer;
+            background: #fff; border: 1.5px solid #e5e7eb; border-radius: 0.85rem;
+            box-shadow: 0 2px 8px rgba(25, 36, 55, 0.05); transition: border-color .15s, box-shadow .15s, transform .15s;
+        }
+        .term-sop-card:hover { border-color: #c9a227; box-shadow: 0 6px 16px rgba(25, 36, 55, 0.08); }
+        .term-sop-card.is-on { border-color: #192437; box-shadow: 0 0 0 2px rgba(25, 36, 55, 0.12); transform: translateY(-2px); }
+        .term-sop-num {
+            width: 1.65rem; height: 1.65rem; border-radius: 999px; background: #192437; color: #fff;
+            font-size: 0.8rem; font-weight: 900; display: grid; place-items: center;
+        }
+        .term-sop-day { font-size: 0.82rem; font-weight: 900; color: #b45309; line-height: 1.25; }
+        .term-sop-act { font-size: 0.92rem; font-weight: 900; color: #0f172a; line-height: 1.25; }
+        .term-sop-icon {
+            width: 3.4rem; height: 3.4rem; margin: 0.15rem 0; border-radius: 0.65rem; border: 1px solid #e5e7eb;
+            background: linear-gradient(180deg, #fffdf8, #f8fafc); display: grid; place-items: center; font-size: 1.65rem;
+        }
+        .term-sop-items {
+            margin: 0; padding: 0 0.15rem; list-style: none; text-align: left; width: 100%;
+            font-size: 0.68rem; font-weight: 600; color: #475569; line-height: 1.4;
+        }
+        .term-sop-items li { position: relative; padding-left: 0.7rem; margin-top: 0.15rem; }
+        .term-sop-items li::before { content: '•'; position: absolute; left: 0; color: #c9a227; font-weight: 900; }
+        .term-sop-focus {
+            width: 100%; margin-top: 0.25rem; padding: 0.4rem 0.35rem; border-radius: 0.5rem; background: #f1f5f9;
+            display: flex; flex-direction: column; gap: 0.1rem; align-items: center;
+            font-size: 0.68rem; font-weight: 700; color: #334155;
+        }
+        .term-sop-focus b { color: #192437; font-size: 0.7rem; }
+        .term-sop-cta { margin-top: auto; padding-top: 0.35rem; font-size: 0.72rem; font-weight: 800; color: #1d4ed8; }
+        .term-sop-tools {
+            display: grid; gap: 0.3rem; margin-top: 0.35rem; padding-top: 0.35rem;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .term-sop-tool {
+            appearance: none; display: block; width: 100%; text-align: left;
+            border: 1.5px solid #cbd5e1; border-radius: 8px; background: #f8fafc;
+            padding: 0.35rem 0.5rem; font: inherit; font-size: 0.7rem; font-weight: 800;
+            color: #1e3a5f; cursor: pointer; line-height: 1.3;
+        }
+        .term-sop-tool:hover { border-color: #c9a227; background: #fffbeb; color: #92400e; }
+        a.term-sop-tool { text-decoration: none; box-sizing: border-box; }
+        .term-sop-full {
+            margin: 0 1rem 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+            justify-content: center;
+        }
+        .term-sop-full a, .term-sop-full button {
+            appearance: none; border: none; border-radius: 10px; padding: 0.55rem 0.9rem;
+            font: inherit; font-size: 0.85rem; font-weight: 900; cursor: pointer;
+            background: #192437; color: #fff; text-decoration: none;
+        }
+        .term-sop-full a.soft, .term-sop-full button.soft {
+            background: #fff; color: #192437; border: 1.5px solid #94a3b8;
+        }
+        .term-sop-detail {
+            margin: 0 0.85rem 0.85rem; padding: 0; border-radius: 0.9rem; border: 1.5px solid #c9a227;
+            background: #fff; box-shadow: 0 8px 22px rgba(25, 36, 55, 0.08);
+        }
+        @media (min-width: 1100px) { .term-sop-detail { margin: 0 1rem 1rem; } }
+        .term-sop-detail-inner { padding: 1rem 1.1rem 1.15rem; }
+        .term-sop-detail-head { display: flex; align-items: flex-start; gap: 0.65rem; margin-bottom: 0.65rem; }
+        .term-sop-detail-head h3 { margin: 0.1rem 0 0; font-size: 1.05rem; font-weight: 900; color: #0f172a; }
+        .term-sop-detail-head .term-sop-day { margin: 0; }
+        .term-sop-close {
+            margin-left: auto; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 0.45rem;
+            width: 2rem; height: 2rem; font-weight: 800; cursor: pointer; color: #64748b;
+        }
+        .term-sop-when { margin: 0 0 0.75rem; font-size: 0.86rem; line-height: 1.55; color: #334155; }
+        .term-sop-how { margin: 0; padding-left: 1.15rem; display: grid; gap: 0.55rem; }
+        .term-sop-how li { font-size: 0.84rem; color: #475569; line-height: 1.5; }
+        .term-sop-how strong { display: block; color: #0f172a; margin-bottom: 0.1rem; }
+        .term-file-grid { display: grid; grid-template-columns: 1fr; gap: 0.55rem; margin-top: 0.9rem; }
+        @media (min-width: 640px) { .term-file-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .term-file-card {
+            border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #fff; padding: 0.7rem 0.8rem;
+        }
+        .term-file-name {
+            display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; font-weight: 700; color: #334155;
+        }
+        .term-file-ico { color: #a78bfa; font-size: 1rem; }
+        .term-file-btn {
+            display: inline-flex; margin-top: 0.45rem; padding: 0.28rem 0.85rem; border-radius: 999px;
+            border: 1px solid #6ee7b7; background: #ecfdf5; color: #047857; font-size: 0.78rem; font-weight: 800;
+            text-decoration: none; cursor: pointer; font-family: inherit;
+        }
+        .term-file-btn:hover { background: #d1fae5; }
+        .term-sop-foot {
+            display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.35rem;
+            padding: 0.55rem 1rem; background: #192437; color: #e2e8f0; font-size: 0.72rem; font-weight: 700;
+        }
+        .term-sop-foot span:last-child { color: #fac02d; }
+        .term-fold {
+            margin: 0 0.85rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.85rem; background: #fff; overflow: hidden;
+        }
+        @media (min-width: 1100px) { .term-fold { margin-left: 1rem; margin-right: 1rem; } }
+        .term-fold > summary {
+            list-style: none; cursor: pointer; padding: 0.75rem 1rem; font-weight: 800; font-size: 0.95rem; color: #1e293b;
+            display: flex; align-items: center; gap: 0.5rem; user-select: none;
+        }
+        .term-fold > summary::-webkit-details-marker { display: none; }
+        .term-fold > summary::after { content: '▾'; margin-left: auto; color: #94a3b8; }
+        .term-fold[open] > summary::after { transform: rotate(180deg); }
+        .term-fold-body { padding: 0 1rem 1rem; border-top: 1px solid #f1f5f9; }
         .aqa-review-note {
             margin-top: 0.55rem;
             padding: 0.5rem 0.65rem;
@@ -7558,38 +7706,84 @@
         </div>
 
         
-        <!-- 專區頁面：解約（轉租／包租退還金額試算） -->
-        <div id="page-termination" class="hidden max-w-4xl mx-auto">
+        <!-- 專區頁面：催收解約（首屏＝完整 SOP 圖卡；小工具在 SOP 下方） -->
+        <div id="page-termination" class="hidden max-w-[1480px] mx-auto term-zone">
             <button onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">
                 ← 返回首頁
             </button>
-            <div class="bg-gradient-to-br from-indigo-50 via-white to-slate-50 rounded-[2rem] p-6 border border-indigo-200 shadow-lg">
-                <h2 class="text-3xl font-bold text-slate-900 mb-6 text-center">📄 催收解約專區</h2>
-                <section class="mb-6 rounded-2xl border-2 border-violet-200 bg-gradient-to-b from-violet-50/90 to-white p-4 md:p-5 shadow-md">
-                    <h3 class="text-lg md:text-xl font-black text-violet-950 text-center mb-4">催收工具</h3>
-                    <div class="mb-5">
-                        <p class="text-sm font-bold text-violet-800/90 mb-2 text-center md:text-left">文件產生器</p>
-                        <div class="practice-hub-grid practice-hub-grid--gens">
-                            <button type="button" onclick="showPage('practice-templates')" class="practice-hub-card"><span>💬</span><strong>訊息範本產生</strong><small>LINE 複製</small></button>
-                            <button type="button" onclick="showPage('lal-generator')" class="practice-hub-card"><span>📮</span><strong>存證信函產生</strong><small>PDF 下載</small></button>
-                            <a href="./docs/lal-howto/?v=20261017-1" class="practice-hub-card no-underline"><span>📘</span><strong>如何寄存證信函</strong><small>流程・注意・法務檢附</small></a>
-                            <button type="button" onclick="openEnforcementSection('form')" class="practice-hub-card"><span>⚖️</span><strong>聲請狀產生器</strong><small>PDF 下載</small></button>
-                            <button type="button" onclick="showPage('care-visit-notice')" class="practice-hub-card"><span>🏠</span><strong>家訪單產生器</strong><small>欠租關懷通知單</small></button>
-                            <a href="./docs/collection-flow/?v=20261019-10" class="practice-hub-card no-underline"><span>📖</span><strong>欠租催收流程</strong><small>SOP・怎麼做＋為什麼</small></a>
+            <div class="term-zone-shell rounded-[1.25rem] border border-slate-200 shadow-lg overflow-hidden">
+                <iframe
+                    id="term-cf-frame"
+                    class="term-cf-frame"
+                    title="催收解約專區 · 完整 SOP"
+                    src="./docs/collection-flow/?embed=1&v=20261019-9"
+                    loading="eager"
+                ></iframe>
+
+                <div class="term-below">
+                <h3 class="term-below-title">其他小工具</h3>
+                <details class="term-fold">
+                    <summary>🛠️ 催收工具（文件產生器・期程）</summary>
+                    <div class="term-fold-body pt-3 space-y-4">
+                    <div>
+                        <p class="text-sm font-bold text-violet-800/90 mb-2">文件產生器</p>
+                        <div class="term-file-grid">
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">💬</span>訊息範本產生</div>
+                                <button type="button" class="term-file-btn" onclick="showPage('practice-templates')">開啟 →</button>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">📮</span>存證信函產生</div>
+                                <button type="button" class="term-file-btn" onclick="showPage('lal-generator')">開啟 →</button>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">📘</span>如何寄存證信函</div>
+                                <a class="term-file-btn" href="./docs/lal-howto/?v=20261017-1" target="_blank" rel="noopener noreferrer">說明 →</a>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">⚖️</span>聲請狀產生器</div>
+                                <button type="button" class="term-file-btn" onclick="openEnforcementSection('form')">開啟 →</button>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">🏠</span>家訪單產生器</div>
+                                <button type="button" class="term-file-btn" onclick="showPage('care-visit-notice')">開啟 →</button>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">📅</span>催收期程試算</div>
+                                <button type="button" class="term-file-btn" onclick="showPage('practice-timeline')">開啟 →</button>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">📋</span>強制執行流程</div>
+                                <button type="button" class="term-file-btn" onclick="openEnforcementSection('flow')">開啟 →</button>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">⚖️</span>調解流程圖</div>
+                                <button type="button" class="term-file-btn" onclick="showPage('mediation-flow')">開啟 →</button>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">📝</span>調解委任書套版</div>
+                                <a class="term-file-btn" href="./docs/collection-flow/?embed=1&v=20261019-9#stage-4-poa" target="_blank" rel="noopener noreferrer">開啟 →</a>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">📄</span>調解聲請書套版</div>
+                                <a class="term-file-btn" href="./docs/collection-flow/?embed=1&v=20261019-9#stage-4-petition" target="_blank" rel="noopener noreferrer">開啟 →</a>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">📑</span>本票裁定／聲請狀</div>
+                                <a class="term-file-btn" href="./docs/collection-flow/?embed=1&v=20261019-9#stage-5" target="_blank" rel="noopener noreferrer">開啟 →</a>
+                            </div>
+                            <div class="term-file-card">
+                                <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">🧰</span>設備損壞賠償試算</div>
+                                <button type="button" class="term-file-btn" onclick="showPage('equip-dep')">開啟 →</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="border-t border-violet-200/80 pt-4">
-                        <p class="text-sm font-bold text-violet-800/90 mb-2 text-center md:text-left">期程・流程</p>
-                        <div class="practice-hub-grid practice-hub-grid--tools">
-                            <button type="button" onclick="showPage('practice-timeline')" class="practice-hub-card"><span>📅</span><strong>催收期程試算</strong><small>欠租時間軸</small></button>
-                            <button type="button" onclick="openEnforcementSection('flow')" class="practice-hub-card"><span>📋</span><strong>強制執行流程</strong><small>案例・範例</small></button>
-                            <button type="button" onclick="showPage('mediation-flow')" class="practice-hub-card"><span>⚖️</span><strong>調解流程圖</strong><small>欠租調解＋範例文件</small></button>
-                            <button type="button" onclick="showPage('equip-dep')" class="practice-hub-card"><span>🧰</span><strong>設備損壞賠償試算</strong><small>解約點交・折舊</small></button>
-                        </div>
                     </div>
-                </section>
-                <div class="rounded-[1.25rem] border-2 border-emerald-300/90 bg-gradient-to-br from-emerald-50/80 via-white to-indigo-50/40 p-4 md:p-6 space-y-4 shadow-sm mb-6">
-                    <h3 class="text-lg font-black text-emerald-950 text-center">解約案件 · 先查地址</h3>
+                </details>
+
+                <details class="term-fold">
+                    <summary>🏠 解約案件 · 先查地址</summary>
+                    <div class="term-fold-body pt-3 space-y-4">
                     <p class="text-xs text-slate-600 text-center leading-relaxed max-w-xl mx-auto">輸入租賃地址後查詢，會同時顯示<strong>房東</strong>與<strong>房客</strong>。再決定先做包租或轉租解約、暫存，或開現場點交。</p>
                     <p class="text-sm md:text-base font-bold text-center leading-relaxed max-w-xl mx-auto text-orange-600">現場點交也可透過<strong class="text-orange-700">星鴻 - 管理部小助手(工具箱)官方帳號</strong>快速開啟工具箱，進入現場點交。</p>
                     <div class="flex flex-col sm:flex-row gap-2 sm:items-end">
@@ -7648,29 +7842,26 @@
                         </div>
                     </div>
                     <p class="text-[11px] text-slate-500 leading-relaxed">選暫存後可直接開包租／轉租解約帶入資料，或點「現場點交」填水電／屋況。</p>
-                </div>
-                <details class="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
-                    <summary class="cursor-pointer text-sm font-semibold text-slate-700 select-none">手動進入試算頁（進階）</summary>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                        <button type="button" onclick="showPage('business-bao-deposit-refund')" class="btn btn-block btn-center btn-xl tone-indigo">
-                            🧮 包租解約退還金額試算
-                        </button>
-                        <button type="button" onclick="showPage('business-deposit-refund')" class="btn btn-block btn-center btn-xl tone-indigo">
-                            🧮 轉租解約退還金額試算<br/>（代租代管適用）
-                        </button>
+                    <div class="term-file-grid mt-3">
+                        <div class="term-file-card">
+                            <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">🧮</span>包租解約退還金額試算</div>
+                            <button type="button" class="term-file-btn" onclick="showPage('business-bao-deposit-refund')">開啟 →</button>
+                        </div>
+                        <div class="term-file-card">
+                            <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">🧮</span>轉租解約退還金額試算</div>
+                            <button type="button" class="term-file-btn" onclick="showPage('business-deposit-refund')">開啟 →</button>
+                        </div>
+                        <div class="term-file-card">
+                            <div class="term-file-name"><span class="term-file-ico" aria-hidden="true">📄</span>空白解約單範本</div>
+                            <a class="term-file-btn" href="./docs/forms/termination-agreement.pdf" target="_blank" rel="noopener noreferrer">下載 PDF ↘</a>
+                        </div>
+                    </div>
                     </div>
                 </details>
-                <div class="mt-2 text-center">
-                    <a href="./docs/forms/termination-agreement.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">📄 空白解約單範本</a>
-                </div>
 
-                <div class="mt-8 pt-6 border-t border-indigo-200/70">
-                    <details class="toolbox-details bg-white p-5 rounded-xl border border-indigo-200 open:border-indigo-400 open:bg-indigo-50/50 cursor-pointer group transition-all duration-200">
-                        <summary class="summary-btn summary-rose font-extrabold text-lg">
-                            包租約解約文件（清單＋點交流程）
-                            <span class="acc-chevron" aria-hidden="true"></span>
-                        </summary>
-                        <div class="text-slate-700 mt-4 leading-relaxed space-y-4 text-sm">
+                <details class="term-fold mb-4">
+                    <summary>📦 包租約解約文件（清單＋點交流程）</summary>
+                    <div class="term-fold-body pt-3 text-slate-700 leading-relaxed space-y-4 text-sm">
                             <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
                                 <div class="font-black text-slate-900">《包租約 解約文件》</div>
 
@@ -7722,9 +7913,8 @@
                                     </div>
                                 </div>
                             </div>
-
-                        </div>
-                    </details>
+                    </div>
+                </details>
                 </div>
             </div>
         </div>
@@ -11732,6 +11922,20 @@
         <script src="./js/termination-agreement-pdf.js?v=20260923-civil-month"></script>
         <script src="./js/termination-case.js?v=20260920-bao-mode1"></script>
         <script src="./js/termination-bao-case.js?v=20260921-end-tenant1"></script>
+        <script>
+        (function () {
+          window.addEventListener('message', function (e) {
+            if (!e.data || e.data.type !== 'skyfun-cf-height') return;
+            var frame = document.getElementById('term-cf-frame');
+            if (!frame) return;
+            var h = Number(e.data.height) || 0;
+            if (h <= 200) return;
+            var y = window.scrollY;
+            frame.style.height = Math.min(h + 2, 12000) + 'px';
+            if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+          });
+        })();
+        </script>
         <script src="./js/termination-hub.js?v=20260921-end-tenant1"></script>
         <script src="./js/equip-depreciation.js?v=20261005-1"></script>
         <script src="./js/skyfun-job-titles.js"></script>
@@ -13490,7 +13694,7 @@
         window.SITE_SEARCH_INDEX = [
             { page: 'business', title: '業務周會檔案', category: '業務專區', keywords: '周會 週會 簡報 業務周會 管理部 下載 領款收據', file: './docs/weekly-meeting/' },
             { file: './docs/weekly-meeting/', title: '業務周會檔案', category: '首頁專區', keywords: '周會 週會 簡報 業務周會 管理部 下載 領款收據' },
-            { file: './docs/collection-flow/', title: '租賃欠租催收流程', category: '催收解約專區', keywords: '欠租 催收 SOP 流程 存證信函 調解 強制執行 還款協議 本票 面訪' },
+            { file: './docs/collection-flow/', title: '催收解約專區 · 完整 SOP', category: '催收解約專區', keywords: '欠租 催收 SOP 流程 存證信函 調解 強制執行 還款協議 本票 面訪 催收解約' },
             { page: 'landlord', title: '房東專區', category: '首頁專區', keywords: '房東 出租 業主 房東客' },
             { page: 'calculator', title: '房東稅務試算表', category: '房東專區', keywords: '稅務試算 稅 所得 二代健保 預扣 綜所稅 社宅優惠 四種租賃' },
             { page: 'landlord-house-tax', title: '房屋稅課稅級距', category: '房東專區', keywords: '房屋稅 級距 自用 非自用 課稅' },

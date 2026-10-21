@@ -19,6 +19,8 @@
 
   const FIXED_COMPANY = '星鴻股份有限公司';
   const FIXED_REP = '吳宗霖';
+  const FIXED_TAX = '85103034';
+  const BLANK_DOCX = ASSET_BASE + 'docs/mediation/租賃糾紛_調解委任書.docx';
 
   const BRANCHES = [
     { id: 'hq', name: '企業總部', phone: '(02) 7755-2669', addr: '台北市萬華區中華路一段106號' },
@@ -226,132 +228,165 @@
     const page = doc.addPage([595.28, 841.89]);
     const W = 595.28;
     const H = 841.89;
-    const ink = PDFLib.rgb(0.08, 0.1, 0.14);
+    const ink = PDFLib.rgb(0.05, 0.07, 0.12);
     const muted = PDFLib.rgb(0.35, 0.38, 0.45);
+
+    /* 官方「租賃糾紛_調解委任書.docx」欄寬（twip→pt）；無「連絡電話」欄 */
+    const TW = 20;
+    const grid = [815, 2008, 545, 1034, 1371, 545, 4200].map((n) => n / TW);
+    const tableW = grid.reduce((a, b) => a + b, 0);
+    const L = (W - tableW) / 2;
+    const R = L + tableW;
+    const colX = [L];
+    for (let i = 0; i < grid.length; i++) colX.push(colX[i] + grid[i]);
+
+    const hPad = 170 / TW;
+    const hTitle = 765 / TW;
+    const hCol = 765 / TW;
+    const hParty = 1247 / TW;
+    const hBody = 624 / TW;
+    const hShort = 454 / TW;
+    const hSig = 765 / TW;
+    /* 表尾：此致 + 調解會 + 委任人 + 受任人 + 日期（與官方 Word 列數一致） */
+    const tableH = hPad + hTitle + hCol + hParty * 2 + hBody * 4 + hShort + hSig * 4;
+    const top = H - 36;
 
     const draw = (text, x, y, size, color) => {
       page.drawText(String(text || ''), { x, y, size, font, color: color || ink });
     };
+    const hLine = (y) => page.drawLine({ start: { x: L, y }, end: { x: R, y }, thickness: 0.9, color: ink });
+    const vLine = (x, y1, y2) => page.drawLine({ start: { x, y: y1 }, end: { x, y: y2 }, thickness: 0.9, color: ink });
 
-    let y = H - 42;
-    const title = '委　　任　　書';
-    const ts = 22;
-    draw(title, (W - font.widthOfTextAtSize(title, ts)) / 2, y, ts);
-    y -= 22;
-
-    const caseLine = (d.caseY || '　　') + '年民調字第' + (d.caseNo || '　　　　') + '號';
-    draw(caseLine, W - 48 - font.widthOfTextAtSize(caseLine, 11), y, 11, muted);
-    y -= 18;
-
-    /* 表格：左稱謂｜姓名｜性別｜出生｜身分證｜住所｜電話 */
-    const L = 36;
-    const R = W - 36;
-    const tableW = R - L;
-    const cols = [
-      { key: 'role', w: 28, label: '' },
-      { key: 'name', w: 118, label: '姓名（或名稱）' },
-      { key: 'sex', w: 28, label: '性別' },
-      { key: 'birth', w: 72, label: '出生年月日' },
-      { key: 'id', w: 88, label: '身分證字號' },
-      { key: 'addr', w: 150, label: '住所或居所（事務所或營業所）' },
-      { key: 'tel', w: tableW - 28 - 118 - 28 - 72 - 88 - 150, label: '連絡電話' }
-    ];
-    const headH = 28;
-    const rowH = 78;
-
-    const drawCellText = (text, x, cy, w, h, size) => {
-      const pad = 4;
-      const lines = wrapLines(font, text, size, w - pad * 2);
-      let ty = cy + h - pad - size;
-      for (const line of lines.slice(0, 5)) {
-        draw(line, x + pad, ty, size);
-        ty -= size + 2;
+    const fillCell = (text, x, topY, w, h, size, opt) => {
+      const pad = (opt && opt.pad != null) ? opt.pad : 3;
+      const align = (opt && opt.align) || 'left';
+      const lines = String(text || '').split('\n');
+      const wrapped = [];
+      for (const ln of lines) {
+        wrapLines(font, ln, size, w - pad * 2).forEach((x2) => wrapped.push(x2));
+      }
+      const lh = size + 1.8;
+      const maxLines = Math.max(1, Math.floor((h - pad * 2) / lh));
+      let ty = topY - pad - size;
+      for (const line of wrapped.slice(0, maxLines)) {
+        let tx = x + pad;
+        if (align === 'center') tx = x + Math.max(pad, (w - font.widthOfTextAtSize(line, size)) / 2);
+        draw(line, tx, ty, size);
+        ty -= lh;
       }
     };
 
-    const drawTableRow = (top, h, cells, isHead) => {
-      let x = L;
-      page.drawRectangle({
-        x: L, y: top - h, width: tableW, height: h,
-        borderWidth: 1, borderColor: ink
-      });
-      for (let i = 0; i < cols.length; i++) {
-        const c = cols[i];
-        if (i > 0) {
-          page.drawLine({
-            start: { x, y: top },
-            end: { x, y: top - h },
-            thickness: 0.9,
-            color: ink
-          });
-        }
-        const t = cells[c.key] || '';
-        drawCellText(t, x, top - h, c.w, h, isHead ? 8.5 : 10);
-        x += c.w;
-      }
-    };
+    page.drawRectangle({
+      x: L, y: top - tableH, width: tableW, height: tableH,
+      borderWidth: 1.1, borderColor: ink
+    });
 
-    drawTableRow(y, headH, {
-      role: '',
-      name: '姓名（或名稱）',
-      sex: '性別',
-      birth: '出生年月日',
-      id: '身分證字號',
-      addr: '住所或居所（事務所或營業所）',
-      tel: '連絡電話'
-    }, true);
-    y -= headH;
+    let y = top;
+    const next = (h) => { const t = y; y -= h; hLine(y); return t; };
 
-    const principalName = FIXED_COMPANY + '\n法定代理人\n' + FIXED_REP;
-    drawTableRow(y, rowH, {
-      role: '委\n任\n人',
-      name: principalName,
-      sex: '',
-      birth: '',
-      id: '',
-      addr: d.addr,
-      tel: d.phone
-    }, false);
-    y -= rowH;
+    /* 頂部空白列（官方用紙留白） */
+    next(hPad);
 
-    drawTableRow(y, rowH, {
-      role: '受\n任\n人',
-      name: d.agent,
-      sex: '',
-      birth: '',
-      id: '',
-      addr: '同上',
-      tel: d.agentPhone || ''
-    }, false);
-    y -= rowH + 18;
+    /* 標題列：委任書 ｜ 年 調字第 號 */
+    const yTitle = next(hTitle);
+    vLine(colX[4], y, yTitle);
+    fillCell('委　　　任　　　書', L, yTitle, colX[4] - L, hTitle, 18, { align: 'center', pad: 10 });
+    const caseY = d.caseY || '　　';
+    const caseNo = d.caseNo || '　　　　';
+    fillCell(caseY + '　年　　調字第　' + caseNo + '　號', colX[4], yTitle, R - colX[4], hTitle, 11, { pad: 10 });
 
-    const bodySize = 12;
-    const bodyMax = tableW;
-    const body1 = '茲因' + FIXED_COMPANY + '與' + d.opponent + '間' + d.matter + '調解事件，委任' + d.agent + '為代理人，有代理為一切調解行為之權，並有同意調解條件、撤回、捨棄、領取所爭物或選任代理人等特別代理權。';
-    for (const line of wrapLines(font, body1, bodySize, bodyMax)) {
-      draw(line, L, y, bodySize);
-      y -= 20;
+    /* 欄位標題（7 欄，與官方 Word 一致） */
+    const yCol = next(hCol);
+    for (let i = 1; i < 7; i++) vLine(colX[i], y, yCol);
+    const heads = ['稱謂', '姓名〈或名稱〉', '性別', '出生日期', '國民身分證\n統一編號', '職業', '住所或居所〈事務所或營業所〉'];
+    for (let i = 0; i < 7; i++) {
+      fillCell(heads[i], colX[i], yCol, grid[i], hCol, 8.5, { align: 'center', pad: 2 });
     }
-    y -= 8;
-    draw('此　致', L, y, bodySize);
-    y -= 22;
-    draw(d.committee, L, y, bodySize);
-    y -= 36;
 
-    draw('委任人：' + FIXED_COMPANY + '　　（公司大章）', L, y, 11);
-    y -= 18;
-    draw('法定代理人：' + FIXED_REP + '　　（負責人小章／簽名）', L, y, 11);
-    y -= 22;
-    draw('受任人：' + d.agent + '　　（簽名或蓋章）', L, y, 11);
-    y -= 28;
-    draw('中　華　民　國　　' + d.y + '　　年　　' + d.m + '　　月　　' + d.d + '　　日', L, y, 11);
-    y -= 28;
+    /* 與官方 Word 一致：姓名僅公司名；統編在身分證欄；住所不含電話 */
+    const parties = [
+      { role: '委\n任\n人', name: FIXED_COMPANY, id: FIXED_TAX, addr: d.addr || '' },
+      { role: '受\n任\n人', name: d.agent || '', id: '', addr: '同上' }
+    ];
+    for (const p of parties) {
+      const yt = next(hParty);
+      for (let i = 1; i < 7; i++) vLine(colX[i], y, yt);
+      fillCell(p.role, colX[0], yt, grid[0], hParty, 11, { align: 'center', pad: 6 });
+      fillCell(p.name, colX[1], yt, grid[1], hParty, 11, { pad: 4 });
+      fillCell('', colX[2], yt, grid[2], hParty, 10);
+      fillCell('', colX[3], yt, grid[3], hParty, 10);
+      fillCell(p.id, colX[4], yt, grid[4], hParty, 10, { align: 'center', pad: 4 });
+      fillCell('', colX[5], yt, grid[5], hParty, 10);
+      fillCell(p.addr, colX[6], yt, grid[6], hParty, 10, { pad: 4 });
+    }
 
-    draw('※ 委任人／受任人：性別、出生年月日、身分證字號欄位留白，列印後手填。', L, y, 9, muted);
-    y -= 14;
-    draw('※ 委任人住所／電話已依營業處帶入；受任人住所印「同上」。', L, y, 9, muted);
+    const bodyLines = [
+      '　　　茲因與　' + (d.opponent || '') + '　間　' + (d.matter || '') + '　調解事件，',
+      '委任　' + (d.agent || '') + '　為代理人，有代為一切調解行為之權，',
+      '並有同意調解條件、撤回、捨棄、領取所爭物或選任代理人等特別代',
+      '理權。'
+    ];
+    for (const line of bodyLines) {
+      const yt = next(hBody);
+      fillCell(line, L, yt, tableW, hBody, 12, { pad: 8 });
+    }
+
+    fillCell('此致', L, next(hShort), tableW, hShort, 12, { pad: 8 });
+    fillCell('　　　　' + (d.committee || '　　　縣〈市〉　　　　鄉〈鎮市區〉調解委員會'), L, next(hSig), tableW, hSig, 12, { pad: 10 });
+    /* 官方簽名列僅委任人／受任人（無另列法定代理人） */
+    fillCell('　　　　　　委任人：' + FIXED_COMPANY + '　　〈簽名或蓋章〉', L, next(hSig), tableW, hSig, 11, { pad: 10 });
+    fillCell('　　　　　　受任人：' + (d.agent || '') + '　　〈簽名或蓋章〉', L, next(hSig), tableW, hSig, 11, { pad: 10 });
+    fillCell('中華民國　　' + d.y + '　　年　　' + d.m + '　　月　　' + d.d + '　　日', L, next(hSig), tableW, hSig, 11, { pad: 10 });
 
     return new Uint8Array(await doc.save());
+  }
+
+  async function makeDocx() {
+    const status = $('mpoa-status');
+    const d = collectData();
+    const miss = validate(d);
+    if (miss.length) {
+      if (status) {
+        status.textContent = '請先填寫：' + miss.join('、');
+        status.style.color = '#b91c1c';
+      }
+      return;
+    }
+    if (!window.mediationDocxFill?.fillPoaDocx) {
+      if (status) {
+        status.textContent = 'Word 套版模組未載入，請重新整理頁面';
+        status.style.color = '#b91c1c';
+      }
+      return;
+    }
+    try {
+      if (status) {
+        status.textContent = '正在套官方 Word…';
+        status.style.color = '#64748b';
+      }
+      await window.mediationDocxFill.fillPoaDocx({
+        company: FIXED_COMPANY,
+        agent: d.agent,
+        opponent: d.opponent,
+        matter: d.matter,
+        addr: d.addr,
+        committee: d.committee,
+        y: d.y,
+        m: d.m,
+        d: d.d,
+        caseY: d.caseY,
+        caseNo: d.caseNo
+      });
+      if (status) {
+        status.textContent = '已下載官方格式 Word。請用 Word 開啟列印，蓋公司大章＋負責人小章。';
+        status.style.color = '#047857';
+      }
+    } catch (e) {
+      if (status) {
+        status.textContent = 'Word 產出失敗：' + (e.message || e);
+        status.style.color = '#b91c1c';
+      }
+    }
   }
 
   async function makePdf(mode) {
@@ -379,12 +414,12 @@
       const bytes = await buildPdf(fontBytes, d);
       if (mode === 'preview') {
         showPreview(bytes);
-        if (status) status.textContent = '預覽已就緒，確認後下載列印並蓋大小章。';
+        if (status) status.textContent = 'PDF 預覽（畫面用）。正式送件請按「下載 Word 官方格式」。';
         return;
       }
       const fn = `調解委任書_${d.agent}_${d.y}${String(d.m).padStart(2, '0')}${String(d.d).padStart(2, '0')}.pdf`;
       downloadPdf(bytes, fn);
-      if (status) status.textContent = '已下載 PDF。列印後手填身分證／生日，並蓋公司大章＋負責人小章。';
+      if (status) status.textContent = '已下載 PDF。正式送件建議改用「下載 Word 官方格式」列印。';
     } catch (e) {
       console.error(e);
       if (status) {
@@ -436,6 +471,7 @@
       e.preventDefault();
       e.stopPropagation();
       if (t.id === 'mpoa-btn-preview') makePdf('preview');
+      else if (t.id === 'mpoa-btn-docx') makeDocx();
       else if (t.id === 'mpoa-btn-generate') makePdf('download');
       else if (t.id === 'mpoa-btn-preview-tab') {
         if (previewUrl) window.open(previewUrl, '_blank', 'noopener');
@@ -469,7 +505,8 @@
     return '' +
       '<div class="nrpbox" id="mpoa-box">' +
         '<h3>📄 調解委任書套版產生器</h3>' +
-        '<p class="nrp-tip">委任人固定<b>星鴻股份有限公司／法定代理人吳宗霖</b>。住所／電話依營業處帶入；受任人填業務。性別／生日／身分證欄位留白，列印後手填。</p>' +
+        '<p class="nrp-tip">正式送件請按<b>「下載 Word 官方格式」</b>（直接套你提供的原檔，版式一模一樣）。委任人固定<b>星鴻／統編 ' + esc(FIXED_TAX) + '</b>；住所依營業處；性別／生日／身分證留白手填。' +
+          '　<a href="' + esc(resolveAssetUrl(BLANK_DOCX)) + '" download>空白原檔 ↘</a></p>' +
         '<div class="nrp-sec">' +
           '<h4>委任人（固定）</h4>' +
           '<div class="nrp-grid">' +
@@ -507,8 +544,9 @@
           '</div>' +
         '</div>' +
         '<div class="nrp-actions">' +
-          '<button type="button" id="mpoa-btn-preview">預覽</button>' +
-          '<button type="button" id="mpoa-btn-generate">產生 PDF（下載列印）</button>' +
+          '<button type="button" id="mpoa-btn-docx">下載 Word 官方格式</button>' +
+          '<button type="button" id="mpoa-btn-preview">PDF 預覽</button>' +
+          '<button type="button" class="soft" id="mpoa-btn-generate">下載 PDF</button>' +
           '<button type="button" class="soft" id="mpoa-btn-clear">清除欄位</button>' +
           '<p id="mpoa-status"></p>' +
         '</div>' +
@@ -522,7 +560,7 @@
           '</div>' +
           '<iframe id="mpoa-preview-frame" title="調解委任書預覽"></iframe>' +
         '</div>' +
-        '<p class="nrp-foot">※ 性別／生日／身分證不套版、列印後手填；委任人蓋公司大章＋負責人小章；受任人（業務）簽名。</p>' +
+        '<p class="nrp-foot">※ 正式送件用 Word 官方格式列印後蓋章。PDF 僅供畫面預覽對稿。</p>' +
       '</div>';
   };
 })();

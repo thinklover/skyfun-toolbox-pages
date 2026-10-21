@@ -42,6 +42,8 @@
         { file: './docs/租賃管理部-跨區管理獎金辦法-1150120版.docx', title: '租賃管理部-跨區管理獎金辦法', category: '檔案 · DOCX · 獎金辦法', keywords: '獎金 獎金辦法 跨區 管理 租賃管理部 kpi' },
         { file: './docs/獎金辦法-租管師獎金暨考核辦法-1140211版.docx', title: '租管師獎金暨考核辦法', category: '檔案 · DOCX · 獎金辦法', keywords: '獎金 獎金辦法 考核 租管師 點數 kpi' },
         { file: './docs/獎懲辦法-租管師未申請修繕-1140714版.docx', title: '租管師未申請修繕獎懲辦法', category: '檔案 · DOCX · 獎金辦法', keywords: '獎懲 修繕 補助 租管師 獎金' },
+        { file: './docs/forms/1150327社宅補充協議.rar', title: '1150327 社宅補充協議', category: '檔案 · RAR · 各式表單', keywords: '補充協議 社宅 1150327 表單 行政' },
+        { file: './docs/mediation/租賃糾紛_調解聲請書.docx', title: '租賃糾紛調解聲請書（空白原檔）', category: '檔案 · DOCX · 催收解約專區', keywords: '調解 聲請書 租賃糾紛 套版 送件' },
         { file: './docs/forms/複審檢核表_Word版.docx', title: '複審檢核表（Word 版）', category: '檔案 · DOCX · 各式表單', keywords: '複審 檢核 預審 表單 Word 業務周會' },
         { file: './docs/forms/星鴻租管部_房租欠款還款協議書_正式公版.pdf', title: '房租欠款還款協議書（正式公版）', category: '檔案 · PDF · 各式表單', keywords: '還款 協議 欠租 催收 房租 星鴻 業務周會' },
         { file: './docs/forms/115Y_09_租金補貼租賃契約變更申請書.docx', title: '租金補貼租賃契約變更申請書', category: '檔案 · DOCX · 各式表單', keywords: '租金補貼 租補 契約變更 300億 表單' },
