@@ -107,7 +107,8 @@ end;
 $$;
 revoke all on function public.newbie_train_sync_run() from public, anon, authenticated;
 
--- 依帳號姓名＋處別找結訓日；同名多列取結訓日最新的一列
+-- 依帳號姓名＋處別找結訓日；同一人重訓時試算表會把姓名加尾碼（如「謝政宇1」），
+-- 比對時先去掉姓名尾巴的數字，同名多列取結訓日最新的一列
 create or replace function public.newbie_train_match(p_name text, p_team text)
 returns table (train_end date, status text, dept text, matched_by text)
 language sql
@@ -115,10 +116,13 @@ stable
 security definer
 set search_path = public
 as $$
-  with c as (
+  with base as (
+    select nullif(regexp_replace(trim(coalesce(p_name, '')), '\s*[0-9０-９]+$', ''), '') as want
+  ), c as (
     select r.*, r.dept_norm = coalesce(trim(p_team), '') as dept_hit
-    from public.newbie_train_roster r
-    where r.name = trim(p_name) and coalesce(trim(p_name), '') <> ''
+    from public.newbie_train_roster r, base
+    where base.want is not null
+      and regexp_replace(trim(r.name), '\s*[0-9０-９]+$', '') = base.want
   ), pick as (
     select c.*, 'name_dept'::text as how from c where dept_hit
     union all
