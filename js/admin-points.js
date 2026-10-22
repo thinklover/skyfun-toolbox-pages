@@ -4910,10 +4910,11 @@
   const DURATION_LONG_SEC = 3600;
 
   function durationViewBar(view) {
-    const tab = (key, label) => `<button type="button" class="apt-sub-tab${view === key ? ' is-active' : ''}" data-dur-view="${key}">${label}</button>`;
-    return `<div class="apt-sub-tabs apt-dur-tabs apt-dur-tabs--grouped">
-      <span class="apt-dur-group"><span class="apt-dur-group-label">🏅 良率</span>${tab('quality', '案件良率排名')}${tab('quality-region', '地區')}${tab('quality-compare', '與上月比較')}</span>
-      <span class="apt-dur-group"><span class="apt-dur-group-label">⏱️ 耗時</span>${tab('rank', '耗時排名')}${tab('region', '地區')}${tab('detail', '耗時明細')}${tab('compare', '與上月比較')}</span>
+    return `<div class="apt-sub-tabs apt-dur-tabs">
+      <button type="button" class="apt-sub-tab${view === 'rank' ? ' is-active' : ''}" data-dur-view="rank">🏆 排名</button>
+      <button type="button" class="apt-sub-tab${view === 'region' ? ' is-active' : ''}" data-dur-view="region">🗺️ 地區</button>
+      <button type="button" class="apt-sub-tab${view === 'detail' ? ' is-active' : ''}" data-dur-view="detail">📋 耗時明細</button>
+      <button type="button" class="apt-sub-tab${view === 'compare' ? ' is-active' : ''}" data-dur-view="compare">📈 與上月比較</button>
     </div>`;
   }
 
@@ -5381,7 +5382,7 @@
     });
     const nodes = Core.DURATION_NODES.filter((n) => n.key !== 'px' || rep.all.nodes.px.count);
     if (state.durBy !== 'all' && !nodes.some((n) => n.key === state.durBy)) state.durBy = 'all';
-    const views = { detail: renderDurationDetail, region: renderDurationRegion, compare: renderDurationCompare, quality: renderDurationQuality, 'quality-region': renderDurationQualityRegion, 'quality-compare': renderDurationQualityCompare };
+    const views = { detail: renderDurationDetail, region: renderDurationRegion, compare: renderDurationCompare };
     const view = views[state.durView] || renderDurationRank;
     return `${durationHero(rep, nodes)}${view(rep, nodes)}`;
   }
