@@ -29,7 +29,7 @@ begin
   if v_case = '' then return json_build_object('ok', false, 'error', '請填媒合編號'); end if;
   if p_kind = 'roster' and v_roster = '' then return json_build_object('ok', false, 'error', '請選清冊期數'); end if;
   if v_content = '' then return json_build_object('ok', false, 'error', '請填公會意見內容'); end if;
-  if p_kind = 'roster' and v_measure = '' then return json_build_object('ok', false, 'error', '請填行政檢討對策'); end if;
+  if v_measure = '' then return json_build_object('ok', false, 'error', '請填行政檢討對策'); end if;
   begin
     v_date := nullif(d->>'opinionDate', '')::date;
   exception when others then
@@ -45,7 +45,7 @@ begin
   values (p_kind, (now() at time zone 'Asia/Taipei')::date, v_name, v_uid, v_period, v_region,
     v_case,
     case when p_kind = 'roster' then v_roster else '' end,
-    v_date, v_content, case when p_kind = 'roster' then v_measure else '' end, v_cat,
+    v_date, v_content, v_measure, v_cat,
     case when p_kind = 'roster' then v_item else '' end)
   returning id into v_id;
   return json_build_object('ok', true, 'id', v_id);

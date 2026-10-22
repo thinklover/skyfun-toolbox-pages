@@ -402,8 +402,8 @@
       : '';
     const opinionBox = opinions.length
       ? `<details class="apt-pd-group"><summary><b>自己填的公會意見</b>${opinions.length} 筆 · ${opinionPts(opinions)} 點</summary>
-          <div class="apt-table-wrap"><table class="apt-table apt-pd-table"><thead><tr><th>填寫日</th><th>類別</th><th>公會期數</th><th>媒合編號／清冊期數</th><th>公會意見內容</th><th class="num">點數</th></tr></thead>
-          <tbody>${opinions.map((o) => `<tr${o.noPoints ? ' class="apt-op-nopts"' : ''}><td>${esc(shortDate(o.date))}</td><td>${o.kind === 'case' ? '案件意見' : '清冊意見'}</td><td>${esc(o.guildPeriod)}</td><td>${esc(opinionRef(o))}</td><td class="apt-pd-left">${esc(o.content)}</td><td class="num">${o.noPoints ? noPointsTag(o) : 1}</td></tr>`).join('')}</tbody></table></div></details>`
+          <div class="apt-table-wrap"><table class="apt-table apt-pd-table"><thead><tr><th>填寫日</th><th>類別</th><th>公會期數</th><th>媒合編號／清冊期數</th><th>公會意見內容</th><th>行政檢討對策</th><th class="num">點數</th></tr></thead>
+          <tbody>${opinions.map((o) => `<tr${o.noPoints ? ' class="apt-op-nopts"' : ''}><td>${esc(shortDate(o.date))}</td><td>${o.kind === 'case' ? '案件意見' : '清冊意見'}</td><td>${esc(o.guildPeriod)}</td><td>${esc(opinionRef(o))}</td><td class="apt-pd-left">${esc(o.content)}</td><td class="apt-pd-left">${esc(o.measure || '')}</td><td class="num">${o.noPoints ? noPointsTag(o) : 1}</td></tr>`).join('')}</tbody></table></div></details>`
       : '';
     return `${head}<div class="apt-pd-groups">${groups}${manualBox}${opinionBox}</div>
       <p class="apt-pd-foot">點上面的項目可以展開每一件。<button type="button" class="apt-pd-more" data-person="${esc(p.name)}">看完整個人績效（每日、耗時、評等）→</button></p>`;
@@ -6037,7 +6037,7 @@
         : o[field]
           ? esc(o[field])
           : NIL;
-    const head = `<th>填寫日</th><th>公會期數</th><th>縣市</th>${isCase ? '<th>媒合編號</th>' : '<th>清冊期數</th><th>媒合編號</th>'}<th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${isCase ? '' : '<th>行政檢討對策</th>'}<th>已修正</th><th>點數</th><th></th>`;
+    const head = `<th>填寫日</th><th>公會期數</th><th>縣市</th>${isCase ? '<th>媒合編號</th>' : '<th>清冊期數</th><th>媒合編號</th>'}<th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th>已修正</th><th>點數</th><th></th>`;
     const rowCls = (o) => [o.noPoints && 'apt-op-nopts', opLate(o) && 'apt-op-late', ids.has(o.id) || 'apt-op-other'].filter((c) => typeof c === 'string');
     const rows = [...others, ...list]
       .map(
@@ -6051,7 +6051,7 @@
           <td>${dateCell(o)}</td>
           <td>${catCell(o)}</td>
           <td class="apt-op-text">${textCell(o, 'content')}</td>
-          ${isCase ? '' : `<td class="apt-op-text apt-op-measure">${textCell(o, 'measure')}</td>`}
+          <td class="apt-op-text apt-op-measure">${textCell(o, 'measure')}</td>
           ${opFixCell(o)}
           <td class="num">${o.noPoints ? noPointsTag(o) : 1}</td>
           <td>${ids.has(o.id) ? `<button type="button" class="apt-op-del" data-op-del="${o.id}">刪除</button>` : ''}</td>
@@ -6064,7 +6064,7 @@
       <p class="apt-op-fix-tip${late ? ' is-late' : ''}">${late ? `⚠️ 有 <b>${late}</b> 筆超過一天還沒勾「已修正」，請盡快修正。` : '修正完成後請勾「已修正」。'}填寫滿一天還沒勾，會用 LINE 提醒填寫的人（每天最多一次）。${others.length ? '其他業績月還沒勾的也列在最上面。' : ''}</p>
       <div class="apt-table-wrap"><table class="apt-table apt-op-table">
         <thead><tr>${head}</tr></thead>
-        <tbody>${rows || `<tr><td colspan="${isCase ? 10 : 12}" class="apt-empty">還沒有填寫</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="${isCase ? 11 : 12}" class="apt-empty">還沒有填寫</td></tr>`}</tbody>
       </table></div>`;
   }
 
@@ -6090,7 +6090,7 @@
           </div>`}
           <label class="apt-op-wide"><span>缺失類別 <em>*</em><small class="apt-op-auto">同公會月報的${isCase ? '審件' : '清冊'}缺失分類，一筆意見選最主要的一項</small></span><select name="category" required><option value="">請選擇</option>${Core.OPINION_CATEGORIES[kind].map((c) => `<option>${esc(c)}</option>`).join('')}</select></label>
           <label class="apt-op-wide"><span>公會意見內容 <em>*</em></span><textarea name="content" rows="3" maxlength="2000" placeholder="照公會回傳的意見填寫"></textarea></label>
-          ${isCase ? '' : '<label class="apt-op-wide apt-op-measure-field"><span>行政檢討對策 <em>*</em></span><textarea name="measure" rows="3" maxlength="2000" placeholder="這個意見要怎麼改善、之後怎麼避免"></textarea></label>'}
+          <label class="apt-op-wide apt-op-measure-field"><span>行政檢討對策 <em>*</em></span><textarea name="measure" rows="3" maxlength="2000" placeholder="這個意見要怎麼改善、之後怎麼避免"></textarea></label>
           <div class="apt-op-actions apt-op-wide"><button type="submit" class="apt-op-save">送出</button><span class="apt-op-msg" role="status" aria-live="polite"></span></div>
         </form>
         <div class="apt-op-list">${opinionRows(kind)}</div>
@@ -6258,7 +6258,10 @@
       return fail('請選缺失類別');
     }
     if (!data.content) return fail('請填公會意見內容');
-    if (kind === 'roster' && !data.measure) return fail('請填行政檢討對策');
+    if (!data.measure) {
+      form.elements.measure?.focus();
+      return fail('請填行政檢討對策');
+    }
     btn.disabled = true;
     msg.textContent = '送出中…';
     msg.className = 'apt-op-msg';

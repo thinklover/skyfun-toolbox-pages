@@ -541,7 +541,7 @@
       </table></div>
       <h3 class="list-title">行政填寫的案件意見<span class="muted" id="op-case-count"></span></h3>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th></th></tr></thead>
+        <thead><tr><th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th></th></tr></thead>
         <tbody id="op-case-list"></tbody>
       </table></div>
       <h3 class="list-title">行政填寫的清冊意見<span class="muted" id="op-roster-count"></span></h3>
@@ -1618,10 +1618,11 @@
 
         const errs = k.errors.slice().sort((a, b) => a.kind.localeCompare(b.kind) || Core.KPI_REGIONS.indexOf(a.area) - Core.KPI_REGIONS.indexOf(b.area));
         $('kpi-errors').innerHTML = errs.length
-          ? `<div class="overflow-x-auto"><table><thead><tr><th>類別</th><th>縣市</th><th>媒合編號／清冊期數</th><th>行政</th><th>填寫日</th><th>公會意見內容</th></tr></thead><tbody>${errs.map((o) => `<tr>
+          ? `<div class="overflow-x-auto"><table><thead><tr><th>類別</th><th>縣市</th><th>媒合編號／清冊期數</th><th>行政</th><th>填寫日</th><th>公會意見內容</th><th>行政檢討對策</th></tr></thead><tbody>${errs.map((o) => `<tr>
               <td>${o.kind === 'roster' ? '清冊' : '審件'}</td><td>${esc(o.area || '—')}${o.area && !o.region ? ' <span class="muted">(依編號)</span>' : ''}</td>
               <td>${esc(o.kind === 'roster' ? [o.rosterPeriod, o.caseNo].filter(Boolean).join('・') : o.caseNo)}</td><td>${esc(o.name)}</td><td>${esc(o.date)}</td>
-              <td style="white-space:pre-wrap;min-width:14rem">${esc(o.content)}</td></tr>`).join('')}</tbody></table></div>`
+              <td style="white-space:pre-wrap;min-width:14rem">${esc(o.content)}</td>
+              <td style="white-space:pre-wrap;min-width:12rem;background:#fefce8">${esc(o.measure || '')}</td></tr>`).join('')}</tbody></table></div>`
           : `<p class="muted">公會期數 ${esc(k.m.guild)} 還沒有行政填寫的清冊／案件意見，錯誤件數都是 0。</p>`;
 
         const head = ['04', '09'].flatMap((f) => KPI_PERIODS.map((p) => `<th>表單${f}<br>${p}</th>`)).join('');
@@ -1889,11 +1890,11 @@
             XLSX.utils.book_append_sheet(wb, finishSheet(ws, [{ wch: 8 }, ...Array.from({ length: ww - 1 }, () => ({ wch: 14 }))]), `${k.m.month}月KPI週報`);
           }
 
-          const detail = [['類別', '縣市', '媒合編號／清冊期數', '行政', '填寫日', '公會意見內容']].concat(
-            k.errors.map((o) => [o.kind === 'roster' ? '清冊' : '審件', o.area || '', o.kind === 'roster' ? [o.rosterPeriod, o.caseNo].filter(Boolean).join('・') : o.caseNo, o.name, o.date, o.content])
+          const detail = [['類別', '縣市', '媒合編號／清冊期數', '行政', '填寫日', '公會意見內容', '行政檢討對策']].concat(
+            k.errors.map((o) => [o.kind === 'roster' ? '清冊' : '審件', o.area || '', o.kind === 'roster' ? [o.rosterPeriod, o.caseNo].filter(Boolean).join('・') : o.caseNo, o.name, o.date, o.content, o.measure || ''])
           );
           const ws2 = XLSX.utils.aoa_to_sheet(detail);
-          ws2['!cols'] = [{ wch: 6 }, { wch: 6 }, { wch: 22 }, { wch: 10 }, { wch: 11 }, { wch: 60 }];
+          ws2['!cols'] = [{ wch: 6 }, { wch: 6 }, { wch: 22 }, { wch: 10 }, { wch: 11 }, { wch: 60 }, { wch: 40 }];
           XLSX.utils.book_append_sheet(wb, ws2, '錯誤件數明細');
           const keys = ['04', '09'].flatMap((f) => KPI_PERIODS.map((p) => `${f}-${p}`));
           const src = [['地區', '公司', ...keys.map((x) => `表單${x}`), '合計']].concat(
@@ -1947,10 +1948,10 @@
                 <td>${esc(kind === 'case' ? o.caseNo : [o.rosterPeriod, o.caseNo].filter(Boolean).join('・'))}${o.rosterItem ? `<div class="muted" style="font-size:.75rem">${esc(o.rosterItem)}</div>` : ''}</td><td>${esc(o.opinionDate || '')}</td>
                 <td>${o.category ? esc(o.category) : '<span class="muted">未分類</span>'}</td>
                 <td style="white-space:pre-wrap;min-width:12rem">${esc(o.content)}</td>
-                ${kind === 'roster' ? `<td style="white-space:pre-wrap;min-width:12rem;background:#fefce8">${esc(o.measure)}</td>` : ''}
+                <td style="white-space:pre-wrap;min-width:12rem;background:#fefce8">${esc(o.measure || '')}</td>
                 <td>${o.noPoints ? '<span class="badge op-k-nopts">不給點</span> ' : ''}<button type="button" class="btn btn-del" data-del-opinion="${o.id}">刪除</button></td>
               </tr>`).join('')
-            : `<tr><td colspan="${kind === 'case' ? 9 : 10}" class="muted">本業績月尚無行政填寫的${kind === 'case' ? '案件' : '清冊'}意見</td></tr>`;
+            : `<tr><td colspan="10" class="muted">本業績月尚無行政填寫的${kind === 'case' ? '案件' : '清冊'}意見</td></tr>`;
         });
       }
 
@@ -4170,9 +4171,7 @@
       const opContentArea = (o) =>
         `<textarea class="op-edit" data-op-content="${o.id}" rows="2" aria-label="公會意見內容">${esc(o.content || '')}</textarea>`;
       const opMeasureArea = (o) =>
-        o.kind === 'roster'
-          ? `<textarea class="op-edit" data-op-measure="${o.id}" rows="2" aria-label="行政檢討對策">${esc(o.measure || '')}</textarea>`
-          : '<span class="muted">—</span>';
+        `<textarea class="op-edit" data-op-measure="${o.id}" rows="2" aria-label="行政檢討對策">${esc(o.measure || '')}</textarea>`;
       function opLeader(name) {
         const s = (data.staff || []).find((x) => x.name === name);
         return s && s.leader ? `${s.leader} 組` : '未對應組長';
@@ -4253,8 +4252,7 @@
           map.get(k).push(o);
         });
         const showKind = op.kind === 'all';
-        const showMeasure = op.kind !== 'case';
-        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th>${showMeasure ? '<th>行政檢討對策</th>' : ''}<th>點數</th><th></th></tr>`;
+        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th>點數</th><th></th></tr>`;
         $('op-groups').innerHTML = [...map.keys()].sort(grp.sort).map((k, gi) => {
           const list = map.get(k);
           const c = list.filter((o) => o.kind === 'case').length;
@@ -4267,7 +4265,7 @@
               <td>${esc(opRef(o))}${opItem(o)}</td><td>${opDateInput(o)}</td>
               <td>${opCatSelect(o)}</td>
               <td style="min-width:14rem">${opContentArea(o)}</td>
-              ${showMeasure ? `<td style="min-width:12rem;${o.kind === 'roster' ? 'background:#fefce8' : ''}">${opMeasureArea(o)}</td>` : ''}
+              <td style="min-width:12rem;background:#fefce8">${opMeasureArea(o)}</td>
               <td>${opPtsCell(o)}</td>
               <td><button type="button" class="btn btn-del" data-op-del="${o.id}">刪除</button></td>
             </tr>`).join('');
@@ -4403,7 +4401,7 @@
           const aoa = [[grp.label, '類別', '填寫時間', '行政', '組別', '公會期數', '縣市', '媒合編號／清冊期數', '意見時間', '缺失類別', '公會意見內容', '行政檢討對策', '點數']].concat(
             rows.slice().sort((a, b) => grp.sort(grp.key(a), grp.key(b))).map((o) => [
               grp.key(o), OP_KIND[o.kind] || o.kind, opTime(o), o.name || '', opLeader(o.name), o.guildPeriod || '', o.region || '',
-              opRef(o) + (o.rosterItem ? `（${o.rosterItem}）` : ''), o.opinionDate || '', o.category || '', o.content || '', o.kind === 'roster' ? o.measure || '' : '',
+              opRef(o) + (o.rosterItem ? `（${o.rosterItem}）` : ''), o.opinionDate || '', o.category || '', o.content || '', o.measure || '',
               o.noPoints ? `不給點${o.noPointsReason ? `：${o.noPointsReason}` : ''}` : 1
             ])
           );

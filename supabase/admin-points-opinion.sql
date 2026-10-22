@@ -268,7 +268,7 @@ begin
   return json_build_object('ok', true, 'opinions', coalesce((
     select json_agg(json_build_object(
       'id', o.id, 'kind', o.kind, 'region', o.region, 'caseNo', o.case_no, 'rosterPeriod', o.roster_period,
-      'name', o.staff_name, 'date', o.work_date, 'opinionDate', o.opinion_date, 'content', o.content, 'category', o.category,
+      'name', o.staff_name, 'date', o.work_date, 'opinionDate', o.opinion_date, 'content', o.content, 'measure', o.measure, 'category', o.category,
       'rosterItem', o.roster_item
     ) order by o.kind, o.region, o.id)
     from public.admin_points_opinion o

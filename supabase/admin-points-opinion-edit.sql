@@ -49,10 +49,9 @@ begin
   end if;
   if p_measure is not null then
     v_measure := left(trim(coalesce(p_measure, '')), 2000);
-    if v_kind = 'roster' and v_measure = '' then
-      return json_build_object('ok', false, 'error', '清冊意見請填行政檢討對策');
+    if v_measure = '' then
+      return json_build_object('ok', false, 'error', '請填行政檢討對策');
     end if;
-    if v_kind = 'case' then v_measure := ''; end if;
   end if;
   if p_guild_period is not null then
     v_period := left(trim(coalesce(p_guild_period, '')), 20);
@@ -72,7 +71,7 @@ begin
   update public.admin_points_opinion
     set category = v_cat,
         content = v_content,
-        measure = case when v_kind = 'roster' then v_measure else '' end,
+        measure = v_measure,
         guild_period = v_period,
         opinion_date = v_odate
   where id = p_id;
@@ -83,7 +82,7 @@ begin
       'id', p_id,
       'category', v_cat,
       'content', v_content,
-      'measure', case when v_kind = 'roster' then v_measure else '' end,
+      'measure', v_measure,
       'guildPeriod', v_period,
       'opinionDate', v_odate
     )
@@ -147,10 +146,9 @@ begin
   end if;
   if p_measure is not null then
     v_measure := left(trim(coalesce(p_measure, '')), 2000);
-    if v_kind = 'roster' and v_measure = '' then
-      return json_build_object('ok', false, 'error', '清冊意見請填行政檢討對策');
+    if v_measure = '' then
+      return json_build_object('ok', false, 'error', '請填行政檢討對策');
     end if;
-    if v_kind = 'case' then v_measure := ''; end if;
   end if;
   if p_guild_period is not null then
     v_period := left(trim(coalesce(p_guild_period, '')), 20);
@@ -170,7 +168,7 @@ begin
   update public.admin_points_opinion
     set category = v_cat,
         content = v_content,
-        measure = case when v_kind = 'roster' then v_measure else '' end,
+        measure = v_measure,
         guild_period = v_period,
         opinion_date = v_odate
   where id = p_id;
@@ -181,7 +179,7 @@ begin
       'id', p_id,
       'category', v_cat,
       'content', v_content,
-      'measure', case when v_kind = 'roster' then v_measure else '' end,
+      'measure', v_measure,
       'guildPeriod', v_period,
       'opinionDate', v_odate
     )
