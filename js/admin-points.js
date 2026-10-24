@@ -5689,8 +5689,8 @@
     if (spotTab) spotTab.hidden = !spotOk;
     if (state.tab === 'spot' && !spotOk) state.tab = 'month';
     document.querySelectorAll('.apt-tab').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === state.tab));
-    // 點數月累計不再加 apt-wide，維持與其他頁籤相同寬度（max-w-6xl）
-    $('page-admin-points')?.classList.remove('apt-wide');
+    // 行政績效中心所有頁籤一律加寬
+    $('page-admin-points')?.classList.add('apt-wide');
     if (state.tab === 'person') box.innerHTML = renderPerson();
     else if (state.tab === 'weekly') box.innerHTML = renderWeekly();
     else if (state.tab === 'area') box.innerHTML = renderArea();

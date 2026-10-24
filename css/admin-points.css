@@ -215,6 +215,8 @@
 .apt-table tbody tr.apt-band--red td, .apt-tone-chip.apt-band--red { background: #fef2f2; }
 .apt-name { border: none; background: none; padding: 0; font-weight: 800; color: #0f172a; cursor: pointer; text-decoration: underline dotted #94a3b8; }
 .apt-name:hover { color: #4338ca; }
+/* 行政績效中心整頁加寬（所有頁籤） */
+#page-admin-points,
 #page-admin-points.apt-wide { max-width: min(96vw, 94rem); }
 .apt-table.apt-month-table { font-size: 1.08rem; }
 .apt-table.apt-month-table th, .apt-table.apt-month-table td { padding: 0.5rem 0.4rem; }
