@@ -298,178 +298,7 @@
     return 'apt-band--red';
   }
 
-  function addDayIso(iso, n) {
-    const d = new Date(`${iso}T00:00:00`);
-    d.setDate(d.getDate() + n);
-    return Core.isoDate(d);
-  }
-
-  function rangeDayList(range) {
-    const out = [];
-    if (!range?.start || !range?.end) return out;
-    for (let d = range.start; d <= range.end; d = addDayIso(d, 1)) out.push(d);
-    return out;
-  }
-
-  function teamDayTotals(admin, days) {
-    return days.map((day) => admin.reduce((s, p) => s + (p.days?.get?.(day)?.total || 0), 0));
-  }
-
-  function teamWeekTotals(admin, range) {
-    return Core.weeksOf(range).map((w) => {
-      let sum = 0;
-      admin.forEach((p) => {
-        (p.days || new Map()).forEach((t, d) => {
-          if (d >= w.start && d <= w.end && d >= range.start && d <= range.end) sum += t.total || 0;
-        });
-      });
-      return { start: w.start, end: w.end, label: `${w.start.slice(5, 7)}/${w.start.slice(8)}`, value: sum };
-    });
-  }
-
-  function sparkSvg(values, color) {
-    const vals = (values || []).filter((v) => v != null && Number.isFinite(v));
-    if (vals.length < 2) return '';
-    const max = Math.max(...vals, 1);
-    const min = Math.min(...vals, 0);
-    const span = Math.max(1, max - min);
-    const W = 96;
-    const H = 36;
-    const pts = vals
-      .map((v, i) => {
-        const x = (i / (vals.length - 1)) * W;
-        const y = H - 3 - ((v - min) / span) * (H - 6);
-        return `${x.toFixed(1)},${y.toFixed(1)}`;
-      })
-      .join(' ');
-    return `<svg class="apt-ov-spark" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="${pts}"/></svg>`;
-  }
-
-  function renderMonthOverview(admin) {
-    const CH = window.AdminPointsCharts;
-    const range = state.meta?.range || {};
-    const days = rangeDayList(range);
-    const dayVals = teamDayTotals(admin, days);
-    const weeks = teamWeekTotals(admin, range);
-    const total = admin.reduce((s, p) => s + p.month.total, 0);
-    const withPts = admin.filter((p) => p.month.total > 0).length;
-    const s1 = admin.filter((p) => p.stage === 1).length;
-    const s2 = admin.filter((p) => p.stage === 2).length;
-    const none = Math.max(0, admin.length - s1 - s2);
-    const avg = withPts ? Math.round((total / withPts) * 10) / 10 : 0;
-    const fetched = state.meta?.fetchedAt ? new Date(state.meta.fetchedAt).toLocaleString('zh-TW', { hour12: false }) : '';
-    const mid = Math.floor(dayVals.length / 2) || 1;
-    const firstHalf = dayVals.slice(0, mid).reduce((s, v) => s + v, 0);
-    const secondHalf = dayVals.slice(mid).reduce((s, v) => s + v, 0);
-    const paceDelta = firstHalf > 0 ? Math.round(((secondHalf - firstHalf) / firstHalf) * 1000) / 10 : null;
-    const paceCls = paceDelta == null ? 'is-flat' : paceDelta > 0 ? 'is-up' : paceDelta < 0 ? 'is-down' : 'is-flat';
-    const paceTxt =
-      paceDelta == null
-        ? '尚無足夠日點數可比較'
-        : `${paceDelta > 0 ? '▲' : paceDelta < 0 ? '▼' : '－'} 後半段較前半 ${paceDelta > 0 ? '+' : ''}${paceDelta}%`;
-
-    const dayChart = CH
-      ? CH.columns({
-          labels: days.map((d) => d.slice(8)),
-          bars: [],
-          lines: [{ name: '全體行政日點數', values: dayVals, color: '#4f46e5' }],
-          height: 220,
-          fmt: (v) => String(Math.round(v))
-        })
-      : '<p class="apt-ov-empty">圖表元件未載入</p>';
-    const weekChart = CH
-      ? CH.columns({
-          labels: weeks.map((w) => w.label),
-          bars: [{ name: '每週點數', values: weeks.map((w) => w.value), color: '#38bdf8' }],
-          height: 220,
-          fmt: (v) => String(Math.round(v))
-        })
-      : '<p class="apt-ov-empty">圖表元件未載入</p>';
-    const pieParts = [
-      { label: `第二階段（${Core.STAGE_2}）`, value: s2, color: '#be185d' },
-      { label: `第一階段（${Core.STAGE_1}）`, value: s1, color: '#2563eb' },
-      { label: '未達第一階段', value: none, color: '#cbd5e1' }
-    ].filter((p) => p.value > 0);
-    const pie = CH && pieParts.length
-      ? CH.pie({ parts: pieParts, center: String(admin.length), sub: '行政人數' })
-      : '<p class="apt-ov-empty">無資料</p>';
-    const weekMax = Math.max(1, ...weeks.map((w) => w.value));
-    const weekBars = weeks.length
-      ? `<div class="apt-ov-bars">${weeks
-          .map(
-            (w) => `<div class="apt-ov-bar-row"><span>${esc(w.label)}</span><div class="apt-ov-bar-track"><span style="width:${(w.value / weekMax) * 100}%"></span></div><b>${w.value}</b></div>`
-          )
-          .join('')}</div>`
-      : '<p class="apt-ov-empty">無資料</p>';
-    const top = admin.filter((p) => p.month.total > 0).slice(0, 5);
-    const rank = top.length
-      ? `<ol class="apt-ov-rank">${top
-          .map(
-            (p, i) => `<li><b>${i + 1}</b><button type="button" class="apt-name" data-point-person="${esc(p.name)}">${esc(p.name)}</button><strong>${p.month.total}</strong></li>`
-          )
-          .join('')}</ol>`
-      : '<p class="apt-ov-empty">本業績月尚無點數</p>';
-
-    return `<section class="apt-ov" aria-label="行政績效總覽">
-      <div class="apt-ov-hero">
-        <div class="apt-glass apt-ov-hero-main">
-          <p class="apt-ov-kicker">行政總點數</p>
-          <p class="apt-ov-hero-val">${total}</p>
-          <p class="apt-ov-hero-foot">${esc(range.start || '')}～${esc(range.end || '')}${fetched ? ` · 系統資料時間 ${esc(fetched)}` : ''}</p>
-        </div>
-        <div class="apt-ov-side">
-          <div class="apt-glass apt-ov-stat">
-            <p class="apt-ov-stat-label">有點數人數</p>
-            <p class="apt-ov-stat-val">${withPts}</p>
-            <p class="apt-ov-stat-delta is-flat">行政 ${admin.length} 人</p>
-            ${sparkSvg(dayVals, '#4f46e5')}
-          </div>
-          <div class="apt-glass apt-ov-stat">
-            <p class="apt-ov-stat-label">第一／第二階段</p>
-            <p class="apt-ov-stat-val">${s1}／${s2}</p>
-            <p class="apt-ov-stat-delta ${paceCls}">${esc(paceTxt)}</p>
-            ${sparkSvg(weeks.map((w) => w.value), '#0ea5e9')}
-          </div>
-          <div class="apt-glass apt-ov-stat">
-            <p class="apt-ov-stat-label">有點數人均</p>
-            <p class="apt-ov-stat-val">${avg}</p>
-            <p class="apt-ov-stat-delta is-flat">僅統計有點數者</p>
-            ${sparkSvg(dayVals.slice(-14), '#6366f1')}
-          </div>
-        </div>
-      </div>
-      <div class="apt-ov-charts">
-        <div class="apt-glass apt-ov-card">
-          <div class="apt-ov-card-head"><h3>每日點數</h3><small>全體行政加總</small></div>
-          ${dayVals.some((v) => v > 0) ? dayChart : '<p class="apt-ov-empty">這個業績月還沒有每日點數</p>'}
-        </div>
-        <div class="apt-glass apt-ov-card">
-          <div class="apt-ov-card-head"><h3>每週點數</h3><small>依週區間加總</small></div>
-          ${weeks.some((w) => w.value > 0) ? weekChart : '<p class="apt-ov-empty">這個業績月還沒有每週點數</p>'}
-        </div>
-      </div>
-      <div class="apt-ov-bottom">
-        <div class="apt-glass apt-ov-card">
-          <div class="apt-ov-card-head"><h3>階段分布</h3><small>行政人數</small></div>
-          <div class="apt-ov-pie-wrap">${pie}<ul class="apt-ov-legend">${pieParts
-            .map((p) => `<li><span><i style="background:${p.color}"></i>${esc(p.label)}</span><b>${p.value}</b></li>`)
-            .join('')}</ul></div>
-        </div>
-        <div class="apt-glass apt-ov-card">
-          <div class="apt-ov-card-head"><h3>週點數條</h3><small>同上方每週資料</small></div>
-          ${weekBars}
-        </div>
-        <div class="apt-glass apt-ov-card">
-          <div class="apt-ov-card-head"><h3>前段排行</h3><small>點姓名看明細</small></div>
-          ${rank}
-        </div>
-      </div>
-    </section>`;
-  }
-
   function renderMonth() {
-    const admin = state.result.people.filter((p) => p.group === '行政');
-    const overview = renderMonthOverview(admin);
     const legend = `<p class="apt-tone-legend">名次底色：
       <span class="apt-tone-chip apt-band--green">前 10 名</span>
       <span class="apt-tone-chip apt-band--white">11–20 名</span>
@@ -478,17 +307,20 @@
     const sheetNote = state.result.sheet
       ? `<p class="apt-sub-note apt-sheet-note">📋 本業績月的月累積以表單「${esc(state.result.sheet)}」為準；各項件數仍是系統爬取，跟表單的差額列為「表單校正」（月累積旁的 ± 數字）</p>`
       : '';
-    const tables = GROUPS.map((g) => {
-      const people = state.result.people.filter((p) => p.group === g.key);
-      if (g.key === '非行政' && !people.length) return '';
-      const sum = people.reduce((s, p) => s + p.month.total, 0);
-      if (g.key === '非行政') {
-        return `<details class="apt-group-fold" data-fold="nonAdmin"${state.nonAdminOpen ? ' open' : ''}>
+    return (
+      legend +
+      sheetNote +
+      GROUPS.map((g) => {
+        const people = state.result.people.filter((p) => p.group === g.key);
+        if (g.key === '非行政' && !people.length) return '';
+        const sum = people.reduce((s, p) => s + p.month.total, 0);
+        if (g.key === '非行政') {
+          return `<details class="apt-group-fold" data-fold="nonAdmin"${state.nonAdminOpen ? ' open' : ''}>
             <summary>${groupTitle(g, people.length, sum)}</summary>${monthTable(people)}</details>`;
-      }
-      return groupTitle(g, people.length, sum) + monthTable(people);
-    }).join('');
-    return `${overview}<div class="apt-ov-table-block"><h3 class="apt-ov-table-title">點數明細表<small>與上方總覽同一套數字</small></h3>${legend}${sheetNote}${tables}</div>`;
+        }
+        return groupTitle(g, people.length, sum) + monthTable(people);
+      }).join('')
+    );
   }
 
   function monthTable(list) {
@@ -5842,7 +5674,13 @@
     const s1 = admin.filter((p) => p.stage === 1).length;
     const s2 = admin.filter((p) => p.stage === 2).length;
     const fetched = state.meta?.fetchedAt ? new Date(state.meta.fetchedAt).toLocaleString('zh-TW', { hour12: false }) : '';
-    const withPts = admin.filter((p) => p.month.total > 0).length;
+    $('apt-summary').innerHTML = `
+      <span class="apt-chip"><strong>${total}</strong>行政總點數</span>
+      <span class="apt-chip"><strong>${admin.filter((p) => p.month.total > 0).length}</strong>行政有點數人數</span>
+      <span class="apt-chip"><strong>${otherTotal}</strong>非行政總點數</span>
+      <span class="apt-chip"><strong>${s1}</strong>第一階段</span>
+      <span class="apt-chip"><strong>${s2}</strong>第二階段</span>
+      <span class="apt-chip apt-chip--muted">${esc(state.meta.range.start)}～${esc(state.meta.range.end)} · 系統資料時間 ${esc(fetched)}</span>`;
     const personTab = document.querySelector('.apt-tab[data-tab="person"]');
     if (personTab) personTab.hidden = !PERSON_OPEN;
     if (state.tab === 'person' && !PERSON_OPEN) state.tab = 'month';
@@ -5850,17 +5688,6 @@
     const spotTab = document.querySelector('.apt-tab[data-tab="spot"]');
     if (spotTab) spotTab.hidden = !spotOk;
     if (state.tab === 'spot' && !spotOk) state.tab = 'month';
-    const summary = $('apt-summary');
-    if (summary) {
-      summary.classList.toggle('is-dash-hidden', state.tab === 'month');
-      summary.innerHTML = `
-      <div class="apt-kpi"><span class="apt-kpi-label">行政總點數</span><strong class="apt-kpi-value">${total}</strong></div>
-      <div class="apt-kpi"><span class="apt-kpi-label">有點數人數</span><strong class="apt-kpi-value">${withPts}</strong></div>
-      <div class="apt-kpi"><span class="apt-kpi-label">非行政總點數</span><strong class="apt-kpi-value">${otherTotal}</strong></div>
-      <div class="apt-kpi"><span class="apt-kpi-label">第一階段（250）</span><strong class="apt-kpi-value">${s1}</strong></div>
-      <div class="apt-kpi"><span class="apt-kpi-label">第二階段（350）</span><strong class="apt-kpi-value">${s2}</strong></div>
-      <div class="apt-kpi apt-kpi--muted"><span class="apt-kpi-label">資料期間</span><span class="apt-kpi-note">${esc(state.meta.range.start)}～${esc(state.meta.range.end)}${fetched ? ` · 系統資料時間 ${esc(fetched)}` : ''}</span></div>`;
-    }
     document.querySelectorAll('.apt-tab').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === state.tab));
     $('page-admin-points')?.classList.toggle('apt-wide', state.tab === 'month');
     if (state.tab === 'person') box.innerHTML = renderPerson();
