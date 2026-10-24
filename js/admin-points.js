@@ -5674,13 +5674,14 @@
     const s1 = admin.filter((p) => p.stage === 1).length;
     const s2 = admin.filter((p) => p.stage === 2).length;
     const fetched = state.meta?.fetchedAt ? new Date(state.meta.fetchedAt).toLocaleString('zh-TW', { hour12: false }) : '';
+    const withPts = admin.filter((p) => p.month.total > 0).length;
     $('apt-summary').innerHTML = `
-      <span class="apt-chip"><strong>${total}</strong>行政總點數</span>
-      <span class="apt-chip"><strong>${admin.filter((p) => p.month.total > 0).length}</strong>行政有點數人數</span>
-      <span class="apt-chip"><strong>${otherTotal}</strong>非行政總點數</span>
-      <span class="apt-chip"><strong>${s1}</strong>第一階段</span>
-      <span class="apt-chip"><strong>${s2}</strong>第二階段</span>
-      <span class="apt-chip apt-chip--muted">${esc(state.meta.range.start)}～${esc(state.meta.range.end)} · 系統資料時間 ${esc(fetched)}</span>`;
+      <div class="apt-kpi"><span class="apt-kpi-label">行政總點數</span><strong class="apt-kpi-value">${total}</strong></div>
+      <div class="apt-kpi"><span class="apt-kpi-label">有點數人數</span><strong class="apt-kpi-value">${withPts}</strong></div>
+      <div class="apt-kpi"><span class="apt-kpi-label">非行政總點數</span><strong class="apt-kpi-value">${otherTotal}</strong></div>
+      <div class="apt-kpi"><span class="apt-kpi-label">第一階段（250）</span><strong class="apt-kpi-value">${s1}</strong></div>
+      <div class="apt-kpi"><span class="apt-kpi-label">第二階段（350）</span><strong class="apt-kpi-value">${s2}</strong></div>
+      <div class="apt-kpi apt-kpi--muted"><span class="apt-kpi-label">資料期間</span><span class="apt-kpi-note">${esc(state.meta.range.start)}～${esc(state.meta.range.end)}${fetched ? ` · 系統資料時間 ${esc(fetched)}` : ''}</span></div>`;
     const personTab = document.querySelector('.apt-tab[data-tab="person"]');
     if (personTab) personTab.hidden = !PERSON_OPEN;
     if (state.tab === 'person' && !PERSON_OPEN) state.tab = 'month';

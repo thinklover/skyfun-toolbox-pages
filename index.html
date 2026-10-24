@@ -4581,7 +4581,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261021-groups">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261024-saas-b0b1">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261017-1">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
@@ -5585,31 +5585,35 @@
             <button onclick="showPage('administration')" class="mb-2 btn btn-sm tone-slate-soft">
                 ← 返回行政專區
             </button>
-            <section class="apt-zone">
-                <div class="apt-head">
-                    <h2 class="apt-title">📊 行政績效中心</h2>
-                    <select id="apt-month" aria-label="業績月"></select>
-                    <button type="button" class="apt-btn" id="apt-refresh">重新抓取星鴻資料</button>
-                    <a class="apt-admin-link" href="./admin/admin-points-dashboard.html" target="_blank" rel="noopener">後台：報表／登錄／考試／改善計畫 ↗</a>
+            <section class="apt-zone apt-dash">
+                <div class="apt-toolbar">
+                    <div class="apt-head">
+                        <h2 class="apt-title">行政績效中心<span class="apt-title-sub">看本月點數與品質；組長／主管可看週月報</span></h2>
+                        <select id="apt-month" aria-label="業績月"></select>
+                        <button type="button" class="apt-btn" id="apt-refresh" title="從星鴻重新抓取審核資料（與系統資料時間同步）">更新點數</button>
+                        <a class="apt-admin-link" href="./admin/admin-points-dashboard.html" target="_blank" rel="noopener">後台：報表／登錄／考試／改善計畫 ↗</a>
+                    </div>
+                    <p class="apt-msg" id="apt-msg" role="status" aria-live="polite"></p>
+                    <div class="apt-summary" id="apt-summary"></div>
+                    <div class="apt-nav-row">
+                        <div class="apt-tabs" id="apt-tabs" role="tablist">
+                            <button type="button" class="apt-tab is-active" data-tab="month">點數月累計</button>
+                            <button type="button" class="apt-tab" data-tab="person">個人績效</button>
+                            <button type="button" class="apt-tab" data-tab="weekly">組長週月報</button>
+                            <button type="button" class="apt-tab" data-tab="area">區主管週月報</button>
+                            <button type="button" class="apt-tab" data-tab="duration">耗時</button>
+                            <button type="button" class="apt-tab" data-tab="spot" hidden>小組長抽查</button>
+                        </div>
+                        <span class="apt-op-btns">
+                            <button type="button" class="apt-op-open" data-op-open="case">填寫案件意見</button>
+                            <button type="button" class="apt-op-open apt-op-open--roster" data-op-open="roster">填寫清冊意見</button>
+                        </span>
+                    </div>
                 </div>
-                <p class="apt-msg" id="apt-msg" role="status" aria-live="polite"></p>
-                <div class="apt-summary" id="apt-summary"></div>
-                <div class="apt-tabs" id="apt-tabs" role="tablist">
-                    <button type="button" class="apt-tab is-active" data-tab="month">點數月累計</button>
-                    <button type="button" class="apt-tab" data-tab="person">個人績效</button>
-                    <button type="button" class="apt-tab" data-tab="weekly">組長週月報</button>
-                    <button type="button" class="apt-tab" data-tab="area">區主管週月報</button>
-                    <button type="button" class="apt-tab" data-tab="duration">耗時</button>
-                    <button type="button" class="apt-tab" data-tab="spot" hidden>小組長抽查</button>
-                    <span class="apt-op-btns">
-                        <button type="button" class="apt-op-open" data-op-open="case">📝 填寫案件意見</button>
-                        <button type="button" class="apt-op-open apt-op-open--roster" data-op-open="roster">📝 填寫清冊意見</button>
-                    </span>
-                </div>
-                <div id="apt-body"></div>
+                <div id="apt-body" class="apt-body"></div>
                 <div id="apt-warnings"></div>
                 <details class="apt-rules">
-                    <summary>計點規則</summary>
+                    <summary>ⓘ 計點規則</summary>
                     <table>
                         <tr><th>項目</th><th>審核時間紀錄（狀態變化）</th><th>每件</th></tr>
                         <tr><td>物審</td><td>物件：送審中 → 已生效</td><td>1</td></tr>
@@ -11953,7 +11957,7 @@
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261022-case-measure"></script>
+        <script src="./js/admin-points.js?v=20261024-saas-b0b1"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
