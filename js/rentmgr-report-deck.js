@@ -304,9 +304,10 @@
     };
   }
 
-  /** 對齊績效中心「年報」列（不含扣除惡意轉業） */
+  /** 對齊績效中心「年報」列 */
   const ANNUAL_FALLBACK_ROWS = [
     { key: 'renewRate', label: '當月續約率', kind: 'rate' },
+    { key: 'renewRateExcl', label: '當月續約率-異常轉業者', kind: 'rate' },
     { key: 'leadRenewNext', label: '領先續約率_次月', kind: 'rate' },
     { key: 'leadRenewNext2', label: '領先續約率_次次月', kind: 'rate' },
     { key: 'toBaoRate', label: '續轉包率', kind: 'rate' },

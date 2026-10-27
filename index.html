@@ -7479,6 +7479,9 @@
                     <button onclick="showPage('business-forms')" class="btn btn-block btn-center btn-solid-purple text-xl">
                         📋 各式表單
                     </button>
+                    <button onclick="showPage('business-guide-exam')" class="btn btn-block btn-center btn-solid-purple text-xl">
+                        📝 執行要點考試
+                    </button>
                     <a href="./docs/weekly-meeting/?v=20261017-5" class="btn btn-block btn-center btn-solid-purple text-xl no-underline md:col-span-2">
                         📂 業務周會檔案
                     </a>
@@ -9433,6 +9436,24 @@
                 </div>
             </div>
         </div>
+        <!-- 業務專區：執行要點考試（題庫與行政同一份；每人 20 題補考到滿分；公開成績） -->
+        <div id="page-business-guide-exam" class="hidden max-w-4xl mx-auto space-y-6">
+            <button onclick="showPage('business')" class="mb-4 btn btn-sm tone-slate-soft">
+                ← 返回業務專區
+            </button>
+            <div class="bg-white rounded-[2rem] p-6 border border-purple-200 shadow-lg space-y-5">
+                <div>
+                    <h2 class="text-3xl font-bold text-purple-900 mb-2">📝 執行要點考試</h2>
+                    <p class="text-slate-600 text-sm leading-relaxed">題庫與行政「執行要點」同一份。每人抽一組 20 題，沒滿分就同一組補考到全對；下方成績板公開顯示姓名與分數。</p>
+                </div>
+                <div id="biz-guide-exam-root"></div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">公開成績板</h3>
+                    <div id="biz-guide-exam-board"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- 土地增值稅（由房東專區進入） -->
         <div id="page-business-land-value-tax" class="hidden max-w-4xl mx-auto space-y-6">
             <button onclick="showPage('landlord')" class="mb-4 btn btn-sm tone-slate-soft">
@@ -12015,6 +12036,7 @@
         <script src="./js/admin-training-content.js?v=20261024-p5"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
         <script src="./js/guide-exam.js?v=20261015-1"></script>
+        <script src="./js/biz-guide-exam.js?v=20261027-biz1"></script>
         <script src="./js/course-exam-data.js?v=20261026-p4-zeng"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261014-1"></script>
@@ -13829,6 +13851,7 @@
             { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳 簽呈 展延' },
             { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 公證費 租賃公證 119條' },
             { page: 'business-forms', title: '各式表單', category: '業務專區', keywords: '表單 場勘 押金讓渡 領款收據 切結書 300億切結 115Y 自願撤案 帳戶變更 租金補貼 複審 檢核 還款 協議 欠租' },
+            { page: 'business-guide-exam', title: '執行要點考試', category: '業務專區', keywords: '執行要點 考試 題庫 業務考試 補考 成績 公開成績 20題' },
             { page: 'termination', title: '催收解約專區', category: '首頁專區', keywords: '催收 解約 退租 終止 退還 欠租 存證信函' },
             { page: 'equip-dep', title: '設備損壞賠償試算', category: '催收解約專區', keywords: '點交 解約點交 設備 損壞 賠償 折舊 殘值 耐用年限 家電 家具 冷氣 冰箱 洗衣機' },
             { page: 'business-deposit-refund', title: '轉租解約退還金額試算', category: '催收解約專區', keywords: '轉租 代租代管 押金 退還 解約試算 房客應退 欠租 溢繳' },
@@ -13906,6 +13929,7 @@
             'business-deposit-refund': 'page-business-deposit-refund',
             'business-bao-deposit-refund': 'page-business-bao-deposit-refund',
             'business-forms': 'page-business-forms',
+            'business-guide-exam': 'page-business-guide-exam',
             termination: 'page-termination',
             rentmanager: 'page-rentmanager',
             'rentmanager-links': 'page-rentmanager-links',
@@ -13965,7 +13989,7 @@
             'page-newbie-roadmap', 'page-newbie-glossary', 'page-newbie-screening', 'page-newbie-quest', 'page-newbie-subsidy', 'page-newbie-transcript',
             'page-business', 'page-business-land-value-tax',
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-591-listing', 'page-business-deposit-refund',
-            'page-business-bao-deposit-refund', 'page-business-forms', 'page-termination',
+            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-termination',
             'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus', 'page-rentmanager-perf', 'page-rentmanager-line-endorse',
             'page-announcement', 'page-manager-bonus', 'page-administration', 'page-admin-qa', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
             'page-practice-timeline', 'page-collection-case', 'page-mediation-flow', 'page-equip-dep', 'page-practice-templates', 'page-practice-contacts', 'page-lal-generator', 'page-care-visit-notice'
@@ -14142,6 +14166,9 @@
             }
             if (pageName === 'rentmanager-perf' && window.RentmgrPerf && typeof window.RentmgrPerf.onShow === 'function') {
                 window.RentmgrPerf.onShow();
+            }
+            if (pageName === 'business-guide-exam' && window.BizGuideExam && typeof window.BizGuideExam.mount === 'function') {
+                window.BizGuideExam.mount();
             }
 
             if (!isSamePage) {

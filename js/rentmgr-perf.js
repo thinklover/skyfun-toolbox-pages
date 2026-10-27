@@ -1039,7 +1039,7 @@
     const cell = ((((byMonth[monthId] || {}).byRegion || {}).all || {}).weeks || [])[weekIndex] || {};
     const cards = [
       { key: 'renewRateAll', label: '續約率' },
-      { key: 'renewRateExcl', label: '扣除異常' },
+      { key: 'renewRateExcl', label: '當月續約率-異常轉業者' },
       { key: 'due', label: '應續約' },
       { key: 'done', label: '已續約' },
       { key: 'noRenewRate', label: '不續約率' }

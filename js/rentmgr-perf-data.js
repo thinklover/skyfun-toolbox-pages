@@ -23,7 +23,7 @@
 
   const RENEW_METRICS = [
     { key: 'renewRateAll', label: '續約率-全部', kind: 'rate', higherIsBetter: true },
-    { key: 'renewRateExcl', label: '續約率-扣除異常', kind: 'rate', higherIsBetter: true },
+    { key: 'renewRateExcl', label: '當月續約率-異常轉業者', kind: 'rate', higherIsBetter: true },
     { key: 'due', label: '應續約', kind: 'count' },
     { key: 'done', label: '已續約', kind: 'count', higherIsBetter: true },
     { key: 'presign', label: '預簽中', kind: 'count' },
@@ -62,7 +62,7 @@
   /** 各地區 KPI 指標列（對齊試算表） */
   const REGION_KPI_METRICS = [
     { key: 'renewRate', label: '當月續約率-全部', section: '一、《提前續約》', weight: '20%', kind: 'rate' },
-    { key: 'renewRateExcl', label: '當月續約率-扣除惡意轉業者', section: '', weight: '', kind: 'rate' },
+    { key: 'renewRateExcl', label: '當月續約率-異常轉業者', section: '', weight: '', kind: 'rate' },
     { key: 'leadRenewNext', label: '領先續約率_次月', section: '', weight: '10%', kind: 'rate' },
     { key: 'leadRenewNext2', label: '領先續約率_次次月', section: '', weight: '10%', kind: 'rate' },
     { key: 'toBaoRate', label: '續轉包率', section: '二、《續約轉包租》', weight: '30%', kind: 'rate' },
@@ -92,6 +92,7 @@
    */
   const ANNUAL_KPI_ROWS = [
     { key: 'renewRate', label: '當月續約率', section: '一、《提前續約》', weight: '20%', kind: 'rate' },
+    { key: 'renewRateExcl', label: '當月續約率-異常轉業者', section: '', weight: '', kind: 'rate' },
     { key: 'leadRenewNext', label: '領先續約率_次月', section: '', weight: '10%', kind: 'rate' },
     { key: 'leadRenewNext2', label: '領先續約率_次次月', section: '', weight: '10%', kind: 'rate' },
     { key: 'toBaoRate', label: '續轉包率', section: '二、《續約轉包租》', weight: '30%', kind: 'rate' },
@@ -117,6 +118,21 @@
       10: { ly: 70, target: 85, actual: null },
       11: { ly: 73, target: 85, actual: null },
       12: { ly: 61, target: 85, actual: null }
+    },
+    /* 年報圖面原本無此列；目標對齊續約率，1–9 實績／去年同期待月報表或系統補 */
+    renewRateExcl: {
+      1: { ly: null, target: 80, actual: null },
+      2: { ly: null, target: 80, actual: null },
+      3: { ly: null, target: 80, actual: null },
+      4: { ly: null, target: 80, actual: null },
+      5: { ly: null, target: 80, actual: null },
+      6: { ly: null, target: 80, actual: null },
+      7: { ly: null, target: 85, actual: null },
+      8: { ly: null, target: 85, actual: null },
+      9: { ly: null, target: 85, actual: null },
+      10: { ly: null, target: 85, actual: null },
+      11: { ly: null, target: 85, actual: null },
+      12: { ly: null, target: 85, actual: null }
     },
     leadRenewNext: {
       1: { ly: 49, target: 60, actual: 43.9 },
@@ -1509,6 +1525,7 @@
   function overviewKpiKeyFromLabel(label) {
     const s = String(label || '').replace(/\s+/g, '').replace(/\n/g, '');
     if (/當月續約率/.test(s) && /扣除|惡意|異常轉業/.test(s)) return 'renewRateExcl';
+    if (/續約率/.test(s) && /異常轉業者/.test(s)) return 'renewRateExcl';
     if (/當月續約率/.test(s)) return 'renewRate';
     if (/領先續約率/.test(s) && /次次月/.test(s)) return 'leadRenewNext2';
     if (/領先續約率/.test(s) && /次月/.test(s)) return 'leadRenewNext';
@@ -2151,7 +2168,7 @@
   }
 
   function defaultAnnualTarget(key, month) {
-    if (key === 'renewRate') return month <= 6 ? 80 : 85;
+    if (key === 'renewRate' || key === 'renewRateExcl') return month <= 6 ? 80 : 85;
     if (key === 'leadRenewNext') return 60;
     if (key === 'leadRenewNext2') return 35;
     if (key === 'toBaoRate') return 20;
@@ -2197,6 +2214,12 @@
 
         if (def.key === 'renewRate') {
           const live = pickLiveRenewRate(renewByMonth, mid, 'all', 'renewRateAll');
+          if (live != null) {
+            actual = live;
+            source = 'system';
+          }
+        } else if (def.key === 'renewRateExcl') {
+          const live = pickLiveRenewRate(renewByMonth, mid, 'all', 'renewRateExcl');
           if (live != null) {
             actual = live;
             source = 'system';
@@ -2367,26 +2390,41 @@
     patch(pack.south);
   }
 
+  /**
+   * 月報矩陣疊系統數字：續約／異常轉業續約／領先／續轉包／再媒合。
+   * （試算表空白或合成月視圖時補上，避免續轉包等欄空白）
+   */
   function overlayReLeaseOntoMonthMatrix(monthPack, renewByMonth) {
     if (!monthPack || !renewByMonth) return;
     Object.keys(monthPack).forEach(function (mid) {
       const pack = monthPack[mid];
       if (!pack) return;
+      function liveFor(rowKey, rid) {
+        if (rowKey === 'renewRate') return pickLiveRenewRate(renewByMonth, mid, rid, 'renewRateAll');
+        if (rowKey === 'renewRateExcl') return pickLiveRenewRate(renewByMonth, mid, rid, 'renewRateExcl');
+        if (rowKey === 'leadRenewNext') {
+          return pickLiveRenewRate(renewByMonth, shiftMonthId(mid, 1), rid, 'renewRateAll');
+        }
+        if (rowKey === 'leadRenewNext2') {
+          return pickLiveRenewRate(renewByMonth, shiftMonthId(mid, 2), rid, 'renewRateAll');
+        }
+        if (rowKey === 'toBaoRate') return pickLiveRenewRate(renewByMonth, mid, rid, 'toBaoRate');
+        if (rowKey === 'reLeaseRate') return pickLiveRenewRate(renewByMonth, mid, rid, 'reLeaseRate');
+        return null;
+      }
       function patch(rows) {
         (rows || []).forEach(function (row) {
           if (!row || !row.byRegion) return;
-          if (row.key !== 'reLeaseRate' && row.key !== 'renewRate') return;
+          if (!/^(renewRate|renewRateExcl|leadRenewNext|leadRenewNext2|toBaoRate|reLeaseRate)$/.test(row.key || '')) {
+            return;
+          }
+          /* 統一週／月／年報顯示名稱 */
+          if (row.key === 'renewRateExcl') row.label = '當月續約率-異常轉業者';
           Object.keys(row.byRegion).forEach(function (rid) {
             const cell = row.byRegion[rid];
             if (!cell) return;
-            if (row.key === 'reLeaseRate') {
-              const v = pickLiveRenewRate(renewByMonth, mid, rid, 'reLeaseRate');
-              if (v != null) cell.actual = v;
-            } else if (row.key === 'renewRate') {
-              /* 續約率已含再媒合完成（Worker 算回開始月後寫入 renewRateAll） */
-              const v = pickLiveRenewRate(renewByMonth, mid, rid, 'renewRateAll');
-              if (v != null) cell.actual = v;
-            }
+            const v = liveFor(row.key, rid);
+            if (v != null) cell.actual = v;
           });
         });
       }
