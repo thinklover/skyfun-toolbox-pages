@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>租賃管理部月報 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
+  <script src="../js/admin-deck.js?v=20261026-dataurl"></script>
+  <script src="../js/rentmgr-report-deck.js?v=20261027-perf-align"></script>
+  <script src="../js/rentmgr-perf-data.js?v=20261027-annual-ly"></script>
+  <script src="../js/rentmgr-org.js?v=20261026-rmr1"></script>
+  <style>
+    .field label { display: block; font-size: 0.72rem; color: #64748b; margin-bottom: 0.2rem; font-weight: 700; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: end; }
+    .page-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; }
+    .page-head h2 { font-size: 1.15rem; font-weight: 900; color: #1e1b4b; margin: 0; }
+    .page-head p { font-size: 0.8rem; color: #64748b; margin: 0; }
+    .help { font-size: 0.78rem; color: #475569; }
+    .help > summary { display: inline-block; cursor: pointer; color: #4f46e5; font-weight: 800; list-style: none; }
+    .help > summary::-webkit-details-marker { display: none; }
+    .help > summary::before { content: 'ⓘ '; }
+    .help[open] > summary { margin-bottom: 0.35rem; }
+    .help p { line-height: 1.7; border-left: 3px solid #c7d2fe; padding-left: 0.6rem; margin-top: 0.2rem; }
+    #rmr-sheet { min-height: 12rem; }
+  </style>
+</head>
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+  <header>
+    <div class="topbar">
+      <h1>租賃管理部月報</h1>
+      <a class="back" href="../index.html?page=rentmanager-perf">← 回租管師績效中心</a>
+    </div>
+    <p class="lead">選業績月 → 一鍵預覽 → 下載 PPT。版型與行政月報相同；表格內容對齊「租管師績效中心」年報／各地區 KPI 月報。</p>
+  </header>
+
+  <section class="card p-4 space-y-4">
+    <div class="page-head">
+      <h2>一鍵產生預覽</h2>
+      <p>預覽＝下載同一套；封面用租管底圖，內頁版型與行政月報相同</p>
+    </div>
+    <details class="help">
+      <summary>簡報內容與資料來源</summary>
+      <p>封面／內頁 chrome 與行政月報相同。內容對齊績效中心：年報（去年同期／目標／實績）、當月各地區 KPI 月報矩陣、不續約占比、催收。續轉包率＝代管轉包租÷(應續約−包租續包租−不續約)。請先登入工具箱。</p>
+    </details>
+    <div class="row">
+      <div class="field">
+        <label>業績月（民國）</label>
+        <select id="rmr-month"></select>
+      </div>
+      <div class="field">
+        <label>報告人</label>
+        <input type="text" id="rmr-reporter" maxlength="20" style="width:7rem" />
+      </div>
+      <div class="field">
+        <label>製作人</label>
+        <input type="text" id="rmr-maker" maxlength="20" style="width:7rem" />
+      </div>
+      <button type="button" class="btn btn-main" id="btn-rmr">一鍵產生預覽</button>
+      <button type="button" class="btn btn-ghost" id="btn-rmr-ppt" disabled>下載 PPT</button>
+      <span class="muted" id="rmr-stamp"></span>
+    </div>
+    <p class="muted text-sm" id="rmr-msg">選好業績月後按「一鍵產生預覽」。</p>
+    <div id="rmr-sheet"><p class="muted">預覽會顯示在這裡。</p></div>
+  </section>
+
+  <script>
+    (function () {
+      const AUTH_KEY = 'skyfun-toolbox-auth-supabase-v1';
+      const LS_REPORTER = 'rmr-reporter';
+      const LS_MAKER = 'rmr-maker';
+
+      /* 沿用工具箱登入 token（同網域 localStorage） */
+      if (!window.skyfunAuth) {
+        window.skyfunAuth = {
+          getToken: function () {
+            try {
+              const s = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+              return (s && (s.supabaseToken || (s.session && s.session.access_token))) || '';
+            } catch (e) {
+              return '';
+            }
+          }
+        };
+      }
+
+      const $ = (id) => document.getElementById(id);
+      const pad2 = (n) => String(n).padStart(2, '0');
+      const rocNow = () => new Date().getFullYear() - 1911;
+      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+      const state = { slides: null, name: '', busy: false };
+
+      function fillMonthSelect() {
+        const sel = $('rmr-month');
+        const roc = rocNow();
+        const cur = new Date().getMonth() + 1;
+        for (let m = 1; m <= 12; m++) {
+          const opt = document.createElement('option');
+          opt.value = String(m);
+          opt.textContent = roc + '年' + pad2(m) + '月';
+          if (m === cur) opt.selected = true;
+          sel.appendChild(opt);
+        }
+      }
+
+      function msg(t, isErr) {
+        const el = $('rmr-msg');
+        el.textContent = t || '';
+        el.className = isErr ? 'err text-sm' : 'muted text-sm';
+      }
+
+      function toNum(v) {
+        const api = window.RentmgrPerfData;
+        if (api && api.toNumber) return api.toNumber(v);
+        if (v == null || v === '') return null;
+        const n = Number(String(v).replace(/[% ,]/g, ''));
+        return isFinite(n) ? n : null;
+      }
+
+      /** 取該月最後一週有資料的指標值（結構：byMonth[月].byRegion[區].weeks[週][指標]） */
+      function monthMetric(byMonth, monthId, regionId, metricKey) {
+        const band = byMonth && byMonth[monthId];
+        if (!band || !band.byRegion) return null;
+        const row = band.byRegion[regionId];
+        if (!row || !row.weeks || !row.weeks.length) return null;
+        for (let i = row.weeks.length - 1; i >= 0; i--) {
+          const cell = row.weeks[i];
+          if (cell && cell[metricKey] != null && cell[metricKey] !== '') return cell[metricKey];
+        }
+        return null;
+      }
+
+      function pickMonthMatrix(regionKpi, monthId) {
+        const map = (regionKpi && regionKpi.monthMatrixByMonth) || {};
+        if (map[monthId]) return map[monthId];
+        const keys = Object.keys(map).sort();
+        return keys.length ? map[keys[keys.length - 1]] : null;
+      }
+
+      function buildOrgPeople() {
+        const Org = window.RentmgrOrg;
+        const data = Org && Org.DEFAULT ? Org.DEFAULT : null;
+        if (!data || !data.groups) return [];
+        const out = [];
+        data.groups.forEach((g) => {
+          (g.people || []).forEach((p) => {
+            out.push(Object.assign({}, p, { group: g.name }));
+          });
+        });
+        return out;
+      }
+
+      async function loadBundle(month) {
+        const api = window.RentmgrPerfData;
+        if (!api) throw new Error('績效資料模組未載入');
+        const token = window.skyfunAuth && window.skyfunAuth.getToken ? window.skyfunAuth.getToken() : '';
+        if (!token) {
+          msg('尚未偵測到工具箱登入，部分系統資料可能讀不到；請先開啟工具箱登入後再開本頁。', true);
+        }
+        msg('讀取續約試算表與各地區 KPI…');
+        const perf = await api.loadPerfData().catch(function (err) {
+          return { modules: { renew: { byMonth: {} } }, error: err && err.message };
+        });
+        const renewByMonth = (perf.modules && perf.modules.renew && perf.modules.renew.byMonth) || {};
+
+        msg('讀取不續約占比（試算表＋系統）…');
+        const noRenew = await api.loadNoRenewDashboard().catch(function (err) {
+          return { months: [], annual: {}, currentMonth: {}, error: err && err.message };
+        });
+
+        msg('讀取當月不續約明細…');
+        let noRenewItems = [];
+        try {
+          const detail = await api.fetchNoRenewDetail(month);
+          noRenewItems = (detail && (detail.items || detail.list || detail.rows)) || [];
+        } catch (err) {
+          noRenewItems = [];
+        }
+
+        msg('讀取催收呆帳與請法務協助…');
+        let collectSummary = {};
+        let collectCases = [];
+        try {
+          const col = await api.loadCollectDashboard();
+          collectSummary = col.summary || api.summarizeCollectCases(col.cases || []) || {};
+          collectCases = collectSummary.cases || col.cases || [];
+        } catch (err) {
+          collectSummary = { error: err && err.message };
+        }
+
+        return {
+          renewByMonth: renewByMonth,
+          regionKpi: (perf.modules && perf.modules.regionKpi) || null,
+          noRenew: noRenew,
+          noRenewItems: noRenewItems,
+          collectSummary: collectSummary,
+          collectCases: collectCases,
+          orgPeople: buildOrgPeople()
+        };
+      }
+
+      async function makePreview() {
+        if (state.busy) return;
+        const Deck = window.AdminDeck;
+        const RD = window.RentmgrReportDeck;
+        if (!Deck || !RD) {
+          msg('簡報元件未載入', true);
+          return;
+        }
+        state.busy = true;
+        $('btn-rmr').disabled = true;
+        $('btn-rmr-ppt').disabled = true;
+        $('rmr-sheet').innerHTML = '<p class="muted">產生中…</p>';
+        try {
+          const month = Number($('rmr-month').value) || 1;
+          const roc = rocNow();
+          const reporter = ($('rmr-reporter').value || '').trim();
+          const maker = ($('rmr-maker').value || '').trim();
+          try {
+            localStorage.setItem(LS_REPORTER, reporter);
+            localStorage.setItem(LS_MAKER, maker);
+          } catch (e) {}
+
+          const bundle = await loadBundle(month);
+          const monthId = pad2(month);
+          const rk = bundle.regionKpi || {};
+          const api = window.RentmgrPerfData;
+          const d = {
+            roc: roc,
+            year: roc + 1911,
+            month: month,
+            reporter: reporter,
+            maker: maker,
+            coverDate: roc + '年' + pad2(month) + '月',
+            annualKpi: rk.annualKpi || null,
+            monthMatrix: pickMonthMatrix(rk, monthId),
+            northRegions: (api && api.REGION_KPI_NORTH) || rk.northRegions || null,
+            southRegions: (api && api.REGION_KPI_SOUTH) || rk.southRegions || null,
+            noRenew: bundle.noRenew,
+            noRenewItems: bundle.noRenewItems,
+            orgPeople: bundle.orgPeople,
+            collectSummary: bundle.collectSummary,
+            collectCases: bundle.collectCases
+          };
+          state.slides = RD.monthDeck(d);
+          state.name = '租賃管理部' + roc + '年' + pad2(month) + '月月報.pptx';
+          Deck.mount($('rmr-sheet'), state.slides);
+          $('btn-rmr-ppt').disabled = false;
+          $('rmr-stamp').textContent =
+            '產出時間 ' +
+            new Date().toLocaleString('zh-TW', { hour12: false }) +
+            '｜共 ' +
+            state.slides.length +
+            ' 頁，確認沒問題再按「下載 PPT」';
+          msg('預覽完成。可捲動查看各頁後下載。');
+        } catch (err) {
+          state.slides = null;
+          $('rmr-sheet').innerHTML = '<p class="err text-sm">' + esc(err.message || err) + '</p>';
+          msg(err.message || '產生失敗', true);
+        } finally {
+          state.busy = false;
+          $('btn-rmr').disabled = false;
+        }
+      }
+
+      fillMonthSelect();
+      try {
+        $('rmr-reporter').value = localStorage.getItem(LS_REPORTER) || '';
+        $('rmr-maker').value = localStorage.getItem(LS_MAKER) || '';
+      } catch (e) {}
+
+      $('btn-rmr').addEventListener('click', makePreview);
+      $('btn-rmr-ppt').addEventListener('click', async function (e) {
+        if (!state.slides) return;
+        const btn = e.currentTarget;
+        const label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '產生 PPT 中…';
+        try {
+          const Deck = window.AdminDeck;
+          if (!Deck || !Deck.pptx) throw new Error('簡報元件未載入');
+          await Deck.pptx(state.slides, state.name || ('租賃管理部' + rocNow() + '年' + pad2(Number($('rmr-month').value) || 1) + '月月報.pptx'));
+          msg('已下載 PPT（與預覽同一套封面／內頁）。');
+        } catch (err) {
+          msg(err.message || '下載失敗', true);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = label;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

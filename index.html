@@ -4581,10 +4581,11 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261021-groups">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261017-1">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261026-xlabel">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261026-gap">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
+<link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261027-rk-tabs">
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
     <script>
@@ -5581,7 +5582,7 @@
             </section>
         </div>
 
-        <div id="page-admin-points" class="hidden max-w-6xl mx-auto space-y-4">
+        <div id="page-admin-points" class="hidden apt-wide mx-auto space-y-4">
             <button onclick="showPage('administration')" class="mb-2 btn btn-sm tone-slate-soft">
                 ← 返回行政專區
             </button>
@@ -9485,32 +9486,49 @@
         </div>
 
         <!-- 專區頁面：租管師 -->
-        <div id="page-rentmanager" class="hidden max-w-4xl mx-auto space-y-6">
-            <button onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">
+        <div id="page-rentmanager" class="hidden max-w-6xl mx-auto space-y-5">
+            <button onclick="showPage('home')" class="mb-2 btn btn-sm tone-slate-soft">
                 ← 返回首頁
             </button>
 
-            <div class="relative bg-gradient-to-r from-rose-50 to-pink-50 p-6 rounded-[2rem] border-2 border-rose-200 shadow-lg">
-                <div class="flex flex-col items-center justify-center gap-3 mb-2">
-                    <img src="./rentmanager-avatar.png" alt="租管師專區頭像" onerror="this.onerror=null; this.src='assets/rentmanager-page-avatar.png';" class="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-[6px] border-white shadow-[0_16px_40px_rgba(2,6,23,0.18)]" />
-                    <h2 class="text-3xl font-bold text-rose-900 text-center">租管師專區</h2>
+            <header class="adz-head">
+                <div>
+                    <h2 class="adz-title">🧑 租管師專區</h2>
+                    <p class="adz-sub">績效中心、會議表單、獎金辦法與日常流程</p>
                 </div>
-                <div class="mt-3 flex flex-col md:flex-row items-stretch justify-center gap-3 flex-wrap">
-                    <button onclick="showPage('rentmanager-links')" class="btn tone-slate px-6 py-3 text-base md:text-lg font-black shadow-[0_16px_40px_rgba(2,6,23,0.25)] border-2 border-slate-900">
-                        🔗 會議表單連結
-                    </button>
-                    <button onclick="showPage('rentmanager-crossarea-bonus')" class="btn tone-slate px-6 py-3 text-base md:text-lg font-black shadow-[0_16px_40px_rgba(2,6,23,0.25)] border-2 border-slate-900">
-                        🏆 租賃管理部獎金辦法
-                    </button>
-                </div>
+            </header>
 
-                <div class="space-y-4">
-                    <details class="rentmgr-major-details toolbox-details">
-                        <summary class="rentmgr-major-summary rentmgr-major-summary--rose">
-                            <span>📋 一般流程</span>
-                            <span class="acc-chevron" aria-hidden="true"></span>
-                        </summary>
-                        <div class="rentmgr-major-body rounded-2xl border-2 border-rose-200 bg-gradient-to-b from-rose-50/90 to-white p-4 md:p-6 shadow-md space-y-4">
+            <div class="adz-quick">
+                <button type="button" class="apt-entry adz-hero adz-hero--points rdz-hero--perf" onclick="showPage('rentmanager-perf')">
+                    <span class="apt-entry-icon" aria-hidden="true">📊</span>
+                    <span class="apt-entry-text">
+                        <strong>租管師績效中心</strong>
+                        <small>各地區 KPI、續約週表、不續約明細、催收與組織人力</small>
+                    </span>
+                    <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                </button>
+                <button type="button" class="apt-entry adz-hero adz-hero--qa rdz-hero--links" onclick="showPage('rentmanager-links')">
+                    <span class="apt-entry-icon" aria-hidden="true">🔗</span>
+                    <span class="apt-entry-text">
+                        <strong>會議表單連結</strong>
+                        <small>續約明細、星鴻系統與會議表單入口</small>
+                    </span>
+                    <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                </button>
+                <button type="button" class="apt-entry adz-hero rdz-hero--bonus" onclick="showPage('rentmanager-crossarea-bonus')">
+                    <span class="apt-entry-icon" aria-hidden="true">🏆</span>
+                    <span class="apt-entry-text">
+                        <strong>租賃管理部獎金辦法</strong>
+                        <small>KPI、考核與續轉包獎金說明</small>
+                    </span>
+                    <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                </button>
+            </div>
+
+            <div class="adz-folds adz-folds--two">
+                    <details class="admin-tools-card admin-tools-card--compact af-fold" id="rentmgr-flow-zone">
+                        <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">📋</i>一般流程</span><span class="af-summary-hint">續約 · 徵信 · 範本</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                        <div class="rentmgr-major-body af-panel space-y-4">
                         <div class="space-y-4">
 <details class="toolbox-details bg-white p-5 rounded-xl border border-rose-200 open:border-rose-500 open:bg-rose-50 cursor-pointer group transition-all duration-200">
                         <summary class="summary-btn summary-rose font-extrabold text-lg" data-rentmgr-item="1">
@@ -10076,12 +10094,9 @@
                         </div>
                     </details>
 
-                    <details class="rentmgr-major-details toolbox-details">
-                        <summary class="rentmgr-major-summary rentmgr-major-summary--sky">
-                            <span>💬 官方 LINE · 包租領款收據</span>
-                            <span class="acc-chevron" aria-hidden="true"></span>
-                        </summary>
-                        <div class="rentmgr-major-body rounded-2xl border-2 border-sky-200 bg-gradient-to-b from-sky-50/90 to-white p-4 md:p-6 shadow-md space-y-4">
+                    <details class="admin-tools-card admin-tools-card--compact af-fold" id="rentmgr-line-zone">
+                        <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">💬</i>官方 LINE · 包租領款收據</span><span class="af-summary-hint">文字範本 · 收據照會</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                        <div class="rentmgr-major-body af-panel space-y-4">
                         <div class="space-y-4">
 <details class="toolbox-details bg-white p-5 rounded-xl border border-rose-200 open:border-rose-500 open:bg-rose-50 cursor-pointer group transition-all duration-200">
                         <summary class="summary-btn summary-rose font-extrabold text-lg" data-rentmgr-item="6">
@@ -10260,72 +10275,91 @@
                                 </ul>
                                 <p class="mt-2">📌 此流程用於避免後續結案、退費、點交爭議，務必確實執行。</p>
                             </div>
-                            <div id="receipt-endorse-form-root" class="rounded-xl border-2 border-sky-300 bg-sky-50 p-4 space-y-3">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <div class="font-bold text-sky-950">LINE 照會通知（官方帳號 · 一張表單）</div>
-                                    <span id="receipt-endorse-line-badge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">檢查連線中…</span>
-                                </div>
-                                <div>
-                                    <label for="receipt-endorse-type" class="block text-slate-700 font-semibold mb-1 text-sm">表單類型</label>
-                                    <select id="receipt-endorse-type" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl bg-white">
-                                        <option value="submit">租管師送件（待照會）</option>
-                                        <option value="done">主管照會完畢</option>
-                                    </select>
-                                </div>
-                                <div data-receipt-panel="submit" class="space-y-3">
-                                    <div>
-                                        <label for="receipt-endorse-rm" class="block text-slate-700 font-semibold mb-1 text-sm">租管師姓名 <span class="text-rose-600">*</span></label>
-                                        <input id="receipt-endorse-rm" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" autocomplete="name" />
-                                    </div>
-                                    <div>
-                                        <label for="receipt-endorse-addr-submit" class="block text-slate-700 font-semibold mb-1 text-sm">物件地址 <span class="text-rose-600">*</span></label>
-                                        <input id="receipt-endorse-addr-submit" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="完整地址" />
-                                    </div>
-                                    <div>
-                                        <label for="receipt-endorse-landlord" class="block text-slate-700 font-semibold mb-1 text-sm">房東姓名 <span class="text-rose-600">*</span></label>
-                                        <input id="receipt-endorse-landlord" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" />
-                                    </div>
-                                    <div>
-                                        <label for="receipt-endorse-phone" class="block text-slate-700 font-semibold mb-1 text-sm">房東電話 <span class="text-rose-600">*</span></label>
-                                        <input id="receipt-endorse-phone" type="tel" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="例：0912345678" />
-                                    </div>
-                                    <div>
-                                        <label for="receipt-endorse-deposit" class="block text-slate-700 font-semibold mb-1 text-sm">押金 <span class="text-rose-600">*</span></label>
-                                        <input id="receipt-endorse-deposit" type="text" inputmode="numeric" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="例：50000" />
-                                    </div>
-                                </div>
-                                <div data-receipt-panel="done" class="space-y-3 hidden">
-                                    <div>
-                                        <label for="receipt-endorse-addr-done" class="block text-slate-700 font-semibold mb-1 text-sm">物件地址 <span class="text-rose-600">*</span></label>
-                                        <input id="receipt-endorse-addr-done" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="與送件時相同" />
-                                    </div>
-                                    <div>
-                                        <label for="receipt-endorse-supervisor" class="block text-slate-700 font-semibold mb-1 text-sm">照會主管 <span class="text-rose-600">*</span></label>
-                                        <input id="receipt-endorse-supervisor" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" />
-                                    </div>
-                                    <div>
-                                        <label for="receipt-endorse-result" class="block text-slate-700 font-semibold mb-1 text-sm">照會結果 <span class="text-rose-600">*</span></label>
-                                        <select id="receipt-endorse-result" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl bg-white">
-                                            <option value="照會完畢">照會完畢</option>
-                                            <option value="退回補件">退回補件</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="receipt-endorse-rm-submit" class="block text-slate-700 font-semibold mb-1 text-sm">送件租管師姓名 <span class="text-rose-600">*</span></label>
-                                        <input id="receipt-endorse-rm-submit" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="與送件時相同" />
-                                    </div>
-                                </div>
-                                <button type="button" id="receipt-endorse-submit-btn" class="btn btn-block btn-center tone-sky font-bold">送出並通知照會群</button>
-                                <button type="button" id="receipt-endorse-repush-btn" class="btn btn-block btn-center tone-amber font-bold hidden mt-2">重新推播照會群（不重複存檔）</button>
-                                <p id="receipt-endorse-status" class="text-sm mt-1 text-slate-600"></p>
+                            <div class="rounded-xl border-2 border-sky-300 bg-sky-50 p-4 space-y-2">
+                                <div class="font-bold text-sky-950">LINE 照會通知</div>
+                                <p class="text-sm text-slate-600 leading-relaxed">表單在下方留白區，可直接輸入物件地址送件／主管照會。</p>
+                                <button type="button" class="btn tone-sky font-bold" onclick="(function(){var el=document.getElementById('receipt-endorse-form-root');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});})()">前往下方照會表單 →</button>
                             </div>
                         </div>
                     </details>
                         </div>
                         </div>
                     </details>
+            </div>
 
+            <!-- LINE 照會：固定在一般流程／官方 LINE 兩個摺疊區下方的留白 -->
+            <section id="rentmgr-line-endorse-slot" class="rdz-line-slot" aria-label="LINE 照會">
+                <div id="receipt-endorse-form-root" class="rounded-xl border-2 border-sky-300 bg-sky-50 p-4 space-y-3 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="font-bold text-sky-950">💬 LINE 照會通知（官方帳號 · 一張表單）</div>
+                        <span id="receipt-endorse-line-badge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">檢查連線中…</span>
+                    </div>
+                    <div>
+                        <label for="receipt-endorse-type" class="block text-slate-700 font-semibold mb-1 text-sm">表單類型</label>
+                        <select id="receipt-endorse-type" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl bg-white">
+                            <option value="submit">租管師送件（待照會）</option>
+                            <option value="done">主管照會完畢</option>
+                        </select>
+                    </div>
+                    <div data-receipt-panel="submit" class="space-y-3">
+                        <div>
+                            <label for="receipt-endorse-addr-submit" class="block text-slate-700 font-semibold mb-1 text-sm">物件地址 <span class="text-rose-600">*</span></label>
+                            <input id="receipt-endorse-addr-submit" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="請輸入完整地址" />
+                        </div>
+                        <div>
+                            <label for="receipt-endorse-rm" class="block text-slate-700 font-semibold mb-1 text-sm">租管師姓名 <span class="text-rose-600">*</span></label>
+                            <input id="receipt-endorse-rm" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" autocomplete="name" />
+                        </div>
+                        <div>
+                            <label for="receipt-endorse-landlord" class="block text-slate-700 font-semibold mb-1 text-sm">房東姓名 <span class="text-rose-600">*</span></label>
+                            <input id="receipt-endorse-landlord" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" />
+                        </div>
+                        <div>
+                            <label for="receipt-endorse-phone" class="block text-slate-700 font-semibold mb-1 text-sm">房東電話 <span class="text-rose-600">*</span></label>
+                            <input id="receipt-endorse-phone" type="tel" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="例：0912345678" />
+                        </div>
+                        <div>
+                            <label for="receipt-endorse-deposit" class="block text-slate-700 font-semibold mb-1 text-sm">押金 <span class="text-rose-600">*</span></label>
+                            <input id="receipt-endorse-deposit" type="text" inputmode="numeric" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="例：50000" />
+                        </div>
+                    </div>
+                    <div data-receipt-panel="done" class="space-y-3 hidden">
+                        <div>
+                            <label for="receipt-endorse-addr-done" class="block text-slate-700 font-semibold mb-1 text-sm">物件地址 <span class="text-rose-600">*</span></label>
+                            <input id="receipt-endorse-addr-done" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="與送件時相同" />
+                        </div>
+                        <div>
+                            <label for="receipt-endorse-supervisor" class="block text-slate-700 font-semibold mb-1 text-sm">照會主管 <span class="text-rose-600">*</span></label>
+                            <input id="receipt-endorse-supervisor" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" />
+                        </div>
+                        <div>
+                            <label for="receipt-endorse-result" class="block text-slate-700 font-semibold mb-1 text-sm">照會結果 <span class="text-rose-600">*</span></label>
+                            <select id="receipt-endorse-result" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl bg-white">
+                                <option value="照會完畢">照會完畢</option>
+                                <option value="退回補件">退回補件</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="receipt-endorse-rm-submit" class="block text-slate-700 font-semibold mb-1 text-sm">送件租管師姓名 <span class="text-rose-600">*</span></label>
+                            <input id="receipt-endorse-rm-submit" type="text" class="w-full px-3 py-2 border-2 border-sky-200 rounded-xl" placeholder="與送件時相同" />
+                        </div>
+                    </div>
+                    <button type="button" id="receipt-endorse-submit-btn" class="btn btn-block btn-center tone-sky font-bold">送出並通知照會群</button>
+                    <button type="button" id="receipt-endorse-repush-btn" class="btn btn-block btn-center tone-amber font-bold hidden mt-2">重新推播照會群（不重複存檔）</button>
+                    <p id="receipt-endorse-status" class="text-sm mt-1 text-slate-600"></p>
                 </div>
+            </section>
+        </div>
+
+        <!-- LINE 照會已放在租管師專區下方留白；此頁僅轉導 -->
+        <div id="page-rentmanager-line-endorse" class="hidden max-w-2xl mx-auto space-y-6">
+            <button type="button" onclick="showPage('rentmanager')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回租管師專區
+            </button>
+            <div class="bg-white rounded-[1.5rem] p-6 border border-sky-200 shadow-lg space-y-3">
+                <h2 class="text-xl font-bold text-sky-950">💬 LINE 照會</h2>
+                <p class="text-slate-600 text-sm leading-relaxed">表單在租管師專區「一般流程」下方，可直接輸入物件地址。</p>
+                <button type="button" class="btn tone-sky font-bold" onclick="showPage('rentmanager')">前往照會表單 →</button>
             </div>
         </div>
 
@@ -10646,6 +10680,37 @@
                         </a>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- 租管師專區：績效中心（各地區總覽外殼；數字之後接系統爬資料） -->
+        <div id="page-rentmanager-perf" class="hidden mx-auto space-y-3">
+            <button type="button" onclick="showPage('rentmanager')" class="mb-4 btn btn-sm tone-slate-soft">
+                ← 返回租管師專區
+            </button>
+            <div class="rmp-shell">
+                <header class="rmp-head">
+                    <h2 class="rmp-title">租管師績效中心</h2>
+                    <p class="rmp-sub">總覽｜各地區 KPI｜資料就緒後自動更新</p>
+                    <div id="rmp-period" class="rmp-period">資料期間：無資料</div>
+                    <p class="rmp-sub" style="margin-top:0.35rem">
+                        <a class="apt-admin-link" href="./admin/rentmgr-report-dashboard.html" target="_blank" rel="noopener">後台：租管部月報一鍵產出 ↗</a>
+                    </p>
+                </header>
+                <nav class="rmp-nav" role="tablist" aria-label="績效模組">
+                    <button type="button" class="rmp-nav-btn is-active" role="tab" aria-selected="true" data-rmp-module="overview">總覽</button>
+                    <button type="button" class="rmp-nav-btn" role="tab" aria-selected="false" data-rmp-module="regionKpi">各地區 KPI</button>
+                    <button type="button" class="rmp-nav-btn" role="tab" aria-selected="false" data-rmp-module="renew">續約</button>
+                    <button type="button" class="rmp-nav-btn" role="tab" aria-selected="false" data-rmp-module="noRenew">不續約明細</button>
+                    <button type="button" class="rmp-nav-btn" role="tab" aria-selected="false" data-rmp-module="collect">催收</button>
+                    <button type="button" class="rmp-nav-btn" role="tab" aria-selected="false" data-rmp-module="org">組織人力</button>
+                </nav>
+                <div id="rmp-cards" class="rmp-cards" data-count="4" aria-live="polite"></div>
+                <div id="rmp-table-wrap" class="rmp-table-wrap" aria-live="polite"></div>
+                <footer class="rmp-foot">
+                    <div id="rmp-foot-links"></div>
+                    <p class="rmp-foot-note">原始 Google 表僅供對照；本頁數字之後改由系統爬資料，目前顯示「無資料」。</p>
+                </footer>
             </div>
         </div>
 
@@ -11934,26 +11999,29 @@
         <script src="./js/pip-contacts-115.js"></script>
         <script src="./js/enforcement-petition-regions.js"></script>
         <script src="./js/enforcement-petition-draw.js"></script>
-        <script src="./js/enforcement-petition.js"></script>
+        <script src="./js/enforcement-petition.js?v=20261026-ep-prefill"></script>
         <script src="./js/lal-generator.js"></script>
-        <script src="./js/care-visit-notice.js?v=20261017-61"></script>
+        <script src="./js/care-visit-notice.js?v=20261026-branch-fix2"></script>
         <script src="./js/practice-tools.js"></script>
         <script src="./js/rentmgr-flow-guide.js"></script>
+        <script src="./js/rentmgr-perf-data.js?v=20261027-annual-ly"></script>
+        <script src="./js/rentmgr-org.js?v=20261026-org-v5"></script>
+        <script src="./js/rentmgr-perf.js?v=20261027-annual-ly"></script>
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
-        <script src="./js/admin-points-core.js?v=20261021-dedupe"></script>
-        <script src="./js/admin-points-charts.js?v=20261014-3"></script>
-        <script src="./js/admin-training-content.js?v=20261014-2"></script>
+        <script src="./js/admin-points-core.js?v=20261024-newbie-bonus"></script>
+        <script src="./js/admin-points-charts.js?v=20261026-xlabel"></script>
+        <script src="./js/admin-training-content.js?v=20261024-p5"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
         <script src="./js/guide-exam.js?v=20261015-1"></script>
-        <script src="./js/course-exam-data.js?v=20261011-5"></script>
+        <script src="./js/course-exam-data.js?v=20261026-p4-zeng"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261014-1"></script>
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261022-case-measure"></script>
+        <script src="./js/admin-points.js?v=20261024-newbie-bonus"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
@@ -11980,7 +12048,7 @@
         <script src="./js/equip-depreciation.js?v=20261005-1"></script>
         <script src="./js/skyfun-job-titles.js"></script>
         <script src="./js/skyfun-departments.js"></script>
-        <script src="./js/toolbox-auth.js?v=20261021-acct"></script>
+        <script src="./js/toolbox-auth.js?v=20261024-lineforce"></script>
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20260930-2"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
@@ -11988,7 +12056,7 @@
         <script src="./js/admin-cancel-form.js?v=20261014-4"></script>
         <script src="./js/admin-calendar-sheet.js?v=20261011-1"></script>
         <script src="./js/admin-calendar.js?v=20261011-5"></script>
-        <script src="./js/admin-org.js?v=20261014-2"></script>
+        <script src="./js/admin-org.js?v=20261024-orgdoc"></script>
         <script src="./js/admin-meeting.js?v=20261021-meet1019"></script>
     <script src="./js/petition.js?v=20261018-35"></script>
         <script src="./js/receipt-endorsement-form.js?v=20261001-1"></script>
@@ -13756,6 +13824,7 @@
             { file: './admin/admin-qa-dashboard.html', title: '行政 QA 檢核後台', category: '管理工具', keywords: '後台 admin 行政 問答 QA 檢核 點數 小組長' },
             { file: './admin/newbie-exam-dashboard.html', title: '財補考試成績後台', category: '管理工具', keywords: '後台 admin 財補 考試 成績 考卷 A卷 B卷 結訓考 新人' },
             { file: './admin/admin-points-dashboard.html', title: '行政績效中心後台（報表、組長登錄、考試成績、改善計畫）', category: '管理工具', keywords: '後台 admin 行政績效中心 行政點數表 每月進度報表 手填點數 審件抽查 客訴 教育訓練 執行要點 考試 成績 補考 改善計畫 人力明細' },
+            { file: './admin/rentmgr-report-dashboard.html', title: '租賃管理部月報一鍵產出', category: '管理工具', keywords: '後台 admin 租管 月報 PPT 簡報 不續約 催收 績效 租賃管理部 租管部月報 各地區KPI 週報 週月報' },
             { file: './admin/object-cancel-dashboard.html', title: '註銷物件申請後台', category: '管理工具', keywords: '後台 admin 註銷 註銷物件 註銷物件申請 物件註銷 行政 管理部 承接業者' },
             { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳 簽呈 展延' },
             { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 公證費 租賃公證 119條' },
@@ -13774,7 +13843,18 @@
             { page: 'newbie-playbook', title: '新人業務開發心法', category: '新人專區', keywords: '心法 開發 業務技巧  playbook' },
             { page: 'rentmanager', title: '租管師專區', category: '首頁專區', keywords: '租管師 租管 sop 流程' },
             { page: 'rentmanager-links', title: '會議表單連結', category: '租管師專區', keywords: '表單 連結 續約明細 星鴻系統' },
-            { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi 考核 獎金辦法 續轉包' },
+            { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi 考核 獎金辦法 續轉包 跨區' },
+            { external: 'https://forms.gle/ZFwBJa2ps6TK2RCv5', title: '跨區派案回報表單', category: '表單連結 · 業務', keywords: '跨區 派案 回報 表單 漏件 跨區派案 填表' },
+            { external: 'https://docs.google.com/spreadsheets/d/12l-Il_Sw268H4IKW4CSsHtrz9hiKbejZsUHCNNTzeW0/edit?usp=sharing', title: '跨區派案後台報表', category: '表單連結 · 業務', keywords: '跨區 派案 後台 報表 漏件 試算表' },
+            { external: 'https://forms.gle/EA13qmjAsXshzYh49', title: '系統 BUG 問題回報表單', category: '表單連結 · 系統', keywords: '系統 BUG bug 問題 表單 回報' },
+            { external: 'https://docs.google.com/forms/d/e/1FAIpQLSeNDdksZFlySxXophr8Lj95nzRyN97iXrNZu9IjuazRHi1E3w/viewform', title: '審件要點優化表單', category: '表單連結 · 系統', keywords: '審件 要點 優化 表單' },
+            { external: 'https://forms.gle/zT126Vt2pcMk1F4DA', title: '實價登錄與系統代入問題表單', category: '表單連結 · 系統', keywords: '實價登錄 系統代入 表單 問題' },
+            { external: 'https://docs.google.com/spreadsheets/d/1VU1X_WN3g4mVleGqmoE1tRTaT333cLraBGQiG3yLBMs/edit?usp=sharing', title: '系統後台報表', category: '表單連結 · 系統', keywords: '後台報表 系統 試算表' },
+            { external: 'https://forms.gle/cTwQeci1UA5sF3sU7', title: '到期合約一個月內申請修繕', category: '表單連結 · 業務', keywords: '到期 合約 修繕 業務線上表單 申請' },
+            { external: 'https://forms.gle/V34gXUqmG9KzYSBA8', title: '領款收據處長照會登記表', category: '表單連結 · 業務', keywords: '領款收據 處長 照會 登記表 星鴻 星華' },
+            { external: 'https://docs.google.com/spreadsheets/d/1COcpC8UMpiyKOV6Ccgae6xZDSWoqQluJM6ADdwnvfN0/edit?usp=sharing', title: '領款收據處長照會登記表後台', category: '表單連結 · 業務', keywords: '領款收據 處長 照會 登記表 後台' },
+            { page: 'rentmanager-perf', title: '租管師績效中心', category: '租管師專區', keywords: '績效中心 kpi 續約 催收 組織人力 各地區 各地區KPI 週報 月報 週月報 租管績效 領先續約 續轉包 不續約 異常轉業 招租中 包租催收 30天 請法務 法務 呆帳' },
+            { page: 'rentmanager', title: 'LINE 照會', category: '租管師專區', keywords: 'LINE 照會 領款收據 送件 主管照會 照會群 一般流程' },
             { page: 'rentmanager', rentmgrItem: 1, title: '續約後客服接手群組服務', category: '租管師專區', keywords: '續約 客服 群組 line 官方line' },
             { page: 'rentmanager', rentmgrItem: 2, title: '信任租不通過條件', category: '租管師專區', keywords: '信任租 徵信 黑名單 監理站罰單 拒往 聯徵 東吳評等 包租' },
             { page: 'rentmanager', rentmgrItem: 3, title: '再媒合超出服務範圍回饋', category: '租管師專區', keywords: '再媒合 偏遠 冷氣清洗 服務範圍' },
@@ -13785,15 +13865,17 @@
             { page: 'rentmanager', rentmgrItem: 7, title: '包租領款收據', category: '租管師專區', keywords: '領款收據 包租 押金 續轉包 收據' },
             { page: 'lal-generator', title: '存證信函產生器', category: '催收解約專區', keywords: '存證信函 產生器 郵局 pdf 下載 催收' },
             { file: './docs/lal-howto/', title: '如何寄存證信函', category: '催收解約專區', keywords: '存證信函 怎麼寄 範本 回執 蓋章 郵局 催告 法務 強執 列印 租屋處 戶籍地' },
-            { page: 'care-visit-notice', title: '家訪單產生器', category: '催收解約專區', keywords: '家訪 關懷通知單 欠租 訪視 家訪單 pdf' },
+            { page: 'care-visit-notice', title: '家訪單產生器', category: '催收解約專區', keywords: '家訪 關懷通知單 欠租 訪視 家訪單 pdf 營業處 分公司 聯絡單位 聯絡電話' },
             { page: 'collection-case', title: '強制執行聲請狀產生器', category: '催收解約專區', keywords: '強制執行 聲請狀 訴狀 欠租 查封 動產 公證 pdf 套版 產生器' },
             { page: 'enforcement-flow', title: '強制執行流程（案例）', category: '催收解約專區', keywords: '強制執行 流程 案例 存證信函 查封 動產 欠租 公證 範例' },
             { page: 'mediation-flow', title: '欠租調解流程圖', category: '催收解約專區', keywords: '調解 欠租 流程圖 調解委員會 委任書 還款協議書 證明書 民調' },
-            { page: 'practice-templates', title: '訊息範本產生器', category: '催收解約專區', keywords: 'line 範本 催繳 存證信函 提醒繳款 租金 國泰 帳戶 虛擬帳號 區域 身分證 電訪未接 逾期 桃園 新北 公司電話 宜蘭 基隆 雙北' },
+            { page: 'practice-templates', title: '訊息範本產生器', category: '催收解約專區', keywords: 'line 範本 催繳 存證信函 提醒繳款 租金 國泰 帳戶 虛擬帳號 區域 身分證 電訪未接 逾期 桃園 新北 公司電話 宜蘭 基隆 雙北 呆帳' },
+            { page: 'practice-timeline', title: '催收期程試算', category: '催收解約專區', keywords: '催收 期程 時程 天數 存證 調解 強制執行 時間軸 timeline' },
+            { page: 'rentmanager-line-endorse', title: '租管 LINE 照會流程', category: '租管師專區', keywords: 'LINE 照會 領款收據 送件 主管照會 照會群 租管' },
             { page: 'practice-contacts', title: '租金補貼辦理單位', category: '房客專區', keywords: '窗口 通訊錄 300億 租金補貼 辦理單位 縣市 電話 傳真 臨櫃 pip' },
             { page: 'announcement', title: '簽呈公告專區', category: '首頁專區', keywords: '簽呈 公告 通知 公司' },
             { page: 'manager-bonus', title: '主管獎金專區', category: '簽呈公告專區', keywords: '主管 獎金 營業處 特定地區 津貼 考核 補貼 請款 協理 儲備處 經理 密碼' },
-            { page: 'petition', title: '簽呈簽核', category: '行政專區', keywords: '簽呈 簽核 送簽 簽名 上傳簽呈 承辦單位 第一線人員 主管 審核 經理 協理 會辦單位 總經理室 決行 總經理 退回 重送 LINE 通知' },
+            { page: 'petition', title: '簽呈簽核', category: '行政專區', keywords: '簽呈 簽核 送簽 簽名 上傳簽呈 承辦單位 第一線人員 主管 審核 經理 協理 會辦單位 總經理室 決行 總經理 退回 重送 LINE 通知 陳情 申訴 客訴' },
             { page: 'administration', title: '行政專區', category: '首頁專區', keywords: '行政 請款 天數 庶務 管理部 簽呈 點數表 成長羅盤 羅盤 行事曆 問答 QA 各式表單 表單 中心系統申請 離職 離職通報 系統資料修正 獎金補發 獎金收回 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件 註銷 註銷物件 註銷物件申請 物件註銷 承接業者 不續約' },
             { page: 'admin-qa', title: '行政問答 QA', category: '行政專區', keywords: '行政 問答 QA 提問 回答 點數 關鍵字 搜尋 小組長 檢核' },
             { page: 'admin-points', title: '行政績效中心', category: '行政專區', keywords: '行政 績效中心 行政點數表 點數 點數表 每日點數 績效 評等 審件 客訴 教育訓練 成長羅盤 羅盤 物審 房客 預審 複審 產編 修繕 保險費 公證費 補助審核 實價登錄 審核時間紀錄 第一階段 第二階段 250 350 組長 人力明細' },
@@ -13806,7 +13888,7 @@
             { external: 'https://www.etax.nat.gov.tw/etwmain/etw113w1/address/query', title: '營登查詢系統', category: '外部連結', keywords: '營登 營業登記' },
         ];
         </script>
-        <script src="./js/home-search.js"></script>
+        <script src="./js/home-search.js?v=20261026-forms"></script>
         <script>
         const PAGE_ROUTE_MAP = {
             landlord: 'page-landlord',
@@ -13828,6 +13910,8 @@
             rentmanager: 'page-rentmanager',
             'rentmanager-links': 'page-rentmanager-links',
             'rentmanager-crossarea-bonus': 'page-rentmanager-crossarea-bonus',
+            'rentmanager-perf': 'page-rentmanager-perf',
+            'rentmanager-line-endorse': 'page-rentmanager-line-endorse',
             announcement: 'page-announcement',
             'manager-bonus': 'page-manager-bonus',
             administration: 'page-administration',
@@ -13882,7 +13966,7 @@
             'page-business', 'page-business-land-value-tax',
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-591-listing', 'page-business-deposit-refund',
             'page-business-bao-deposit-refund', 'page-business-forms', 'page-termination',
-            'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus',
+            'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus', 'page-rentmanager-perf', 'page-rentmanager-line-endorse',
             'page-announcement', 'page-manager-bonus', 'page-administration', 'page-admin-qa', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
             'page-practice-timeline', 'page-collection-case', 'page-mediation-flow', 'page-equip-dep', 'page-practice-templates', 'page-practice-contacts', 'page-lal-generator', 'page-care-visit-notice'
         ];
@@ -13978,6 +14062,15 @@
             if (pageName === 'business-591-listing' && !isSf591PreviewHost()) {
                 pageName = 'business';
             }
+            /* LINE 照會表單在一般流程下方留白，舊連結改轉導並捲到地址欄 */
+            if (pageName === 'rentmanager-line-endorse') {
+                showPage('rentmanager', opts);
+                requestAnimationFrame(function () {
+                    const el = document.getElementById('receipt-endorse-form-root');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+                return;
+            }
             const skipHistory = !!opts.skipHistory;
             const fromPage = lastActivePageName;
 
@@ -14046,6 +14139,9 @@
             if (pageName === 'rentmanager') {
                 if (typeof window.initReceiptEndorsementForm === 'function') window.initReceiptEndorsementForm();
                 if (typeof window.refreshReceiptEndorseLineStatus === 'function') window.refreshReceiptEndorseLineStatus();
+            }
+            if (pageName === 'rentmanager-perf' && window.RentmgrPerf && typeof window.RentmgrPerf.onShow === 'function') {
+                window.RentmgrPerf.onShow();
             }
 
             if (!isSamePage) {

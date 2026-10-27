@@ -151,6 +151,7 @@
 
   const imgCache = new Map();
   function dataUrl(src) {
+    if (typeof src === 'string' && /^data:/i.test(src)) return Promise.resolve(src);
     if (!imgCache.has(src)) {
       imgCache.set(
         src,
