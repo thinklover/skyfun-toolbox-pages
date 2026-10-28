@@ -787,14 +787,17 @@
       if (!c.leaseEnd && l.leaseEnd) c.leaseEnd = l.leaseEnd;
       if (l.status && !c.status) c.status = l.status;
       if (l.city) c.city = normalizeCityLabel(l.city);
-      if (l.note) c.notes.push(String(l.note).trim());
+      const n = String(l.note || l.memo || l.remark || l.systemMemo || '').trim();
+      if (n) c.notes.push(n);
     });
     return Object.keys(map).map(function (id) {
       const c = map[id];
-      const notes = (c.notes || []).filter(Boolean);
-      c.note = notes.length
-        ? notes.sort(function (a, b) { return b.length - a.length; })[0]
-        : '';
+      const notes = [];
+      (c.notes || []).forEach(function (n) {
+        if (n && notes.indexOf(n) < 0) notes.push(n);
+      });
+      /* 多筆備註用分號串起，勿只留最長一筆 */
+      c.note = notes.length ? notes.join('；') : '';
       delete c.notes;
       c.lines = (c.lines || []).sort(function (a, b) {
         return (b.days - a.days) || (b.arrears - a.arrears);
@@ -1673,12 +1676,14 @@
   }
 
   function setNoRenewAbnormal(matchNo, abnormal) {
-    const token =
-      (typeof window !== 'undefined' && window.skyfunAuth && window.skyfunAuth.getToken
-        ? window.skyfunAuth.getToken()
-        : '') || '';
+    const token = resolveToolboxToken();
+    if (!token) {
+      return Promise.reject(
+        new Error('尚未登入工具箱。測站與正式站登入不共用，請在本頁重新登入後再勾異常轉業。')
+      );
+    }
     const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['X-Skyfun-Session'] = token;
+    headers['X-Skyfun-Session'] = token;
     return fetch(RPA_BASE + '/admin-points/renew-abnormal-transfer', {
       method: 'POST',
       headers: headers,
@@ -1687,7 +1692,11 @@
       .then(function (res) {
         return res.json().then(function (data) {
           if (!res.ok || !data || data.ok === false) {
-            throw new Error((data && data.error) || '寫入失敗');
+            const raw = (data && data.error) || '';
+            if (res.status === 401 || /unauthorized/i.test(raw)) {
+              throw new Error('登入已失效或未登入（測站請重新登入工具箱後再勾異常轉業）');
+            }
+            throw new Error(raw || '寫入失敗');
           }
           return data;
         });

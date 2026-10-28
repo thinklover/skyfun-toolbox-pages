@@ -848,17 +848,10 @@
       }
     } else if (view === 'year') {
       title = (annualPack && annualPack.title) || '115年度租管部KPI月報';
-      note = (annualPack && annualPack.note) || '1–9 月＝年報圖面；10 月起＝系統';
+      note = (annualPack && annualPack.note) || '1–12 月同頁；實績顏色對齊績效中心（達標綠／差距黃紅）';
       if (annualPack && annualPack.rows && annualPack.rows.length) {
-        const halves = annualPack.halves || [
-          { months: [1, 2, 3, 4, 5, 6] },
-          { months: [7, 8, 9, 10, 11, 12] }
-        ];
-        tables = halves
-          .map(function (h) {
-            return renderRegionKpiAnnualTable(annualPack, h.months);
-          })
-          .join('');
+        /* 1–12 月同一頁（不再拆上下半年） */
+        tables = renderRegionKpiAnnualTable(annualPack, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
       } else {
         tables = '<p class="rmp-norenew-empty">年報尚無資料</p>';
       }
@@ -892,7 +885,6 @@
             : '') +
           '<p class="rmp-renew-hint">' + esc(title) +
             (note ? '｜' + esc(note) : '') +
-            (view !== 'year' && mod.toBaoFormula ? '｜續轉包：' + esc(mod.toBaoFormula) : '') +
           '</p>' +
         '</div>' +
         tables +
@@ -936,7 +928,8 @@
   /** 不續約明細：縣市篩選（空＝全部） */
   let activeNoRenewCity = '';
   /** 不續約明細排序：{ key, dir } dir＝1 升／-1 降 */
-  let noRenewSort = { key: '', dir: 1 };
+  /* 預設：異常轉業集中在一起（是 → 否 → 未填） */
+  let noRenewSort = { key: 'abnormal', dir: -1 };
   /** 不續約儀表板：展開中的 KPI 卡（null／noRenew／leasing／annualNoRenew） */
   let nrKpiOpen = null;
   let leasingDetailMonth = null;
@@ -949,7 +942,7 @@
   let annualNoRenewLoading = false;
   let activeAnnualNrCity = '';
   let annualNrMonthFilter = 0;
-  let annualNrSort = { key: '', dir: 1 };
+  let annualNrSort = { key: 'abnormal', dir: -1 };
   let collectDash = null;
   let collectLoading = false;
   /** 催收案件明細：縣市篩選（空＝全部） */
@@ -2206,7 +2199,10 @@
             }
           })
           .catch(function (err) {
-            alert(err && err.message ? err.message : '寫入失敗');
+            const msg = err && err.message ? String(err.message) : '寫入失敗';
+            alert(/unauthorized/i.test(msg)
+              ? '登入已失效或未登入（測站請重新登入工具箱後再勾異常轉業）'
+              : msg);
             if (nrKpiOpen === 'annualNoRenew') loadAnnualNoRenewDetail(true);
             else loadAndShowNoRenewDetail(noRenewDetailMonth);
           })
@@ -2314,6 +2310,20 @@
     bindNoRenewExpandHandlers(wrap);
   }
 
+  function waitToolboxToken(maxMs) {
+    const deadline = Date.now() + (maxMs || 4000);
+    return new Promise(function (resolve) {
+      function tick() {
+        const t =
+          window.skyfunAuth && window.skyfunAuth.getToken ? window.skyfunAuth.getToken() : '';
+        if (t) return resolve(t);
+        if (Date.now() >= deadline) return resolve('');
+        setTimeout(tick, 120);
+      }
+      tick();
+    });
+  }
+
   function loadAndShowNoRenewDetail(month) {
     const api = dataApi();
     if (!api || !api.fetchNoRenewDetail) return;
@@ -2327,7 +2337,10 @@
       noRenewLoading = false;
       if (activeModule === 'noRenew') renderNoRenewDashboard();
     }, 25000);
-    api.fetchNoRenewDetail(month)
+    waitToolboxToken(5000)
+      .then(function (token) {
+        return api.fetchNoRenewDetail(month, undefined, token || undefined);
+      })
       .then(function (data) {
         clearTimeout(timer);
         if (noRenewDetailMonth !== reqMonth) return;
@@ -2474,7 +2487,10 @@
       ? new Date(collectDash.syncedAt).toLocaleString('zh-TW', { hour12: false })
       : EMPTY;
     const cities = s.cities || [];
-    const allCases = s.cases || collectDash.cases || [];
+    /* 催收案件明細只要 30 天以上 */
+    const allCases = (s.cases || collectDash.cases || []).filter(function (c) {
+      return Number(c && c.maxDays) >= 30;
+    });
     const cityOk = cities.some(function (c) { return c.name === activeCollectCity; });
     if (activeCollectCity && !cityOk) activeCollectCity = '';
     const filtered = activeCollectCity
@@ -2639,11 +2655,11 @@
         '<article class="rmp-collect-panel rmp-collect-detail">' +
           '<div class="rmp-cp-hd">' +
             '<div>' +
-              '<h4>各地區明細</h4>' +
+              '<h4>各地區明細（30天以上）</h4>' +
               '<p>目前 ' + esc(activeCollectCity || '全部縣市') +
                 '｜' + esc(numFmt(filtered.length)) + ' 案' +
                 (filtered.length !== allCases.length ? '／全部 ' + esc(numFmt(allCases.length)) + ' 案' : '') +
-                '｜點列展開各筆應收天數與金額' +
+                '｜僅列欠租≥30天｜點列展開各筆應收與備註' +
               '</p>' +
             '</div>' +
           '</div>' +
@@ -3052,6 +3068,27 @@
         if (id) renderModule(id);
       });
     });
+    const refreshBtn = document.getElementById('rmp-btn-refresh');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function () {
+        refreshAllData();
+      });
+    }
+  }
+
+  function setRefreshBusy(on) {
+    const btn = document.getElementById('rmp-btn-refresh');
+    if (!btn) return;
+    btn.disabled = !!on;
+    btn.textContent = on ? '更新中…' : '↻ 更新數據';
+  }
+
+  function refreshAllData() {
+    if (loading) return;
+    /* 清催收快取，強制重抓；init 會重抓續約／KPI／點數 */
+    collectDash = null;
+    collectLoading = false;
+    init();
   }
 
   function init() {
@@ -3060,19 +3097,22 @@
     if (!page || !api) return;
     bindNav();
     renderFooter();
-    /* 每次進入都重抓；舊畫面先標「更新中」，數字到齊再換上最新 */
+    /* 每次進入／按更新都重抓；舊畫面先標「更新中」，數字到齊再換上最新 */
     const seq = ++loadSeq;
     loading = true;
+    setRefreshBusy(true);
     setPeriod(cache && cache.periodLabel, { loading: true });
     api.loadPerfData().then(function (payload) {
       if (seq !== loadSeq) return;
       loading = false;
+      setRefreshBusy(false);
       cache = payload || { periodLabel: null, modules: {} };
       setPeriod(cache.periodLabel, { fetchedAt: cache.updatedAt || null });
       renderModule(activeModule || 'overview');
     }).catch(function () {
       if (seq !== loadSeq) return;
       loading = false;
+      setRefreshBusy(false);
       cache = { periodLabel: null, modules: {} };
       setPeriod(null);
       renderModule('overview');
@@ -3083,7 +3123,7 @@
     init();
   }
 
-  global.RentmgrPerf = { init: init, onShow: onShow };
+  global.RentmgrPerf = { init: init, onShow: onShow, refresh: refreshAllData };
 
   document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('page-rentmanager-perf') &&

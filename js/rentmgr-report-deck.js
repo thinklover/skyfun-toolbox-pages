@@ -533,20 +533,20 @@
 
     function buildBandTable(regions, rows) {
       const list = rows && rows.length ? rows : [];
-      /* 專案／指標加寬，數字欄固定，避免直排 */
-      const colW = [1.15, 0.48, 1.7, ...regions.flatMap(() => [0.5, 0.5, 0.5])];
+      /* 專案合併儲存格；數字欄夠寬、左右不換行 */
+      const colW = [1.05, 0.42, 1.55, ...regions.flatMap(() => [0.48, 0.48, 0.48])];
       const out = [];
       out.push([
-        headCell('專案', { rs: 2, size: 9, nw: true }),
-        headCell('權重', { rs: 2, size: 9, nw: true }),
-        headCell('指標', { rs: 2, size: 9, nw: true }),
-        ...regions.map((r) => headCell(r.label, { cs: 3, size: 10, nw: true }))
+        headCell('專案', { rs: 2, size: 8, nw: true }),
+        headCell('權重', { rs: 2, size: 8, nw: true }),
+        headCell('指標', { rs: 2, size: 8, nw: true }),
+        ...regions.map((r) => headCell(r.label, { cs: 3, size: 9, nw: true }))
       ]);
       out.push(
         regions.flatMap(() => [
-          headCell('去年', { size: 8, nw: true }),
-          headCell('目標', { size: 8, fill: C.target, nw: true }),
-          headCell('實績', { size: 8, nw: true })
+          headCell('去年', { size: 7, nw: true }),
+          headCell('目標', { size: 7, fill: C.target, nw: true }),
+          headCell('實績', { size: 7, nw: true })
         ])
       );
       if (!list.length) {
@@ -555,37 +555,49 @@
             v: '此月尚無各地區 KPI 月報矩陣',
             cs: colW.length,
             color: C.muted,
-            size: 11
+            size: 10
           }
         ]);
       } else {
-        list.forEach((row) => {
-          const line = [
-            {
-              v: shortSection(row.section),
-              size: 9,
+        list.forEach((row, idx) => {
+          const section = shortSection(row.section);
+          const prev = idx > 0 ? shortSection(list[idx - 1].section) : null;
+          const isFirst = section !== prev;
+          let span = 1;
+          if (isFirst) {
+            while (idx + span < list.length && shortSection(list[idx + span].section) === section) {
+              span += 1;
+            }
+          }
+          const line = [];
+          if (isFirst) {
+            line.push({
+              v: section,
+              rs: span,
+              size: 8,
               align: 'left',
               fill: C.label,
-              nw: true
-            },
-            { v: dash(row.weight), size: 9, fill: C.label, nw: true },
-            {
-              v: shortMetric(row.label),
-              size: 9,
-              bold: true,
-              align: 'left',
-              fill: C.head,
-              nw: true
-            }
-          ];
+              nw: true,
+              valign: 'middle'
+            });
+          }
+          line.push({ v: dash(row.weight), size: 8, fill: C.label, nw: true });
+          line.push({
+            v: shortMetric(row.label),
+            size: 8,
+            bold: true,
+            align: 'left',
+            fill: C.head,
+            nw: true
+          });
           regions.forEach((r) => {
             const cell = (row.byRegion && row.byRegion[r.id]) || {};
             const g = cell.target != null ? cell.target : row.goal;
-            line.push(kpiNum(row.kind, cell.ly, { size: 10 }));
-            line.push(kpiNum(row.kind, g, { size: 10, fill: C.target }));
+            line.push(kpiNum(row.kind, cell.ly, { size: 8 }));
+            line.push(kpiNum(row.kind, g, { size: 8, fill: C.target }));
             line.push(
               kpiNum(row.kind, cell.actual, {
-                size: 10,
+                size: 8,
                 bold: true,
                 fill: kpiToneFill(row.kind, cell.actual, g, r.id)
               })
@@ -596,8 +608,8 @@
       }
       return denseTable({
         colW,
-        size: 10,
-        rowH: [0.32, 0.28, ...(list.length ? list.map(() => 0.42) : [0.5])],
+        size: 8,
+        rowH: [0.24, 0.2, ...(list.length ? list.map(() => 0.3) : [0.4])],
         rows: out
       });
     }
@@ -605,13 +617,12 @@
     const ym = `${d.roc}年${pad2(d.month)}月`;
     const northT = buildBandTable(northRegs, (pack && pack.north) || []);
     const southT = buildBandTable(southRegs, (pack && pack.south) || []);
-    /* 上下拆兩頁，避免底部列被裁切 */
+    const northH = tableH(northT);
+    /* 北桃中＋彰南高同一頁 */
     return [
-      contentSlide(`二、《各地區${ym}KPI》北桃中`, [
-        tableBlock(northT, { y: 1.05, w: 12.7 })
-      ]),
-      contentSlide(`二、《各地區${ym}KPI》彰南高`, [
-        tableBlock(southT, { y: 1.05, w: 12.7 })
+      contentSlide(`二、《各地區${ym}KPI》`, [
+        tableBlock(northT, { y: 0.95, w: 12.7 }),
+        tableBlock(southT, { y: Math.min(1.02 + northH + 0.06, 4.15), w: 12.7 })
       ])
     ];
   }
@@ -967,16 +978,17 @@
         head.map((t) => headCell(t, { size: 8, nw: true })),
         ...chunk.map((c) => {
           const legal = String(c.collectStatus || '').trim() === '請法務協助';
-          const remark = shortRemark(c.note || c.remark || c.caseNote || '', 90);
+          const remarkRaw = c.note || c.remark || c.caseNote || c.memo || '';
+          const remark = shortRemark(remarkRaw, 120);
           return [
-            { v: dash(c.city), nw: true, size: 10, valign: 'top' },
-            { v: dash(c.staff), nw: true, size: 10, valign: 'top' },
-            { v: dash(c.tenant), nw: true, size: 10, valign: 'top' },
-            { v: num(c.maxDays), bold: true, fill: C.y, nw: true, size: 11, valign: 'top' },
+            { v: dash(c.city), nw: true, size: 9, valign: 'top' },
+            { v: dash(c.staff), nw: true, size: 9, valign: 'top' },
+            { v: dash(c.tenant), nw: true, size: 9, valign: 'top' },
+            { v: num(c.maxDays), bold: true, fill: C.y, nw: true, size: 10, valign: 'top' },
             {
               v: c.amount != null ? Number(c.amount).toLocaleString('zh-TW') : '—',
               nw: true,
-              size: 10,
+              size: 9,
               valign: 'top'
             },
             {
@@ -984,11 +996,18 @@
               fill: legal ? C.r : C.white,
               bold: legal,
               nw: true,
-              size: 9,
+              size: 8,
               valign: 'top'
             },
-            { v: shortRemark(c.address, 28), align: 'left', size: 9, nw: true, valign: 'top' },
-            { v: remark, align: 'left', size: 9, valign: 'top' }
+            { v: shortRemark(c.address, 24), align: 'left', size: 8, nw: true, valign: 'top' },
+            {
+              v: remark,
+              align: 'left',
+              size: 9,
+              bold: remark !== '—',
+              fill: remark !== '—' ? C.beige : C.white,
+              valign: 'top'
+            }
           ];
         })
       ];

@@ -1198,7 +1198,15 @@
 
   window.skyfunAuth = {
     isReady: () => ready,
-    getToken: () => session?.supabaseToken || '',
+    getToken: () => {
+      if (session?.supabaseToken) return session.supabaseToken;
+      try {
+        const s = loadStored();
+        return (s && (s.supabaseToken || s.token)) || '';
+      } catch {
+        return '';
+      }
+    },
     getUser: () => session?.user || null,
     getProfile: () => null,
     rpc,
