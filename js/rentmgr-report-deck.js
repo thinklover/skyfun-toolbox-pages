@@ -708,8 +708,8 @@
 
   function detailPages(slideTitle, items, emptyHint) {
     const head = ['狀態', '委託', '縣市', '地址', '業務', '異常轉業', '備註'];
-    const colW = [0.9, 0.7, 0.7, 3.6, 0.9, 0.9, 3.0];
-    const ROW_H = 0.34;
+    const colW = [0.85, 0.65, 0.7, 3.2, 0.85, 0.85, 3.5];
+    const ROW_H = 0.46;
     const headH = [0.34];
     const avail = 6.6 - 1.15 - headH.reduce((s, x) => s + x, 0);
     const per = Math.max(1, Math.floor(avail / ROW_H));
@@ -727,14 +727,15 @@
               { v: dash(it.status), nw: true, size: 10 },
               { v: dash(it.entrustType), nw: true, size: 10 },
               { v: dash(it.city), nw: true, size: 10 },
-              { v: shortRemark(it.address, 28), align: 'left', size: 10, nw: true },
-              { v: dash(it.sales), nw: true, size: 10 },
+              { v: shortRemark(it.address, 26), align: 'left', size: 10, nw: true, valign: 'top' },
+              { v: dash(it.sales), nw: true, size: 10, valign: 'top' },
               {
                 v: it.abnormal === true ? '是' : it.abnormal === false ? '否' : '—',
                 fill: it.abnormal === true ? C.y : C.white,
-                nw: true
+                nw: true,
+                valign: 'top'
               },
-              { v: shortRemark(it.remark, 36), align: 'left', size: 9, nw: true }
+              { v: shortRemark(it.remark, 80), align: 'left', size: 9, valign: 'top' }
             ])
           : [[{ v: emptyMsg, cs: head.length, color: C.muted, size: 12 }]])
       ];
@@ -927,16 +928,16 @@
       .replace(/\s+/g, ' ')
       .trim();
     if (!s) return '—';
-    const n = maxLen || 42;
+    const n = maxLen || 72;
     return s.length > n ? s.slice(0, n) + '…' : s;
   }
 
   function collectDetailPages(d) {
-    /* 只要 30 天以上；備註截短，避免列高爆開 */
+    /* 只要 30 天以上；備註要顯示（可換行），其餘數字欄不換行 */
     const cases = (d.collectCases || []).filter((c) => Number(c && c.maxDays) >= 30);
     const head = ['縣市', '代管', '房客', '天數', '欠款', '催收狀態', '地址', '案件備註'];
-    const colW = [0.85, 0.75, 0.9, 0.7, 1.05, 1.2, 3.2, 3.0];
-    const ROW_H = 0.34;
+    const colW = [0.75, 0.7, 0.85, 0.65, 0.95, 1.1, 2.7, 3.95];
+    const ROW_H = 0.48;
     const headH = [0.34];
     const per = Math.max(1, Math.floor((6.6 - 1.15 - 0.34) / ROW_H));
     if (!cases.length) {
@@ -966,20 +967,28 @@
         head.map((t) => headCell(t, { size: 8, nw: true })),
         ...chunk.map((c) => {
           const legal = String(c.collectStatus || '').trim() === '請法務協助';
-          const remark = shortRemark(c.note || c.remark || c.caseNote || '', 40);
+          const remark = shortRemark(c.note || c.remark || c.caseNote || '', 90);
           return [
-            { v: dash(c.city), nw: true, size: 10 },
-            { v: dash(c.staff), nw: true, size: 10 },
-            { v: dash(c.tenant), nw: true, size: 10 },
-            { v: num(c.maxDays), bold: true, fill: C.y, nw: true, size: 11 },
+            { v: dash(c.city), nw: true, size: 10, valign: 'top' },
+            { v: dash(c.staff), nw: true, size: 10, valign: 'top' },
+            { v: dash(c.tenant), nw: true, size: 10, valign: 'top' },
+            { v: num(c.maxDays), bold: true, fill: C.y, nw: true, size: 11, valign: 'top' },
             {
               v: c.amount != null ? Number(c.amount).toLocaleString('zh-TW') : '—',
               nw: true,
-              size: 10
+              size: 10,
+              valign: 'top'
             },
-            { v: dash(c.collectStatus), fill: legal ? C.r : C.white, bold: legal, nw: true, size: 9 },
-            { v: dash(c.address), align: 'left', size: 9, nw: true },
-            { v: remark, align: 'left', size: 8, nw: true }
+            {
+              v: dash(c.collectStatus),
+              fill: legal ? C.r : C.white,
+              bold: legal,
+              nw: true,
+              size: 9,
+              valign: 'top'
+            },
+            { v: shortRemark(c.address, 28), align: 'left', size: 9, nw: true, valign: 'top' },
+            { v: remark, align: 'left', size: 9, valign: 'top' }
           ];
         })
       ];

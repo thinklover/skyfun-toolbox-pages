@@ -1614,11 +1614,30 @@
     });
   }
 
-  function fetchNoRenewDetail(month, year) {
-    const token =
-      (typeof window !== 'undefined' && window.skyfunAuth && window.skyfunAuth.getToken
-        ? window.skyfunAuth.getToken()
-        : '') || '';
+  function resolveToolboxToken(explicit) {
+    if (explicit) return String(explicit).trim();
+    try {
+      if (typeof window !== 'undefined' && window.skyfunAuth && typeof window.skyfunAuth.getToken === 'function') {
+        const t = window.skyfunAuth.getToken();
+        if (t) return String(t).trim();
+      }
+    } catch (_) {}
+    try {
+      if (typeof window !== 'undefined' && window.opener && window.opener.skyfunAuth && typeof window.opener.skyfunAuth.getToken === 'function') {
+        const t = window.opener.skyfunAuth.getToken();
+        if (t) return String(t).trim();
+      }
+    } catch (_) {}
+    try {
+      const s = JSON.parse(localStorage.getItem('skyfun-toolbox-auth-supabase-v1') || 'null');
+      return String((s && (s.supabaseToken || s.token)) || '').trim();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function fetchNoRenewDetail(month, year, tokenOverride) {
+    const token = resolveToolboxToken(tokenOverride);
     const roc =
       Number(year) ||
       (typeof window !== 'undefined' ? new Date().getFullYear() - 1911 : 115);
@@ -1628,6 +1647,9 @@
     });
     const headers = {};
     if (token) headers['X-Skyfun-Session'] = token;
+    if (!token) {
+      return Promise.reject(new Error('尚未登入工具箱（無 session），無法載入不續約明細'));
+    }
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timer = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (_) {} }, 60000) : null;
     return fetch(RPA_BASE + '/admin-points/renew-norenew-detail?' + q.toString(), {

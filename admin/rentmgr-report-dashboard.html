@@ -7,8 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
   <script src="../js/admin-deck.js?v=20261028-nw"></script>
-  <script src="../js/rentmgr-report-deck.js?v=20261028-region-fix2"></script>
-  <script src="../js/rentmgr-perf-data.js?v=20261028-norenew-yr"></script>
+  <script src="../js/rentmgr-report-deck.js?v=20261028-norenew-auth"></script>
+  <script src="../js/rentmgr-perf-data.js?v=20261028-norenew-auth"></script>
   <script src="../js/rentmgr-org.js?v=20261026-rmr1"></script>
   <style>
     .field label { display: block; font-size: 0.72rem; color: #64748b; margin-bottom: 0.2rem; font-weight: 700; }
@@ -70,19 +70,30 @@
       const LS_REPORTER = 'rmr-reporter';
       const LS_MAKER = 'rmr-maker';
 
-      /* 沿用工具箱登入 token（同網域 localStorage） */
-      if (!window.skyfunAuth) {
-        window.skyfunAuth = {
-          getToken: function () {
-            try {
-              const s = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
-              return (s && (s.supabaseToken || (s.session && s.session.access_token))) || '';
-            } catch (e) {
-              return '';
-            }
+      /* 沿用工具箱登入 token：本頁 localStorage → opener → 既有 skyfunAuth */
+      function resolveToken() {
+        try {
+          const s = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+          const t = (s && (s.supabaseToken || s.token || (s.session && s.session.access_token))) || '';
+          if (t) return String(t);
+        } catch (e) {}
+        try {
+          if (window.opener && window.opener.skyfunAuth && window.opener.skyfunAuth.getToken) {
+            const t = window.opener.skyfunAuth.getToken();
+            if (t) return String(t);
           }
-        };
+        } catch (e) {}
+        try {
+          if (window.skyfunAuth && window.skyfunAuth.getToken) {
+            const t = window.skyfunAuth.getToken();
+            if (t) return String(t);
+          }
+        } catch (e) {}
+        return '';
       }
+      window.skyfunAuth = {
+        getToken: resolveToken
+      };
 
       const $ = (id) => document.getElementById(id);
       const pad2 = (n) => String(n).padStart(2, '0');
@@ -154,9 +165,9 @@
       async function loadBundle(month) {
         const api = window.RentmgrPerfData;
         if (!api) throw new Error('績效資料模組未載入');
-        const token = window.skyfunAuth && window.skyfunAuth.getToken ? window.skyfunAuth.getToken() : '';
+        const token = resolveToken();
         if (!token) {
-          msg('尚未偵測到工具箱登入，部分系統資料可能讀不到；請先開啟工具箱登入後再開本頁。', true);
+          msg('尚未偵測到工具箱登入。請先回工具箱登入，再從績效中心開啟本頁。', true);
         }
         msg('讀取續約試算表與各地區 KPI…');
         const perf = await api.loadPerfData().catch(function (err) {
@@ -173,7 +184,8 @@
         let noRenewItems = [];
         let noRenewDetailError = '';
         try {
-          const detail = await api.fetchNoRenewDetail(month, rocNow());
+          if (!token) throw new Error('尚未登入工具箱（HTTP 會 401）');
+          const detail = await api.fetchNoRenewDetail(month, rocNow(), token);
           noRenewItems = (detail && (detail.items || detail.list || detail.rows)) || [];
           if (!noRenewItems.length && detail && detail.error) {
             noRenewDetailError = String(detail.error);
