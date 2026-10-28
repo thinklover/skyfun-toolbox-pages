@@ -6,9 +6,9 @@
   <title>租賃管理部月報 — 星鴻工具箱</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
-  <script src="../js/admin-deck.js?v=20261026-dataurl"></script>
-  <script src="../js/rentmgr-report-deck.js?v=20261027-perf-align"></script>
-  <script src="../js/rentmgr-perf-data.js?v=20261027-annual-ly"></script>
+  <script src="../js/admin-deck.js?v=20261028-nw"></script>
+  <script src="../js/rentmgr-report-deck.js?v=20261028-region-fix2"></script>
+  <script src="../js/rentmgr-perf-data.js?v=20261028-norenew-yr"></script>
   <script src="../js/rentmgr-org.js?v=20261026-rmr1"></script>
   <style>
     .field label { display: block; font-size: 0.72rem; color: #64748b; margin-bottom: 0.2rem; font-weight: 700; }
@@ -41,7 +41,7 @@
     </div>
     <details class="help">
       <summary>簡報內容與資料來源</summary>
-      <p>封面／內頁 chrome 與行政月報相同。內容對齊績效中心：年報（去年同期／目標／實績）、當月各地區 KPI 月報矩陣、不續約占比、催收。續轉包率＝代管轉包租÷(應續約−包租續包租−不續約)。請先登入工具箱。</p>
+      <p>封面／內頁 chrome 與行政月報相同。內容對齊績效中心：年報 1–12 月同頁（實績紅綠黃）、各地區 KPI 同頁、不續約（異常轉業集中）、催收僅列 30 天以上並含案件備註。請先登入工具箱。</p>
     </details>
     <div class="row">
       <div class="field">
@@ -171,11 +171,16 @@
 
         msg('讀取當月不續約明細…');
         let noRenewItems = [];
+        let noRenewDetailError = '';
         try {
-          const detail = await api.fetchNoRenewDetail(month);
+          const detail = await api.fetchNoRenewDetail(month, rocNow());
           noRenewItems = (detail && (detail.items || detail.list || detail.rows)) || [];
+          if (!noRenewItems.length && detail && detail.error) {
+            noRenewDetailError = String(detail.error);
+          }
         } catch (err) {
           noRenewItems = [];
+          noRenewDetailError = (err && err.message) || '載入不續約明細失敗';
         }
 
         msg('讀取催收呆帳與請法務協助…');
@@ -194,6 +199,7 @@
           regionKpi: (perf.modules && perf.modules.regionKpi) || null,
           noRenew: noRenew,
           noRenewItems: noRenewItems,
+          noRenewDetailError: noRenewDetailError,
           collectSummary: collectSummary,
           collectCases: collectCases,
           orgPeople: buildOrgPeople()
@@ -239,6 +245,7 @@
             southRegions: (api && api.REGION_KPI_SOUTH) || rk.southRegions || null,
             noRenew: bundle.noRenew,
             noRenewItems: bundle.noRenewItems,
+            noRenewDetailError: bundle.noRenewDetailError || '',
             orgPeople: bundle.orgPeople,
             collectSummary: bundle.collectSummary,
             collectCases: bundle.collectCases

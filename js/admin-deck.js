@@ -60,7 +60,7 @@
     css.push(`font-size:${((c.size || size) * PT).toFixed(1)}px`);
     if (c.align && c.align !== 'center') css.push(`text-align:${c.align}`);
     if (c.valign) css.push(`vertical-align:${c.valign === 'top' ? 'top' : c.valign === 'bottom' ? 'bottom' : 'middle'}`);
-    if (c.nw) css.push('white-space:nowrap');
+    if (c.nw) css.push('white-space:nowrap;word-break:keep-all;overflow:hidden');
     if (h) css.push(`height:${h}px`);
     const span = `${c.cs > 1 ? ` colspan="${c.cs}"` : ''}${c.rs > 1 ? ` rowspan="${c.rs}"` : ''}`;
     const sub = c.sub != null && c.sub !== '' ? `<small style="font-size:${((c.subSize || (c.size || size) * 0.72) * PT).toFixed(1)}px">${br(c.sub)}</small>` : '';
@@ -189,6 +189,8 @@
     if (c.fill) opts.fill = { color: c.fill };
     if (c.cs > 1) opts.colspan = c.cs;
     if (c.rs > 1) opts.rowspan = c.rs;
+    /* nw＝不換行，避免 48.5% 被拆成直排 */
+    if (c.nw) opts.wrap = false;
     const main = String(c.v ?? '');
     if (c.sub != null && c.sub !== '') {
       return {

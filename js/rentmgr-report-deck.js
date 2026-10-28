@@ -33,8 +33,6 @@
   const LEFT = 0.3;
   const WIDTH = 12.73;
   const BODY = 11;
-  const TO_BAO_FORMULA = '代管轉包租案件數/(應續約件數-包租續包租件數-不續約件數)';
-
   const NORTH_CITIES = ['台北', '臺北', '新北', '基隆', '宜蘭', '桃園', '新竹'];
   const CENTRAL_CITIES = ['台中', '臺中', '彰化', '南投', '苗栗', '雲林'];
   const SOUTH_CITIES = ['嘉義', '台南', '臺南', '高雄', '屏東', '澎湖', '金門', '連江'];
@@ -44,8 +42,41 @@
   const pct = (v) => (v == null || v === '' ? '—' : `${Number(v)}%`);
   const num = (n) => (n == null || n === '' ? '—' : Number(n).toLocaleString('zh-TW'));
 
-  function cityArea(city) {
-    const s = String(city || '');
+  /**
+   * 對齊租管師績效中心 regionKpiTone：
+   * 件數｜地區：0綠／1白／2黃／>2紅；全區：0–4綠／5白／6–9黃／≥10紅
+   * 比率：達標綠｜差距≤5%白｜5.1%–10%黃｜>10%紅
+   */
+  function kpiToneFill(kind, actual, goal, regionId) {
+    if (actual == null || actual === '') return C.white;
+    const a = Number(actual);
+    if (!isFinite(a)) return C.white;
+    if (kind === 'count') {
+      const isAll = !regionId || regionId === 'all';
+      if (isAll) {
+        if (a <= 4) return C.g;
+        if (a === 5) return C.white;
+        if (a <= 9) return C.y;
+        return C.r;
+      }
+      if (a <= 0) return C.g;
+      if (a === 1) return C.white;
+      if (a === 2) return C.y;
+      return C.r;
+    }
+    if (goal == null || goal === '') return C.white;
+    const target = Number(goal);
+    if (!isFinite(target)) return C.white;
+    if (a >= target) return C.g;
+    if (target === 0) return a > 0 ? C.r : C.g;
+    const gapPct = ((target - a) / Math.abs(target)) * 100;
+    if (gapPct <= 5) return C.white;
+    if (gapPct <= 10) return C.y;
+    return C.r;
+  }
+
+  function cityArea(city, address) {
+    const s = String(city || '') + String(address || '');
     if (NORTH_CITIES.some((k) => s.indexOf(k) >= 0)) return 'north';
     if (CENTRAL_CITIES.some((k) => s.indexOf(k) >= 0)) return 'central';
     if (SOUTH_CITIES.some((k) => s.indexOf(k) >= 0)) return 'south';
@@ -65,6 +96,29 @@
       return cell;
     };
     return { ...table, size: Math.max(base, BODY), rows: table.rows.map((r) => r.map(up)), ...over };
+  }
+
+  /** 密表專用：不強制放大到 BODY，避免窄欄直排／底部被裁切 */
+  function denseTable(table) {
+    return table;
+  }
+
+  function shortSection(s) {
+    return String(s || '')
+      .replace(/[《》]/g, '')
+      .replace(/^([一二三四五六七八九十]+)、?/, '$1、')
+      .trim();
+  }
+
+  function shortMetric(s) {
+    const t = String(s || '');
+    if (/控管包租催收/.test(t)) return '催收≥30天件數';
+    if (/再媒合完成招租/.test(t)) return '再媒合完成招租';
+    if (/當月續約率-異常/.test(t) || /當月續約率－異常/.test(t)) return '續約率-異常轉業';
+    if (/當月續約率-全部/.test(t) || /當月續約率－全部/.test(t)) return '續約率-全部';
+    if (/領先續約率_次次月/.test(t)) return '領先續約_次次月';
+    if (/領先續約率_次月/.test(t)) return '領先續約_次月';
+    return t;
   }
 
   function titleBlocks(title) {
@@ -95,7 +149,7 @@
     return t.rows.length * (t.rowH || 0.3);
   }
 
-  /** 續轉包率＝代管轉包租÷(應續約−包租續包租−不續約)；缺任一分子分母則回 null */
+  /** 續轉包率計算（內部用）；缺任一分子分母則回 null */
   function calcToBaoRate(parts) {
     const nume = Number(parts && parts.toBao);
     const due = Number(parts && parts.due);
@@ -218,8 +272,8 @@
   }
 
   function barCompareDataUrl(cfg) {
-    const W = cfg.width || 900;
-    const H = cfg.height || 420;
+    const W = cfg.width || 1100;
+    const H = cfg.height || 360;
     const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
     if (!canvas || !canvas.getContext) return null;
     canvas.width = W;
@@ -227,51 +281,81 @@
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, W, H);
+    const title = cfg.title || '';
     ctx.fillStyle = '#1f2937';
-    ctx.font = 'bold 20px "Microsoft JhengHei",sans-serif';
+    ctx.font = 'bold 18px "Microsoft JhengHei",sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(cfg.title || '', W / 2, 28);
+    ctx.fillText(title.length > 36 ? title.slice(0, 36) + '…' : title, W / 2, 24);
     const cats = cfg.categories || [];
     const sA = cfg.seriesA || { name: '114', color: '94a3b8', values: [] };
     const sB = cfg.seriesB || { name: '115', color: 'dc2626', values: [] };
     let max = 1;
     [...(sA.values || []), ...(sB.values || [])].forEach((v) => {
-      if (v != null && v > max) max = v;
+      if (v != null && Number(v) > max) max = Number(v);
     });
-    const pad = { t: 50, r: 20, b: 40, l: 50 };
+    max = Math.max(4, Math.ceil(max * 1.15));
+    const pad = { t: 58, r: 24, b: 46, l: 48 };
     const plotW = W - pad.l - pad.r;
     const plotH = H - pad.t - pad.b;
-    const groupW = plotW / Math.max(1, cats.length);
+    /* 格線 */
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i) / 4;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(pad.l + plotW, y);
+      ctx.stroke();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px "Microsoft JhengHei",sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(String(Math.round(max - (max * i) / 4)), pad.l - 6, y + 4);
+    }
+    const n = Math.max(1, cats.length);
+    const groupW = plotW / n;
+    const dual = (sA.values || []).some((v) => v != null);
     cats.forEach((lab, i) => {
       const gx = pad.l + i * groupW;
-      const bw = groupW * 0.32;
+      const bw = dual ? groupW * 0.28 : groupW * 0.46;
       const drawBar = (val, color, ox) => {
-        if (val == null) return;
-        const h = (plotH * val) / max;
+        if (val == null || !isFinite(Number(val))) return;
+        const h = Math.max(2, (plotH * Number(val)) / max);
         ctx.fillStyle = '#' + color;
         ctx.fillRect(gx + ox, pad.t + plotH - h, bw, h);
-        ctx.fillStyle = '#334155';
-        ctx.font = '11px "Microsoft JhengHei",sans-serif';
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 12px "Microsoft JhengHei",sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(String(val), gx + ox + bw / 2, pad.t + plotH - h - 4);
+        ctx.fillText(String(val), gx + ox + bw / 2, pad.t + plotH - h - 5);
       };
-      drawBar(sA.values[i], sA.color, groupW * 0.15);
-      drawBar(sB.values[i], sB.color, groupW * 0.52);
-      ctx.fillStyle = '#64748b';
+      if (dual) {
+        drawBar(sA.values[i], sA.color, groupW * 0.18);
+        drawBar(sB.values[i], sB.color, groupW * 0.52);
+      } else {
+        drawBar(sB.values[i], sB.color, (groupW - bw) / 2);
+      }
+      ctx.fillStyle = '#475569';
       ctx.font = '12px "Microsoft JhengHei",sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(lab, gx + groupW / 2, H - 14);
+      const short = String(lab || '').length > 6 ? String(lab).slice(0, 6) : String(lab || '');
+      ctx.fillText(short, gx + groupW / 2, H - 16);
     });
-    ctx.fillStyle = '#' + sA.color;
-    ctx.fillRect(W / 2 - 90, 36, 14, 10);
+    /* 圖例 */
+    let lx = W / 2 - (dual ? 110 : 40);
+    if (dual) {
+      ctx.fillStyle = '#' + sA.color;
+      ctx.fillRect(lx, 36, 14, 10);
+      ctx.fillStyle = '#334155';
+      ctx.font = '12px "Microsoft JhengHei",sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(sA.name, lx + 18, 45);
+      lx += 120;
+    }
+    ctx.fillStyle = '#' + sB.color;
+    ctx.fillRect(lx, 36, 14, 10);
     ctx.fillStyle = '#334155';
     ctx.font = '12px "Microsoft JhengHei",sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(sA.name, W / 2 - 72, 45);
-    ctx.fillStyle = '#' + sB.color;
-    ctx.fillRect(W / 2 + 20, 36, 14, 10);
-    ctx.fillStyle = '#334155';
-    ctx.fillText(sB.name, W / 2 + 38, 45);
+    ctx.fillText(sB.name, lx + 18, 45);
     return canvas.toDataURL('image/png');
   }
 
@@ -343,72 +427,88 @@
     return kind === 'rate' ? pct(v) : num(v);
   }
 
-  /** 與績效中心年報相同：上下半年兩頁、每月「去年同期／目標／實績」 */
+  /** 數字格：強制左右不換行（避免 48.5% 被拆成直排） */
+  function kpiNum(kind, v, extra) {
+    return Object.assign(
+      {
+        v: fmtKpiCell(kind, v),
+        size: (extra && extra.size) || 8,
+        nw: true,
+        align: 'center'
+      },
+      extra || {}
+    );
+  }
+
+  /** 1–12 月同一頁：上半 1–6、下半 7–12（欄夠寬、數字左右排） */
   function annualKpiSlides(d) {
     const rows = annualRowsFromDeck(d);
-    return [0, 1].map((half) => {
-      const months = Array.from({ length: 6 }, (_, i) => half * 6 + i + 1);
-      const colW = [2.4, ...months.flatMap(() => [0.56, 0.56, 0.56])];
+
+    function halfTable(months, caption) {
+      const colW = [2.2, ...months.flatMap(() => [0.58, 0.58, 0.58])];
       const out = [];
       out.push([
         {
-          v: `${d.roc}年度租管部KPI月報`,
+          v: caption,
           cs: colW.length,
           bold: true,
-          size: 11,
-          fill: C.white
+          size: 10,
+          fill: C.white,
+          align: 'left',
+          nw: true
         }
       ]);
       out.push([
-        headCell('目標效益指標展開', { rs: 2, size: 8 }),
-        ...months.map((m) => headCell(`${m}月`, { cs: 3, size: 8 }))
+        headCell('目標效益指標展開', { rs: 2, size: 8, nw: true }),
+        ...months.map((m) => headCell(`${m}月`, { cs: 3, size: 8, nw: true }))
       ]);
       out.push(
         months.flatMap(() => [
-          headCell('去年同期', { size: 6 }),
-          headCell('目標', { size: 6, fill: C.target }),
-          headCell('實績', { size: 6 })
+          headCell('去年', { size: 7, nw: true }),
+          headCell('目標', { size: 7, fill: C.target, nw: true }),
+          headCell('實績', { size: 7, nw: true })
         ])
       );
       rows.forEach((r) => {
-        const line = [{ v: r.label, size: 8, bold: true, align: 'left', fill: C.head }];
+        const line = [
+          { v: shortMetric(r.label), size: 8, bold: true, align: 'left', fill: C.head, nw: true }
+        ];
         months.forEach((m) => {
           const cell = (r.byMonth && r.byMonth[m]) || {};
-          line.push({ v: fmtKpiCell(r.kind, cell.ly), size: 8 });
-          line.push({ v: fmtKpiCell(r.kind, cell.target), size: 8, fill: C.target });
-          line.push({
-            v: fmtKpiCell(r.kind, cell.actual),
-            size: 8,
-            bold: true,
-            fill: m === d.month ? C.y : C.white
-          });
+          line.push(kpiNum(r.kind, cell.ly, { size: 8 }));
+          line.push(kpiNum(r.kind, cell.target, { size: 8, fill: C.target }));
+          line.push(
+            kpiNum(r.kind, cell.actual, {
+              size: 8,
+              bold: true,
+              fill: kpiToneFill(r.kind, cell.actual, cell.target, 'all')
+            })
+          );
         });
         out.push(line);
       });
-      const t = bodyFont(
-        { colW, size: 8, rowH: [0.32, 0.28, 0.26, ...rows.map(() => 0.38)], rows: out },
-        {}
-      );
-      const halfLabel = half ? '（7–12月）' : '（1–6月）';
-      return contentSlide(`一、《租管部｜${d.roc}年度KPI》${halfLabel}`, [
-        tableBlock(t, { y: 1.02 }),
-        {
-          type: 'text',
-          x: LEFT,
-          y: 6.85,
-          w: WIDTH,
-          h: 0.28,
-          text: `對齊租管師績效中心年報；續轉包率＝${TO_BAO_FORMULA}`,
-          size: BODY,
-          color: C.muted
-        }
-      ]);
-    });
+      return denseTable({
+        colW,
+        size: 8,
+        rowH: [0.28, 0.26, 0.24, ...rows.map(() => 0.34)],
+        rows: out
+      });
+    }
+
+    const top = halfTable([1, 2, 3, 4, 5, 6], `${d.roc}年度租管部KPI｜1–6月`);
+    const bot = halfTable([7, 8, 9, 10, 11, 12], `${d.roc}年度租管部KPI｜7–12月`);
+    const topH = tableH(top);
+    return [
+      contentSlide(`一、《租管部｜${d.roc}年度KPI（1–12月）》`, [
+        tableBlock(top, { y: 0.98, w: 12.9 }),
+        tableBlock(bot, { y: Math.min(1.05 + topH + 0.1, 4.05), w: 12.9 })
+      ])
+    ];
   }
 
   /**
-   * 各地區 KPI 月報：與績效中心月報矩陣相同（專案／權重／指標 × 地區去年／目標／實績）
-   * 北區一頁、南區一頁。
+   * 各地區 KPI 月報：與績效中心月報矩陣相同；全區～高雄同一頁（上下兩表）。
+   * 實績依績效中心紅綠黃著色。
    */
   function regionMonthMatrixSlides(d) {
     const pack = d.monthMatrix || null;
@@ -431,77 +531,88 @@
           { id: 'khh', label: '高雄' }
         ];
 
-    function oneBand(title, regions, rows) {
+    function buildBandTable(regions, rows) {
       const list = rows && rows.length ? rows : [];
-      const colW = [1.15, 0.55, 1.7, ...regions.flatMap(() => [0.52, 0.52, 0.52])];
+      /* 專案／指標加寬，數字欄固定，避免直排 */
+      const colW = [1.15, 0.48, 1.7, ...regions.flatMap(() => [0.5, 0.5, 0.5])];
       const out = [];
       out.push([
-        headCell('專案', { rs: 2, size: 8 }),
-        headCell('權重', { rs: 2, size: 8 }),
-        headCell('指標', { rs: 2, size: 8 }),
-        ...regions.map((r) => headCell(r.label, { cs: 3, size: 8 }))
+        headCell('專案', { rs: 2, size: 9, nw: true }),
+        headCell('權重', { rs: 2, size: 9, nw: true }),
+        headCell('指標', { rs: 2, size: 9, nw: true }),
+        ...regions.map((r) => headCell(r.label, { cs: 3, size: 10, nw: true }))
       ]);
       out.push(
         regions.flatMap(() => [
-          headCell('去年', { size: 6 }),
-          headCell('目標', { size: 6, fill: C.target }),
-          headCell('實績', { size: 6 })
+          headCell('去年', { size: 8, nw: true }),
+          headCell('目標', { size: 8, fill: C.target, nw: true }),
+          headCell('實績', { size: 8, nw: true })
         ])
       );
       if (!list.length) {
         out.push([
           {
-            v: '此月尚無各地區 KPI 月報矩陣（請確認試算表／績效中心月報）',
+            v: '此月尚無各地區 KPI 月報矩陣',
             cs: colW.length,
             color: C.muted,
-            size: 10
+            size: 11
           }
         ]);
       } else {
         list.forEach((row) => {
           const line = [
-            { v: dash(row.section), size: 7, align: 'left', fill: C.label },
-            { v: dash(row.weight), size: 8, fill: C.label },
-            { v: dash(row.label), size: 8, bold: true, align: 'left', fill: C.head }
+            {
+              v: shortSection(row.section),
+              size: 9,
+              align: 'left',
+              fill: C.label,
+              nw: true
+            },
+            { v: dash(row.weight), size: 9, fill: C.label, nw: true },
+            {
+              v: shortMetric(row.label),
+              size: 9,
+              bold: true,
+              align: 'left',
+              fill: C.head,
+              nw: true
+            }
           ];
           regions.forEach((r) => {
             const cell = (row.byRegion && row.byRegion[r.id]) || {};
             const g = cell.target != null ? cell.target : row.goal;
-            line.push({ v: fmtKpiCell(row.kind, cell.ly), size: 8 });
-            line.push({ v: fmtKpiCell(row.kind, g), size: 8, fill: C.target });
-            line.push({ v: fmtKpiCell(row.kind, cell.actual), size: 8, bold: true });
+            line.push(kpiNum(row.kind, cell.ly, { size: 10 }));
+            line.push(kpiNum(row.kind, g, { size: 10, fill: C.target }));
+            line.push(
+              kpiNum(row.kind, cell.actual, {
+                size: 10,
+                bold: true,
+                fill: kpiToneFill(row.kind, cell.actual, g, r.id)
+              })
+            );
           });
           out.push(line);
         });
       }
-      const t = bodyFont(
-        {
-          colW,
-          size: 8,
-          rowH: [0.28, 0.24, ...(list.length ? list.map(() => 0.34) : [0.5])],
-          rows: out
-        },
-        {}
-      );
-      return contentSlide(title, [
-        tableBlock(t, { y: 1.02, w: 12.7 }),
-        {
-          type: 'text',
-          x: LEFT,
-          y: 6.88,
-          w: WIDTH,
-          h: 0.26,
-          text: `對齊租管師績效中心｜各地區KPI月報；續轉包＝${TO_BAO_FORMULA}`,
-          size: 10,
-          color: C.muted
-        }
-      ]);
+      return denseTable({
+        colW,
+        size: 10,
+        rowH: [0.32, 0.28, ...(list.length ? list.map(() => 0.42) : [0.5])],
+        rows: out
+      });
     }
 
     const ym = `${d.roc}年${pad2(d.month)}月`;
+    const northT = buildBandTable(northRegs, (pack && pack.north) || []);
+    const southT = buildBandTable(southRegs, (pack && pack.south) || []);
+    /* 上下拆兩頁，避免底部列被裁切 */
     return [
-      oneBand(`二、《各地區${ym}KPI｜全區～台中》`, northRegs, (pack && pack.north) || []),
-      oneBand(`二、《各地區${ym}KPI｜彰化～高雄》`, southRegs, (pack && pack.south) || [])
+      contentSlide(`二、《各地區${ym}KPI》北桃中`, [
+        tableBlock(northT, { y: 1.05, w: 12.7 })
+      ]),
+      contentSlide(`二、《各地區${ym}KPI》彰南高`, [
+        tableBlock(southT, { y: 1.05, w: 12.7 })
+      ])
     ];
   }
 
@@ -560,69 +671,80 @@
       });
     }
     const cur = dashb.currentMonth || {};
-    blocks.push({
-      type: 'rect',
-      x: 7.2,
-      y: 2.95,
-      w: 5.7,
-      h: 3.6,
-      fill: C.label,
-      line: 'CBD5E1',
-      radius: 0.08
-    });
-    blocks.push({
-      type: 'text',
-      x: 7.4,
-      y: 3.15,
-      w: 5.3,
-      h: 3.2,
-      text: [
-        `${d.roc}/${pad2(d.month)} 當月摘要`,
-        `不續約占比 ${pct(cur.noRenewRate)}（去年 ${pct(cur.lyNoRenewRate)}）`,
-        `不續約件數 ${num(cur.noRenew)}／應續約 ${num(cur.due)}`,
-        `異常轉業比例 ${pct(cur.abnormalRate)}（${num(cur.abnormalTransfer)} 件）`,
-        `招租中占比 ${pct(cur.leaseRate)}`
-      ].join('\n'),
-      size: BODY,
-      bold: true,
-      color: C.ink,
-      valign: 'top'
-    });
+    const sumRows = [
+      [
+        { v: `${d.roc}/${pad2(d.month)} 當月摘要`, cs: 2, bold: true, size: 13, fill: C.head, align: 'left', nw: true }
+      ],
+      [
+        { v: '不續約占比', bold: true, fill: C.label, align: 'left', nw: true },
+        { v: `${pct(cur.noRenewRate)}（去年 ${pct(cur.lyNoRenewRate)}）`, bold: true, align: 'left', nw: true }
+      ],
+      [
+        { v: '不續約件數', bold: true, fill: C.label, align: 'left', nw: true },
+        { v: `${num(cur.noRenew)} ／ 應續約 ${num(cur.due)}`, bold: true, align: 'left', nw: true }
+      ],
+      [
+        { v: '異常轉業比例', bold: true, fill: C.label, align: 'left', nw: true },
+        { v: `${pct(cur.abnormalRate)}（${num(cur.abnormalTransfer)} 件）`, bold: true, fill: C.y, align: 'left', nw: true }
+      ],
+      [
+        { v: '招租中占比', bold: true, fill: C.label, align: 'left', nw: true },
+        { v: pct(cur.leaseRate), bold: true, align: 'left', nw: true }
+      ]
+    ];
+    const sumT = bodyFont({ colW: [1.9, 3.5], size: 12, rowH: 0.42, rows: sumRows }, {});
+    blocks.push(tableBlock(sumT, { x: 7.2, y: 2.95, w: 5.6 }));
     return contentSlide(`三、《不續約佔比》`, blocks);
   }
 
-  function detailPages(slideTitle, items) {
+  /** 異常轉業排在前面，其餘維持原順序 */
+  function sortAbnormalFirst(items) {
+    return (items || []).slice().sort((a, b) => {
+      const aa = a && a.abnormal === true ? 0 : 1;
+      const bb = b && b.abnormal === true ? 0 : 1;
+      return aa - bb;
+    });
+  }
+
+  function detailPages(slideTitle, items, emptyHint) {
     const head = ['狀態', '委託', '縣市', '地址', '業務', '異常轉業', '備註'];
     const colW = [0.9, 0.7, 0.7, 3.6, 0.9, 0.9, 3.0];
-    const ROW_H = 0.32;
+    const ROW_H = 0.34;
     const headH = [0.34];
     const avail = 6.6 - 1.15 - headH.reduce((s, x) => s + x, 0);
     const per = Math.max(1, Math.floor(avail / ROW_H));
-    const list = items.length ? items : [];
+    const list = sortAbnormalFirst(items);
     const chunks = [];
     if (!list.length) chunks.push([]);
     else for (let i = 0; i < list.length; i += per) chunks.push(list.slice(i, i + per));
     return chunks.map((chunk, idx) => {
       const title = idx ? `${slideTitle}（續 ${idx}）` : slideTitle;
+      const emptyMsg = emptyHint || '本月此區無不續約案件';
       const rows = [
-        head.map((t) => headCell(t, { size: 9 })),
+        head.map((t) => headCell(t, { size: 9, nw: true })),
         ...(chunk.length
           ? chunk.map((it) => [
-              { v: dash(it.status) },
-              { v: dash(it.entrustType) },
-              { v: dash(it.city) },
-              { v: dash(it.address), align: 'left', size: 10 },
-              { v: dash(it.sales) },
+              { v: dash(it.status), nw: true, size: 10 },
+              { v: dash(it.entrustType), nw: true, size: 10 },
+              { v: dash(it.city), nw: true, size: 10 },
+              { v: shortRemark(it.address, 28), align: 'left', size: 10, nw: true },
+              { v: dash(it.sales), nw: true, size: 10 },
               {
                 v: it.abnormal === true ? '是' : it.abnormal === false ? '否' : '—',
-                fill: it.abnormal === true ? C.y : C.white
+                fill: it.abnormal === true ? C.y : C.white,
+                nw: true
               },
-              { v: dash(it.remark), align: 'left', size: 10 }
+              { v: shortRemark(it.remark, 36), align: 'left', size: 9, nw: true }
             ])
-          : [[{ v: '本月此區無不續約案件', cs: head.length, color: C.muted }]])
+          : [[{ v: emptyMsg, cs: head.length, color: C.muted, size: 12 }]])
       ];
       const t = bodyFont(
-        { colW, size: 11, rowH: [...headH, ...(chunk.length ? chunk.map(() => ROW_H) : [0.45])], rows },
+        {
+          colW,
+          size: 11,
+          rowH: [...headH, ...(chunk.length ? chunk.map(() => ROW_H) : [0.5])],
+          rows
+        },
         {}
       );
       return contentSlide(title, [tableBlock(t, { y: 1.05, w: 12.4 })]);
@@ -631,15 +753,43 @@
 
   function areaDetailSlides(d) {
     const items = (d.noRenewItems || []).slice();
-    const north = items.filter((it) => cityArea(it.city) === 'north');
-    const central = items.filter((it) => cityArea(it.city) === 'central');
-    const south = items.filter((it) => cityArea(it.city) === 'south' || cityArea(it.city) === 'other');
+    const err = d.noRenewDetailError || '';
     const ym = `${d.roc}/${pad2(d.month)}`;
-    return [
-      ...detailPages(`北區不續約明細（${ym}）`, north),
-      ...detailPages(`中區不續約明細（${ym}）`, central),
-      ...detailPages(`南區不續約明細（${ym}）`, south)
+    if (err && !items.length) {
+      return [
+        contentSlide(`不續約明細（${ym}）`, [
+          {
+            type: 'text',
+            x: 0.8,
+            y: 2.4,
+            w: 11.5,
+            h: 1.6,
+            text: `載入失敗：${err}\n請先在工具箱登入後，回本頁重新「一鍵產生預覽」。`,
+            size: 16,
+            color: 'B91C1C',
+            align: 'center'
+          }
+        ])
+      ];
+    }
+    const north = items.filter((it) => cityArea(it.city, it.address) === 'north');
+    const central = items.filter((it) => cityArea(it.city, it.address) === 'central');
+    const south = items.filter((it) => {
+      const a = cityArea(it.city, it.address);
+      return a === 'south' || a === 'other';
+    });
+    /* 有資料的區才出頁；全空才出三區「無案件」各一頁 */
+    const packs = [
+      { title: `北區不續約明細（${ym}）`, list: north },
+      { title: `中區不續約明細（${ym}）`, list: central },
+      { title: `南區不續約明細（${ym}）`, list: south }
     ];
+    if (items.length) {
+      return packs
+        .filter((p) => p.list.length)
+        .flatMap((p) => detailPages(p.title, p.list));
+    }
+    return packs.flatMap((p) => detailPages(p.title, p.list));
   }
 
   function summarySlide(d) {
@@ -647,14 +797,29 @@
     const col = d.collectSummary || {};
     const legal = col.legalAssist || {};
     const rows = [
-      [headCell('項目'), headCell('數值'), headCell('說明')],
-      [{ v: '當月不續約占比', bold: true, fill: C.label, align: 'left' }, { v: pct(nr.noRenewRate), bold: true }, { v: '去年同期 ' + pct(nr.lyNoRenewRate), align: 'left' }],
-      [{ v: '異常轉業比例', bold: true, fill: C.label, align: 'left' }, { v: pct(nr.abnormalRate), bold: true, fill: C.y }, { v: num(nr.abnormalTransfer) + ' ÷ 應續約 ' + num(nr.due), align: 'left' }],
-      [{ v: '催收 30 天以上', bold: true, fill: C.label, align: 'left' }, { v: num(col.over30 && col.over30.cases) }, { v: '' }],
-      [{ v: '請法務協助', bold: true, fill: C.label, align: 'left' }, { v: num(legal.cases), bold: true, fill: C.r }, { v: '催收狀態勾選', align: 'left' }],
-      [{ v: '續轉包率口徑', bold: true, fill: C.label, align: 'left' }, { v: '公式' }, { v: TO_BAO_FORMULA, align: 'left', size: 10 }]
+      [headCell('項目', { nw: true }), headCell('數值', { nw: true }), headCell('說明', { nw: true })],
+      [
+        { v: '當月不續約占比', bold: true, fill: C.label, align: 'left', nw: true },
+        { v: pct(nr.noRenewRate), bold: true, nw: true },
+        { v: '去年同期 ' + pct(nr.lyNoRenewRate), align: 'left', nw: true }
+      ],
+      [
+        { v: '異常轉業比例', bold: true, fill: C.label, align: 'left', nw: true },
+        { v: pct(nr.abnormalRate), bold: true, fill: C.y, nw: true },
+        { v: num(nr.abnormalTransfer) + ' ÷ 應續約 ' + num(nr.due), align: 'left', nw: true }
+      ],
+      [
+        { v: '催收 30 天以上', bold: true, fill: C.label, align: 'left', nw: true },
+        { v: num(col.over30 && col.over30.cases), nw: true },
+        { v: '', nw: true }
+      ],
+      [
+        { v: '請法務協助', bold: true, fill: C.label, align: 'left', nw: true },
+        { v: num(legal.cases), bold: true, fill: C.r, nw: true },
+        { v: '催收狀態勾選', align: 'left', nw: true }
+      ]
     ];
-    const t = bodyFont({ colW: [3.2, 2.0, 7.0], size: 12, rowH: [0.36, ...Array(5).fill(0.44)], rows }, {});
+    const t = bodyFont({ colW: [3.2, 2.0, 7.0], size: 12, rowH: [0.36, ...Array(4).fill(0.44)], rows }, {});
     return contentSlide(`四、《${d.roc}年${pad2(d.month)}月｜不續約／催收摘要》`, [
       tableBlock(t, { y: 1.1 })
     ]);
@@ -688,57 +853,102 @@
 
   function collectChartSlide(d) {
     const s = d.collectSummary || {};
-    const regions = s.regions || [];
-    const chart = barCompareDataUrl({
-      title: '包租催收件數（目前快照；114 同期待歷史檔）',
-      categories: regions.slice(0, 6).map((r) => r.name),
-      seriesA: { name: '114（無資料）', color: '94a3b8', values: regions.slice(0, 6).map(() => null) },
-      seriesB: { name: '115 目前', color: 'dc2626', values: regions.slice(0, 6).map((r) => r.cases) }
-    });
+    /* 各縣市 30 天以上件數（不用業務支援整區一根棒） */
+    let cities = (s.cities || [])
+      .map((c) => ({
+        name: c.name,
+        cases: Number(c.over30 != null ? c.over30 : 0) || 0
+      }))
+      .filter((c) => c.cases > 0)
+      .sort((a, b) => b.cases - a.cases)
+      .slice(0, 8);
+    if (!cities.length) {
+      const map = {};
+      (d.collectCases || []).forEach((c) => {
+        if (Number(c && c.maxDays) < 30) return;
+        const name = c.city || '未填縣市';
+        map[name] = (map[name] || 0) + 1;
+      });
+      cities = Object.keys(map)
+        .map((n) => ({ name: n, cases: map[n] }))
+        .sort((a, b) => b.cases - a.cases)
+        .slice(0, 8);
+    }
     const blocks = [];
-    if (chart) blocks.push({ type: 'image', src: chart, x: 0.5, y: 1.0, w: 12.3, h: 3.1 });
+    if (cities.length) {
+      const chart = barCompareDataUrl({
+        title: '包租催收｜各縣市 30 天以上件數（目前快照）',
+        width: 1180,
+        height: 340,
+        categories: cities.map((c) => c.name),
+        seriesA: { name: '114', color: '94a3b8', values: cities.map(() => null) },
+        seriesB: { name: '115 目前', color: 'dc2626', values: cities.map((c) => c.cases) }
+      });
+      if (chart) {
+        blocks.push({ type: 'image', src: chart, x: 0.35, y: 1.0, w: 12.5, h: 3.55 });
+      }
+    } else {
+      blocks.push({
+        type: 'text',
+        x: 0.5,
+        y: 2.2,
+        w: 12,
+        h: 0.8,
+        text: '目前無 30 天以上催收件數可繪圖',
+        size: BODY,
+        color: C.muted,
+        align: 'center'
+      });
+    }
+    /* KPI：標籤與數字左右同一格（不要上下堆） */
     const kpi = [
       ['14天以下', num(s.under14 && s.under14.cases)],
       ['14～29天', num(s.day14to29 && s.day14to29.cases)],
       ['30天以上', num(s.over30 && s.over30.cases)],
       ['請法務協助', num(s.legalAssist && s.legalAssist.cases)]
     ];
-    kpi.forEach((k, i) => {
-      const x = 0.5 + i * 3.2;
-      blocks.push({ type: 'rect', x, y: 4.3, w: 3.0, h: 1.8, fill: C.label, line: 'CBD5E1', radius: 0.08 });
-      blocks.push({
-        type: 'text',
-        x,
-        y: 4.45,
-        w: 3.0,
-        h: 1.5,
-        text: `${k[0]}\n${k[1]}`,
-        size: 18,
+    const kpiRows = [
+      kpi.map((k) => ({
+        v: `${k[0]}　${k[1]}`,
         bold: true,
-        color: C.ink,
+        size: 14,
+        fill: C.label,
+        nw: true,
         align: 'center'
-      });
-    });
+      }))
+    ];
+    const kpiT = bodyFont({ colW: [3.1, 3.1, 3.1, 3.1], size: 14, rowH: 0.55, rows: kpiRows }, {});
+    blocks.push(tableBlock(kpiT, { y: 4.75, w: 12.5 }));
     return contentSlide(`六、《包租催收概況》`, blocks);
   }
 
+  function shortRemark(text, maxLen) {
+    const s = String(text || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!s) return '—';
+    const n = maxLen || 42;
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+
   function collectDetailPages(d) {
-    const cases = d.collectCases || [];
-    const head = ['縣市', '代管', '房客', '天數', '欠款', '催收狀態', '地址'];
-    const colW = [0.9, 0.9, 1.1, 0.7, 1.2, 1.4, 5.0];
-    const ROW_H = 0.32;
+    /* 只要 30 天以上；備註截短，避免列高爆開 */
+    const cases = (d.collectCases || []).filter((c) => Number(c && c.maxDays) >= 30);
+    const head = ['縣市', '代管', '房客', '天數', '欠款', '催收狀態', '地址', '案件備註'];
+    const colW = [0.85, 0.75, 0.9, 0.7, 1.05, 1.2, 3.2, 3.0];
+    const ROW_H = 0.34;
     const headH = [0.34];
     const per = Math.max(1, Math.floor((6.6 - 1.15 - 0.34) / ROW_H));
     if (!cases.length) {
       return [
-        contentSlide('催收案件明細', [
+        contentSlide('催收案件明細（30天以上）', [
           {
             type: 'text',
             x: 1,
             y: 3,
             w: 11,
             h: 1,
-            text: '目前無催收案件或資料尚未載入',
+            text: '目前無 30 天以上催收案件或資料尚未載入',
             size: 18,
             color: C.muted,
             align: 'center'
@@ -749,24 +959,32 @@
     const pages = [];
     for (let i = 0; i < cases.length; i += per) {
       const chunk = cases.slice(i, i + per);
-      const title = pages.length ? `催收案件明細（續 ${pages.length}）` : '催收案件明細（含請法務協助）';
+      const title = pages.length
+        ? `催收案件明細｜30天以上（續 ${pages.length}）`
+        : '催收案件明細｜30天以上';
       const rows = [
-        head.map((t) => headCell(t, { size: 9 })),
+        head.map((t) => headCell(t, { size: 8, nw: true })),
         ...chunk.map((c) => {
           const legal = String(c.collectStatus || '').trim() === '請法務協助';
+          const remark = shortRemark(c.note || c.remark || c.caseNote || '', 40);
           return [
-            { v: dash(c.city) },
-            { v: dash(c.staff) },
-            { v: dash(c.tenant) },
-            { v: num(c.maxDays), bold: true, fill: (c.maxDays || 0) >= 30 ? C.y : C.white },
-            { v: c.amount != null ? Number(c.amount).toLocaleString('zh-TW') : '—' },
-            { v: dash(c.collectStatus), fill: legal ? C.r : C.white, bold: legal },
-            { v: dash(c.address), align: 'left', size: 10 }
+            { v: dash(c.city), nw: true, size: 10 },
+            { v: dash(c.staff), nw: true, size: 10 },
+            { v: dash(c.tenant), nw: true, size: 10 },
+            { v: num(c.maxDays), bold: true, fill: C.y, nw: true, size: 11 },
+            {
+              v: c.amount != null ? Number(c.amount).toLocaleString('zh-TW') : '—',
+              nw: true,
+              size: 10
+            },
+            { v: dash(c.collectStatus), fill: legal ? C.r : C.white, bold: legal, nw: true, size: 9 },
+            { v: dash(c.address), align: 'left', size: 9, nw: true },
+            { v: remark, align: 'left', size: 8, nw: true }
           ];
         })
       ];
       const t = bodyFont(
-        { colW, size: 11, rowH: [...headH, ...chunk.map(() => ROW_H)], rows },
+        { colW, size: 10, rowH: [...headH, ...chunk.map(() => ROW_H)], rows },
         {}
       );
       pages.push(contentSlide(title, [tableBlock(t, { y: 1.05, w: 12.5 })]));
@@ -790,8 +1008,8 @@
 
   return {
     C,
-    TO_BAO_FORMULA,
     calcToBaoRate,
+    kpiToneFill,
     cityArea,
     monthDeck,
     pad2,

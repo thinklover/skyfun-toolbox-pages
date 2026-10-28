@@ -1614,12 +1614,18 @@
     });
   }
 
-  function fetchNoRenewDetail(month) {
+  function fetchNoRenewDetail(month, year) {
     const token =
       (typeof window !== 'undefined' && window.skyfunAuth && window.skyfunAuth.getToken
         ? window.skyfunAuth.getToken()
         : '') || '';
-    const q = new URLSearchParams({ year: '115', month: String(Number(month) || 1) });
+    const roc =
+      Number(year) ||
+      (typeof window !== 'undefined' ? new Date().getFullYear() - 1911 : 115);
+    const q = new URLSearchParams({
+      year: String(roc),
+      month: String(Number(month) || 1)
+    });
     const headers = {};
     if (token) headers['X-Skyfun-Session'] = token;
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
