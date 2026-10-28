@@ -944,44 +944,147 @@
     return !!(code && PERIOD_5.has(code.period));
   }
 
-  /** 公會良率分子：意見去重（四期＋增辦四期＋五期都算） */
-  function opinionsForGuildQuality(opinions) {
-    return dedupeOpinionsByCase(opinions || []);
+  /**
+   * 寄居蟹轉銜案：公會審件良率預設不計入；下列媒合代碼依公會期數例外保留
+   * （115/09 新北 11 件當月起租；115/08 的 B2M10500408）
+   */
+  const GUILD_HERMIT_KEEP = {
+    '115/08': new Set(['B2M10500408']),
+    '115/09': new Set([
+      'B2M10500419',
+      'B2M10500420',
+      'B2M10500428',
+      'B2M10500430',
+      'B2M10500435',
+      'B2M10500437',
+      'B2M30500276',
+      'B2M30500278',
+      'B2M30500282',
+      'B2M30500283',
+      'B2M30500294'
+    ])
+  };
+
+  function hermitKeep(period, code) {
+    const set = GUILD_HERMIT_KEEP[String(period || '')];
+    return !!(set && code && set.has(code));
   }
 
-  function kpiQuality(r04, r09, cases, opinions) {
+  function isHermitCaseNo(no) {
+    return /寄居/.test(String(no || ''));
+  }
+
+  function isHermitLeaseRow(r) {
+    if (!r) return false;
+    if (Number(r.hermit) === 1) return true;
+    if (isHermitCaseNo(r.no)) return true;
+    return /寄居蟹|寄居/.test(String(r.caseType || ''));
+  }
+
+  /** 起租案是否計入該公會期數審件良率（寄居蟹預設排除，保留名單除外） */
+  function leaseInGuildAudit(r, period) {
+    if (!isHermitLeaseRow(r)) return true;
+    return hermitKeep(period, opinionCaseCode(r.no));
+  }
+
+  /** 當月起租案媒合代碼（已排除不計入的寄居蟹）→ 審件意見只認這些 */
+  function leaseCodesForGuildAudit(leaseRows, period) {
+    const codes = new Set();
+    for (const r of leaseRows || []) {
+      if (!leaseInGuildAudit(r, period)) continue;
+      const code = opinionCaseCode(r.no);
+      if (code) codes.add(code);
+    }
+    return codes;
+  }
+
+  /** 由逐筆起租案重算審件分母（同地址包租／轉租只算一件；已排除寄居蟹） */
+  function auditTotalsFromLeaseRows(leaseRows, period) {
+    const regions = ['全區', ...KPI_REGIONS];
+    const audit = Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
+    const addrs = new Set();
+    for (const r of leaseRows || []) {
+      if (!leaseInGuildAudit(r, period)) continue;
+      const city = String(r.city || '').trim();
+      const addr = String(r.address || '')
+        .normalize('NFKC')
+        .replace(/\s+/g, '')
+        .replace(/臺/g, '台');
+      const key = addr ? `${city.replace(/臺/g, '台')}|${addr}` : `#${r.id || opinionCaseCode(r.no)}`;
+      if (addrs.has(key)) continue;
+      addrs.add(key);
+      const region = String(r.region || '').trim() || kpiRegionOfCity(city);
+      audit['全區'].total += 1;
+      if (region && audit[region]) audit[region].total += 1;
+    }
+    return audit;
+  }
+
+  /**
+   * 公會良率分子：意見去重；審件意見還須對到當月起租案（leaseCodes），
+   * 寄居蟹意見僅保留名單內可計。
+   */
+  function opinionsForGuildQuality(opinions, opts) {
+    let list = dedupeOpinionsByCase(opinions || []);
+    const period = opts?.period || '';
+    const leaseCodes = opts?.leaseCodes;
+    list = list.filter((o) => {
+      if (o.kind !== 'case') return true;
+      const code = opinionCaseCode(o.caseNo);
+      if (leaseCodes) {
+        if (!code || !leaseCodes.has(code)) return false;
+      }
+      if (isHermitCaseNo(o.caseNo) && !hermitKeep(period, code)) return false;
+      return true;
+    });
+    return list;
+  }
+
+  function applyAuditErrors(audit, roster, opinions, opts) {
+    const errors = opinionsForGuildQuality(opinions, opts).map((o) => ({
+      ...o,
+      area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '')
+    }));
+    for (const o of errors) {
+      const bucket = o.kind === 'roster' ? roster : audit;
+      bucket['全區'].err += 1;
+      if (o.area && bucket[o.area]) bucket[o.area].err += 1;
+    }
+    return errors;
+  }
+
+  function kpiQuality(r04, r09, cases, opinions, opts) {
     const regions = ['全區', ...KPI_REGIONS];
     const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
     const roster = blank();
-    const audit = blank();
+    let audit = blank();
     for (const d of [r04, r09]) {
       for (const [region, , , n] of d?.rows || []) {
         if (roster[region]) roster[region].total += n;
         roster['全區'].total += n;
       }
     }
-    for (const [region, , n] of cases?.rows || []) {
-      audit['全區'].total += n;
-      if (audit[region]) audit[region].total += n;
+    if (opts?.leaseRows?.length) {
+      audit = auditTotalsFromLeaseRows(opts.leaseRows, opts.period);
+    } else {
+      for (const [region, , n] of cases?.rows || []) {
+        audit['全區'].total += n;
+        if (audit[region]) audit[region].total += n;
+      }
     }
-    const errors = opinionsForGuildQuality(opinions).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
-    for (const o of errors) {
-      const bucket = o.kind === 'roster' ? roster : audit;
-      bucket['全區'].err += 1;
-      if (o.area && bucket[o.area]) bucket[o.area].err += 1;
-    }
+    const errors = applyAuditErrors(audit, roster, opinions, opts);
     return { roster, audit, errors };
   }
 
   /**
    * 清冊快照＋即時公會意見 → 與 kpiQuality 相同形狀。
-   * 審件總數優先用快照 cases；沒有則傳入 liveCases（舊 kpi part）。
+   * 審件總數優先用起租逐筆（opts.leaseRows）；否則快照 cases／liveCases。
    */
-  function kpiQualityFromSnapshot(snap, opinions, liveCases) {
+  function kpiQualityFromSnapshot(snap, opinions, liveCases, opts) {
     const regions = ['全區', ...KPI_REGIONS];
     const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
     const roster = blank();
-    const audit = blank();
+    let audit = blank();
     const regTotals = snap?.totals?.region || {};
     let allRoster = Number(snap?.totals?.all?.total) || 0;
     if (!allRoster && Array.isArray(snap?.rows)) allRoster = snap.rows.length;
@@ -990,18 +1093,17 @@
       const n = Number(regTotals[g]?.total) || 0;
       if (roster[g]) roster[g].total = n;
     }
-    const cases = snap?.cases?.rows ? snap.cases : liveCases;
-    for (const [region, , n] of cases?.rows || []) {
-      audit['全區'].total += n;
-      if (audit[region]) audit[region].total += n;
+    if (opts?.leaseRows?.length) {
+      audit = auditTotalsFromLeaseRows(opts.leaseRows, opts.period);
+    } else {
+      const cases = snap?.cases?.rows ? snap.cases : liveCases;
+      for (const [region, , n] of cases?.rows || []) {
+        audit['全區'].total += n;
+        if (audit[region]) audit[region].total += n;
+      }
+      if (!audit['全區'].total && snap?.cases?.total) audit['全區'].total = Number(snap.cases.total) || 0;
     }
-    if (!audit['全區'].total && snap?.cases?.total) audit['全區'].total = Number(snap.cases.total) || 0;
-    const errors = opinionsForGuildQuality(opinions).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
-    for (const o of errors) {
-      const bucket = o.kind === 'roster' ? roster : audit;
-      bucket['全區'].err += 1;
-      if (o.area && bucket[o.area]) bucket[o.area].err += 1;
-    }
+    const errors = applyAuditErrors(audit, roster, opinions, opts);
     return {
       roster,
       audit,
@@ -1907,6 +2009,13 @@
     kpiQualityFromSnapshot,
     isPeriod5CaseNo,
     opinionsForGuildQuality,
+    GUILD_HERMIT_KEEP,
+    hermitKeep,
+    isHermitCaseNo,
+    isHermitLeaseRow,
+    leaseInGuildAudit,
+    leaseCodesForGuildAudit,
+    auditTotalsFromLeaseRows,
     contractPeriod,
     OPINION_CATEGORIES,
     kpiRegionOfStaff,

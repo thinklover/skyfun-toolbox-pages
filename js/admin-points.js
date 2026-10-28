@@ -2618,24 +2618,38 @@
     }
   }
 
+  /** 公會期數對應西元起租月，抓起租案（審件良率只認當約起租＋寄居蟹保留名單） */
+  async function fetchGuildLeaseRows(period, refresh) {
+    const m = guildPeriodMonth(period);
+    const lease = await fetchWorker('/admin-points/lease-starts', '起租案件', m, refresh);
+    return Core.rowsFromPayload(lease);
+  }
+
+  function guildAuditOpts(period, leaseRows) {
+    const rows = leaseRows || [];
+    return { period, leaseRows: rows, leaseCodes: Core.leaseCodesForGuildAudit(rows, period) };
+  }
+
   async function loadQualityViaSnapshot(g) {
-    const [snap, op] = await Promise.all([
+    const [snap, op, leaseRows] = await Promise.all([
       fetchRosterSnapshot(g, { lite: true }),
-      window.skyfunAuth.rpc('admin_points_kpi_opinions_view', { p_token: token(), p_guild_period: g.guild })
+      window.skyfunAuth.rpc('admin_points_kpi_opinions_view', { p_token: token(), p_guild_period: g.guild }),
+      fetchGuildLeaseRows(g.guild).catch(() => [])
     ]);
     if (!op?.ok) throw new Error(op?.error || '公會意見讀取失敗');
+    const auditOpts = guildAuditOpts(g.guild, leaseRows);
     /* 不走即時清冊：有合計就能算良率；複審人可背景補 */
     if (snap?.missing || (snap?.building && !snap?.totals)) {
       const status = snap.building
         ? `清冊月結建立中（${snap.phase || ''} ${snap.progress?.done || 0}/${snap.progress?.total || '?'}）`
         : '清冊月結尚未建立（背景每 5 分鐘推進）';
-      const q = Core.kpiQualityFromSnapshot({ ok: true, totals: { all: { total: 0 }, region: {} }, cases: null }, op.opinions, null);
+      const q = Core.kpiQualityFromSnapshot({ ok: true, totals: { all: { total: 0 }, region: {} }, cases: null }, op.opinions, null, auditOpts);
       q.snapStatus = status;
       q.snapPending = true;
       return q;
     }
     if (!snap?.totals && !snap?.rows) throw new Error('清冊快照格式錯誤');
-    const q = Core.kpiQualityFromSnapshot(snap, op.opinions, null);
+    const q = Core.kpiQualityFromSnapshot(snap, op.opinions, null, auditOpts);
     if (snap.enriching || (snap.partial && snap.unresolved?.noRev)) {
       const n = snap.unresolved?.noRev || 0;
       const p = snap.progress ? `${snap.progress.done || 0}/${snap.progress.total || '?'}` : '';
@@ -2667,10 +2681,11 @@
             fetchKpiPart(g, 'roster04'),
             fetchKpiPart(g, 'roster09'),
             fetchKpiPart(g, 'cases'),
-            window.skyfunAuth.rpc('admin_points_kpi_opinions_view', { p_token: token(), p_guild_period: g.guild })
-          ]).then(([r04, r09, cases, op]) => {
+            window.skyfunAuth.rpc('admin_points_kpi_opinions_view', { p_token: token(), p_guild_period: g.guild }),
+            fetchGuildLeaseRows(g.guild).catch(() => [])
+          ]).then(([r04, r09, cases, op, leaseRows]) => {
             if (!op?.ok) throw new Error(op?.error || '公會意見讀取失敗');
-            return Core.kpiQuality(r04, r09, cases, op.opinions);
+            return Core.kpiQuality(r04, r09, cases, op.opinions, guildAuditOpts(g.guild, leaseRows));
           })
     ).catch((e) => ({ error: String(e.message || e) }));
     const tcPromise = fetchWorker('/admin-points/tenant-cities', '房客地區', range).catch((e) => ({ rows: [], pending: 0, error: e.message }));
@@ -2856,10 +2871,11 @@
           fetchKpiPart(g, 'roster04'),
           fetchKpiPart(g, 'roster09'),
           fetchKpiPart(g, 'cases'),
-          window.skyfunAuth.rpc('admin_points_kpi_opinions_view', { p_token: token(), p_guild_period: period })
-        ]).then(([r04, r09, cases, op]) => {
+          window.skyfunAuth.rpc('admin_points_kpi_opinions_view', { p_token: token(), p_guild_period: period }),
+          fetchGuildLeaseRows(period).catch(() => [])
+        ]).then(([r04, r09, cases, op, leaseRows]) => {
           if (!op?.ok) throw new Error(op?.error || '公會意見讀取失敗');
-          return Core.kpiQuality(r04, r09, cases, op.opinions);
+          return Core.kpiQuality(r04, r09, cases, op.opinions, guildAuditOpts(period, leaseRows));
         })
     )
       .catch((e) => ({ error: String(e.message || e) }))
@@ -3117,6 +3133,7 @@
     Promise.all([fetchWorker('/admin-points/lease-starts', '起租案件', m), ...windows.map((w) => fetchWorker('/admin-points/audit-log', '審核時間紀錄', w))])
       .then(([lease, ...logs]) => {
         entry.cases = Core.rowsFromPayload(lease);
+        entry.period = period;
         entry.rev = revIndex(logs.flatMap((l) => Core.rowsFromPayload(l)));
         entry.from = windows[REV_LOOKBACK.length - 1].start;
         entry.to = windows[windows.length - 1].end;
@@ -3272,11 +3289,13 @@
   /**
    * 各營業處審件件數與退件：案件（同地址的包租／轉租只算一件）依「代管營業處」歸處
    * （公司等非○○處 → 各地區租管部）；公會案件意見依媒合編號找回案件。
+   * 只算當月起租案；寄居蟹預設排除（保留名單除外）；對不到起租的意見不列、不算。
    * 複審人仍顯示在明細，但不再用來分營業處。
    */
-  function guildOfficeRows(entry, regions, errors, manager) {
+  function guildOfficeRows(entry, regions, errors, manager, period) {
     const want = new Set(regions);
     const everywhere = want.has('全區');
+    const guild = period || entry.period || '';
     const revOf = (c) => revOfCase(entry, c);
     const buckets = new Map();
     const bucket = (office) => {
@@ -3286,6 +3305,7 @@
     const byNo = new Map();
     for (const list of caseGroups(entry.cases || [])) {
       const pick = list.find(revOf) || list[0];
+      if (!Core.leaseInGuildAudit(pick, guild)) continue;
       const r = revOf(pick);
       const office = escrowOfficeLabel(pick) || OFF_NO_ESCROW;
       const other = r
@@ -3304,17 +3324,13 @@
       b.total += 1;
       b.cases.push(item);
     }
-    for (const o of Core.opinionsForGuildQuality(errors || []).filter((x) => x.kind === 'case')) {
+    const leaseCodes = new Set(byNo.keys());
+    for (const o of Core.opinionsForGuildQuality(errors || [], { period: guild, leaseCodes }).filter((x) => x.kind === 'case')) {
       if (!everywhere && !want.has(o.area)) continue;
       const item = byNo.get(caseNoKey(o.caseNo));
-      if (item?.inScope) {
-        item.errs.push(o.category || '未分類');
-        buckets.get(item.office).err += 1;
-      } else if (!manager) {
-        const b = bucket(OFF_NO_CASE);
-        b.err += 1;
-        b.cases.push({ no: o.caseNo || '', others: [], city: o.region || o.area || '', region: o.area || '', auditor: '', revAt: '', office: OFF_NO_CASE, errs: [o.category || '未分類'] });
-      }
+      if (!item?.inScope) continue;
+      item.errs.push(o.category || '未分類');
+      buckets.get(item.office).err += 1;
     }
     const special = [OFF_NO_ESCROW, OFF_NO_REV, OFF_NO_CASE];
     const rank = (o) => (special.includes(o) ? 2e6 + special.indexOf(o) : leaseOfficeRank(o));
@@ -3335,7 +3351,7 @@
       return `<div class="apt-goff">${head}<p class="apt-bad">讀取失敗：${esc(entry.error)} <button type="button" class="apt-btn-lite" data-guild-off-retry="${esc(sel)}">重試</button></p></div>`;
     }
     const errors = state.guildSys.get(sel)?.data?.errors || [];
-    const rows = guildOfficeRows(entry, regions, errors, manager);
+    const rows = guildOfficeRows(entry, regions, errors, manager, sel);
     const open = state.guildOffOpen;
     const tone = (rate) => (rate == null ? 'na' : rate >= 0.9 ? 'g' : rate >= 0.8 ? 'y' : 'r');
     const caseTable = (b) => `<tr class="apt-goff-cases"><td colspan="5">
@@ -3382,7 +3398,7 @@
             <tr class="apt-sum-row"><th>合計</th><td></td><td class="num">${total.total}</td><td class="num">${total.err}</td><td class="num">${total.total ? `${(Core.kpiErrRate(total) * 100).toFixed(1)}%` : NIL}</td></tr>
           </tbody>
         </table></div>
-        <p class="apt-sub-note">案件＝公會期數 ${esc(sel)}（起租日在該月）的已生效合約（四期＋增辦四期＋五期）；包租案件的包租、轉租兩張合約同地址只算一件。<b>營業處＝媒合管理「代管營業處」</b>（與應繳件數同一口徑）；代管是公司／租賃管理部等非「○○處」時，依物件縣市顯示「台中租管部」等地區租管部；沒填代管營業處的列在「${OFF_NO_ESCROW}」。明細的複審人僅供對照，取審核時間紀錄「複審中 → 複審通過」最後一次（查 ${esc(entry.from)}～${esc(entry.to)}），對不到再補合約明細。退件＝公會案件意見，依媒合編號找回案件。合計會和上方系統計算的件數相同；上方若採管報匯入的月報，數字可能略有差異。</p>
+        <p class="apt-sub-note">案件＝公會期數 ${esc(sel)}（起租日在該月）的已生效合約（四期＋增辦四期＋五期）；包租案件的包租、轉租兩張合約同地址只算一件。<b>營業處＝媒合管理「代管營業處」</b>（與應繳件數同一口徑）；代管是公司／租賃管理部等非「○○處」時，依物件縣市顯示「台中租管部」等地區租管部；沒填代管營業處的列在「${OFF_NO_ESCROW}」。明細的複審人僅供對照，取審核時間紀錄「複審中 → 複審通過」最後一次（查 ${esc(entry.from)}～${esc(entry.to)}），對不到再補合約明細。退件＝公會案件意見，只算媒合編號對得到本期起租案的；對不到的不列、不算良率。寄居蟹轉銜案預設不計入審件良率（公會期數保留名單除外）。合計會和上方系統計算的件數相同；上方若採管報匯入的月報，數字可能略有差異。</p>
       </div>`;
   }
 
