@@ -4647,7 +4647,7 @@
   const SPOT_TERM = '解約審核';
   const EXPENSE_TYPE = { 0: '修繕', 1: '保險費', 3: '房東公證費', 4: '房客公證費', 5: '業者公證費' };
 
-  /** 星鴻審核單件網址（抽查用）：物件／房客走審核頁，修繕走補助申請檢視頁 */
+  /** 星鴻審核單件網址（抽查用）：必須用案件 targetId（物件／房客／合約），不能用審核時間紀錄 id */
   function spotCaseUrl(row) {
     if (row?.repair) {
       const id = row.id;
@@ -4663,31 +4663,51 @@
     return '';
   }
 
-  /** 已存名單也可能是舊網址；依 key／節點重算，讓「複製網址」一定指到審核頁 */
+  function spotUrlByTarget(node, type, targetId) {
+    const tid = String(targetId == null ? '' : targetId).trim();
+    if (!tid) return '';
+    const q = encodeURIComponent(tid);
+    const n = String(node || '');
+    const t = String(type || '');
+    if (n === SPOT_REPAIR || t === 'expense' || t === 'repair') {
+      return `https://skyfunsystem.com/Expenses/ExpensesApplication?id=${q}&mode=view`;
+    }
+    if (n === '物審' || t === 'object') return `https://skyfunsystem.com/Audit/Audit_Object?id=${q}`;
+    if (n === '房客' || t === 'tenant') return `https://skyfunsystem.com/Audit/Audit_Tenant?id=${q}`;
+    if (n === '預審' || n === SPOT_TERM || n.includes('解約') || t === 'contract') {
+      return `https://skyfunsystem.com/Audit/Audit_Contrat?id=${q}`;
+    }
+    return '';
+  }
+
+  /**
+   * 已存名單也可能是舊網址。
+   * 注意：key 的 a:xxx 是「審核時間紀錄 id」，不能拿去開 Audit_*；
+   * 正確案件編號在 item.targetId，或抽查當下存好的 item.url。
+   */
   function spotItemUrl(item) {
     if (!item) return '';
-    const key = String(item.key || '');
-    const m = key.match(/^([eat]):(.+)$/);
-    if (m) {
-      const kind = m[1];
-      const id = encodeURIComponent(m[2]);
-      if (kind === 'e') return `https://skyfunsystem.com/Expenses/ExpensesApplication?id=${id}&mode=view`;
-      if (kind === 't') return `https://skyfunsystem.com/Audit/Audit_Contrat?id=${id}`;
-      const node = String(item.node || '');
-      if (node === '物審') return `https://skyfunsystem.com/Audit/Audit_Object?id=${id}`;
-      if (node === '房客') return `https://skyfunsystem.com/Audit/Audit_Tenant?id=${id}`;
-      if (node === '預審' || node === SPOT_TERM || node.includes('解約')) {
-        return `https://skyfunsystem.com/Audit/Audit_Contrat?id=${id}`;
+    const rebuilt = spotUrlByTarget(item.node, item.type, item.targetId);
+    if (rebuilt) return rebuilt;
+
+    let u = String(item.url || '').trim();
+    if (u) {
+      u = u.replace('/Object/ObjectData?id=', '/Audit/Audit_Object?id=');
+      u = u.replace('/Tenant/TenantData?id=', '/Audit/Audit_Tenant?id=');
+      if (/\/Audit\/Audit_(Object|Tenant|Contrat)\?id=/.test(u) || /\/Expenses\/ExpensesApplication\?id=/.test(u)) {
+        return u;
       }
     }
-    let u = String(item.url || '');
-    if (!u) return '';
-    u = u.replace('/Object/ObjectData?id=', '/Audit/Audit_Object?id=');
-    u = u.replace('/Tenant/TenantData?id=', '/Audit/Audit_Tenant?id=');
-    if (/\/Audit\/Audit_Expenses_Index\/?$/.test(u) && m) {
-      return `https://skyfunsystem.com/Expenses/ExpensesApplication?id=${encodeURIComponent(m[2])}&mode=view`;
-    }
-    return u;
+
+    const key = String(item.key || '');
+    const m = key.match(/^([eat]):(.+)$/);
+    if (!m) return u || '';
+    const kind = m[1];
+    const id = m[2];
+    /* e／t 的 key 本身就是補助／解約案件 id；a 是審核紀錄 id，不能組審核頁 */
+    if (kind === 'e') return `https://skyfunsystem.com/Expenses/ExpensesApplication?id=${encodeURIComponent(id)}&mode=view`;
+    if (kind === 't') return `https://skyfunsystem.com/Audit/Audit_Contrat?id=${encodeURIComponent(id)}`;
+    return u || '';
   }
 
   async function copyText(text) {
@@ -4826,8 +4846,12 @@
       }
       const row = pool[randIndex(pool.length)];
       const kind = row.repair ? EXPENSE_TYPE[row.type] : row.term ? `${String(row.contractType || '').trim()}解約` : '';
+      const targetId = row.repair || row.term ? row.id : row.targetId;
+      const caseType = row.repair ? 'expense' : row.term ? 'contract' : String(row.type || '');
       items.push({
         key: `${row.repair ? 'e' : row.term ? 't' : 'a'}:${row.id}`,
+        targetId: targetId == null ? '' : String(targetId),
+        type: caseType,
         date: row.date,
         name: person.name,
         node: row.repair ? SPOT_REPAIR : row.term ? SPOT_TERM : SPOT_NODE.get(Core.durationNode(row)),
