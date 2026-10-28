@@ -4581,11 +4581,11 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261026-xlabel">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261029-other-hide">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261026-gap">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
-<link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-fresh1">
+<link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
     <script>
@@ -10711,8 +10711,13 @@
             </button>
             <div class="rmp-shell">
                 <header class="rmp-head">
-                    <h2 class="rmp-title">租管師績效中心</h2>
-                    <p class="rmp-sub">總覽｜各地區 KPI｜每次開啟都重抓系統最新數字</p>
+                    <div class="rmp-head-row">
+                        <div>
+                            <h2 class="rmp-title">租管師績效中心</h2>
+                            <p class="rmp-sub">總覽｜各地區 KPI｜可按「更新數據」重抓系統最新數字</p>
+                        </div>
+                        <button type="button" class="rmp-refresh-btn" id="rmp-btn-refresh" title="重新抓取續約／KPI／催收等最新數字">↻ 更新數據</button>
+                    </div>
                     <div id="rmp-period" class="rmp-period">資料期間：無資料</div>
                     <p class="rmp-sub" style="margin-top:0.35rem">
                         <a class="apt-admin-link" href="./admin/rentmgr-report-dashboard.html" target="_blank" rel="noopener">後台：租管部月報一鍵產出 ↗</a>
@@ -12031,7 +12036,7 @@
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
-        <script src="./js/admin-points-core.js?v=20261028-hermit"></script>
+        <script src="./js/admin-points-core.js?v=20261029-other-cat"></script>
         <script src="./js/admin-points-charts.js?v=20261026-xlabel"></script>
         <script src="./js/admin-training-content.js?v=20261027-lvr"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
@@ -12043,7 +12048,7 @@
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261028-hermit"></script>
+        <script src="./js/admin-points.js?v=20261029-other-cat"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>

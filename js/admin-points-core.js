@@ -914,6 +914,24 @@
     ]
   };
 
+  /** 選「其他」時可填說明，存成「其他：說明」；圖表仍歸「其他」 */
+  const isOpinionOtherCat = (c) => {
+    const s = String(c || '');
+    return s === '其他' || s.startsWith('其他：');
+  };
+  const opinionOtherNote = (c) => {
+    const s = String(c || '');
+    return s.startsWith('其他：') ? s.slice(3).trim() : '';
+  };
+  const formatOpinionOtherCat = (note) => {
+    const n = String(note || '').trim().slice(0, 60);
+    return n ? `其他：${n}` : '其他';
+  };
+  const opinionCatBucket = (c) => {
+    const s = String(c || '') || '未分類';
+    return isOpinionOtherCat(s) ? '其他' : s;
+  };
+
   /** 清冊／審件作業良率：（總件數 − 錯誤件數）÷ 總件數 */
   const kpiErrRate = (x) => (x && x.total ? Math.max(0, (x.total - x.err) / x.total) : null);
 
@@ -2018,6 +2036,10 @@
     auditTotalsFromLeaseRows,
     contractPeriod,
     OPINION_CATEGORIES,
+    isOpinionOtherCat,
+    opinionOtherNote,
+    formatOpinionOtherCat,
+    opinionCatBucket,
     kpiRegionOfStaff,
     kpiRegionsOfAreas,
     kpiStageReport,

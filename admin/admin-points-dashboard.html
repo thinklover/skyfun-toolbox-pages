@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261027-obj-re"></script>
+  <script src="../js/admin-points-core.js?v=20261029-other-cat"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -50,7 +50,9 @@
     .topbar .back:hover { color: #4338ca; }
     .topbar-tools { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
     .month-pick { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: #475569; font-weight: 800; }
-    .layout { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 1rem; align-items: start; }
+    .layout { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+    body.is-op-wide { max-width: none; padding-left: 0.6rem; padding-right: 0.6rem; }
+    body.is-op-wide .layout { grid-template-columns: 8.5rem minmax(0, 1fr); }
     .side { position: sticky; top: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.5rem; }
     .side h6 { margin: 0.7rem 0.55rem 0.25rem; font-size: 0.68rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.04em; }
     .side h6:first-child { margin-top: 0.2rem; }
@@ -174,21 +176,29 @@
     .op-pt:hover { border-color: #f87171; background: #fef2f2; color: #b91c1c; }
     .op-pt.is-no { border-color: #fca5a5; background: #fee2e2; color: #b91c1c; }
     .op-pt.is-no:hover { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
-    .op-pt-why { display: block; margin-top: 0.2rem; max-width: 10rem; font-size: 0.7rem; color: #b91c1c; white-space: normal; }
-    .op-edit { width: 100%; min-width: 11rem; min-height: 3.2rem; padding: 0.35rem 0.45rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 0.82rem; line-height: 1.4; resize: vertical; background: #fff; }
-    .op-edit:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
-    .op-cat { max-width: 14rem; }
-    .op-guild, .op-odate, .op-caseno, .op-roster, .op-region { padding: 0.3rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 0.82rem; background: #fff; }
-    .op-guild { min-width: 5.5rem; }
-    .op-odate { min-width: 8.5rem; }
-    .op-caseno { width: 100%; min-width: 10rem; max-width: 14rem; }
-    .op-caseno-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; min-width: 12rem; }
-    .op-caseno-save { padding: 0.25rem 0.55rem; font-size: 0.75rem; font-weight: 800; border-radius: 8px; border: 1px solid #38bdf8; background: #e0f2fe; color: #0369a1; cursor: pointer; white-space: nowrap; }
+    .op-pt-why { display: block; margin-top: 0.15rem; max-width: 8rem; font-size: 0.68rem; color: #b91c1c; white-space: normal; }
+    /* 公會意見表：壓密列高、加寬可用寬度，一次多看幾筆 */
+    #tab-opinion .fold-body { padding: 0 0.5rem 0.5rem; }
+    #tab-opinion table { font-size: 0.78rem; }
+    #tab-opinion th, #tab-opinion td { padding: 0.22rem 0.28rem; vertical-align: top; }
+    #tab-opinion td { white-space: normal; }
+    .op-edit { width: 100%; min-width: 8rem; min-height: 3.6rem; height: auto; max-height: none; overflow: hidden; padding: 0.28rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; font-size: 0.76rem; line-height: 1.4; resize: vertical; background: #fff; field-sizing: content; }
+    .op-edit:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+    .op-cat { max-width: 9.5rem; font-size: 0.74rem; padding: 0.15rem 0.3rem; }
+    .op-cat-wrap { display: flex; flex-direction: column; gap: 0.25rem; min-width: 8rem; }
+    .op-cat-other { width: 100%; max-width: 9.5rem; font-size: 0.74rem; padding: 0.2rem 0.35rem; border: 1px solid #f59e0b; border-radius: 6px; background: #fffbeb; font-family: inherit; }
+    .op-cat-other[hidden] { display: none !important; }
+    .op-guild, .op-odate, .op-caseno, .op-roster, .op-region { padding: 0.18rem 0.32rem; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; font-size: 0.76rem; background: #fff; }
+    .op-guild { min-width: 4.8rem; }
+    .op-odate { min-width: 7.2rem; }
+    .op-caseno { width: auto; flex: 1 1 8rem; min-width: 8rem; max-width: 12rem; }
+    .op-caseno-wrap { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.25rem; min-width: 0; }
+    .op-caseno-save { padding: 0.15rem 0.4rem; font-size: 0.7rem; font-weight: 800; border-radius: 6px; border: 1px solid #38bdf8; background: #e0f2fe; color: #0369a1; cursor: pointer; white-space: nowrap; flex: 0 0 auto; }
     .op-caseno-save:hover { background: #bae6fd; }
     .op-caseno-save:disabled { opacity: 0.55; cursor: wait; }
-    .op-region { max-width: 6.5rem; }
-    .op-roster { min-width: 5.5rem; margin-bottom: 0.25rem; }
-    .op-ref-edit { display: flex; flex-direction: column; gap: 0.2rem; align-items: stretch; }
+    .op-region { max-width: 5.2rem; }
+    .op-roster { min-width: 4.8rem; margin-bottom: 0; }
+    .op-ref-edit { display: flex; flex-direction: row; flex-wrap: wrap; gap: 0.2rem 0.35rem; align-items: center; }
     .op-guild:focus, .op-odate:focus, .op-caseno:focus, .op-roster:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
     tr.op-nopts > td { background: #fef2f2; color: #94a3b8; }
     .op-sub { font-size: 0.72rem; font-weight: 700; color: #64748b; }
@@ -288,7 +298,7 @@
     }
   </style>
 </head>
-<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+<body class="p-3 md:p-4 max-w-[100rem] mx-auto space-y-3">
   <header class="topbar">
     <h1>行政績效中心後台</h1>
     <a class="back" href="../index.html">← 回工具箱</a>
@@ -560,9 +570,9 @@
     </div>
 
     <div id="tab-opinion" class="space-y-4 hidden">
-      <div class="page-head"><h2>公會意見</h2><p>行政在工具箱填的案件意見、清冊意見，全部期間都列在這裡，可以依公會期數、縣市、行政、組別分類</p></div>
+      <div class="page-head"><h2>公會意見</h2><p>行政在工具箱填的案件意見、清冊意見，全部期間都列在這裡，可以依公會期數、缺失類別、縣市、行政、組別分類與篩選</p></div>
       <details class="help"><summary>說明</summary>
-        <p>不受上方業績月限制，列出全部意見（最近 5000 筆）。先選案件／清冊，再選分類方式；篩選條件可以疊加。每筆 1 點，填錯可以按「刪除」，那位行政會少 1 點。「人工計點」頁最下面仍只列本業績月的意見。<b>公會期數、縣市、媒合編號、清冊期數、意見時間、缺失類別、公會意見內容、行政檢討對策</b>可直接在表上修改；媒合編號改完請按旁邊「儲存」（或 Enter），其餘欄位選完／離開即存，右下角會顯示「已儲存修改」。請用測試版網址操作（正式版尚未開放改媒合編號）。督導邱奕棋、簡為倢、黃怡婷亦可在工具箱用帳號修改。</p>
+        <p>不受上方業績月限制，列出全部意見（最近 5000 筆）。先選案件／清冊，再選分類方式；篩選條件（含<strong>缺失類別</strong>）可以疊加。每筆 1 點，填錯可以按「刪除」，那位行政會少 1 點。「人工計點」頁最下面仍只列本業績月的意見。<b>公會期數、縣市、媒合編號、清冊期數、意見時間、缺失類別、公會意見內容、行政檢討對策</b>可直接在表上修改；媒合編號改完請按旁邊「儲存」（或 Enter），其餘欄位選完／離開即存，右下角會顯示「已儲存修改」。請用測試版網址操作（正式版尚未開放改媒合編號）。督導邱奕棋、簡為倢、黃怡婷亦可在工具箱用帳號修改。</p>
       </details>
       <div class="toolbar">
         <div class="flex gap-2 pb-1" id="op-kinds">
@@ -580,6 +590,7 @@
           </select>
         </div>
         <div class="field"><label>公會期數</label><select id="op-f-guild"></select></div>
+        <div class="field"><label>缺失類別</label><select id="op-f-category"></select></div>
         <div class="field"><label>縣市</label><select id="op-f-region"></select></div>
         <div class="field"><label>行政</label><select id="op-f-name"></select></div>
         <div class="field"><label>點數</label><select id="op-f-pts"><option value="">全部</option><option value="yes">給點</option><option value="no">不給點</option></select></div>
@@ -4164,8 +4175,9 @@
       };
       const OP_CATS_ALL = [...new Set([...Core.OPINION_CATEGORIES.case, ...Core.OPINION_CATEGORIES.roster])];
       const opCatRank = (c) => {
+        if (Core.isOpinionOtherCat?.(c) || c === '其他') return 98;
         const i = OP_CATS_ALL.indexOf(c);
-        return c === '其他' ? 98 : i < 0 ? 99 : i;
+        return i < 0 ? 99 : i;
       };
       const opGuildOptions = () => {
         const now = new Date();
@@ -4184,14 +4196,30 @@
       };
       const opDateInput = (o) =>
         `<input type="date" class="op-odate" data-op-odate="${o.id}" value="${esc(o.opinionDate || '')}" aria-label="意見時間">`;
-      const opCatSelect = (o) => `<select class="op-cat" data-op-cat="${o.id}" aria-label="缺失類別">
-          <option value=""${o.category ? '' : ' selected'}>（未分類）</option>
-          ${(Core.OPINION_CATEGORIES[o.kind] || []).map((c) => `<option${c === o.category ? ' selected' : ''}>${esc(c)}</option>`).join('')}
-        </select>`;
+      const opCatSelect = (o) => {
+        const otherOn = Core.isOpinionOtherCat?.(o.category);
+        const selVal = otherOn ? '其他' : (o.category || '');
+        const note = Core.opinionOtherNote?.(o.category) || '';
+        return `<div class="op-cat-wrap">
+          <select class="op-cat" data-op-cat="${o.id}" aria-label="缺失類別">
+            <option value=""${!o.category ? ' selected' : ''}>（未分類）</option>
+            ${(Core.OPINION_CATEGORIES[o.kind] || []).map((c) => `<option${c === selVal ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+          </select>
+          <input type="text" class="op-cat-other" data-op-cat-other="${o.id}" value="${esc(note)}" maxlength="60" placeholder="請填實際類別" aria-label="其他類別說明"${otherOn ? '' : ' hidden'}>
+        </div>`;
+      };
       const opContentArea = (o) =>
-        `<textarea class="op-edit" data-op-content="${o.id}" rows="2" aria-label="公會意見內容">${esc(o.content || '')}</textarea>`;
+        `<textarea class="op-edit" data-op-content="${o.id}" rows="3" aria-label="公會意見內容">${esc(o.content || '')}</textarea>`;
       const opMeasureArea = (o) =>
-        `<textarea class="op-edit" data-op-measure="${o.id}" rows="2" aria-label="行政檢討對策">${esc(o.measure || '')}</textarea>`;
+        `<textarea class="op-edit" data-op-measure="${o.id}" rows="3" aria-label="行政檢討對策">${esc(o.measure || '')}</textarea>`;
+      function opAutosize(el) {
+        if (!el || el.tagName !== 'TEXTAREA') return;
+        el.style.height = 'auto';
+        el.style.height = Math.max(el.scrollHeight, 48) + 'px';
+      }
+      function opAutosizeAll(root) {
+        (root || document).querySelectorAll('#op-groups textarea.op-edit').forEach(opAutosize);
+      }
       function opLeader(name) {
         const s = (data.staff || []).find((x) => x.name === name);
         return s && s.leader ? `${s.leader} 組` : '未對應組長';
@@ -4248,21 +4276,26 @@
         };
         const uniq = (f) => [...new Set(op.all.map(f).filter(Boolean))];
         fill('op-f-guild', '期數', uniq((o) => o.guildPeriod).sort((a, b) => b.localeCompare(a)));
+        const cats = uniq((o) => o.category || '未分類').sort((a, b) => opCatRank(a) - opCatRank(b) || a.localeCompare(b, 'zh-Hant'));
+        fill('op-f-category', '缺失類別', cats);
         fill('op-f-region', '縣市', uniq((o) => o.region).sort((a, b) => opRegionRank(a) - opRegionRank(b)));
         fill('op-f-name', '行政', uniq((o) => o.name).sort((a, b) => a.localeCompare(b, 'zh-Hant')));
       }
 
       function opFiltered(ignoreKind) {
         const g = $('op-f-guild').value;
+        const cat = $('op-f-category').value;
         const r = $('op-f-region').value;
         const n = $('op-f-name').value;
         const pt = $('op-f-pts').value;
         const q = $('op-f-q').value.trim().toLowerCase();
         return op.all.filter((o) =>
           (ignoreKind || op.kind === 'all' || o.kind === op.kind) &&
-          (!g || o.guildPeriod === g) && (!r || o.region === r) && (!n || o.name === n) &&
+          (!g || o.guildPeriod === g) &&
+          (!cat || (o.category || '未分類') === cat) &&
+          (!r || o.region === r) && (!n || o.name === n) &&
           (!pt || (pt === 'no') === !!o.noPoints) &&
-          (!q || [opRef(o), o.content, o.measure, o.name].some((v) => String(v || '').toLowerCase().includes(q))));
+          (!q || [opRef(o), o.content, o.measure, o.name, o.category].some((v) => String(v || '').toLowerCase().includes(q))));
       }
 
       function renderOpinionTab() {
@@ -4303,10 +4336,10 @@
           const body = list.map((o) => `<tr${o.noPoints ? ' class="op-nopts"' : ''}>
               ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
               <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${opGuildSelect(o)}</td><td>${opRegionEdit(o)}</td>
-              <td style="min-width:12rem">${opRefEdit(o)}</td><td>${opDateInput(o)}</td>
-              <td>${opCatSelect(o)}</td>
-              <td style="min-width:14rem">${opContentArea(o)}</td>
-              <td style="min-width:12rem;background:#fefce8">${opMeasureArea(o)}</td>
+              <td style="min-width:10rem;max-width:14rem">${opRefEdit(o)}</td><td>${opDateInput(o)}</td>
+              <td style="max-width:10rem">${opCatSelect(o)}</td>
+              <td style="min-width:10rem;max-width:18rem">${opContentArea(o)}</td>
+              <td style="min-width:8rem;max-width:14rem;background:#fefce8">${opMeasureArea(o)}</td>
               <td>${opPtsCell(o)}</td>
               <td><button type="button" class="btn btn-del" data-op-del="${o.id}">刪除</button></td>
             </tr>`).join('');
@@ -4317,6 +4350,7 @@
             <div class="fold-body"><div class="overflow-x-auto"><table><thead>${head}</thead><tbody>${body}</tbody></table></div></div>
           </details>`;
         }).join('');
+        requestAnimationFrame(() => opAutosizeAll($('op-groups')));
       }
 
       $('op-kinds').addEventListener('click', (e) => {
@@ -4325,7 +4359,15 @@
         op.kind = b.dataset.opKind;
         renderOpinionTab();
       });
-      ['op-group', 'op-f-guild', 'op-f-region', 'op-f-name', 'op-f-pts'].forEach((id) => $(id).addEventListener('change', renderOpinionTab));
+      $('op-groups').addEventListener('input', (e) => {
+        if (e.target && e.target.matches('textarea.op-edit')) opAutosize(e.target);
+      });
+      $('op-groups').addEventListener('toggle', (e) => {
+        if (e.target && e.target.tagName === 'DETAILS' && e.target.open) {
+          requestAnimationFrame(() => opAutosizeAll(e.target));
+        }
+      }, true);
+      ['op-group', 'op-f-guild', 'op-f-category', 'op-f-region', 'op-f-name', 'op-f-pts'].forEach((id) => $(id).addEventListener('change', renderOpinionTab));
       $('op-f-q').addEventListener('input', renderOpinionTab);
       $('op-reload').addEventListener('click', loadOpinions);
       async function opSaveFields(id, patch, el, before) {
@@ -4406,7 +4448,39 @@
         const sel = e.target.closest('[data-op-cat]');
         if (!sel) return;
         const o = op.all.find((x) => String(x.id) === sel.dataset.opCat);
+        const note = sel.parentElement?.querySelector('[data-op-cat-other]');
+        if (note) {
+          const on = sel.value === '其他';
+          note.hidden = !on;
+          if (!on) note.value = '';
+          if (on) {
+            note.focus();
+            return;
+          }
+        }
         await opSaveFields(sel.dataset.opCat, { category: sel.value }, sel, o?.category || '').catch(() => {});
+      });
+      $('op-groups').addEventListener('focusout', async (e) => {
+        const note = e.target.closest('[data-op-cat-other]');
+        if (!note) return;
+        const id = note.dataset.opCatOther;
+        const o = op.all.find((x) => String(x.id) === id);
+        const n = String(note.value || '').trim();
+        if (!n) {
+          window.alert('選「其他」時請填寫實際類別說明');
+          note.focus();
+          return;
+        }
+        const next = Core.formatOpinionOtherCat?.(n) || `其他：${n}`;
+        if (next === (o?.category || '')) return;
+        await opSaveFields(id, { category: next }, note, o?.category || '').catch(() => {});
+      });
+      $('op-groups').addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const note = e.target.closest('[data-op-cat-other]');
+        if (!note) return;
+        e.preventDefault();
+        note.blur();
       });
       async function opSaveCaseNo(caseno, opts) {
         const o = op.all.find((x) => String(x.id) === caseno.dataset.opCaseno);
@@ -4677,6 +4751,7 @@
         document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab));
         for (const t of TABS) $(`tab-${t}`).classList.toggle('hidden', t !== tab);
         $('month-wrap').classList.toggle('hidden', ['training', 'exam', 'sim', 'kpi', 'kpiyear', 'org', 'opinion'].includes(tab));
+        document.body.classList.toggle('is-op-wide', tab === 'opinion');
         say('');
         if (tab === 'boss' && !boss.slides) fillBossWeeks();
         if (tab === 'wprog') makeWprog(false);

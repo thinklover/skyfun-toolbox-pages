@@ -25,6 +25,37 @@
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
 }
 
+#page-rentmanager-perf .rmp-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+}
+
+#page-rentmanager-perf .rmp-refresh-btn {
+  flex: 0 0 auto;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.86rem;
+  font-weight: 800;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+#page-rentmanager-perf .rmp-refresh-btn:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+#page-rentmanager-perf .rmp-refresh-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 #page-rentmanager-perf .rmp-head {
   text-align: center;
   margin-bottom: 1rem;

@@ -2946,7 +2946,7 @@
       months += 1;
       for (const o of q.errors || []) {
         if (o.kind !== opKind || (!everywhere && !want.has(o.area))) continue;
-        const c = o.category || '未分類';
+        const c = Core.opinionCatBucket(o.category || '未分類');
         counts.set(c, (counts.get(c) || 0) + 1);
         total += 1;
       }
@@ -6188,15 +6188,19 @@
         : o.opinionDate
           ? esc(shortDate(o.opinionDate))
           : NIL;
-    const catCell = (o) =>
-      canEditOp(o)
-        ? `<select class="apt-op-edit-cat" data-op-edit="${o.id}" data-op-field="category" aria-label="缺失類別">
+    const catCell = (o) => {
+      if (!canEditOp(o)) return o.category ? esc(o.category) : NIL;
+      const otherOn = Core.isOpinionOtherCat(o.category);
+      const selVal = otherOn ? '其他' : o.category || '';
+      const note = Core.opinionOtherNote(o.category);
+      return `<div class="apt-op-cat-wrap">
+          <select class="apt-op-edit-cat" data-op-edit="${o.id}" data-op-field="category" aria-label="缺失類別">
             <option value="">（未分類）</option>
-            ${(Core.OPINION_CATEGORIES[kind] || []).map((c) => `<option${c === o.category ? ' selected' : ''}>${esc(c)}</option>`).join('')}
-          </select>`
-        : o.category
-          ? esc(o.category)
-          : NIL;
+            ${(Core.OPINION_CATEGORIES[kind] || []).map((c) => `<option${c === selVal ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+          </select>
+          <input type="text" class="apt-op-other-note" data-op-edit="${o.id}" data-op-field="categoryOther" value="${esc(note)}" maxlength="60" placeholder="請填實際類別" aria-label="其他類別說明"${otherOn ? '' : ' hidden'}>
+        </div>`;
+    };
     const caseNoCell = (o) =>
       canEditOp(o)
         ? `<input type="text" class="apt-op-edit-cat apt-op-edit-caseno" data-op-edit="${o.id}" data-op-field="caseNo" value="${esc(o.caseNo || '')}" maxlength="60" aria-label="媒合編號" placeholder="星鴻F2M…" title="改完按 Enter 或點其他地方儲存">`
@@ -6268,6 +6272,7 @@
             <div class="apt-op-items" hidden></div>
           </div>`}
           <label class="apt-op-wide"><span>缺失類別 <em>*</em><small class="apt-op-auto">同公會月報的${isCase ? '審件' : '清冊'}缺失分類，一筆意見選最主要的一項</small></span><select name="category" required><option value="">請選擇</option>${Core.OPINION_CATEGORIES[kind].map((c) => `<option>${esc(c)}</option>`).join('')}</select></label>
+          <label class="apt-op-wide apt-op-other-cat" hidden><span>其他類別說明 <em>*</em><small class="apt-op-auto">選「其他」時請寫這筆實際屬於哪一類</small></span><input name="categoryOther" maxlength="60" autocomplete="off" placeholder="例如：地址誤繕、附件格式錯誤…"></label>
           <label class="apt-op-wide"><span>公會意見內容 <em>*</em></span><textarea name="content" rows="3" maxlength="2000" placeholder="照公會回傳的意見填寫"></textarea></label>
           <label class="apt-op-wide apt-op-measure-field"><span>行政檢討對策 <em>*</em></span><textarea name="measure" rows="3" maxlength="2000" placeholder="這個意見要怎麼改善、之後怎麼避免"></textarea></label>
           <div class="apt-op-actions apt-op-wide"><button type="submit" class="apt-op-save">送出</button><span class="apt-op-msg" role="status" aria-live="polite"></span></div>
@@ -6306,25 +6311,52 @@
     mask.addEventListener('change', (e) => {
       const box = e.target.closest('[data-op-fixed]');
       if (box) setOpinionFixed(kind, box);
+      const catSel = e.target.closest('[data-op-edit][data-op-field="category"]');
+      if (catSel) {
+        const note = catSel.parentElement?.querySelector('[data-op-field="categoryOther"]');
+        if (note) {
+          const on = catSel.value === '其他';
+          note.hidden = !on;
+          if (!on) note.value = '';
+          if (on) {
+            note.focus();
+            return;
+          }
+        }
+        saveOpinionFields(kind, catSel);
+        return;
+      }
       const edit = e.target.closest(
-        '[data-op-edit][data-op-field="category"], [data-op-edit][data-op-field="guildPeriod"], [data-op-edit][data-op-field="opinionDate"], [data-op-edit][data-op-field="rosterPeriod"]'
+        '[data-op-edit][data-op-field="guildPeriod"], [data-op-edit][data-op-field="opinionDate"], [data-op-edit][data-op-field="rosterPeriod"]'
       );
       if (edit) saveOpinionFields(kind, edit);
     });
     mask.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter') return;
-      const edit = e.target.closest('[data-op-edit][data-op-field="caseNo"]');
+      const edit = e.target.closest('[data-op-edit][data-op-field="caseNo"], [data-op-edit][data-op-field="categoryOther"]');
       if (!edit) return;
       e.preventDefault();
       edit.blur();
     });
     mask.addEventListener('focusout', (e) => {
       const edit = e.target.closest(
-        '[data-op-edit][data-op-field="content"], [data-op-edit][data-op-field="measure"], [data-op-edit][data-op-field="caseNo"]'
+        '[data-op-edit][data-op-field="content"], [data-op-edit][data-op-field="measure"], [data-op-edit][data-op-field="caseNo"], [data-op-edit][data-op-field="categoryOther"]'
       );
       if (edit) saveOpinionFields(kind, edit);
     });
     const form = mask.querySelector('form');
+    const syncOther = () => {
+      const wrap = form.querySelector('.apt-op-other-cat');
+      const inp = form.elements.categoryOther;
+      const on = form.elements.category?.value === '其他';
+      if (wrap) wrap.hidden = !on;
+      if (inp) {
+        inp.required = on;
+        if (!on) inp.value = '';
+      }
+    };
+    form.elements.category?.addEventListener('change', syncOther);
+    syncOther();
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       saveOpinion(kind, e.currentTarget);
@@ -6367,19 +6399,38 @@
 
   async function saveOpinionFields(kind, el) {
     const id = Number(el.dataset.opEdit);
-    const field = el.dataset.opField;
+    let field = el.dataset.opField;
     if (!id || !field) return;
     const lists = [...myOpinions(kind), ...(state.opOpen || [])];
     const o = lists.find((x) => Number(x.id) === id);
     if (!o) return;
     let next = String(el.value || '');
-    const prev = String(o[field] || '');
+    const prevCat = String(o.category || '');
+    const prev = field === 'categoryOther' ? prevCat : String(o[field] || '');
     if (field === 'caseNo') {
       const canon = Core.canonicalOpinionCaseNo(next, o.region || '', next.includes('星華') ? '星華' : '星鴻');
       if (canon) {
         next = canon.value;
         el.value = next;
       }
+    }
+    if (field === 'category' || field === 'categoryOther') {
+      const wrap = el.closest('.apt-op-cat-wrap') || el.parentElement;
+      const sel = wrap?.querySelector('[data-op-field="category"]');
+      const note = wrap?.querySelector('[data-op-field="categoryOther"]');
+      const selVal = sel ? String(sel.value || '') : next;
+      if (selVal === '其他') {
+        const n = String(note?.value || '').trim();
+        if (!n) {
+          window.alert('選「其他」時請填寫實際類別說明');
+          note?.focus();
+          return;
+        }
+        next = Core.formatOpinionOtherCat(n);
+      } else {
+        next = selVal;
+      }
+      field = 'category';
     }
     if (next === prev) return;
     el.disabled = true;
@@ -6407,12 +6458,17 @@
       for (const row of [...(state.sb?.opinions || []), ...(state.opOpen || [])]) {
         if (Number(row.id) === id && res.opinion) Object.assign(row, res.opinion);
       }
-      if (field === 'caseNo' || field === 'rosterPeriod') {
+      if (field === 'caseNo' || field === 'rosterPeriod' || field === 'category') {
         const list = document.querySelector('#apt-op-mask .apt-op-list');
         if (list) list.innerHTML = opinionRows(kind);
       }
     } catch (err) {
-      el.value = prev;
+      if (field === 'category') {
+        const list = document.querySelector('#apt-op-mask .apt-op-list');
+        if (list) list.innerHTML = opinionRows(kind);
+      } else {
+        el.value = prev;
+      }
       window.alert(String(err.message || err));
     } finally {
       el.disabled = false;
@@ -6466,6 +6522,15 @@
       form.elements.category.focus();
       return fail('請選缺失類別');
     }
+    if (data.category === '其他') {
+      const note = String(data.categoryOther || '').trim();
+      if (!note) {
+        form.elements.categoryOther?.focus();
+        return fail('選「其他」時請填寫實際類別說明');
+      }
+      data.category = Core.formatOpinionOtherCat(note);
+    }
+    delete data.categoryOther;
     if (!data.content) return fail('請填公會意見內容');
     if (!data.measure) {
       form.elements.measure?.focus();
@@ -6477,7 +6542,7 @@
     try {
       const res = await window.skyfunAuth.rpc('admin_points_opinion_save', { p_token: token(), p_kind: kind, p_data: data });
       if (!res?.ok) throw new Error(res?.error || '送出失敗');
-      ['caseNo', 'opinionDate', 'category', 'content', 'measure'].concat(kind === 'case' ? ['rosterPeriod'] : []).forEach((k) => {
+      ['caseNo', 'opinionDate', 'category', 'categoryOther', 'content', 'measure'].concat(kind === 'case' ? ['rosterPeriod'] : []).forEach((k) => {
         if (form.elements[k]) form.elements[k].value = '';
       });
       form._roster?.reset();
@@ -6486,6 +6551,9 @@
         form.elements.region.dataset.manual = '';
       }
       if (form.elements.company) form.elements.company.value = '星鴻';
+      const otherWrap = form.querySelector('.apt-op-other-cat');
+      if (otherWrap) otherWrap.hidden = true;
+      if (form.elements.categoryOther) form.elements.categoryOther.required = false;
       msg.textContent = res.duplicate
         ? '✓ 已送出；這個媒合編號已有意見，只認列第一筆 1 點，本筆 0 點'
         : '✓ 已送出，+1 點';

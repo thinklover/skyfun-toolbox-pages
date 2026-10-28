@@ -84,6 +84,11 @@
 .apt-op-form textarea { resize: vertical; line-height: 1.55; }
 .apt-op-form :is(input, select, textarea):focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18); }
 .apt-op-wide { grid-column: 1 / -1; }
+.apt-op-form label[hidden],
+.apt-op-other-cat[hidden] { display: none !important; }
+.apt-op-cat-wrap { display: flex; flex-direction: column; gap: 0.3rem; min-width: 8rem; }
+.apt-op-other-note { width: 100%; padding: 0.35rem 0.5rem; border: 1.5px solid #f59e0b; border-radius: 0.45rem; font-size: 0.82rem; font-family: inherit; background: #fffbeb; }
+.apt-op-other-note[hidden] { display: none !important; }
 .apt-op-measure-field textarea { background: #fefce8; border-color: #facc15; }
 .apt-op-roster { display: flex; flex-direction: column; gap: 0.5rem; }
 .apt-op-roster input[name="caseNo"] { font-weight: 700; letter-spacing: 0.02em; }
