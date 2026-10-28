@@ -58,6 +58,13 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
+#page-rentmanager-perf .rmp-period.is-loading {
+  color: #0f766e;
+  border-color: #99f6e4;
+  background: #f0fdfa;
+  font-weight: 700;
+}
+
 #page-rentmanager-perf .rmp-nav {
   display: flex;
   flex-wrap: wrap;

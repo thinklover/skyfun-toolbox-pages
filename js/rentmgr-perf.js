@@ -12,6 +12,8 @@
   let activeRenewRegion = 'all';
   let cache = null;
   let bound = false;
+  let loadSeq = 0;
+  let loading = false;
 
   const STATUS_LABEL = {
     bad: '警示',
@@ -60,10 +62,27 @@
     return Array.prototype.slice.call((root || document).querySelectorAll(sel));
   }
 
-  function setPeriod(periodLabel) {
+  function formatFetchedAt(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (!isFinite(d.getTime())) return String(iso).replace('T', ' ').slice(0, 16);
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()) +
+      ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function setPeriod(periodLabel, meta) {
     const el = $('#rmp-period');
     if (!el) return;
-    el.textContent = '資料期間：' + (periodLabel || EMPTY);
+    if (meta && meta.loading) {
+      el.textContent = '正在抓取最新數字…';
+      el.classList.add('is-loading');
+      return;
+    }
+    el.classList.remove('is-loading');
+    const base = '資料期間：' + (periodLabel || EMPTY);
+    const when = meta && meta.fetchedAt ? formatFetchedAt(meta.fetchedAt) : '';
+    el.textContent = when ? (base + '｜更新於 ' + when) : base;
   }
 
   function overviewGoal(kpi, row) {
@@ -3041,11 +3060,19 @@
     if (!page || !api) return;
     bindNav();
     renderFooter();
+    /* 每次進入都重抓；舊畫面先標「更新中」，數字到齊再換上最新 */
+    const seq = ++loadSeq;
+    loading = true;
+    setPeriod(cache && cache.periodLabel, { loading: true });
     api.loadPerfData().then(function (payload) {
+      if (seq !== loadSeq) return;
+      loading = false;
       cache = payload || { periodLabel: null, modules: {} };
-      setPeriod(cache.periodLabel);
+      setPeriod(cache.periodLabel, { fetchedAt: cache.updatedAt || null });
       renderModule(activeModule || 'overview');
     }).catch(function () {
+      if (seq !== loadSeq) return;
+      loading = false;
       cache = { periodLabel: null, modules: {} };
       setPeriod(null);
       renderModule('overview');

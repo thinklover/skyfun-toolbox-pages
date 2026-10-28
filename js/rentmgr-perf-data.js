@@ -1274,18 +1274,14 @@
       if (sheet) return Promise.resolve(sheet);
     }
     const q = new URLSearchParams({ year: String(y), month: String(m) });
-    let force = !!refresh;
-    try {
-      const dayKey = 'rmp-points-refresh-v2-' + todayIsoLocal();
-      if (!force && typeof localStorage !== 'undefined' && localStorage.getItem(dayKey) !== '1') {
-        force = true;
-        localStorage.setItem(dayKey, '1');
-      }
-    } catch (_) {}
-    if (force) q.set('refresh', '1');
+    /* 畫面上有數字＝必須最新：每次進頁都強制重算，不再用「一天一次」本地閘門 */
+    if (refresh !== false) q.set('refresh', '1');
     const headers = {};
     if (token) headers['X-Skyfun-Session'] = token;
-    return fetch(RPA_BASE + '/admin-points/rentmgr-points?' + q.toString(), { headers: headers })
+    return fetch(RPA_BASE + '/admin-points/rentmgr-points?' + q.toString(), {
+      headers: headers,
+      cache: 'no-store'
+    })
       .then(function (res) {
         if (!res.ok) throw new Error('rentmgr-points HTTP ' + res.status);
         return res.json();
@@ -1326,24 +1322,21 @@
     const cur = currentSheetWeekIndex();
     const q = new URLSearchParams({
       year: String(y),
-      months: monthsCsv || '10,11,12'
+      months: monthsCsv || '10,11,12',
+      /* 每次開績效中心都重爬；避免 session／local 閘門造成正式版還在吃舊 KV */
+      refresh: '1'
     });
     /* 週快照僅寫入當年（115）本週 */
     if (y === 115 && cur) {
       q.set('weekId', (currentRenewWeek() || {}).id || '');
       q.set('weekMonth', String(Number(cur.monthId)));
     }
-    /* 每天第一次進績效中心強制重爬，讓續轉包／領先續約吃到最新系統數字 */
-    try {
-      const dayKey = 'rmp-renew-kpi-refresh-v11-release-caseType-' + todayIsoLocal();
-      if (!sessionStorage.getItem(dayKey)) {
-        q.set('refresh', '1');
-        sessionStorage.setItem(dayKey, '1');
-      }
-    } catch (e) { /* ignore */ }
     const headers = {};
     if (token) headers['X-Skyfun-Session'] = token;
-    return fetch(RPA_BASE + '/admin-points/renew-kpi?' + q.toString(), { headers: headers })
+    return fetch(RPA_BASE + '/admin-points/renew-kpi?' + q.toString(), {
+      headers: headers,
+      cache: 'no-store'
+    })
       .then(function (res) {
         if (!res.ok) throw new Error('renew-kpi HTTP ' + res.status);
         return res.json();
@@ -1353,7 +1346,8 @@
         return {
           months: data.months || {},
           weekSnapshots: data.weekSnapshots || {},
-          fetchedAt: data.fetchedAt || null
+          fetchedAt: data.fetchedAt || null,
+          refreshed: true
         };
       })
       .catch(function () {
