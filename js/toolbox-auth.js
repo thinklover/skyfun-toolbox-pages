@@ -673,7 +673,7 @@
 
   const LINE_ADD_URL = 'https://line.me/R/ti/p/@522ubeym';
   const LINE_GATE_TEAMS = new Set(['行政管理部']);
-  const lineGate = { checked: false, code: '', expiresAt: '', error: '', busy: false };
+  const lineGate = { checked: false, code: '', expiresAt: '', error: '', busy: false, forced: false };
 
   function lineGateSkipKey() {
     return `skyfun-line-gate-skip-${session?.user?.id || ''}`;
@@ -692,20 +692,43 @@
   async function maybeLineGate() {
     if (lineGate.checked || !session?.supabaseToken) return;
     const team = String(session.supabaseUser?.team || session.user?.team || '').trim();
-    if (!LINE_GATE_TEAMS.has(team)) return;
-    lineGate.checked = true;
-    try {
-      if (sessionStorage.getItem(lineGateSkipKey())) return;
-    } catch {
-      /* ignore */
-    }
     let info;
     try {
       info = await rpc('line_my_binding', { p_token: session.supabaseToken });
     } catch {
       return;
     }
-    if (!info?.ok || info.bound) return;
+    if (!info?.ok) return;
+    const forced = !!info.forceBind;
+    lineGate.forced = forced;
+    // 行政管理部未綁定，或後台強制綁定：都要進閘道
+    if (info.bound && !forced) {
+      lineGate.checked = true;
+      return;
+    }
+    if (!forced && !LINE_GATE_TEAMS.has(team)) {
+      lineGate.checked = true;
+      return;
+    }
+    if (info.bound && forced) {
+      // 理論上綁定後 trigger 會清掉 force；若仍有標記就當已完成
+      lineGate.checked = true;
+      return;
+    }
+    lineGate.checked = true;
+    if (!forced) {
+      try {
+        if (sessionStorage.getItem(lineGateSkipKey())) return;
+      } catch {
+        /* ignore */
+      }
+    } else {
+      try {
+        sessionStorage.removeItem(lineGateSkipKey());
+      } catch {
+        /* ignore */
+      }
+    }
     renderLineGate();
   }
 
@@ -768,9 +791,18 @@
     const codeStep = lineGate.code
       ? `<span>在小幫手的聊天室傳送這 6 位數驗證碼：</span><br><span class="lg-code">${lineGateEsc(lineGate.code)}</span><br><span class="lg-note">10 分鐘內有效（到 ${lineGateEsc(lineGateTime(lineGate.expiresAt))}），傳出後按「我傳好了」。</span>`
       : '<span>按下方「取得驗證碼」，再到小幫手的聊天室傳送那 6 位數驗證碼。</span>';
+    const sub = lineGate.forced
+      ? '管理員要求你必須完成綁定後才能繼續使用'
+      : '行政管理部同仁都要完成，約 1 分鐘';
+    const why = lineGate.forced
+      ? '後台已開啟「強制綁定 LINE」。請加入官方帳號並完成綁定後，才能繼續使用工具箱。'
+      : '之後抽查結果、考試、績效與公告等通知會用 LINE 傳給你，請先加入官方帳號並完成綁定。';
+    const skipBtn = lineGate.forced
+      ? ''
+      : '<button type="button" class="lg-skip" data-lg="skip">稍後再綁（下次進入工具箱會再提醒）</button>';
     gate.innerHTML = `<div class="lg-card">
-      <div class="lg-head"><div class="lg-mark">LINE</div><div><h2>請綁定 LINE 官方帳號</h2><p class="lg-sub">行政管理部同仁都要完成，約 1 分鐘</p></div></div>
-      <p class="lg-why">之後抽查結果、考試、績效與公告等通知會用 LINE 傳給你，請先加入官方帳號並完成綁定。</p>
+      <div class="lg-head"><div class="lg-mark">LINE</div><div><h2>請綁定 LINE 官方帳號</h2><p class="lg-sub">${sub}</p></div></div>
+      <p class="lg-why">${why}</p>
       <ol>
         <li><b>1</b><div>加入官方帳號「星鴻萬能小幫手」好友<br><a class="lg-add" href="${LINE_ADD_URL}" target="_blank" rel="noopener">＋ 加好友</a> <span class="lg-id">（電腦版可在 LINE 搜尋 ID：@522ubeym）</span></div></li>
         <li class="${lineGate.code ? 'is-done' : ''}"><b>2</b><div>${codeStep}</div></li>
@@ -780,7 +812,7 @@
         ${lineGate.code ? `<button type="button" class="lg-btn" data-lg="check"${busy}>${lineGate.busy ? '確認中…' : '我傳好了'}</button>` : ''}
       </div>
       ${lineGate.error ? `<p class="lg-err">${lineGateEsc(lineGate.error)}</p>` : ''}
-      <button type="button" class="lg-skip" data-lg="skip">稍後再綁（下次進入工具箱會再提醒）</button>
+      ${skipBtn}
     </div>`;
   }
 
@@ -790,6 +822,7 @@
       return;
     }
     if (kind === 'skip') {
+      if (lineGate.forced) return;
       try {
         sessionStorage.setItem(lineGateSkipKey(), '1');
       } catch {

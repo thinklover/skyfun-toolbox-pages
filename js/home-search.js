@@ -21,6 +21,10 @@
         { page: 'calculator', title: '房東稅務試算表', category: '房東專區', keywords: '稅務 試算' },
         { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 費用' },
         { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi' },
+        { page: 'rentmanager-perf', title: '租管師績效中心', category: '租管師專區', keywords: 'kpi 各地區 週報' },
+        { page: 'care-visit-notice', title: '家訪單產生器', category: '催收解約專區', keywords: '家訪 關懷' },
+        { file: './admin/rentmgr-report-dashboard.html', title: '租賃管理部月報', category: '管理工具', keywords: '月報 ppt' },
+        { external: 'https://forms.gle/ZFwBJa2ps6TK2RCv5', title: '跨區派案回報表單', category: '表單連結 · 業務', keywords: '跨區 派案' },
     ];
 
     const SEARCH_SYNONYMS = {
@@ -33,13 +37,16 @@
         租金補貼: ['租補', '300億'],
         公證: ['公證費', '119'],
         公證費: ['公證'],
-        催收: ['欠租', '催繳', '遲繳'],
+        催收: ['欠租', '催繳', '遲繳', '呆帳', '包租催收', '30天'],
+        呆帳: ['催收', '欠租', '逾期'],
         存證: ['存證信函', '信函'],
         存證信函: ['存證', 'lal'],
         押金: ['退還', '解約'],
         退還: ['押金', '解約'],
         解約: ['退租', '終止', '催收'],
-        續約: ['轉包租', '包租', 'line'],
+        續約: ['轉包租', '包租', 'line', '領先續約', '續轉包'],
+        領先續約: ['續約', '次月', 'kpi'],
+        續轉包: ['續約', '轉包租', '包租'],
         評定: ['租金水準', '待租', '社宅'],
         待租: ['評定', '擬定月租'],
         信任租: ['徵信', '黑名單'],
@@ -47,6 +54,28 @@
         稅務: ['稅', '試算', '綜所稅'],
         實價: ['實價登錄', 'lvr'],
         時價: ['實價登錄', '實價'],
+        kpi: ['績效', '各地區', '週報', '月報', '租管'],
+        績效: ['kpi', '績效中心', '租管', '各地區'],
+        績效中心: ['kpi', '租管師績效', '各地區'],
+        各地區: ['kpi', '週報', '月報', '績效'],
+        週報: ['kpi', '各地區', '月報'],
+        月報: ['kpi', '各地區', '週報', 'ppt', '租管'],
+        週月報: ['週報', '月報', 'kpi'],
+        租管: ['租管師', '租賃管理部', '績效', 'kpi'],
+        租管師: ['租管', '租賃管理部'],
+        租賃管理部: ['租管', '租管師', '月報'],
+        家訪: ['關懷通知單', '訪視', '家訪單'],
+        營業處: ['分公司', '聯絡單位', '家訪'],
+        陳情: ['簽呈', '客訴', '申訴'],
+        法務: ['請法務', '催收', '強制執行'],
+        不續約: ['退租', '解約', '異常轉業'],
+        組織人力: ['組織', '人力', '租管'],
+        591: ['上架', '刊登', '自動上架'],
+        跨區: ['派案', '跨區派案', '漏件', '回報表單', '獎金'],
+        派案: ['跨區', '跨區派案', '漏件'],
+        漏件: ['跨區', '派案', '回報'],
+        回報表單: ['跨區', '派案', '表單'],
+        表單: ['回報表單', 'google表單', '線上表單'],
     };
 
     function normalizeSearchText(text) {
@@ -94,6 +123,32 @@
         return base.concat(files);
     }
 
+    /** 把查詢拆成中文段／英文數字段，避免「各地區KPI」因關鍵字不相鄰而 miss */
+    function queryParts(q) {
+        const s = normalizeSearchText(q);
+        if (!s) return [];
+        const parts = s.match(/[\u4e00-\u9fff]+|[a-z0-9]+/g);
+        return parts && parts.length ? parts : [s];
+    }
+
+    function partsAllInBlob(parts, blob) {
+        if (!parts.length) return false;
+        return parts.every(function (p) {
+            if (!p) return true;
+            if (blob.includes(p)) return true;
+            if (!/^[\u4e00-\u9fff]+$/.test(p)) return false;
+            /* 「租管績效」→ 租管＋績效；「週月報」→ 週＋月報 或 週報＋月報 字元覆蓋 */
+            if (p.length >= 3) {
+                const head = p.slice(0, 2);
+                const tail = p.slice(-2);
+                if (blob.includes(head) && blob.includes(tail)) return true;
+                const mid = Math.floor(p.length / 2);
+                if (blob.includes(p.slice(0, mid)) && blob.includes(p.slice(mid))) return true;
+            }
+            return false;
+        });
+    }
+
     function scoreSearchItemForQuery(item, q) {
         if (!q) return 0;
         const title = normalizeSearchText(item.title);
@@ -103,12 +158,25 @@
             ? normalizeSearchText(item.file.split('/').pop().replace(/\.[^.]+$/, ''))
             : '';
         const blob = title + category + keywords + fileName;
+        const parts = queryParts(q);
 
         if (title === q) return 200;
         if (title.startsWith(q)) return 155;
         if (title.includes(q)) return 125;
         if (category.includes(q)) return 108;
         if (keywords.includes(q) || blob.includes(q)) return 95;
+
+        /* 多段關鍵字（各地區 + kpi）皆命中：順序無關 */
+        if (parts.length >= 2 && partsAllInBlob(parts, blob)) {
+            const inTitle = parts.filter(function (p) { return title.includes(p); }).length;
+            return 88 + Math.min(20, inTitle * 8);
+        }
+        if (parts.length === 1 && parts[0] !== q && blob.includes(parts[0])) {
+            return 90;
+        }
+        if (parts.length >= 1 && partsAllInBlob(parts, blob)) {
+            return 82;
+        }
 
         const chars = Array.from(q);
         let pos = 0;
@@ -121,15 +189,16 @@
             }
         }
         const orderedRatio = ordered / chars.length;
-        const minOrdered = chars.length <= 2 ? 0.75 : 0.85;
+        const minOrdered = chars.length <= 2 ? 0.7 : 0.8;
         if (orderedRatio >= minOrdered) return 55 + Math.round(orderedRatio * 35);
 
+        /* 順序無關的字元覆蓋（補「績效kpi」類顛倒） */
         let any = 0;
         for (const ch of chars) {
             if (blob.includes(ch)) any++;
         }
         const anyRatio = any / chars.length;
-        const minAny = chars.length <= 2 ? 0.55 : 0.65;
+        const minAny = chars.length <= 2 ? 0.5 : 0.6;
         if (anyRatio >= minAny) return 22 + Math.round(anyRatio * 28);
 
         return 0;
@@ -239,7 +308,7 @@
             const hint = query
                 ? '找不到「' + escapeHtml(query) + '」，試試：'
                 : '熱門搜尋：';
-            const chips = (query ? ['獎金', '押金', '公證', '催收', '稅務', '任務板', '評定'] : []).map(
+            const chips = (query ? ['各地區KPI', '績效中心', '月報', '家訪', '獎金', '押金', '催收', '任務板'] : []).map(
                 (w) =>
                     '<button type="button" class="home-search-chip" data-suggest="' +
                     escapeHtml(w) +

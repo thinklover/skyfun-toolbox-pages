@@ -148,7 +148,9 @@
     const padL = o.padL ?? 56;
     const padR = o.padR ?? 16;
     const padT = 30;
-    const padB = 12;
+    /* 底部留空畫月份標籤（可用 o.padB／o.showXLabels 覆寫） */
+    const showX = o.showXLabels !== false && labels.some((l) => String(l || '').trim());
+    const padB = o.padB != null ? o.padB : showX ? 28 : 12;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
     const gw = plotW / Math.max(1, labels.length);
@@ -226,6 +228,16 @@
         const w = s.tag.text.length * 11 + 18;
         out.push(`<rect x="${cx - w / 2}" y="${ty - 4}" width="${w}" height="24" rx="12" fill="${s.tag.bg || '#f1f5f9'}"/><text class="apc-tr-side-tag" x="${cx}" y="${ty + 12}" text-anchor="middle" style="fill:${s.tag.color}">${esc(s.tag.text)}</text>`);
       }
+    }
+    if (showX) {
+      labels.forEach((l, i) => {
+        const text = String(l || '').trim();
+        if (!text) return;
+        const on = i === active;
+        out.push(
+          `<text class="apc-tr-axis apc-tr-xlabel${on ? ' is-on' : ''}" x="${xOf(i)}" y="${H - 8}" text-anchor="middle">${esc(text)}</text>`
+        );
+      });
     }
     if (pick) {
       labels.forEach((l, i) => {

@@ -161,14 +161,50 @@
     branchSel.innerHTML = '<option value="">－ 請先選公司別 －</option>';
   }
 
+  const DRAFT_KEY = 'skyfun_cvn_contact_draft';
+
   function applyBranchPhone() {
     const company = val('cvn-company');
     const branchId = val('cvn-branch');
     const branches = COMPANY_BRANCH_PRESETS[company] || [];
     const hit = branches.find((b) => b.id === branchId);
     if (!hit) return;
+    /* 選營業處後一律重帶單位／電話（可再手動改） */
     if ($('cvn-unit')) $('cvn-unit').value = hit.name;
     if ($('cvn-phone')) $('cvn-phone').value = hit.phone;
+    saveContactDraft();
+  }
+
+  function clearUnitPhone() {
+    if ($('cvn-unit')) $('cvn-unit').value = '';
+    if ($('cvn-phone')) $('cvn-phone').value = '';
+  }
+
+  function saveContactDraft() {
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        company: val('cvn-company'),
+        branch: val('cvn-branch'),
+        unit: val('cvn-unit'),
+        phone: val('cvn-phone'),
+        staff: val('cvn-staff')
+      }));
+    } catch { /* ignore */ }
+  }
+
+  function restoreContactDraft() {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      if (!d || typeof d !== 'object') return false;
+      if ($('cvn-company') && d.company && !$('cvn-company').value) {
+        $('cvn-company').value = d.company;
+      }
+      return d;
+    } catch {
+      return false;
+    }
   }
 
   function collectData() {
@@ -472,86 +508,144 @@
       wrap.classList.add('hidden');
     }
     setStatus('');
+    try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
   }
 
-  function fillBranchOptions() {
+  function fillBranchOptions(opts) {
+    const keepUnit = !!(opts && opts.keepUnit);
+    const preferBranch = opts && opts.preferBranch ? String(opts.preferBranch) : '';
     const company = val('cvn-company');
     const branchSel = $('cvn-branch');
     if (!branchSel) return;
     const branches = COMPANY_BRANCH_PRESETS[company] || [];
     if (!company || !branches.length) {
       resetBranchSelect();
+      if (!keepUnit) clearUnitPhone();
       return;
     }
-    const prev = branchSel.value;
+    const prev = preferBranch || branchSel.value;
     branchSel.disabled = false;
+    branchSel.removeAttribute('disabled');
     branchSel.innerHTML = '<option value="">－ 請選擇營業處 －</option>' +
       branches.map((b) => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
     if (prev && branches.some((b) => b.id === prev)) {
       branchSel.value = prev;
       applyBranchPhone();
+    } else if (!keepUnit) {
+      clearUnitPhone();
+    }
+    saveContactDraft();
+  }
+
+  function eventRoot() {
+    /* 工具箱主頁只有 page-care-visit-notice；催收流程頁才有 cf-cvn */
+    const page = $('page-care-visit-notice');
+    if (page && !page.classList.contains('hidden')) return page;
+    return $('cf-cvn') || page || $('page-care-visit-notice');
+  }
+
+  function onCompanyChange() {
+    fillBranchOptions();
+    saveContactDraft();
+  }
+
+  function onBranchChange() {
+    applyBranchPhone();
+  }
+
+  function bindDirectSelects() {
+    const company = $('cvn-company');
+    const branch = $('cvn-branch');
+    if (company && company.getAttribute('data-cvn-direct') !== '1') {
+      company.setAttribute('data-cvn-direct', '1');
+      company.addEventListener('change', onCompanyChange);
+    }
+    if (branch && branch.getAttribute('data-cvn-direct') !== '1') {
+      branch.setAttribute('data-cvn-direct', '1');
+      branch.addEventListener('change', onBranchChange);
+      /* 點營業處時若公司已選但選項未展開，先解鎖 */
+      branch.addEventListener('pointerdown', () => {
+        if (val('cvn-company') && branch.disabled) fillBranchOptions({ keepUnit: true });
+      });
     }
   }
 
   function bindEvents() {
     ensurePreviewShell();
-    const root = $('cf-cvn');
-    if (!root || root.getAttribute('data-cvn-bound') === '1') return;
-    root.setAttribute('data-cvn-bound', '1');
+    const root = eventRoot();
+    if (!root) return;
 
-    root.addEventListener('change', (e) => {
-      const t = e.target;
-      if (!t || !root.contains(t)) return;
-      if (t.id === 'cvn-company') fillBranchOptions();
-      if (t.id === 'cvn-branch') applyBranchPhone();
-    });
+    if (root.getAttribute('data-cvn-bound') !== '1') {
+      root.setAttribute('data-cvn-bound', '1');
+      root.addEventListener('change', (e) => {
+        const t = e.target;
+        if (!t || !root.contains(t)) return;
+        if (t.id === 'cvn-company') onCompanyChange();
+        if (t.id === 'cvn-branch') onBranchChange();
+      });
+      root.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn || !root.contains(btn)) return;
+        if (btn.id === 'cvn-btn-preview') {
+          e.preventDefault();
+          e.stopPropagation();
+          makePdf('preview');
+          return;
+        }
+        if (btn.id === 'cvn-btn-generate') {
+          e.preventDefault();
+          e.stopPropagation();
+          makePdf('download');
+          return;
+        }
+        if (btn.id === 'cvn-btn-clear') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!confirm('清除本頁所有欄位？')) return;
+          clearForm();
+          return;
+        }
+        if (btn.id === 'cvn-btn-preview-close') {
+          e.preventDefault();
+          e.stopPropagation();
+          const wrap = $('cvn-preview-wrap');
+          const frame = $('cvn-preview-frame');
+          if (frame) frame.src = 'about:blank';
+          if (wrap) {
+            wrap.hidden = true;
+            wrap.classList.add('hidden');
+          }
+          revokePreview();
+          setStatus('');
+          return;
+        }
+        if (btn.id === 'cvn-btn-preview-tab') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (previewUrl) window.open(previewUrl, '_blank', 'noopener');
+          else if (lastPdf) {
+            const url = URL.createObjectURL(new Blob([lastPdf.bytes], { type: 'application/pdf' }));
+            window.open(url, '_blank', 'noopener');
+          }
+        }
+      });
+    }
 
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (!btn || !root.contains(btn)) return;
-      if (btn.id === 'cvn-btn-preview') {
-        e.preventDefault();
-        e.stopPropagation();
-        makePdf('preview');
-        return;
-      }
-      if (btn.id === 'cvn-btn-generate') {
-        e.preventDefault();
-        e.stopPropagation();
-        makePdf('download');
-        return;
-      }
-      if (btn.id === 'cvn-btn-clear') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!confirm('清除本頁所有欄位？')) return;
-        clearForm();
-        return;
-      }
-      if (btn.id === 'cvn-btn-preview-close') {
-        e.preventDefault();
-        e.stopPropagation();
-        const wrap = $('cvn-preview-wrap');
-        const frame = $('cvn-preview-frame');
-        if (frame) frame.src = 'about:blank';
-        if (wrap) {
-          wrap.hidden = true;
-          wrap.classList.add('hidden');
-        }
-        revokePreview();
-        setStatus('');
-        return;
-      }
-      if (btn.id === 'cvn-btn-preview-tab') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (previewUrl) window.open(previewUrl, '_blank', 'noopener');
-        else if (lastPdf) {
-          const url = URL.createObjectURL(new Blob([lastPdf.bytes], { type: 'application/pdf' }));
-          window.open(url, '_blank', 'noopener');
-        }
-      }
-    });
+    /* 直綁：避免根節點找不到時公司／營業處完全無反應 */
+    bindDirectSelects();
+  }
+
+  function syncContactFromDraftOrDom() {
+    const draft = restoreContactDraft();
+    const preferBranch = (draft && draft.branch) || val('cvn-branch');
+    fillBranchOptions({ keepUnit: true, preferBranch: preferBranch });
+    if (val('cvn-branch')) {
+      applyBranchPhone();
+    } else if (draft) {
+      if ($('cvn-unit') && draft.unit && !$('cvn-unit').value) $('cvn-unit').value = draft.unit;
+      if ($('cvn-phone') && draft.phone && !$('cvn-phone').value) $('cvn-phone').value = draft.phone;
+      if ($('cvn-staff') && draft.staff && !$('cvn-staff').value) $('cvn-staff').value = draft.staff;
+    }
   }
 
   function applyArrearsPrefill() {
@@ -576,7 +670,10 @@
     if ($('cvn-visit-y') && !$('cvn-visit-y').value) $('cvn-visit-y').value = String(t.y);
     if ($('cvn-visit-m') && !$('cvn-visit-m').value) $('cvn-visit-m').value = String(t.m);
     if ($('cvn-visit-d') && !$('cvn-visit-d').value) $('cvn-visit-d').value = String(t.day);
-    fillBranchOptions();
+    /* 瀏覽器可能晚點還原公司別：立刻同步一次，再延遲補同步 */
+    syncContactFromDraftOrDom();
+    setTimeout(syncContactFromDraftOrDom, 50);
+    setTimeout(syncContactFromDraftOrDom, 300);
     applyArrearsPrefill();
   }
 

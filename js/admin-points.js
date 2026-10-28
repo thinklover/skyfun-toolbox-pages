@@ -132,11 +132,31 @@
     }
   }
 
+  /** 同租期停用＋最終已生效：失敗不擋其他點數 */
+  async function fetchDisableCredits(range, refresh) {
+    try {
+      return await fetchWorker('/admin-points/disable-credits', '同租期停用認點', range, refresh);
+    } catch (err) {
+      return { ok: false, fields: [], rows: [], pending: 0, suppressIds: [], error: String(err.message || err) };
+    }
+  }
+
   function termNote(term) {
     if (!term) return '';
     if (term.error) return `解約資料暫時讀不到（${term.error}），解約點數先不計`;
     if (term.pending) return `解約還有 ${term.pending} 件審核記錄在補抓中，稍後重新整理會再增加`;
     return '';
+  }
+
+  function disableNote(dis) {
+    if (!dis) return '';
+    if (dis.error) return `同租期停用認點暫時讀不到（${dis.error}），停用加點先不計`;
+    if (dis.pending) return `同租期停用還有 ${dis.pending} 件明細在補抓中，稍後重新整理會再增加`;
+    return '';
+  }
+
+  function mergeNotes(...notes) {
+    return notes.filter(Boolean).join('；');
   }
 
   async function fetchSupabase(range) {
@@ -169,15 +189,18 @@
     $('apt-refresh')?.setAttribute('disabled', '');
     setMsg(`讀取 ${range.month} 月業績（${range.start}～${range.end}）…第一次約需 5～10 秒`);
     try {
-      const [audit, expenses, term, sb] = await Promise.all([
+      const [audit, expenses, term, dis, sb] = await Promise.all([
         fetchWorker('/admin-points/audit-log', '審核時間紀錄', range, refresh),
         fetchWorker('/admin-points/expenses', '補助審核', range, refresh),
         fetchTerminations(range, refresh),
+        fetchDisableCredits(range, refresh),
         fetchSupabase(range)
       ]);
       state.auditRows = auditRowsOf(audit);
       state.expenseRows = auditRowsOf(expenses);
       state.termRows = auditRowsOf(term);
+      state.disableRows = auditRowsOf(dis);
+      state.disableSuppressIds = Array.isArray(dis.suppressIds) ? dis.suppressIds : [];
       state.lkpi = null;
       state.lease = null;
       state.result = Core.compute(state.auditRows, {
@@ -188,9 +211,11 @@
         manual: sb.manual || [],
         opinions: sb.opinions || [],
         expenses: state.expenseRows,
-        terminations: state.termRows
+        terminations: state.termRows,
+        disableCredits: state.disableRows,
+        disableSuppressIds: state.disableSuppressIds
       });
-      state.termNote = termNote(term);
+      state.termNote = mergeNotes(termNote(term), disableNote(dis));
       state.meta = { range, fetchedAt: audit.fetchedAt, total: audit.total, staffCount: (sb.staff || []).length };
       state.sb = sb;
       const today = Core.isoDate(new Date());
@@ -1137,10 +1162,11 @@
           sb = state.sb;
           result = state.result;
         } else {
-          const [audit, expenses, term, sbData] = await Promise.all([
+          const [audit, expenses, term, dis, sbData] = await Promise.all([
             fetchWorker('/admin-points/audit-log', `${mr.month} 月審核時間紀錄`, mr, false),
             fetchWorker('/admin-points/expenses', `${mr.month} 月補助審核`, mr, false),
             fetchTerminations(mr, false),
+            fetchDisableCredits(mr, false),
             fetchSupabase(mr)
           ]);
           auditRows = auditRowsOf(audit);
@@ -1153,7 +1179,9 @@
             manual: sb.manual || [],
             opinions: sb.opinions || [],
             expenses: auditRowsOf(expenses),
-            terminations: auditRowsOf(term)
+            terminations: auditRowsOf(term),
+            disableCredits: auditRowsOf(dis),
+            disableSuppressIds: Array.isArray(dis.suppressIds) ? dis.suppressIds : []
           });
         }
         const dur = Core.durationReport(auditRows, { start: mr.start, end: mr.end, staff: sb.staff || [] });
@@ -1662,10 +1690,10 @@
       return '<p class="apt-train-empty">教材準備中，內容上架後會顯示在這裡。</p>';
     }
     return `${m.summary ? `<p class="apt-train-summary">${esc(m.summary)}</p>` : ''}
+      ${videos.map(trainingVideo).join('')}
       ${(m.alerts || []).map(trainingAlert).join('')}
       ${m.flow ? trainingFlow(key, m.flow) : ''}
       ${m.checklist ? trainingChecklist(key, m.checklist) : ''}
-      ${videos.map(trainingVideo).join('')}
       ${tables
         .map(
           (t) => `<section class="apt-train-sec">${t.title ? `<h5>${esc(t.title)}</h5>` : ''}<div class="apt-table-wrap"><table class="apt-table apt-train-table">
@@ -2029,10 +2057,11 @@
     state.prev = { key, loading: true };
     const pr = prevRange(range);
     try {
-      const [audit, expenses, term, sb] = await Promise.all([
+      const [audit, expenses, term, dis, sb] = await Promise.all([
         fetchWorker('/admin-points/audit-log', '上月審核時間紀錄', pr, false),
         fetchWorker('/admin-points/expenses', '上月補助審核', pr, false),
         fetchTerminations(pr, false),
+        fetchDisableCredits(pr, false),
         fetchSupabase(pr)
       ]);
       const res = Core.compute(auditRowsOf(audit), {
@@ -2043,7 +2072,9 @@
         manual: sb.manual || [],
         opinions: sb.opinions || [],
         expenses: auditRowsOf(expenses),
-        terminations: auditRowsOf(term)
+        terminations: auditRowsOf(term),
+        disableCredits: auditRowsOf(dis),
+        disableSuppressIds: Array.isArray(dis.suppressIds) ? dis.suppressIds : []
       });
       state.prev = { key, totals: new Map(res.people.map((p) => [p.name, p.month.total])) };
     } catch (err) {
@@ -2098,7 +2129,7 @@
   const blockZone = (kind, html) => `<section class="apt-block apt-block--${kind}">${html}</section>`;
 
   const WEEKLY_NOTE = () =>
-    `點欄位標題就用那一欄排序，再點一次反過來；# 是目前排序的名次（同值同名次）。本週點數、審件抽查／正確／良率、客訴件數依所選週（週一～週日）加總；月累積點數、月度級距、預估個人獎金、本月懲處依業績月。不含工讀生。到職未滿一個月（以週結束日判斷）為「新人首月排除」，不發獎金。預估獎金：達 ${Core.STAGE_1} 點 2,000、達 ${Core.STAGE_2} 點 5,000，上個業績月未達 ${Core.STAGE_1} 點打八折；達 ${Core.STAGE_1} 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。審件良率顏色：90% 以上綠、60%～未滿 90% 黃、未滿 60% 紅（同主管簡報）。`;
+    `點欄位標題就用那一欄排序，再點一次反過來；# 是目前排序的名次（同值同名次）。本週點數、審件抽查／正確／良率、客訴件數依所選週（週一～週日）加總；月累積點數、月度級距、預估個人獎金、本月懲處依業績月。不含工讀生。到職未滿一個月（以週結束日判斷）為「新人首月排除」，不發獎金。預估獎金：達 ${Core.STAGE_1} 點 2,000、達 ${Core.STAGE_2} 點 5,000；達 ${Core.STAGE_1} 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）；上個業績月未達 ${Core.STAGE_1} 點時，基本＋專案全部打八折（新人首月未達標，次月不打折）。審件良率顏色：90% 以上綠、60%～未滿 90% 黃、未滿 60% 紅（同主管簡報）。`;
 
   /** 組員點數表欄位（組長週月報、區主管週月報共用） */
   function staffCols(prevErr) {
@@ -2114,7 +2145,25 @@
         label: '專案任務',
         dir: 1,
         value: (r) => r.project || null,
-        cell: (r) => `<td>${r.project ? `<span class="apt-proj${/清冊/.test(r.project) ? ' apt-proj--list' : ''}">${esc(r.project)}</span>` : ''}</td>`
+        cell: (r) => {
+          const cur = r.project || '';
+          const selected = Core.parseProjects(cur);
+          const chips = Core.projectChipsHtml(cur, esc);
+          if (!Core.canEditProject(myName())) {
+            return `<td class="apt-proj-cell">${chips || ''}</td>`;
+          }
+          const opts = [...new Set([...Core.PROJECT_TASKS, ...selected])];
+          return `<td class="apt-proj-cell"><details class="apt-proj-multi" data-staff-project="${esc(r.name)}">
+              <summary class="apt-proj-multi-sum" title="可複選；勾選後即儲存（僅黃怡婷、邱奕棋、簡為倢可改）">${chips || '<span class="apt-proj-empty">選任務</span>'}</summary>
+              <div class="apt-proj-multi-panel" role="group" aria-label="${esc(r.name)} 專案任務（可複選）">
+                ${opts.map((p) => {
+                  const tone = Core.projectTone(p);
+                  return `<label class="apt-proj-opt"><input type="checkbox" value="${esc(p)}"${selected.includes(p) ? ' checked' : ''}> <span class="apt-proj${tone ? ` apt-proj--${tone}` : ''}">${esc(p)}</span></label>`;
+                }).join('')}
+                <button type="button" class="apt-btn-lite apt-proj-clear" data-proj-clear>清除全部</button>
+              </div>
+            </details></td>`;
+        }
       },
       { key: 'weekPoints', label: '本週點數', num: true, dir: -1, value: (r) => r.weekPoints, cell: (r) => `<td class="num">${r.weekPoints}</td>` },
       { key: 'points', label: '月累積點數', num: true, dir: -1, value: (r) => r.points, cell: (r) => `<td class="num apt-total">${r.points}</td>` },
@@ -2396,8 +2445,9 @@
     return data;
   }
 
-  const ROSTER_SNAP_LS = 'apt-roster-snap-v1';
-  const ROSTER_SNAP_LITE_LS = 'apt-roster-snap-lite-v1';
+  /* v3-all3：良率改回四＋四一＋五期加總，作廢五期-only 本機快取 */
+  const ROSTER_SNAP_LS = 'apt-roster-snap-v3-all3';
+  const ROSTER_SNAP_LITE_LS = 'apt-roster-snap-lite-v3-all3';
 
   function readRosterSnapLocal(period) {
     try {
@@ -2718,7 +2768,7 @@
           .map((row) => `<tr><th class="apt-kpi-label">${row.label}<small>${esc(row.sub)}</small></th><td class="num">${Math.round(row.target * 100)}%</td>${cols.map((g) => cell(row, g)).join('')}</tr>`)
           .join('')}</tbody>
       </table></div>
-      <p class="apt-sub-note">和後台「各地區KPI指標」同一套算法，${areaNames ? '地區依區主管負責的北區／中區／南區／高雄列出' : '地區依組長負責的北／中／南區列出'}。第一階段以上達成率＝在職正職行政中，業績月第一天累計到本週日（或業績月最後一天）點數達 ${Core.STAGE_1} 點的人數 ÷ 人數（依人力明細部別分區${areaNames ? '，只算營業處的行政，不含租賃管理部' : ''}）。承接率＝行政審核件數 ÷ 總件數（案件依物件／合約縣市、房審依房客縣市分區）。清冊／審件作業良率＝（總件數 − 公會意見錯誤件數）÷ 總件數，依公會期數按月計算，採上個月（同主管簡報月報）。顏色：達目標綠、差 10% 以內黃、其餘紅。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`;
+      <p class="apt-sub-note">和後台「各地區KPI指標」同一套算法，${areaNames ? '地區依區主管負責的北區／中區／南區／高雄列出' : '地區依組長負責的北／中／南區列出'}。第一階段以上達成率＝在職正職行政中，業績月第一天累計到本週日（或業績月最後一天）點數達 ${Core.STAGE_1} 點的人數 ÷ 人數（依人力明細部別分區${areaNames ? '，只算營業處的行政，不含租賃管理部' : ''}）。承接率＝行政審核件數 ÷ 總件數（案件依物件／合約縣市、房審依房客縣市分區）。清冊／審件作業良率＝（總件數 − 公會意見錯誤件數）÷ 總件數，依公會期數按月計算，採上個月（同主管簡報月報）；清冊／案件為四期＋增辦四期＋五期加總。顏色：達目標綠、差 10% 以內黃、其餘紅。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`;
   }
 
   /* ---------- 品質儀表板：內部審件良率（本業績月抽查）、公會審件／清冊良率（公會意見，採上個月公會期數） ---------- */
@@ -2939,7 +2989,7 @@
   const GUILD_GEO_DUO = { width: 680, padL: 84, padR: 14 };
 
   /** 各縣市良率排行（選取的月份或今年累計）：組合計置頂，其餘依良率高到低；點一列切換下方趨勢圖 */
-  function guildCityBoard(gy, kind, k, cur, sel, regions, groupName, city, sum) {
+  function guildCityBoard(gy, kind, k, cur, sel, regions, groupName, city, sum, manager) {
     const isYear = sel === 'year';
     const upTo = Array.from({ length: cur.month }, (_, i) => i + 1);
     const selYear = isYear ? cur.year : Number(sel.slice(0, 3));
@@ -2983,11 +3033,11 @@
         <div class="apt-gcity-scale"><span></span><span class="apt-gcity-ticks">${[50, 60, 70, 80, 90, 100].map((t) => `<i style="left:${pos(t / 100)}%">${t}%</i>`).join('')}</span><span class="apt-gcity-keys"><em></em>目標 ${Math.round(k.goal * 100)}%　<b></b>同期</span><span></span></div>
         ${regions.length > 1 ? row(total, 0) : ''}
         ${cities.map((r, i) => row(r, i + 1)).join('')}
-        ${kind === 'audit' ? guildOfficePanel(sel, city ? [city] : regions, city || groupName.replace(/合計$/, '')) : ''}
+        ${kind === 'audit' ? guildOfficePanel(sel, city ? [city] : regions, city || groupName.replace(/合計$/, ''), manager) : ''}
       </div>`;
   }
 
-  /* ---------- 公會審件良率：各營業處（案件依複審人在人力明細的營業處；退件依媒合編號對回案件） ---------- */
+  /* ---------- 公會審件良率：各營業處（案件依代管營業處；公司→各地區租管部；退件依媒合編號對回案件） ---------- */
   /* 媒合編號儲存不帶縣市（星鴻F2M…）；縣市看 region 欄，比對用後段代碼 */
 
   const REV_STATUS = '複審中 → 複審通過';
@@ -3087,26 +3137,68 @@
     if (state.guildOpen || state.tab === 'person' || (state.tab === 'duration' && String(state.durView).startsWith('quality'))) render();
   }
 
-  const LEASE_COMPANY = '公司';
+  const OFF_NO_ESCROW = '未填代管營業處';
 
-  /** 案件在區主管範圍內的營業處：這一區的處照原名；業務支援管理部等不是「○○處」的歸「公司」；別區的處、沒填的回空字串 */
-  function leaseOfficeKey(r, manager) {
-    const name = Core.officeName(r.office);
+  /** 代管營業處顯示名：○○處照原名；公司／租管部等非「○○處」→ 依物件縣市 KPI 地區顯示「台中租管部」 */
+  function escrowOfficeLabel(r) {
+    const name = Core.officeName(r?.office);
     if (!name) return '';
-    if (!/處$/.test(name)) return LEASE_COMPANY;
-    return Core.officeArea(name)?.manager === manager ? name : '';
+    if (/處$/.test(name)) return name;
+    const region = String(r?.region || '').trim();
+    return region ? `${region}租管部` : '';
+  }
+
+  /** 顯示名 → 區主管設定（處用 officeArea；○○租管部用地區對 AREA_MANAGERS） */
+  function escrowOfficeArea(office) {
+    const label = String(office || '');
+    if (/租管部$/.test(label)) {
+      const region = label.replace(/租管部$/, '');
+      return Core.AREA_MANAGERS.find((m) => m.regions.includes(region)) || null;
+    }
+    return Core.officeArea(label);
+  }
+
+  /**
+   * 營業處是否屬這位區主管（同縣市拆兩位主管時用，例：台南→葉芮恩南一、葉建志南二）。
+   * ○○處依 heads；○○租管部同區多位主管都會看到；未指定 manager 則不過濾。
+   */
+  function officeOfManager(office, manager) {
+    if (!manager) return true;
+    const label = String(office || '');
+    if (/租管部$/.test(label)) {
+      const mgr = Core.AREA_MANAGERS.find((m) => m.manager === manager);
+      return !!(mgr && mgr.regions.includes(label.replace(/租管部$/, '')));
+    }
+    if ([OFF_NO_ESCROW, OFF_NO_REV, OFF_NO_CASE].includes(label)) return false;
+    return Core.officeArea(label)?.manager === manager;
+  }
+
+  /** 案件在區主管範圍內的營業處：這一區的處照原名；代管是公司等非處 → 各地區租管部；別區的處、沒填的回空字串 */
+  function leaseOfficeKey(r, manager) {
+    const label = escrowOfficeLabel(r);
+    if (!label) return '';
+    if (/租管部$/.test(label)) {
+      const mgr = Core.AREA_MANAGERS.find((m) => m.manager === manager);
+      return mgr && mgr.regions.includes(String(r.region || '').trim()) ? label : '';
+    }
+    return Core.officeArea(label)?.manager === manager ? label : '';
   }
 
   function leaseOfficeRank(o) {
-    return o === LEASE_COMPANY ? 1e9 : Core.officeRank(o);
+    if (/租管部$/.test(o)) {
+      const region = String(o).replace(/租管部$/, '');
+      const i = (Core.KPI_REGIONS || []).indexOf(region);
+      return 1e9 + (i >= 0 ? i : 999);
+    }
+    return Core.officeRank(o);
   }
 
-  /** 區主管：只算這一區的處和公司的案件 */
+  /** 區主管：只算這一區的處與該區各地區租管部的案件 */
   function areaOwnRows(rows, manager) {
     return rows.filter((r) => leaseOfficeKey(r, manager));
   }
 
-  /** 應繳案件依合約的「代管營業處」（媒合管理）分組；只列這一區、有應繳的營業處 */
+  /** 應繳案件依合約的「代管營業處」（媒合管理）分組；只列這一區、有應繳的營業處／租管部 */
   function leaseOfficeGroups(rows, manager) {
     if (rows.length && !rows.some((r) => r.office)) return { error: '應繳案件還沒有代管營業處資料，請按「重新抓取星鴻資料」' };
     const own = areaOwnRows(rows, manager);
@@ -3178,25 +3270,24 @@
   }
 
   /**
-   * 各營業處審件件數與退件：案件（同地址的包租／轉租只算一件，同 Worker）依複審人歸處；
-   * 公會案件意見依媒合編號找回案件，算在該案的營業處。
+   * 各營業處審件件數與退件：案件（同地址的包租／轉租只算一件）依「代管營業處」歸處
+   * （公司等非○○處 → 各地區租管部）；公會案件意見依媒合編號找回案件。
+   * 複審人仍顯示在明細，但不再用來分營業處。
    */
-  function guildOfficeRows(entry, regions, errors) {
+  function guildOfficeRows(entry, regions, errors, manager) {
     const want = new Set(regions);
     const everywhere = want.has('全區');
-    const staffBy = new Map((state.sb?.staff || []).map((s) => [s.name, s]));
     const revOf = (c) => revOfCase(entry, c);
     const buckets = new Map();
-    const bucket = (office, staffOffice) => {
-      if (!buckets.has(office)) buckets.set(office, { office, area: Core.officeArea(staffOffice || office), total: 0, err: 0, cases: [] });
+    const bucket = (office) => {
+      if (!buckets.has(office)) buckets.set(office, { office, area: escrowOfficeArea(office), total: 0, err: 0, cases: [] });
       return buckets.get(office);
     };
     const byNo = new Map();
-    for (const list of caseGroups(entry.cases)) {
+    for (const list of caseGroups(entry.cases || [])) {
       const pick = list.find(revOf) || list[0];
       const r = revOf(pick);
-      const s = r ? staffBy.get(r.auditor) || (REVIEWER_OFFICE[r.auditor] ? { office: REVIEWER_OFFICE[r.auditor] } : null) : null;
-      const office = !r ? OFF_NO_REV : !s ? OFF_NOT_STAFF : Core.officeName(s.office) || '人力明細沒有營業處';
+      const office = escrowOfficeLabel(pick) || OFF_NO_ESCROW;
       const other = r
         ? null
         : list
@@ -3207,32 +3298,34 @@
       const item = { no: pick.no || '', others: list.filter((c) => c !== pick).map((c) => c.no).filter(Boolean), city: pick.city || '', region: pick.region || '', auditor: r?.auditor || '', fromDetail: !!r?.fromDetail, hint, revAt: r ? String(r.time).slice(0, 10) : '', office, errs: [] };
       for (const c of list) if (c.no) byNo.set(caseNoKey(c.no), item);
       if (!everywhere && !want.has(item.region)) continue;
+      if (!officeOfManager(office, manager)) continue;
       item.inScope = true;
-      const b = bucket(office, s?.office);
+      const b = bucket(office);
       b.total += 1;
       b.cases.push(item);
     }
-    for (const o of errors || []) {
-      if (o.kind !== 'case' || (!everywhere && !want.has(o.area))) continue;
+    for (const o of Core.opinionsForGuildQuality(errors || []).filter((x) => x.kind === 'case')) {
+      if (!everywhere && !want.has(o.area)) continue;
       const item = byNo.get(caseNoKey(o.caseNo));
       if (item?.inScope) {
         item.errs.push(o.category || '未分類');
         buckets.get(item.office).err += 1;
-      } else {
+      } else if (!manager) {
         const b = bucket(OFF_NO_CASE);
         b.err += 1;
         b.cases.push({ no: o.caseNo || '', others: [], city: o.region || o.area || '', region: o.area || '', auditor: '', revAt: '', office: OFF_NO_CASE, errs: [o.category || '未分類'] });
       }
     }
-    const special = [OFF_NOT_STAFF, OFF_NO_REV, OFF_NO_CASE];
-    const rank = (o) => (special.includes(o) ? 2e6 + special.indexOf(o) : Core.officeRank(o));
+    const special = [OFF_NO_ESCROW, OFF_NO_REV, OFF_NO_CASE];
+    const rank = (o) => (special.includes(o) ? 2e6 + special.indexOf(o) : leaseOfficeRank(o));
     return [...buckets.values()]
+      .filter((b) => officeOfManager(b.office, manager))
       .map((b) => ({ ...b, rate: b.total ? Core.kpiErrRate(b) : null }))
       .sort((a, b) => rank(a.office) - rank(b.office) || a.office.localeCompare(b.office, 'zh-Hant'));
   }
 
-  function guildOfficePanel(sel, regions, label) {
-    const head = `<h5 class="apt-goff-title">🏢 ${esc(label)}｜各營業處審件良率<small>案件依「複審人」在人力明細的營業處；點營業處看逐件媒合編號與複審人</small></h5>`;
+  function guildOfficePanel(sel, regions, label, manager) {
+    const head = `<h5 class="apt-goff-title">🏢 ${esc(label)}｜各營業處審件良率<small>案件依媒合管理「代管營業處」（公司→各地區租管部）；點營業處看逐件媒合編號與複審人</small></h5>`;
     if (sel === 'year') return `<div class="apt-goff">${head}<p class="apt-sub-note">各營業處明細要看單月，請按右上角「單月」。</p></div>`;
     if (sel < GUILD_SYS_START) return `<div class="apt-goff">${head}<p class="apt-sub-note">${esc(sel)} 是管報匯入的月報，只有總數，沒有逐件案件可以分營業處（${GUILD_SYS_START} 起才有）。</p></div>`;
     loadGuildOffices(sel);
@@ -3242,7 +3335,7 @@
       return `<div class="apt-goff">${head}<p class="apt-bad">讀取失敗：${esc(entry.error)} <button type="button" class="apt-btn-lite" data-guild-off-retry="${esc(sel)}">重試</button></p></div>`;
     }
     const errors = state.guildSys.get(sel)?.data?.errors || [];
-    const rows = guildOfficeRows(entry, regions, errors);
+    const rows = guildOfficeRows(entry, regions, errors, manager);
     const open = state.guildOffOpen;
     const tone = (rate) => (rate == null ? 'na' : rate >= 0.9 ? 'g' : rate >= 0.8 ? 'y' : 'r');
     const caseTable = (b) => `<tr class="apt-goff-cases"><td colspan="5">
@@ -3289,9 +3382,7 @@
             <tr class="apt-sum-row"><th>合計</th><td></td><td class="num">${total.total}</td><td class="num">${total.err}</td><td class="num">${total.total ? `${(Core.kpiErrRate(total) * 100).toFixed(1)}%` : NIL}</td></tr>
           </tbody>
         </table></div>
-        <p class="apt-sub-note">案件＝公會期數 ${esc(sel)}（起租日在該月）的已生效合約，包租案件的包租、轉租兩張合約同地址只算一件；複審人取審核時間紀錄「複審中 → 複審通過」最後一次（查 ${esc(entry.from)}～${esc(entry.to)}），先用合約對，對不到再用地址對；${
-          entry.rev.first ? `星鴻審核時間紀錄最早只有 ${esc(entry.rev.first)} 起的資料，` : ''
-        }還是查不到的，改到媒合管理合約明細的審核紀錄抓「複審通過」的審核者（標「合約明細」）。仍抓不到的列在「${OFF_NO_REV}」，明細改列這件找得到的其他審核人供參考。退件＝公會案件意見，依媒合編號找回案件。合計會和上方系統計算的件數相同；上方若採管報匯入的月報，數字可能略有差異。</p>
+        <p class="apt-sub-note">案件＝公會期數 ${esc(sel)}（起租日在該月）的已生效合約（四期＋增辦四期＋五期）；包租案件的包租、轉租兩張合約同地址只算一件。<b>營業處＝媒合管理「代管營業處」</b>（與應繳件數同一口徑）；代管是公司／租賃管理部等非「○○處」時，依物件縣市顯示「台中租管部」等地區租管部；沒填代管營業處的列在「${OFF_NO_ESCROW}」。明細的複審人僅供對照，取審核時間紀錄「複審中 → 複審通過」最後一次（查 ${esc(entry.from)}～${esc(entry.to)}），對不到再補合約明細。退件＝公會案件意見，依媒合編號找回案件。合計會和上方系統計算的件數相同；上方若採管報匯入的月報，數字可能略有差異。</p>
       </div>`;
   }
 
@@ -3538,8 +3629,8 @@
       it.forms.push(row.form);
       buckets.get(it.office).total += 1;
     }
-    for (const o of errors || []) {
-      if (o.kind !== 'roster' || (!everywhere && !want.has(o.area))) continue;
+    for (const o of Core.opinionsForGuildQuality(errors || []).filter((x) => x.kind === 'roster')) {
+      if (!everywhere && !want.has(o.area)) continue;
       const no = String(o.caseNo || '').trim();
       const what = o.category || '未分類';
       const it = items.get(caseNoKey(no));
@@ -3651,7 +3742,7 @@
             <tr class="apt-sum-row"><th>合計</th><td></td><td class="num">${total.total}</td><td class="num">${total.err}</td><td class="num">${total.total ? `${(Core.kpiErrRate(total) * 100).toFixed(1)}%` : NIL}</td></tr>
           </tbody>
         </table></div>
-        <p class="apt-sub-note">清冊件數＝公會期數 ${esc(sel)} 表單04＋表單09（同上方系統計算，表04、表09 各算一件）；每件依媒合編號找到合約，取合約明細審核紀錄最後一次「複審通過」的審核者，算到他在人力明細的營業處（不在人力明細的主管依對照表）。公會意見＝清冊意見，依媒合編號找回清冊那一件；對不到本期清冊的列在「${OFF_NO_ROW}」。顏色：95% 以上綠、85% 以上黃、其餘紅。</p>
+        <p class="apt-sub-note">清冊件數＝公會期數 ${esc(sel)} 表單04＋表單09（四期＋增辦四期＋五期；表04、表09 各算一件）；每件依媒合編號找到合約，取合約明細審核紀錄最後一次「複審通過」的審核者，算到他在人力明細的營業處（不在人力明細的主管依對照表）。公會意見＝清冊意見，依媒合編號找回清冊那一件；對不到本期清冊的列在「${OFF_NO_ROW}」。顏色：95% 以上綠、85% 以上黃、其餘紅。</p>
       </div>`;
   }
 
@@ -3776,7 +3867,7 @@
       return x.total ? { ...x, rate: Core.kpiErrRate(x) } : null;
     };
     const single = !multi && o.scopeName && o.regions.length === 1 && o.regions[0] !== '全區';
-    const cityBoard = (multi || single) && !o.noCityBoard ? guildCityBoard(gy, open.kind, k, cur, sel, o.regions, groupName, single ? o.regions[0] : city, sum) : '';
+    const cityBoard = (multi || single) && !o.noCityBoard ? guildCityBoard(gy, open.kind, k, cur, sel, o.regions, groupName, single ? o.regions[0] : city, sum, o.manager || '') : '';
     const curSum = sum(curVals);
     const prevSum = sum(prevVals.slice(0, cur.month));
     const prevYear = sum(prevVals);
@@ -3902,7 +3993,7 @@
       ? `<div class="apt-guild-duo${wide ? ' is-wide' : ''}">${wide === 'cats' ? `${catCard}${plot}` : `${plot}${catCard}`}</div>${tableBox}`
       : `${plot}${catCard}`;
     return wrap(`${cityBoard}${duo}
-      <p class="apt-sub-note">良率＝（總件數 − ${k.errText}件數）÷ 總件數，目標 ${Math.round(k.goal * 100)}%；${k.op === 'case' ? '審件總件數＝起租已生效案件，包租案件的包租、轉租兩張合約同地址只算一件；' : ''}${GUILD_SYS_START} 起由系統計算（同上方卡片），更早的月份與同期取自管報「各都良率總表」（全台與各縣市，後台「公會意見」頁匯入；新竹、嘉義含市與縣），兩者都有時以匯入的為準。滑鼠停在良率上可看資料來源。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`);
+      <p class="apt-sub-note">良率＝（總件數 − ${k.errText}件數）÷ 總件數，目標 ${Math.round(k.goal * 100)}%；${k.op === 'case' ? '審件總件數＝起租已生效案件（四期＋增辦四期＋五期），包租案件的包租、轉租兩張合約同地址只算一件；' : '清冊總件數＝表單04＋09（四期＋增辦四期＋五期）；'}退件／意見依媒合編號去重。${GUILD_SYS_START} 起由系統計算（同上方卡片），更早的月份與同期取自管報「各都良率總表」（全台與各縣市，後台「公會意見」頁匯入；新竹、嘉義含市與縣），兩者都有時以匯入的為準。滑鼠停在良率上可看資料來源。${notes.length ? `<br><span class="apt-bad">${esc(notes.join('；'))}</span>` : ''}</p>`);
   }
 
   /** 組長週報：全部組長＝全區；選了組長＝該組組員與負責地區 */
@@ -3913,7 +4004,7 @@
     const who = !scope ? '全區' : scope.label ? esc(scope.label) : `${esc(scope.leader)} 組${scope.areas?.length ? `（${esc(scope.areas.join('・'))}）` : ''}`;
     const boss = state.tab === 'area' ? '區主管' : '組長';
     return `<h4 class="apt-sec-title">本月品質良率<small>${who} · ${scope ? `點上方「看全部${boss}」回到全區` : `點上方${boss}看該區`}</small></h4>
-      ${qualityGauges(range, { names: scope ? staff.map((s) => s.name) : null, regions, regionText: scope ? regions.join('・') : '', scopeName: scope ? scope.short || scopeLabel(scope) : '', noCityBoard: state.tab === 'weekly' })}`;
+      ${qualityGauges(range, { names: scope ? staff.map((s) => s.name) : null, regions, regionText: scope ? regions.join('・') : '', scopeName: scope ? scope.short || scopeLabel(scope) : '', noCityBoard: state.tab === 'weekly', manager: state.tab === 'area' && scope?.leader ? scope.leader : '' })}`;
   }
 
   /* ---------- 案件繳交稽核：應繳＝起租日在該週（週五～週四）的已生效合約；行政逐件打勾＝已繳 ---------- */
@@ -4118,6 +4209,40 @@
     render();
   }
 
+  async function saveStaffProject(name, project, el) {
+    const staff = (state.sb?.staff || []).find((s) => s.name === name);
+    if (!staff || !token()) return;
+    if (!Core.canEditProject(myName())) {
+      window.alert('只有黃怡婷、邱奕棋、簡為倢可以變更專案任務');
+      return;
+    }
+    const prev = staff.project || '';
+    const next = Core.formatProjects(Core.parseProjects(project));
+    if (next === Core.formatProjects(Core.parseProjects(prev))) return;
+    const boxes = el ? [...el.querySelectorAll('input[type="checkbox"]')] : [];
+    boxes.forEach((b) => { b.disabled = true; });
+    try {
+      const res = await window.skyfunAuth.rpc('admin_points_staff_set_project', {
+        p_token: token(),
+        p_name: name,
+        p_project: next
+      });
+      if (!res?.ok) throw new Error(res?.error || '儲存失敗');
+      staff.project = next;
+      setMsg(`已更新 ${name} 的專案任務`, 'ok');
+      render();
+    } catch (e) {
+      if (el) {
+        const prevSet = new Set(Core.parseProjects(prev));
+        boxes.forEach((b) => { b.checked = prevSet.has(b.value); });
+      }
+      setMsg(`專案任務沒有存到：${e.message || e}`, 'err');
+      window.alert(`專案任務儲存失敗：${e.message || e}`);
+    } finally {
+      boxes.forEach((b) => { b.disabled = false; });
+    }
+  }
+
   /** 一鍵打勾／一鍵取消：逐件存（同單件打勾），中途失敗就停，已存的保留 */
   async function saveLeaseCheckAll(ids, checked = true) {
     const lz = state.lease;
@@ -4180,7 +4305,7 @@
     const byOffice = !!(scope && state.tab === 'area' && scope.offices);
     const unit = byOffice ? '營業處' : '地區';
     const title = `<h4 class="apt-sec-title">應繳件數・繳交率<small>${scope ? `${esc(areaName)} · ${range.month} 月整月，點${unit}看明細並打勾` : `全區 · 點上方${state.tab === 'area' ? '區主管' : '組長'}可看各${state.tab === 'area' ? '營業處' : '地區'}明細並打勾`}</small>${LEASE_FOLD_BTN}</h4>`;
-    const notes = `<p class="apt-sub-note">應繳＝起租日落在當月的已生效合約，依物件縣市分區；包租案件的包租、轉租兩張合約同地址，只算一件。${byOffice ? `營業處＝該案在媒合管理的「代管營業處」，不是審核人的營業處；只算這一區的營業處，業務支援管理部等公司部門合併為「公司」，沒有應繳的營業處不列。` : ''}繳交率＝已打勾件數 ÷ 應繳件數。以日曆月計（1 號～月底，不是業績月）。</p>`;
+    const notes = `<p class="apt-sub-note">應繳＝起租日落在當月的已生效合約，依物件縣市分區；包租案件的包租、轉租兩張合約同地址，只算一件。${byOffice ? `營業處＝該案在媒合管理的「代管營業處」（與公會審件良率同一口徑）；只算這一區的營業處；代管是公司／租賃管理部等非「○○處」時，依物件縣市顯示「台中租管部」等地區租管部；沒有應繳的營業處不列。` : ''}繳交率＝已打勾件數 ÷ 應繳件數。以日曆月計（1 號～月底，不是業績月）。</p>`;
     if (!lz || lz.loading) return `${title}<p class="apt-sub-note apt-loading">讀取應繳案件中…</p>`;
     if (lz.error) return `${title}<p class="apt-bad">應繳案件讀取失敗：${esc(lz.error)}</p>`;
     if (!scope) return `${title}<div class="apt-gauges">${card(`全區 ${range.month} 月應繳件數`, stat(rowsOf(null)), periodText)}</div>${notes}`;
@@ -4474,7 +4599,7 @@
   function personGauges(range, name) {
     const st = (state.sb?.staff || []).find((s) => s.name === name);
     const region = Core.kpiRegionOfStaff(st?.region);
-    return `<h4 class="apt-sec-title">本月品質良率<small>內部審件良率是自己的抽查結果；公會審件／清冊良率依合約「複審通過」的審核者算到個人（審件＝我複審的起租案件，清冊＝表單04／09 裡我複審過的合約，退件／意見依媒合編號算）</small></h4>
+    return `<h4 class="apt-sec-title">本月品質良率<small>內部審件良率是自己的抽查結果；公會審件／清冊良率依合約「複審通過」的審核者算到個人（審件＝我複審的起租案件，清冊＝表單04／09 裡我複審過的合約；四期＋增辦四期＋五期加總）</small></h4>
       ${personQuality(range, name, region)}`;
   }
 
@@ -5659,7 +5784,7 @@
       );
     }
     if (r.duplicates.length) {
-      out.push(`<li>同案件同工作項目重複紀錄已排除 ${r.duplicates.length} 筆（只認列第一次）。</li>`);
+      out.push(`<li>同案件同工作項目重複紀錄已排除 ${r.duplicates.length} 筆（只認列第一次；物件「人工審核 → 已生效」為停用後再審，另計一點；合約同租期已停用另給「重新審核通過」者一點）。</li>`);
     }
     return `<ul class="apt-warn">${out.join('')}</ul>`;
   }
@@ -5689,7 +5814,8 @@
     if (spotTab) spotTab.hidden = !spotOk;
     if (state.tab === 'spot' && !spotOk) state.tab = 'month';
     document.querySelectorAll('.apt-tab').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === state.tab));
-    $('page-admin-points')?.classList.toggle('apt-wide', state.tab === 'month');
+    // 行政績效中心所有頁籤一律加寬
+    $('page-admin-points')?.classList.add('apt-wide');
     if (state.tab === 'person') box.innerHTML = renderPerson();
     else if (state.tab === 'weekly') box.innerHTML = renderWeekly();
     else if (state.tab === 'area') box.innerHTML = renderArea();
@@ -5841,7 +5967,7 @@
         rp.items = [];
         rp.loaded = false;
         list.innerHTML = '';
-        hint.textContent = '先選縣市與清冊期數，會列出這期表單04、表單09的媒合編號';
+        if (hint) hint.textContent = '';
         renderPick();
         return;
       }
@@ -5851,7 +5977,7 @@
       rp.loaded = false;
       list.innerHTML = '';
       renderPick();
-      hint.textContent = `讀取 ${region} ${el.rosterPeriod.value}（${gp}）的表單04、表單09…第一次約 5～15 秒`;
+      if (hint) hint.textContent = '';
       try {
         const items = await fetchRosterItems(region, code, gp);
         if (rp.key !== key) return;
@@ -5869,15 +5995,15 @@
           const clean = Core.canonicalOpinionCaseNo(no, region, '')?.value || no;
           return `<option value="${esc(clean)}" label="${esc([forms.join('、'), who].filter(Boolean).join('｜'))}">`;
         }).join('');
-        const n04 = items.filter((x) => x.form === '04').length;
-        hint.textContent = items.length
-          ? `${byNo.size} 個媒合編號（表單04 ${n04} 筆、表單09 ${items.length - n04} 筆），可下拉選或直接輸入`
-          : `${region} ${el.rosterPeriod.value} 在 ${gp} 沒有表單04／09 資料，請直接輸入媒合編號`;
+        if (hint) hint.textContent = '';
         renderPick();
       } catch (err) {
         if (rp.key !== key) return;
         rp.key = '';
-        hint.textContent = `清冊明細讀取失敗（${err.message}），請直接輸入媒合編號`;
+        if (hint) {
+          hint.hidden = false;
+          hint.textContent = `清冊明細讀取失敗（${err.message}），請直接輸入媒合編號`;
+        }
       }
     };
     ['guildPeriod', 'region', 'rosterPeriod'].forEach((n) => el[n].addEventListener('change', load));
@@ -6031,6 +6157,18 @@
         : o.category
           ? esc(o.category)
           : NIL;
+    const caseNoCell = (o) =>
+      canEditOp(o)
+        ? `<input type="text" class="apt-op-edit-cat apt-op-edit-caseno" data-op-edit="${o.id}" data-op-field="caseNo" value="${esc(o.caseNo || '')}" maxlength="60" aria-label="媒合編號" placeholder="星鴻F2M…" title="改完按 Enter 或點其他地方儲存">`
+        : o.caseNo
+          ? esc(o.caseNo)
+          : NIL;
+    const rosterCell = (o) => {
+      if (!canEditOp(o)) return esc(o.rosterPeriod) || NIL;
+      const cur = o.rosterPeriod || '';
+      const opts = [...new Set([...ROSTER_PERIODS.map(([p]) => p), cur].filter(Boolean))];
+      return `<select class="apt-op-edit-cat" data-op-edit="${o.id}" data-op-field="rosterPeriod" aria-label="清冊期數">${opts.map((p) => `<option${p === cur ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>`;
+    };
     const textCell = (o, field) =>
       canEditOp(o)
         ? `<textarea class="apt-op-edit-text" data-op-edit="${o.id}" data-op-field="${field}" rows="2">${esc(o[field] || '')}</textarea>`
@@ -6046,8 +6184,8 @@
           <td>${guildCell(o)}</td>
           <td>${o.region ? esc(o.region) : NIL}</td>
           ${isCase
-            ? `<td>${esc(o.caseNo)}</td>`
-            : `<td>${esc(o.rosterPeriod)}</td><td>${o.caseNo ? esc(o.caseNo) : NIL}${o.rosterItem ? `<small class="apt-op-item-note">${esc(o.rosterItem)}</small>` : ''}</td>`}
+            ? `<td>${caseNoCell(o)}</td>`
+            : `<td>${rosterCell(o)}</td><td>${caseNoCell(o)}${o.rosterItem ? `<small class="apt-op-item-note">${esc(o.rosterItem)}</small>` : ''}</td>`}
           <td>${dateCell(o)}</td>
           <td>${catCell(o)}</td>
           <td class="apt-op-text">${textCell(o, 'content')}</td>
@@ -6074,18 +6212,19 @@
     const periods = guildPeriods().map((p) => `<option>${p}</option>`).join('');
     return `<div class="apt-op-modal" role="dialog" aria-modal="true" aria-label="填寫${f.title}">
         <header class="apt-op-head"><b>📝 填寫${f.title}</b><button type="button" class="apt-op-x" data-op-close aria-label="關閉">✕</button></header>
-        <p class="apt-op-tip">每填一筆算 <b>1 點</b>，計入填寫當天所在業績月的「${f.item}」，點數算給填寫的人（${esc(myName() || '—')}）。媒合編號固定存成「星鴻／星華＋編號」（例：星鴻F2M10500502），<b>不帶縣市</b>（貼上「星鴻高雄F2M…」會自動拿掉高雄；縣市欄可不選、不防呆，期數不同編號格式不一照常送出）；同一媒合編號有多筆意見時，<b>只認列第一筆 1 點</b>，後面的筆數照常列入公會意見、但 0 點。若把有給點的那筆刪掉，點數會改算到剩下最早的一筆。</p>
+        <p class="apt-op-tip">每填一筆算 <b>1 點</b>，計入填寫當天所在業績月的「${f.item}」，點數算給填寫的人（${esc(myName() || '—')}）。媒合編號固定存成「星鴻／星華＋編號」（例：星鴻F2M10500502），<b>不帶縣市</b>（貼上「星鴻高雄F2M…」會自動拿掉高雄）。<b>五期編號（期別 05）一定要選縣市</b>；四期／增辦四期可不選。同一媒合編號有多筆意見時，<b>只認列第一筆 1 點</b>，後面的筆數照常列入公會意見、但 0 點。若把有給點的那筆刪掉，點數會改算到剩下最早的一筆。</p>
         <form class="apt-op-form" data-op-kind="${kind}" novalidate>
           <label><span>公會期數 <em>*</em></span><select name="guildPeriod">${periods}</select></label>
-          <label><span>縣市<small class="apt-op-auto">可不選，不防呆</small></span><select name="region"><option value="">（不選）</option>${Core.KPI_REGIONS.map((r) => `<option>${r}</option>`).join('')}</select></label>
+          <label><span>縣市<small class="apt-op-auto apt-op-region-hint">五期必選；其他可不選</small></span><select name="region"><option value="">（不選）</option>${Core.KPI_REGIONS.map((r) => `<option>${r}</option>`).join('')}</select></label>
           <label><span>公司 <em>*</em><small class="apt-op-auto">只打編號時用</small></span><select name="company"><option>星鴻</option><option>星華</option></select></label>
           ${isCase
-            ? '<label><span>媒合編號 <em>*</em><small class="apt-op-auto">只打 F2M… 也會自動補齊，不帶縣市</small></span><input name="caseNo" maxlength="60" placeholder="例如 星鴻F2M10500502" autocomplete="off"></label>'
+            ? '<label><span>媒合編號 <em>*</em></span><input name="caseNo" maxlength="60" autocomplete="off"></label>'
             : `<label><span>清冊期數 <em>*</em></span><select name="rosterPeriod"><option value="">請選擇</option>${ROSTER_PERIODS.map(([p]) => `<option>${p}</option>`).join('')}</select></label>`}
           <label><span>意見時間 <em>*</em></span><input type="date" name="opinionDate" required></label>
           ${isCase ? '' : `<div class="apt-op-wide apt-op-roster">
-            <label><span>媒合編號 <em>*</em><small class="apt-op-auto apt-op-roster-hint">有選縣市與清冊期數會列出這期表單04、表單09的媒合編號，也可以直接輸入</small></span>
-              <input name="caseNo" maxlength="60" list="apt-op-roster-nos" placeholder="下拉選擇或直接輸入，例如 星鴻F2M10500502（不帶縣市）" autocomplete="off"><datalist id="apt-op-roster-nos"></datalist></label>
+            <label><span>媒合編號 <em>*</em></span>
+              <input name="caseNo" maxlength="60" list="apt-op-roster-nos" autocomplete="off"><datalist id="apt-op-roster-nos"></datalist>
+              <small class="apt-op-auto apt-op-roster-hint" hidden></small></label>
             <div class="apt-op-items" hidden></div>
           </div>`}
           <label class="apt-op-wide"><span>缺失類別 <em>*</em><small class="apt-op-auto">同公會月報的${isCase ? '審件' : '清冊'}缺失分類，一筆意見選最主要的一項</small></span><select name="category" required><option value="">請選擇</option>${Core.OPINION_CATEGORIES[kind].map((c) => `<option>${esc(c)}</option>`).join('')}</select></label>
@@ -6127,11 +6266,22 @@
     mask.addEventListener('change', (e) => {
       const box = e.target.closest('[data-op-fixed]');
       if (box) setOpinionFixed(kind, box);
-      const edit = e.target.closest('[data-op-edit][data-op-field="category"], [data-op-edit][data-op-field="guildPeriod"], [data-op-edit][data-op-field="opinionDate"]');
+      const edit = e.target.closest(
+        '[data-op-edit][data-op-field="category"], [data-op-edit][data-op-field="guildPeriod"], [data-op-edit][data-op-field="opinionDate"], [data-op-edit][data-op-field="rosterPeriod"]'
+      );
       if (edit) saveOpinionFields(kind, edit);
     });
+    mask.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const edit = e.target.closest('[data-op-edit][data-op-field="caseNo"]');
+      if (!edit) return;
+      e.preventDefault();
+      edit.blur();
+    });
     mask.addEventListener('focusout', (e) => {
-      const edit = e.target.closest('[data-op-edit][data-op-field="content"], [data-op-edit][data-op-field="measure"]');
+      const edit = e.target.closest(
+        '[data-op-edit][data-op-field="content"], [data-op-edit][data-op-field="measure"], [data-op-edit][data-op-field="caseNo"]'
+      );
       if (edit) saveOpinionFields(kind, edit);
     });
     const form = mask.querySelector('form');
@@ -6182,8 +6332,15 @@
     const lists = [...myOpinions(kind), ...(state.opOpen || [])];
     const o = lists.find((x) => Number(x.id) === id);
     if (!o) return;
-    const next = String(el.value || '');
+    let next = String(el.value || '');
     const prev = String(o[field] || '');
+    if (field === 'caseNo') {
+      const canon = Core.canonicalOpinionCaseNo(next, o.region || '', next.includes('星華') ? '星華' : '星鴻');
+      if (canon) {
+        next = canon.value;
+        el.value = next;
+      }
+    }
     if (next === prev) return;
     el.disabled = true;
     try {
@@ -6194,17 +6351,25 @@
         p_content: null,
         p_measure: null,
         p_guild_period: null,
-        p_opinion_date: null
+        p_opinion_date: null,
+        p_case_no: null,
+        p_roster_period: null
       };
       if (field === 'category') patch.p_category = next;
       if (field === 'content') patch.p_content = next;
       if (field === 'measure') patch.p_measure = next;
       if (field === 'guildPeriod') patch.p_guild_period = next;
       if (field === 'opinionDate') patch.p_opinion_date = next;
+      if (field === 'caseNo') patch.p_case_no = next;
+      if (field === 'rosterPeriod') patch.p_roster_period = next;
       const res = await window.skyfunAuth.rpc('admin_points_opinion_update', patch);
       if (!res?.ok) throw new Error(res?.error || '更新失敗');
       for (const row of [...(state.sb?.opinions || []), ...(state.opOpen || [])]) {
         if (Number(row.id) === id && res.opinion) Object.assign(row, res.opinion);
+      }
+      if (field === 'caseNo' || field === 'rosterPeriod') {
+        const list = document.querySelector('#apt-op-mask .apt-op-list');
+        if (list) list.innerHTML = opinionRows(kind);
       }
     } catch (err) {
       el.value = prev;
@@ -6246,8 +6411,12 @@
       form.elements.caseNo.focus();
       return fail('媒合編號格式不正確：請填後段編號（例如 F2M10500502），系統會組成「星鴻F2M10500502」（不帶縣市）');
     }
-    /* 縣市不防呆：期數不同，有的編號有縣市、有的沒有，不比對也不擋 */
     data.caseNo = canon.value;
+    /* 五期（期別碼 05）一定要選縣市（表單有選或編號可推出才算）；四期／增辦四期不防呆 */
+    if (Core.isPeriod5CaseNo(data.caseNo) && !(data.region || canon.region)) {
+      form.elements.region.focus();
+      return fail('五期媒合編號請選縣市');
+    }
     data.region = data.region || canon.region || '';
     if (!data.opinionDate) {
       form.elements.opinionDate.focus();
@@ -6337,6 +6506,16 @@
       if (state.leaseDueCell && !state.lease?.dueSaving && !e.target.closest('.apt-lease-due-editing, [data-lease-due-cell]')) {
         state.leaseDueCell = null;
         render();
+      }
+      const projClear = e.target.closest('[data-proj-clear]');
+      if (projClear) {
+        e.preventDefault();
+        const root = projClear.closest('[data-staff-project]');
+        if (root) {
+          root.querySelectorAll('input[type="checkbox"]').forEach((c) => { c.checked = false; });
+          saveStaffProject(root.dataset.staffProject, '', root);
+        }
+        return;
       }
       const sortTh = e.target.closest('[data-dur-sort]');
       if (sortTh) {
@@ -6709,6 +6888,12 @@
         if (state.meta?.range && (!v || Number(v.slice(0, 4)) >= 2000)) saveLeaseDue(state.meta.range, e.target.dataset.leaseDueInput, v);
         return;
       }
+      const projRoot = e.target.closest?.('[data-staff-project]');
+      if (projRoot && e.target.matches?.('input[type="checkbox"]')) {
+        const picked = [...projRoot.querySelectorAll('input[type="checkbox"]:checked')].map((c) => c.value);
+        saveStaffProject(projRoot.dataset.staffProject, Core.formatProjects(picked), projRoot);
+        return;
+      }
       if (e.target.id === 'apt-person') state.person = e.target.value;
       else if (e.target.id === 'apt-leader') {
         state.leader = e.target.value;
@@ -6748,10 +6933,11 @@
       const saved = JSON.parse(sessionStorage.getItem(TOP_KEY) || 'null');
       if (saved?.key === key && Date.now() - saved.at < 10 * 60 * 1000) return saved.top;
     } catch { /* 沒存過就重算 */ }
-    const [audit, expenses, term, sb] = await Promise.all([
+    const [audit, expenses, term, dis, sb] = await Promise.all([
       fetchWorker('/admin-points/audit-log', '審核時間紀錄', range, false),
       fetchWorker('/admin-points/expenses', '補助審核', range, false),
       fetchTerminations(range, false),
+      fetchDisableCredits(range, false),
       fetchSupabase(range)
     ]);
     const result = Core.compute(auditRowsOf(audit), {
@@ -6762,7 +6948,9 @@
       manual: sb.manual || [],
       opinions: sb.opinions || [],
       expenses: auditRowsOf(expenses),
-      terminations: auditRowsOf(term)
+      terminations: auditRowsOf(term),
+      disableCredits: auditRowsOf(dis),
+      disableSuppressIds: Array.isArray(dis.suppressIds) ? dis.suppressIds : []
     });
     const top = result.people.filter((p) => p.month.total > 0).slice(0, 3).map((p) => ({ name: p.name, points: p.month.total }));
     try { sessionStorage.setItem(TOP_KEY, JSON.stringify({ key, at: Date.now(), top })); } catch { /* 存不了就算了 */ }

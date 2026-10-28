@@ -1607,12 +1607,12 @@
   background: var(--rmp-panel-2);
   border: 1px solid var(--rmp-line);
   border-radius: 1rem;
-  padding: 0.9rem 1rem 1rem;
+  padding: 0.75rem 0.85rem 0.9rem;
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
 }
 
 #page-rentmanager-perf .rmp-points-head {
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.55rem;
 }
 
 #page-rentmanager-perf .rmp-points-title {
@@ -1623,14 +1623,209 @@
 }
 
 #page-rentmanager-perf .rmp-points-sub {
-  margin: 0.25rem 0 0;
-  font-size: 0.8rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
   color: var(--rmp-muted);
+}
+
+#page-rentmanager-perf .rmp-points-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+#page-rentmanager-perf .rmp-points-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #dbe4f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+#page-rentmanager-perf .rmp-points-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#page-rentmanager-perf .rmp-points-table {
+  width: 100%;
+  min-width: 720px;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+#page-rentmanager-perf .rmp-points-table th,
+#page-rentmanager-perf .rmp-points-table td {
+  padding: 0.42rem 0.5rem;
+  vertical-align: middle;
+  font-size: 0.86rem;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-rank {
+  width: 2.2rem;
+  text-align: center;
+  color: var(--rmp-muted);
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-name {
+  width: 4.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-title {
+  width: 5.2rem;
+  text-align: center;
+  white-space: nowrap;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-region {
+  width: 3.2rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-office {
+  width: 3rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-cases {
+  width: 4rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-points {
+  width: 5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-points.is-pos {
+  color: #047857;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-points.is-neg {
+  color: #b91c1c;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-points.is-zero {
+  color: #94a3b8;
+}
+
+#page-rentmanager-perf .rmp-points-table .rmp-pt-detail,
+#page-rentmanager-perf .rmp-points-table .rmp-pt-note {
+  color: var(--rmp-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  word-break: break-word;
+  min-width: 14rem;
+}
+
+#page-rentmanager-perf .rmp-pt-details {
+  margin: 0;
+}
+
+#page-rentmanager-perf .rmp-pt-details > summary {
+  cursor: pointer;
+  list-style: none;
+  color: #334155;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+#page-rentmanager-perf .rmp-pt-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+#page-rentmanager-perf .rmp-pt-details > summary::before {
+  content: '▸ ';
+  color: #64748b;
+  font-weight: 700;
+}
+
+#page-rentmanager-perf .rmp-pt-details[open] > summary::before {
+  content: '▾ ';
+}
+
+#page-rentmanager-perf .rmp-pt-detail-table {
+  width: 100%;
+  margin-top: 0.45rem;
+  border-collapse: collapse;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+#page-rentmanager-perf .rmp-pt-detail-table th,
+#page-rentmanager-perf .rmp-pt-detail-table td {
+  padding: 0.28rem 0.45rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.74rem;
+}
+
+#page-rentmanager-perf .rmp-pt-detail-table th {
+  background: #eef2f7;
+  color: #475569;
+  font-weight: 700;
+  text-align: right;
+}
+
+#page-rentmanager-perf .rmp-pt-detail-table th.left,
+#page-rentmanager-perf .rmp-pt-detail-table td.left {
+  text-align: left;
+}
+
+#page-rentmanager-perf .rmp-pt-detail-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+#page-rentmanager-perf .rmp-pt-detail-table .rmp-pt-unit {
+  text-align: left;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+#page-rentmanager-perf .rmp-pt-detail-empty {
+  margin-top: 0.35rem;
+  color: #94a3b8;
 }
 
 #page-rentmanager-perf .rmp-points-table .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  #page-rentmanager-perf .rmp-points-table .rmp-pt-office,
+  #page-rentmanager-perf .rmp-points-table th.rmp-pt-office,
+  #page-rentmanager-perf .rmp-points-table .rmp-pt-title,
+  #page-rentmanager-perf .rmp-points-table th.rmp-pt-title {
+    display: none;
+  }
+  #page-rentmanager-perf .rmp-points-table .rmp-pt-name {
+    width: 4.6rem;
+  }
+  #page-rentmanager-perf .rmp-points-table .rmp-pt-points {
+    width: 4.2rem;
+  }
 }
 
 #page-rentmanager-perf .rmp-empty-row {

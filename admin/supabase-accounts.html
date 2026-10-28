@@ -72,6 +72,12 @@
     .badge-online { background: #d1fae5; color: #065f46; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
     .badge-idle { background: #e2e8f0; color: #475569; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
     .badge-abnormal { background: #fee2e2; color: #b91c1c; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-line-on { background: #dcfce7; color: #166534; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-line-off { background: #f1f5f9; color: #64748b; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
+    .badge-line-force { background: #ffedd5; color: #c2410c; font-size: 0.68rem; padding: 0.1rem 0.35rem; border-radius: 0.35rem; font-weight: 800; margin-top: 0.25rem; display: inline-block; }
+    .act-line { background: #06c755; color: #fff; }
+    .act-line-cancel { background: #64748b; color: #fff; }
+    .line-cell { min-width: 7.5rem; }
     .login-events { max-height: 14rem; overflow-y: auto; font-size: 0.78rem; }
     .login-events table { width: 100%; }
     .login-events .ok { color: #047857; font-weight: 800; }
@@ -171,6 +177,10 @@
         <input type="checkbox" id="filter-missing-team" class="w-auto" />
         只顯示缺處別
       </label>
+      <label class="flex items-center gap-2 text-sm text-slate-300 pb-2">
+        <input type="checkbox" id="filter-line-unbound" class="w-auto" />
+        只顯示未綁 LINE
+      </label>
       <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
       <p class="text-sm text-slate-400" id="count">—</p>
     </div>
@@ -180,7 +190,7 @@
         <thead>
           <tr>
             <th>帳號</th><th>顯示名稱</th><th>處別</th><th>登入狀態</th><th>最近活動</th>
-            <th>QA 雙倍</th><th>QA 優質</th><th>狀態</th><th>註冊時間</th><th>操作</th>
+            <th>QA 雙倍</th><th>QA 優質</th><th>LINE</th><th>狀態</th><th>註冊時間</th><th>操作</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -453,12 +463,33 @@
         }).join('');
       }
 
+      function lineCellHtml(u) {
+        const bound = !!u.lineBound;
+        const force = !!u.forceLineBind;
+        const name = esc(u.lineName || '');
+        const status = bound
+          ? `<span class="badge-line-on">已綁定</span>${name ? `<div class="text-[11px] text-slate-500 mt-0.5">${name}</div>` : ''}${u.lineBoundAt ? `<div class="text-[11px] text-slate-400">${fmt(u.lineBoundAt)}</div>` : ''}`
+          : '<span class="badge-line-off">未綁定</span>';
+        const forceTag = force ? '<div><span class="badge-line-force">下次強制綁定</span></div>' : '';
+        let btn = '';
+        if (force) {
+          btn = `<button type="button" class="act-btn act-line-cancel" data-act="line-force-off" data-id="${u.id}">取消強制</button>`;
+        } else if (bound) {
+          btn = `<button type="button" class="act-btn act-line" data-act="line-force-rebind" data-id="${u.id}" data-user="${esc(u.username)}" data-name="${esc(u.name)}">強制重綁</button>`;
+        } else {
+          btn = `<button type="button" class="act-btn act-line" data-act="line-force-on" data-id="${u.id}">下次強制綁定</button>`;
+        }
+        return `<div class="line-cell">${status}${forceTag}${btn}</div>`;
+      }
+
       function renderRows(users) {
         const missingOnly = document.getElementById('filter-missing-team').checked;
+        const unboundOnly = document.getElementById('filter-line-unbound')?.checked;
         const loginFilter = document.getElementById('filter-login')?.value || '';
         let list = missingOnly
           ? users.filter((u) => !String(u.team || '').trim())
           : users.slice();
+        if (unboundOnly) list = list.filter((u) => !u.lineBound);
         if (selectedTeamFilter) {
           list = list.filter((u) => userTeamKey(u) === selectedTeamFilter);
         }
@@ -467,10 +498,11 @@
         else if (loginFilter === 'session') list = list.filter((u) => u.hasSession);
         const q = document.getElementById('search').value.trim().toLowerCase();
         if (q) {
-          list = list.filter((u) => [u.username, u.name, u.team].some((v) => String(v || '').toLowerCase().includes(q)));
+          list = list.filter((u) => [u.username, u.name, u.team, u.lineName].some((v) => String(v || '').toLowerCase().includes(q)));
         }
         const suffix = [
           missingOnly ? '缺處別' : '',
+          unboundOnly ? '未綁 LINE' : '',
           loginFilter === 'online' ? '僅線上' : '',
           loginFilter === 'abnormal' ? '僅異常' : '',
           loginFilter === 'session' ? '仍有憑證' : '',
@@ -519,6 +551,7 @@
                 可認定優質
               </label>
             </td>
+            <td>${lineCellHtml(u)}</td>
             <td>${badge(u.status)}</td>
             <td>${fmt(u.createdAt)}</td>
             <td>${acts.join('') || '—'}</td>
@@ -620,6 +653,22 @@
         await loadList();
       }
 
+      async function setForceLineBind(id, on, unbind, username, name) {
+        if (on && unbind) {
+          const label = (username || '') + (name ? '（' + name + '）' : '');
+          if (!confirm('確定要解除 ' + label + ' 的 LINE 綁定，並要求下次登入強制重新綁定嗎？')) return;
+        }
+        const data = await rpc('toolbox_admin_set_force_line_bind', {
+          p_secret: secret,
+          p_user_id: id,
+          p_on: on,
+          p_unbind: !!unbind
+        });
+        if (!data?.ok) throw new Error(data?.error || '更新失敗');
+        document.getElementById('msg').textContent = data.message || (on ? '已設為下次強制綁 LINE' : '已取消強制綁 LINE');
+        await loadList();
+      }
+
       document.getElementById('btn-login').addEventListener('click', async () => {
         secret = document.getElementById('admin-secret').value.trim();
         const msg = document.getElementById('login-msg');
@@ -645,6 +694,7 @@
       document.getElementById('filter').addEventListener('change', () => loadList().catch(() => {}));
       document.getElementById('filter-login').addEventListener('change', () => renderRows(allUsers));
       document.getElementById('filter-missing-team').addEventListener('change', () => renderRows(allUsers));
+      document.getElementById('filter-line-unbound').addEventListener('change', () => renderRows(allUsers));
       document.getElementById('search').addEventListener('input', () => renderRows(allUsers));
 
       document.getElementById('team-stats-grid').addEventListener('click', (e) => {
@@ -666,6 +716,18 @@
         }
         if (btn.dataset.act === 'delete') {
           deleteUser(id, btn.dataset.user, btn.dataset.name).catch((err) => { msgEl.textContent = err.message; });
+          return;
+        }
+        if (btn.dataset.act === 'line-force-on') {
+          setForceLineBind(id, true, false).catch((err) => { msgEl.textContent = err.message; });
+          return;
+        }
+        if (btn.dataset.act === 'line-force-off') {
+          setForceLineBind(id, false, false).catch((err) => { msgEl.textContent = err.message; });
+          return;
+        }
+        if (btn.dataset.act === 'line-force-rebind') {
+          setForceLineBind(id, true, true, btn.dataset.user, btn.dataset.name).catch((err) => { msgEl.textContent = err.message; });
           return;
         }
         setStatus(id, btn.dataset.act).catch((err) => {

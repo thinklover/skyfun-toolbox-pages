@@ -37,7 +37,7 @@ declare v_uid uuid; v_ticket uuid; v_w public.course_video_watch%rowtype;
 begin
   v_uid := admin_qa_user_id(p_token);
   if v_uid is null then return json_build_object('ok', false, 'error', '請先登入'); end if;
-  if p_course not in ('obj', 'tenant', 'pre', 'rev') then return json_build_object('ok', false, 'error', '沒有這個課程影片'); end if;
+  if p_course not in ('obj', 'tenant', 'pre', 'rev', 'p5', 'lvr') then return json_build_object('ok', false, 'error', '沒有這個課程影片'); end if;
   delete from public.course_video_tickets where expires_at < now() - interval '1 day';
   insert into public.course_video_tickets (user_id, course, expires_at)
   values (v_uid, p_course, now() + interval '6 hours') returning ticket into v_ticket;
@@ -60,7 +60,7 @@ declare v_uid uuid; v_dur int; v_max int; v_segs int[]; v_pct int; v_done timest
 begin
   v_uid := admin_qa_user_id(p_token);
   if v_uid is null then return json_build_object('ok', false, 'error', '請先登入'); end if;
-  if p_course not in ('obj', 'tenant', 'pre', 'rev') then return json_build_object('ok', false, 'error', '沒有這個課程影片'); end if;
+  if p_course not in ('obj', 'tenant', 'pre', 'rev', 'p5', 'lvr') then return json_build_object('ok', false, 'error', '沒有這個課程影片'); end if;
   v_dur := least(greatest(coalesce(p_duration, 0), 0), 4 * 3600);
   select greatest(v_dur, coalesce(max(duration), 0)) into v_dur from public.course_video_watch where user_id = v_uid and course = p_course;
   v_max := ceil(v_dur / 10.0)::int - 1;

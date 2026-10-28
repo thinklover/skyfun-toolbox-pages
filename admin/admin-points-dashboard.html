@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261019-snap1"></script>
+  <script src="../js/admin-points-core.js?v=20261027-obj-re"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -178,10 +178,18 @@
     .op-edit { width: 100%; min-width: 11rem; min-height: 3.2rem; padding: 0.35rem 0.45rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 0.82rem; line-height: 1.4; resize: vertical; background: #fff; }
     .op-edit:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
     .op-cat { max-width: 14rem; }
-    .op-guild, .op-odate { padding: 0.3rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 0.82rem; background: #fff; }
+    .op-guild, .op-odate, .op-caseno, .op-roster, .op-region { padding: 0.3rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 0.82rem; background: #fff; }
     .op-guild { min-width: 5.5rem; }
     .op-odate { min-width: 8.5rem; }
-    .op-guild:focus, .op-odate:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
+    .op-caseno { width: 100%; min-width: 10rem; max-width: 14rem; }
+    .op-caseno-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; min-width: 12rem; }
+    .op-caseno-save { padding: 0.25rem 0.55rem; font-size: 0.75rem; font-weight: 800; border-radius: 8px; border: 1px solid #38bdf8; background: #e0f2fe; color: #0369a1; cursor: pointer; white-space: nowrap; }
+    .op-caseno-save:hover { background: #bae6fd; }
+    .op-caseno-save:disabled { opacity: 0.55; cursor: wait; }
+    .op-region { max-width: 6.5rem; }
+    .op-roster { min-width: 5.5rem; margin-bottom: 0.25rem; }
+    .op-ref-edit { display: flex; flex-direction: column; gap: 0.2rem; align-items: stretch; }
+    .op-guild:focus, .op-odate:focus, .op-caseno:focus, .op-roster:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
     tr.op-nopts > td { background: #fef2f2; color: #94a3b8; }
     .op-sub { font-size: 0.72rem; font-weight: 700; color: #64748b; }
     tr.click { cursor: pointer; }
@@ -554,7 +562,7 @@
     <div id="tab-opinion" class="space-y-4 hidden">
       <div class="page-head"><h2>公會意見</h2><p>行政在工具箱填的案件意見、清冊意見，全部期間都列在這裡，可以依公會期數、縣市、行政、組別分類</p></div>
       <details class="help"><summary>說明</summary>
-        <p>不受上方業績月限制，列出全部意見（最近 5000 筆）。先選案件／清冊，再選分類方式；篩選條件可以疊加。每筆 1 點，填錯可以按「刪除」，那位行政會少 1 點。「人工計點」頁最下面仍只列本業績月的意見。<b>公會期數、意見時間、缺失類別、公會意見內容、行政檢討對策</b>可直接在表上修改（離開欄位即儲存）；督導邱奕棋、簡為倢、黃怡婷亦可在工具箱用帳號修改。</p>
+        <p>不受上方業績月限制，列出全部意見（最近 5000 筆）。先選案件／清冊，再選分類方式；篩選條件可以疊加。每筆 1 點，填錯可以按「刪除」，那位行政會少 1 點。「人工計點」頁最下面仍只列本業績月的意見。<b>公會期數、縣市、媒合編號、清冊期數、意見時間、缺失類別、公會意見內容、行政檢討對策</b>可直接在表上修改；媒合編號改完請按旁邊「儲存」（或 Enter），其餘欄位選完／離開即存，右下角會顯示「已儲存修改」。請用測試版網址操作（正式版尚未開放改媒合編號）。督導邱奕棋、簡為倢、黃怡婷亦可在工具箱用帳號修改。</p>
       </details>
       <div class="toolbar">
         <div class="flex gap-2 pb-1" id="op-kinds">
@@ -802,7 +810,7 @@
           <div class="field"><label>地區／部別</label><input type="text" id="s-region" maxlength="30" style="width:6rem" /></div>
           <div class="field"><label>營業處</label><input type="text" id="s-office" maxlength="60" style="width:8rem" /></div>
           <div class="field"><label>到職日</label><input type="date" id="s-hire" /></div>
-          <div class="field"><label>專案任務</label><input type="text" id="s-project" maxlength="100" style="width:10rem" /></div>
+          <div class="field"><label>專案任務（可複選）</label><select id="s-project" multiple size="4" style="width:10.5rem;min-height:4.2rem" title="可複選"><option>清冊＋公會對接</option><option>實價登錄</option><option>續約管理</option><option>包租催收管理</option></select></div>
           <div class="field"><label>組長</label><input type="text" id="s-leader" maxlength="30" style="width:6rem" /></div>
           <button type="button" class="btn btn-main" id="btn-add-staff">新增</button>
         </div></div>
@@ -834,7 +842,7 @@
       <div class="page-head"><h2>組織圖</h2><p>工具箱「行政專區」行事曆下方的「全台行政組織與人力配置」</p></div>
       <details class="help"><summary>怎麼改？</summary>
         <p>直接改格子，改完按最下面「儲存組織圖」才會生效（工具箱重新整理就看得到）。狀態選「待補」是黃色待補列；營業處填「工讀生」算工讀生（另計）；現有、待補、規劃人數會自動算。主管姓名填「待補」會顯示成虛線待補框。儲存時會把在職員工的<strong>部別／營業處</strong>同步到人力明細（個人點數）；組長仍以人力明細為準，需另改。</p>
-        <p>邱奕棋、黃怡婷、簡為倢、李芷琳、侯思廷登入工具箱後，可以直接在行政專區的組織圖點人員修改、新增或刪除待補；改成離職要填離職日，會記在下面「離職紀錄」。工具箱上顯示時會依部別→營業處→到職日自動排序；到職日請填「115年10月01日」這種格式，工具箱表格只顯示到月份，點開才看得到日期。前台有人改過後，這裡要重新整理再改，以免蓋掉。</p>
+        <p>邱奕棋、黃怡婷、簡為倢、李芷琳、侯思廷登入工具箱後，可以直接在行政專區的組織圖點人員修改、新增或刪除待補；改成離職要填離職日，會記在下面「離職紀錄」，並同步把人力明細改成離職（點數表不再列出）。工具箱上顯示時會依部別→營業處→到職日自動排序；到職日請填「115年10月01日」這種格式，工具箱表格只顯示到月份，點開才看得到日期。前台有人改過後，這裡要重新整理再改，以免蓋掉。</p>
       </details>
       <div id="org-editor" class="space-y-3"><p class="muted">讀取中…</p></div>
       <div class="row">
@@ -3161,6 +3169,13 @@
         const bound = lineMap instanceof Map ? `，LINE 已綁定 ${active.filter(lineOf).length}／${active.length} 人` : '';
         $('staff-count').textContent = `在職 ${active.length} 人${off ? `，離職 ${off} 人${showOff ? '' : '（已隱藏）'}` : ''}${bound}`;
         const text = (f, v, w, max) => `<input type="text" data-f="${f}" value="${esc(v)}" maxlength="${max}" style="width:${w}" />`;
+        const PROJECTS = ['清冊＋公會對接', '實價登錄', '續約管理', '包租催收管理'];
+        const parseProjects = (cur) => String(cur || '').replace(/[，,|／/]/g, '、').split('、').map((s) => s.trim()).filter(Boolean);
+        const projectSel = (cur) => {
+          const selected = parseProjects(cur);
+          const opts = [...new Set([...PROJECTS, ...selected])];
+          return `<select data-f="project" multiple size="${Math.min(4, opts.length)}" style="width:10.5rem;min-height:4.2rem" title="可複選（Ctrl／Cmd＋點選）">${opts.map((p) => `<option value="${esc(p)}"${selected.includes(p) ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>`;
+        };
         $('staff-list').innerHTML = rows.length
           ? rows.map((s) => `<tr data-id="${s.id}" data-name="${esc(s.name)}" class="${s.status === '在職' ? '' : 'is-off'}">
               <td>${esc(s.name)}</td>
@@ -3170,7 +3185,7 @@
               <td>${text('region', s.region, '5rem', 30)}</td>
               <td>${text('office', s.office, '6rem', 60)}</td>
               <td><input type="date" data-f="hireDate" value="${esc(s.hireDate || '')}" style="width:8.5rem" /></td>
-              <td>${text('project', s.project, '7rem', 100)}</td>
+              <td>${projectSel(s.project)}</td>
               <td>${text('leader', s.leader, '4.5rem', 30)}</td>
               <td>${text('note', s.note, '6rem', 200)}</td>
               <td><button type="button" class="btn btn-ghost btn-sm" data-act="save">儲存</button> <button type="button" class="btn btn-del" data-act="del">刪除</button></td>
@@ -3216,10 +3231,11 @@
             region: $('s-region').value,
             office: $('s-office').value,
             hireDate: $('s-hire').value,
-            project: $('s-project').value,
+            project: [...$('s-project').selectedOptions].map((o) => o.value).filter(Boolean).join('、'),
             leader: $('s-leader').value
           });
-          for (const id of ['s-name', 's-region', 's-office', 's-hire', 's-project', 's-leader']) $(id).value = '';
+          for (const id of ['s-name', 's-region', 's-office', 's-hire', 's-leader']) $(id).value = '';
+          [...$('s-project').options].forEach((o) => { o.selected = false; });
           await afterEdit(`已新增 ${name}`);
         } catch (err) {
           say(err.message);
@@ -3250,12 +3266,16 @@
             await rpc('admin_points_admin_delete_staff', { p_id: tr.dataset.id });
           } else {
             const f = (k) => tr.querySelector(`[data-f="${k}"]`).value;
+            const projEl = tr.querySelector('[data-f="project"]');
+            const project = projEl
+              ? [...projEl.selectedOptions].map((o) => o.value).filter(Boolean).join('、')
+              : '';
             await saveStaff(tr.dataset.id, tr.dataset.name, f('kind'), f('status'), {
               note: f('note'),
               region: f('region'),
               office: f('office'),
               hireDate: f('hireDate'),
-              project: f('project'),
+              project,
               leader: f('leader')
             });
           }
@@ -4176,8 +4196,29 @@
         const s = (data.staff || []).find((x) => x.name === name);
         return s && s.leader ? `${s.leader} 組` : '未對應組長';
       }
+      const OP_ROSTER_PERIODS = ['三期', '3-1期', '四期', '增辦四期', '五期'];
       const opRef = (o) => (o.kind === 'case' ? o.caseNo : [o.rosterPeriod, o.caseNo].filter(Boolean).join('・')) || '';
       const opItem = (o) => (o.rosterItem ? `<div class="muted" style="font-size:.75rem;white-space:normal;min-width:10rem">${esc(o.rosterItem)}</div>` : '');
+      const opRegionEdit = (o) => {
+        const cur = o.region || '';
+        const opts = [...new Set(['', ...Core.KPI_REGIONS, cur].filter((x, i, a) => x === '' || a.indexOf(x) === i))];
+        return `<select class="op-region" data-op-region="${o.id}" aria-label="縣市" title="選完即儲存">
+            ${opts.map((r) => `<option value="${esc(r)}"${r === cur ? ' selected' : ''}>${r ? esc(r) : '（不選）'}</option>`).join('')}
+          </select>`;
+      };
+      const opRefEdit = (o) => {
+        const caseInput = `<div class="op-caseno-wrap">
+            <input type="text" class="op-caseno" data-op-caseno="${o.id}" value="${esc(o.caseNo || '')}" maxlength="60" aria-label="媒合編號" placeholder="星鴻F2M…" title="改完按旁邊「儲存」或 Enter">
+            <button type="button" class="op-caseno-save" data-op-caseno-save="${o.id}">儲存</button>
+          </div>`;
+        if (o.kind === 'case') return caseInput;
+        const cur = o.rosterPeriod || '';
+        const opts = [...new Set([...OP_ROSTER_PERIODS, cur].filter(Boolean))];
+        return `<div class="op-ref-edit">
+            <select class="op-roster" data-op-roster="${o.id}" aria-label="清冊期數" title="選完即儲存">${opts.map((p) => `<option${p === cur ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>
+            ${caseInput}${opItem(o)}
+          </div>`;
+      };
       const opPtsCell = (o) => (o.noPoints
         ? `<button type="button" class="op-pt is-no" data-op-pt="${o.id}" title="點一下恢復給 1 點">✕ 不給點</button>${o.noPointsReason ? `<span class="op-pt-why">${esc(o.noPointsReason)}</span>` : ''}`
         : `<button type="button" class="op-pt" data-op-pt="${o.id}" title="點一下改成不給點">✓ 給 1 點</button>`);
@@ -4261,8 +4302,8 @@
           const noPts = list.filter((o) => o.noPoints).length;
           const body = list.map((o) => `<tr${o.noPoints ? ' class="op-nopts"' : ''}>
               ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
-              <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${opGuildSelect(o)}</td><td>${esc(o.region || '—')}</td>
-              <td>${esc(opRef(o))}${opItem(o)}</td><td>${opDateInput(o)}</td>
+              <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${opGuildSelect(o)}</td><td>${opRegionEdit(o)}</td>
+              <td style="min-width:12rem">${opRefEdit(o)}</td><td>${opDateInput(o)}</td>
               <td>${opCatSelect(o)}</td>
               <td style="min-width:14rem">${opContentArea(o)}</td>
               <td style="min-width:12rem;background:#fefce8">${opMeasureArea(o)}</td>
@@ -4296,7 +4337,10 @@
             p_content: patch.content !== undefined ? patch.content : null,
             p_measure: patch.measure !== undefined ? patch.measure : null,
             p_guild_period: patch.guildPeriod !== undefined ? patch.guildPeriod : null,
-            p_opinion_date: patch.opinionDate !== undefined ? patch.opinionDate : null
+            p_opinion_date: patch.opinionDate !== undefined ? patch.opinionDate : null,
+            p_case_no: patch.caseNo !== undefined ? patch.caseNo : null,
+            p_roster_period: patch.rosterPeriod !== undefined ? patch.rosterPeriod : null,
+            p_region: patch.region !== undefined ? patch.region : null
           });
           if (!res?.ok) throw new Error(res?.error || '更新失敗');
           const o = op.all.find((x) => String(x.id) === String(id));
@@ -4305,12 +4349,21 @@
             content: res.opinion.content,
             measure: res.opinion.measure,
             guildPeriod: res.opinion.guildPeriod,
-            opinionDate: res.opinion.opinionDate
+            opinionDate: res.opinion.opinionDate,
+            caseNo: res.opinion.caseNo,
+            rosterPeriod: res.opinion.rosterPeriod,
+            region: res.opinion.region,
+            noPoints: res.opinion.noPoints,
+            noPointsReason: res.opinion.noPointsReason
           });
           say('已儲存修改', true);
           const regroup =
             (patch.category !== undefined && $('op-group').value === 'category') ||
-            (patch.guildPeriod !== undefined && $('op-group').value === 'guild');
+            (patch.guildPeriod !== undefined && $('op-group').value === 'guild') ||
+            (patch.region !== undefined && $('op-group').value === 'region') ||
+            patch.caseNo !== undefined ||
+            patch.rosterPeriod !== undefined ||
+            patch.region !== undefined;
           if (regroup || patch.guildPeriod !== undefined) {
             opFillFilters();
             renderOpinionTab();
@@ -4318,6 +4371,7 @@
         } catch (err) {
           if (el && before !== undefined) el.value = before;
           say(err.message);
+          throw err;
         } finally {
           if (el) el.disabled = false;
         }
@@ -4326,7 +4380,13 @@
         const guild = e.target.closest('[data-op-guild]');
         if (guild) {
           const o = op.all.find((x) => String(x.id) === guild.dataset.opGuild);
-          await opSaveFields(guild.dataset.opGuild, { guildPeriod: guild.value }, guild, o?.guildPeriod || '');
+          await opSaveFields(guild.dataset.opGuild, { guildPeriod: guild.value }, guild, o?.guildPeriod || '').catch(() => {});
+          return;
+        }
+        const region = e.target.closest('[data-op-region]');
+        if (region) {
+          const o = op.all.find((x) => String(x.id) === region.dataset.opRegion);
+          await opSaveFields(region.dataset.opRegion, { region: region.value }, region, o?.region || '').catch(() => {});
           return;
         }
         const odate = e.target.closest('[data-op-odate]');
@@ -4334,13 +4394,50 @@
           const o = op.all.find((x) => String(x.id) === odate.dataset.opOdate);
           const prev = o?.opinionDate || '';
           if (odate.value === prev) return;
-          await opSaveFields(odate.dataset.opOdate, { opinionDate: odate.value }, odate, prev);
+          await opSaveFields(odate.dataset.opOdate, { opinionDate: odate.value }, odate, prev).catch(() => {});
+          return;
+        }
+        const roster = e.target.closest('[data-op-roster]');
+        if (roster) {
+          const o = op.all.find((x) => String(x.id) === roster.dataset.opRoster);
+          await opSaveFields(roster.dataset.opRoster, { rosterPeriod: roster.value }, roster, o?.rosterPeriod || '').catch(() => {});
           return;
         }
         const sel = e.target.closest('[data-op-cat]');
         if (!sel) return;
         const o = op.all.find((x) => String(x.id) === sel.dataset.opCat);
-        await opSaveFields(sel.dataset.opCat, { category: sel.value }, sel, o?.category || '');
+        await opSaveFields(sel.dataset.opCat, { category: sel.value }, sel, o?.category || '').catch(() => {});
+      });
+      async function opSaveCaseNo(caseno, opts) {
+        const o = op.all.find((x) => String(x.id) === caseno.dataset.opCaseno);
+        if (!o) return;
+        let next = String(caseno.value || '').trim();
+        const prev = o.caseNo || '';
+        const canon = Core.canonicalOpinionCaseNo?.(next, o.region || '', next.includes('星華') ? '星華' : '星鴻');
+        if (canon) {
+          next = canon.value;
+          caseno.value = next;
+        }
+        if (next === prev) {
+          if (opts?.notifySame) say('媒合編號沒有變更', true);
+          return;
+        }
+        try {
+          await opSaveFields(o.id, { caseNo: next }, caseno, prev);
+        } catch (err) {
+          window.alert(`媒合編號儲存失敗：${err.message || err}`);
+        }
+      }
+      /* 按「儲存」時先擋掉 blur，避免跟 focusout 搶跑 */
+      $('op-groups').addEventListener('mousedown', (e) => {
+        if (e.target.closest('[data-op-caseno-save]')) e.preventDefault();
+      });
+      $('op-groups').addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const caseno = e.target.closest('[data-op-caseno]');
+        if (!caseno) return;
+        e.preventDefault();
+        opSaveCaseNo(caseno, { notifySame: true });
       });
       $('op-groups').addEventListener('focusout', async (e) => {
         const ta = e.target.closest('[data-op-content], [data-op-measure]');
@@ -4351,9 +4448,16 @@
         const next = ta.value;
         const prev = isContent ? o.content || '' : o.measure || '';
         if (next === prev) return;
-        await opSaveFields(o.id, isContent ? { content: next } : { measure: next }, ta, prev);
+        await opSaveFields(o.id, isContent ? { content: next } : { measure: next }, ta, prev).catch(() => {});
       });
       $('op-groups').addEventListener('click', async (e) => {
+        const saveBtn = e.target.closest('[data-op-caseno-save]');
+        if (saveBtn) {
+          const caseno = saveBtn.parentElement?.querySelector(`[data-op-caseno="${saveBtn.dataset.opCasenoSave}"]`)
+            || $('op-groups').querySelector(`[data-op-caseno="${saveBtn.dataset.opCasenoSave}"]`);
+          if (caseno) await opSaveCaseNo(caseno, { notifySame: true });
+          return;
+        }
         const ptBtn = e.target.closest('[data-op-pt]');
         if (ptBtn) {
           const o = op.all.find((x) => String(x.id) === ptBtn.dataset.opPt);

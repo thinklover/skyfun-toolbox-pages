@@ -49,7 +49,12 @@ window.AdminTrainingContent = {
   },
   contract: { summary: '', sections: [], links: [] },
   p4: { summary: '', sections: [], links: [] },
-  p5: { summary: '', sections: [], links: [] },
+  p5: {
+    summary: '先看完五期系統續約產編教學影片（系統會記錄觀看進度），再點上方「線上考試」考試（20 題，全部答對才通過）；答錯的題目會標示影片時間點。',
+    videos: [{ title: '五期系統續約產編教學影片', length: '約 11 分鐘', course: 'p5' }],
+    sections: [],
+    links: []
+  },
   weekly: { summary: '', sections: [], links: [] },
   term: { summary: '', sections: [], links: [] },
   repair: { summary: '', sections: [], links: [] },
@@ -57,7 +62,8 @@ window.AdminTrainingContent = {
   hr: { summary: '', sections: [], links: [] },
   guild: { summary: '', sections: [], links: [] },
   lvr: {
-    summary: '照 1 → 9 的順序操作，點每一步的標題看細節；黃色螢光是最容易出錯的地方。第一次做不放心，送件前用最下面的檢核表逐項打勾。申報網與憑證卡的帳號、密碼請向組長確認，不放在網站上。',
+    summary: '先看完實價登錄教學影片（系統會記錄觀看進度），再點上方「線上考試」考試（20 題，全部答對才通過）；答錯的題目會標示影片時間點。下方照 1 → 9 的順序操作，黃色螢光是最容易出錯的地方；送件前用檢核表逐項打勾。申報網與憑證卡的帳號、密碼請向組長確認，不放在網站上。',
+    videos: [{ title: '實價登錄教學影片', length: '約 33 分鐘', course: 'lvr' }],
     alerts: [
       {
         title: '實價登錄罰責提醒',

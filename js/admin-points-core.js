@@ -62,7 +62,7 @@
     ...TRAINING_PROJECTS.map((key) => trainingNode(key, { project: true }))
   ];
   /** 有教學影片＋線上考試的課程 */
-  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev'];
+  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p5', 'lvr'];
   /** 已開放模擬系統實作的課程；其他課程的模擬環境還在建置，實作一律顯示準備中 */
   const PRACTICE_COURSES = ['obj', 'tenant', 'pre'];
   /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */
@@ -88,8 +88,10 @@
       { key: 'exam', label: '考試滿分', ok: !!s.examPassed },
       { key: 'practice', label: '實作', ok: practiceReady && !!s.practiceDone, pending: !practiceReady }
     ];
-    const n = steps.filter((x) => x.ok).length;
-    return { ready: true, done: n === steps.length, progress: n / steps.length, steps };
+    // 模擬實作尚未開放的課程（pending）不列入通過條件，看完影片＋考試滿分就算通過
+    const scored = steps.filter((x) => !x.pending);
+    const n = scored.filter((x) => x.ok).length;
+    return { ready: true, done: scored.length > 0 && n === scored.length, progress: scored.length ? n / scored.length : 0, steps };
   }
 
   /**
@@ -140,8 +142,17 @@
     return SHEET_TOTALS[`${start}|${end}`] || null;
   }
   const TENANT_TO_EFFECTIVE = /^(財調中|未財調|已退件|人工審核) → 已生效$/;
+  /** 系統停用後再核准到已生效（物件／房客）也認列點數 */
+  const DISABLED_TO_EFFECTIVE = /^(系統停用|已停用|停用) → 已生效$/;
   const PERIOD_4 = new Set(['04', '41']);
   const PERIOD_5 = new Set(['05']);
+  /** 審核時間紀錄變成系統停用／已停用／停用 → 之後重新審件可再認列 */
+  const TO_DISABLED = /→\s*(系統停用|已停用|停用)\s*$/;
+  const GROUPS_BY_TYPE = {
+    object: ['obj', 'obj_re'],
+    tenant: ['tenant'],
+    contract: ['pre', 'rev', 'lvr', 'prod', 'prod_re']
+  };
 
   /** 合約編號：區碼英文＋數字＋英文後三碼，首碼 1 代管／3 包租，後兩碼期別（04 四期、41 增辦四期、05 五期） */
   function contractPeriod(no) {
@@ -154,10 +165,18 @@
   function classify(row) {
     const status = String(row.status || '').replace(/\s+/g, ' ').trim();
     if (row.type === 'object') {
-      return status === '送審中 → 已生效' ? { item: 'obj', group: 'obj' } : { item: null };
+      // 一般物審
+      if (status === '送審中 → 已生效') return { item: 'obj', group: 'obj' };
+      // 系統停用後再審核到已生效：審核時間紀錄多為「人工審核 → 已生效」（與首次送審分開認列）
+      if (status === '人工審核 → 已生效' || DISABLED_TO_EFFECTIVE.test(status)) {
+        return { item: 'obj', group: 'obj_re' };
+      }
+      return { item: null };
     }
     if (row.type === 'tenant') {
-      return TENANT_TO_EFFECTIVE.test(status) ? { item: 'tenant', group: 'tenant' } : { item: null };
+      return TENANT_TO_EFFECTIVE.test(status) || DISABLED_TO_EFFECTIVE.test(status)
+        ? { item: 'tenant', group: 'tenant' }
+        : { item: null };
     }
     if (row.type !== 'contract') return { item: null };
     if (status === '預審中 → 預審通過') return { item: 'pre', group: 'pre' };
@@ -169,12 +188,20 @@
       if (code && PERIOD_5.has(code.period)) return { item: 'p5', group: 'prod' };
       return { item: null, group: 'prod', unknownCode: true };
     }
+    // 合約停用後再變已生效（若審核紀錄有此狀態）
+    if (DISABLED_TO_EFFECTIVE.test(status)) {
+      const code = contractPeriod(row.no);
+      if (code && PERIOD_4.has(code.period)) return { item: 'p4', group: 'prod_re' };
+      if (code && PERIOD_5.has(code.period)) return { item: 'p5', group: 'prod_re' };
+      return { item: null, group: 'prod_re', unknownCode: true };
+    }
     return { item: null };
   }
 
   /**
    * 同案件判斷鍵：系統 id；合約另加「編號＋地址」與完整編號。
    * 退件重送時系統會開新 id；產編前編號只有前綴（如 L2M105），需搭配地址才能分辨。
+   * 系統停用後重新審件：停用當下會清掉這些鍵，之後再審可再認列。
    */
   function caseKeys(row, group) {
     const keys = [`${row.type}|id:${row.targetId}|${group}`];
@@ -184,6 +211,16 @@
       if (no && addr) keys.push(`contract|no:${no}|addr:${addr}|${group}`);
       if (/[A-Z]\d[A-Z]\d{8,}/.test(no)) keys.push(`contract|no:${no}|${group}`);
     }
+    return keys;
+  }
+
+  /** 該筆若為「變成停用」，回傳要從去重集合清掉的鍵（讓後續重新審件可再計點） */
+  function disableResetKeys(row) {
+    const status = String(row.status || '').replace(/\s+/g, ' ').trim();
+    if (!TO_DISABLED.test(status)) return [];
+    const groups = GROUPS_BY_TYPE[row.type] || [];
+    const keys = [];
+    for (const g of groups) keys.push(...caseKeys(row, g));
     return keys;
   }
 
@@ -335,6 +372,12 @@
     };
 
     for (const r of sorted) {
+      // 審核紀錄若有「→ 停用」，清掉去重鍵（讓後續一般送審也可再認）
+      const reset = disableResetKeys(r);
+      if (reset.length) {
+        reset.forEach((k) => seen.delete(k));
+        continue;
+      }
       const c = classify(r);
       if (!c.group) continue;
       const keys = caseKeys(r, c.group);
@@ -380,6 +423,28 @@
         points: itemPoints(termItem, r.date),
         type: 'contract',
         status: `${r.contractType || ''}解約 → 已解約生效`
+      });
+    }
+
+    /** 同租期最終已生效時：每個已停用另給「重新審核通過」者 1 點（不是點停用的人） */
+    const disableCredits = dropExcludedRows(opts.disableCredits, excluded)
+      .filter((r) => r.date >= start && r.date <= end && r.auditor && String(r.kind || 'disable') !== 'effective')
+      .slice()
+      .sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : String(a.id).localeCompare(String(b.id))));
+    const seenDisable = new Set();
+    for (const r of disableCredits) {
+      const dedupe = `disable:${r.id}`;
+      if (seenDisable.has(dedupe)) continue;
+      seenDisable.add(dedupe);
+      if (skipResigned(r.auditor)) continue;
+      const item = r.item === 'p5' ? 'p5' : 'p4';
+      scored.push({
+        ...r,
+        item,
+        points: 1,
+        type: 'contract',
+        targetId: r.id,
+        status: '同租期停用後重新審核'
       });
     }
 
@@ -549,6 +614,59 @@
   const BONUS_STAGE_2 = 5000;
   const BONUS_PROJECT_LIST = 3000;
   const BONUS_PROJECT_LVR = 2000;
+  /** 人力明細／點數表「專案任務」選項（獎金另見 estimateBonus；可複選，存「、」分隔） */
+  const PROJECT_TASKS = ['清冊＋公會對接', '實價登錄', '續約管理', '包租催收管理'];
+  const PROJECT_SEP = '、';
+
+  function parseProjects(project) {
+    const raw = String(project || '')
+      .replace(/[，,|／/]/g, PROJECT_SEP)
+      .split(PROJECT_SEP)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const known = PROJECT_TASKS.filter((p) => raw.includes(p));
+    const extra = raw.filter((p) => !PROJECT_TASKS.includes(p));
+    return [...known, ...extra];
+  }
+
+  function formatProjects(list) {
+    const seen = new Set();
+    const out = [];
+    for (const p of [...(list || [])].map((s) => String(s || '').trim()).filter(Boolean)) {
+      if (seen.has(p)) continue;
+      seen.add(p);
+      out.push(p);
+    }
+    const ordered = PROJECT_TASKS.filter((p) => seen.has(p));
+    const extra = out.filter((p) => !PROJECT_TASKS.includes(p));
+    return [...ordered, ...extra].join(PROJECT_SEP);
+  }
+
+  function projectTone(project) {
+    const s = String(project || '');
+    if (/清冊/.test(s)) return 'list';
+    if (/實價登錄/.test(s)) return 'lvr';
+    if (/續約/.test(s)) return 'renew';
+    if (/催收/.test(s)) return 'collect';
+    return '';
+  }
+
+  /** 專案任務標籤（複選時每個任務一顆） */
+  function projectChipsHtml(project, escFn) {
+    const esc = typeof escFn === 'function' ? escFn : (t) => String(t ?? '');
+    const list = parseProjects(project);
+    if (!list.length) return '';
+    return list.map((p) => {
+      const tone = projectTone(p);
+      return `<span class="apt-proj${tone ? ` apt-proj--${tone}` : ''}">${esc(p)}</span>`;
+    }).join(' ');
+  }
+
+  /** 只有黃怡婷、邱奕棋、簡為倢可改專案任務（複選） */
+  function canEditProject(viewer) {
+    const me = String(viewer || '').trim();
+    return !!me && VIEW_ALL.has(me);
+  }
 
   function addDays(iso, n) {
     const d = new Date(iso + 'T00:00:00');
@@ -578,20 +696,33 @@
   }
 
   /**
-   * 預估個人獎金：達 250 點 2,000、350 點 5,000；上個業績月未達 250 點打八折（115年9月制度首月不適用）；
-   * 達 250 點另加專案任務獎金（清冊＋公會對接 3,000、實價登錄 2,000）。
+   * 預估個人獎金：達 250 點 2,000、350 點 5,000；達 250 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。
+   * 上個業績月未達 250 點時，基本＋專案全部打八折（115年9月制度首月不適用；
+   * 新人首月未達標，次月不打折——上個業績月月初仍屬新人首月排除者不適用八折）。
    */
   function estimateBonus({ points, project, eligible, hireDate, prevPoints, perf }) {
     if (!eligible) return 0;
     const base = points >= STAGE_2 ? BONUS_STAGE_2 : points >= STAGE_1 ? BONUS_STAGE_1 : 0;
+    let py = perf.year;
+    let pm = perf.month - 1;
+    if (pm < 1) {
+      pm = 12;
+      py -= 1;
+    }
+    const prevStart = perfMonthRange(py, pm).start;
+    // 上個業績月月初已過新人首月才套用八折；新人首月未達標，次月不打折
     const discount =
-      perf.year * 12 + perf.month > 2026 * 12 + 9 && points >= STAGE_1 && hireDate && hireDate < perf.start && (prevPoints || 0) < STAGE_1;
-    let bonus = discount ? base * 0.8 : base;
+      perf.year * 12 + perf.month > 2026 * 12 + 9 &&
+      points >= STAGE_1 &&
+      hireDate &&
+      eligibleAt(hireDate, prevStart) &&
+      (prevPoints || 0) < STAGE_1;
+    let bonus = base;
     if (points >= STAGE_1) {
       if (/清冊[＋+]公會對接/.test(project || '')) bonus += BONUS_PROJECT_LIST;
       if (/實價登錄/.test(project || '')) bonus += BONUS_PROJECT_LVR;
     }
-    return bonus;
+    return discount ? bonus * 0.8 : bonus;
   }
 
   /**
@@ -807,6 +938,17 @@
     return out;
   }
 
+  /** 媒合編號是否五期（期別碼 05）；產編等用途，良率不再只濾五期 */
+  function isPeriod5CaseNo(no) {
+    const code = contractPeriod(no);
+    return !!(code && PERIOD_5.has(code.period));
+  }
+
+  /** 公會良率分子：意見去重（四期＋增辦四期＋五期都算） */
+  function opinionsForGuildQuality(opinions) {
+    return dedupeOpinionsByCase(opinions || []);
+  }
+
   function kpiQuality(r04, r09, cases, opinions) {
     const regions = ['全區', ...KPI_REGIONS];
     const blank = () => Object.fromEntries(regions.map((g) => [g, { total: 0, err: 0 }]));
@@ -822,7 +964,7 @@
       audit['全區'].total += n;
       if (audit[region]) audit[region].total += n;
     }
-    const errors = dedupeOpinionsByCase(opinions).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
+    const errors = opinionsForGuildQuality(opinions).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
     for (const o of errors) {
       const bucket = o.kind === 'roster' ? roster : audit;
       bucket['全區'].err += 1;
@@ -854,7 +996,7 @@
       if (audit[region]) audit[region].total += n;
     }
     if (!audit['全區'].total && snap?.cases?.total) audit['全區'].total = Number(snap.cases.total) || 0;
-    const errors = dedupeOpinionsByCase(opinions).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
+    const errors = opinionsForGuildQuality(opinions).map((o) => ({ ...o, area: o.region || (o.kind === 'case' ? kpiRegionOfCaseNo(o.caseNo) : '') }));
     for (const o of errors) {
       const bucket = o.kind === 'roster' ? roster : audit;
       bucket['全區'].err += 1;
@@ -1763,6 +1905,9 @@
     kpiErrRate,
     kpiQuality,
     kpiQualityFromSnapshot,
+    isPeriod5CaseNo,
+    opinionsForGuildQuality,
+    contractPeriod,
     OPINION_CATEGORIES,
     kpiRegionOfStaff,
     kpiRegionsOfAreas,
@@ -1799,9 +1944,15 @@
     OPINION_ITEMS,
     otherManual,
     opinionPoints,
+    PROJECT_TASKS,
+    PROJECT_SEP,
+    parseProjects,
+    formatProjects,
+    projectTone,
+    projectChipsHtml,
+    canEditProject,
     STAGE_1,
     STAGE_2,
-    contractPeriod,
     classify,
     rowsFromPayload,
     perfMonthRange,

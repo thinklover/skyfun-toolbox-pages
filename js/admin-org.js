@@ -30,7 +30,6 @@
                     P('在職', '吳羽涵', '宜蘭', '115年07月', '宜一處', '侯思廷'),
                     P('在職', '蔡宜秀', '桃園', '111年12月', '桃一處', '簡旻鈺'),
                     P('在職', '簡旻鈺', '桃園', '115年08月', '桃一處', '蔡宜秀'),
-                    P('在職', '邱郁庭', '桃園', '115年03月', '工讀生'),
                     P('在職', '張庭筠', '新竹', '115年02月', '竹一處', '賴曉嫻'),
                     P('在職', '賴曉嫻', '新竹', '115年08月', '竹一處', '張庭筠')
                 ]
@@ -174,7 +173,7 @@
             ${status === '在職' ? joinedField(p.joined) : ''}
             ${field('office', '營業處', '例如 中一處')}
             ${status === '在職' ? field('deputy', '代理人') : ''}
-            ${status === '離職' ? '<p class="ado2-form-hint">儲存後會在後台記錄離職日，這一列轉成「待補」，保留部別與營業處。</p>' : ''}
+            ${status === '離職' ? '<p class="ado2-form-hint">儲存後會在後台記錄離職日，這一列轉成「待補」，並把人力明細改成離職（點數表不再列出）。</p>' : ''}
             <div class="ado2-form-btns">
                 <button type="button" class="ado2-btn ado2-btn--main" data-org-act="save"${view.busy ? ' disabled' : ''}>${view.busy ? '儲存中…' : '儲存'}</button>
                 <button type="button" class="ado2-btn" data-org-act="cancel">取消</button>
@@ -208,8 +207,18 @@
             const vacant = isVacantName(l.name);
             return `<div class="ado2-lead ado2-lead--${i % 3}${vacant ? ' is-vacant' : ''}">${esc(l.role)}｜${esc(vacant ? '待補' : l.name)}</div>`;
         }).join('');
+        const docHref = './docs/admin/%E7%A7%98%E6%9B%B8%E5%8F%8A%E5%B0%88%E6%A1%88%E4%BB%BB%E5%8B%99%E7%AE%A1%E7%90%86%E8%BE%A6%E6%B3%95_1151012%E7%89%88.pdf';
         return `<div class="ado2-title">${esc(d.title || DEFAULT.title)}</div>
-            <div class="ado2-leads">${leads}</div>
+            <div class="ado2-head">
+                <div class="ado2-leads">${leads}</div>
+                <a class="ado2-doc" href="${docHref}" target="_blank" rel="noopener" title="開啟 PDF">
+                    <span class="ado2-doc-mark">PDF</span>
+                    <span class="ado2-doc-body">
+                        <strong>秘書及專案任務管理辦法</strong>
+                        <small>115/10/12 版 · 點擊開啟</small>
+                    </span>
+                </a>
+            </div>
             ${view.canEdit ? '<p class="ado2-edit-tip">✏️ 你可以修改組織圖：點人員那一列就能改；離職會記離職日並轉成待補。</p>' : ''}
             <div class="ado2-groups">${d.groups.map(group).join('')}</div>
             ${d.note ? `<p class="ado2-note">${esc(d.note)}</p>` : ''}`;

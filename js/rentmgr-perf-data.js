@@ -39,6 +39,167 @@
   /** @deprecated 僅相容舊呼叫；實際週數依各月日曆 */
   const RENEW_WEEK_LABELS = RENEW_WEEK_NAME.slice(0, 3);
   const RENEW_MONTH_IDS = ['10', '11', '12'];
+
+  /** 點數表名單（與 Worker／組織人力圖對齊；職稱供點數表顯示） */
+  const RENTMGR_POINTS_ROSTER = [
+    { name: '林凌宇', region: '雙北', office: '北區', title: '租管師(儲幹)' },
+    { name: '羅偉融', region: '雙北', office: '北區', title: '租管師' },
+    { name: '謝岑宗', region: '台中', office: '北區', title: '租管師' },
+    { name: '逄旻絹', region: '台中', office: '北區', title: '租管師' },
+    { name: '李仲弦', region: '高雄', office: '南區', title: '儲備幹部' },
+    { name: '李效誠', region: '高雄', office: '南區', title: '租管師' },
+    { name: '蔡佩珊', region: '高雄', office: '南區', title: '租管師' },
+    { name: '張佐華', region: '高雄', office: '南區', title: '租管師' },
+    { name: '盧冠云', region: '台南', office: '南區', title: '儲備幹部' },
+    { name: '呂佶霖', region: '台南', office: '南區', title: '租管師' },
+    { name: '林杰', region: '台南', office: '南區', title: '租管師' },
+    { name: '莊雨蓁', region: '台南', office: '南區', title: '租管師' },
+    { name: '廖宜嫻', region: '嘉義', office: '南區', title: '租管師' }
+  ];
+
+  /**
+   * 計點單價（獎金辦法）：用來把報表「點數」反推「件數」方便核對。
+   * 再媒合／新媒合有 8／4／2 等多檔，優先取可整除的單價。
+   */
+  const POINTS_UNIT_FIXED = {
+    '續約': 2,
+    '轉包租': 6,
+    '轉三年': 6,
+    '家訪': 1,
+    '修繕': 1,
+    '轉介紹': 8,
+    '跨區直媒': 2
+  };
+  const POINTS_UNIT_CHOICES = {
+    '再媒合': [8, 4],
+    '新媒合': [8, 2, 4],
+    '客訴': [1, 2, 3, 4]
+  };
+
+  function inferCasesFromPoints(label, pts) {
+    const n = Number(pts);
+    if (!Number.isFinite(n) || n === 0) return { cases: 0, unit: null, ambiguous: false };
+    if (POINTS_UNIT_FIXED[label] != null) {
+      const unit = POINTS_UNIT_FIXED[label];
+      if (n % unit === 0) return { cases: n / unit, unit: unit, ambiguous: false };
+      return { cases: null, unit: unit, ambiguous: true };
+    }
+    const choices = POINTS_UNIT_CHOICES[label];
+    if (choices && choices.length) {
+      for (let i = 0; i < choices.length; i++) {
+        const unit = choices[i];
+        if (n % unit === 0) {
+          return { cases: n / unit, unit: unit, ambiguous: choices.length > 1 && unit !== choices[0] };
+        }
+      }
+    }
+    return { cases: null, unit: null, ambiguous: true };
+  }
+
+  /** 把備註「續約 14・再媒合 16」拆成可核對明細（件數＋點數） */
+  function parsePointsNoteToItems(note) {
+    const raw = String(note || '').replace(/（報表[：:][^）]*）/g, '').trim();
+    if (!raw || raw === '報表無登錄' || raw === '本月無計點案件') return [];
+    const parts = raw.split(/[・·‧•、,，]/).map(function (s) { return s.trim(); }).filter(Boolean);
+    const items = [];
+    parts.forEach(function (part) {
+      const m = part.match(/^(.+?)\s*([+\-]?\d+)\s*點?$/);
+      if (!m) return;
+      const label = m[1].replace(/\s+/g, '').trim();
+      const points = Number(m[2]);
+      if (!label || !Number.isFinite(points)) return;
+      const inferred = inferCasesFromPoints(label, points);
+      items.push({
+        label: label,
+        points: points,
+        cases: inferred.cases,
+        unit: inferred.unit,
+        ambiguous: !!inferred.ambiguous
+      });
+    });
+    return items;
+  }
+
+  function formatPointsItemsSummary(items) {
+    if (!items || !items.length) return '';
+    return items.map(function (it) {
+      if (it.cases != null && it.cases > 0) {
+        return it.label + ' ' + it.cases + '件（' + it.points + '點）';
+      }
+      return it.label + ' ' + it.points + '點';
+    }).join('・');
+  }
+
+  function enrichPointsPerson(base, hit) {
+    const note = hit && hit.note ? hit.note : (base.note || '報表無登錄');
+    const items = (hit && hit.items) || parsePointsNoteToItems(note);
+    let caseCount = 0;
+    items.forEach(function (it) {
+      if (it.cases != null) caseCount += Number(it.cases) || 0;
+    });
+    return Object.assign({}, base, {
+      title: base.title || '',
+      points: hit ? Number(hit.points) || 0 : (base.points || 0),
+      note: note,
+      items: items,
+      caseCount: caseCount,
+      detail: formatPointsItemsSummary(items) || note,
+      breakdown: hit && hit.breakdown ? hit.breakdown : base.breakdown || null
+    });
+  }
+
+  /**
+   * 115/10：考核點數表 × 系統「已生效」地址核對後計點。
+   * 報表別名：李仲玹→李仲弦、廖宜嫺→廖宜嫻。
+   */
+  const RENTMGR_POINTS_SHEET_OVERRIDE = {
+    10: {
+      period: { start: '2026-09-21', end: '2026-10-20', settle: '115/10/20' },
+      note: '本月取自「儲備考核件數暨管理師點數表_115年10月」，已對系統物件「已生效」核對（通過 159／未生效或對不到 18 不計）；盧冠云報表無登錄',
+      byName: {
+        '林凌宇': { points: 48, note: '續約 14・再媒合 16・轉三年 12・轉包租 6' },
+        '羅偉融': { points: 50, note: '續約 30・再媒合 8・轉三年 6・轉包租 6' },
+        '謝岑宗': { points: 50, note: '續約 20・轉三年 18・再媒合 8・修繕 4' },
+        '逄旻絹': { points: 51, note: '續約 24・轉三年 24・修繕 3' },
+        '李仲弦': { points: 40, note: '再媒合 32・續約 6・跨區直媒 2' },
+        '李效誠': { points: 40, note: '續約 18・再媒合 8・家訪 8・轉三年 6' },
+        '蔡佩珊': { points: 52, note: '轉三年 36・續約 8・家訪 8' },
+        '張佐華': { points: 32, note: '再媒合 16・家訪 10・續約 6' },
+        '盧冠云': { points: 0, note: '報表無登錄' },
+        '呂佶霖': { points: 68, note: '再媒合 32・轉包租 18・家訪 6・轉三年 6・續約 4・新媒合 2' },
+        '林杰': { points: 33, note: '再媒合 16・轉三年 6・續約 4・家訪 4・客訴 2・修繕 1' },
+        '莊雨蓁': { points: 55, note: '再媒合 16・轉包租 12・家訪 10・續約 8・新媒合 8・修繕 1' },
+        '廖宜嫻': { points: 14, note: '續約 12・新媒合 2' }
+      }
+    }
+  };
+
+  function sheetPointsPack(month) {
+    const ov = RENTMGR_POINTS_SHEET_OVERRIDE[Number(month)];
+    if (!ov) return null;
+    const people = RENTMGR_POINTS_ROSTER.map(function (r) {
+      const hit = ov.byName[r.name];
+      return enrichPointsPerson({
+        name: r.name,
+        region: r.region,
+        office: r.office,
+        title: r.title || '租管師'
+      }, hit || { points: 0, note: '報表無登錄' });
+    }).sort(function (a, b) {
+      return b.points - a.points || a.name.localeCompare(b.name, 'zh-Hant');
+    });
+    people.forEach(function (p, i) { p.rank = i + 1; });
+    return {
+      ok: true,
+      year: 115,
+      month: Number(month),
+      period: ov.period,
+      people: people,
+      note: ov.note,
+      source: 'sheet'
+    };
+  }
+
   /** 試算表每個地區固定 3 欄週次；超過的週改吃系統週快照 */
   const SHEET_WEEK_COLS = 3;
   /**
@@ -172,7 +333,8 @@
       7: { ly: 3, target: 20, actual: 7 },
       8: { ly: 6, target: 20, actual: 8 },
       9: { ly: 2, target: 20, actual: 5 },
-      10: { ly: 3, target: 20, actual: null },
+      /* 10 月：去年同期／目標對齊各地區KPI週報；實績改吃系統（目前 0%，勿沿用 6 月 10%） */
+      10: { ly: 2, target: 25, actual: null },
       11: { ly: 13, target: 20, actual: null },
       12: { ly: 10, target: 20, actual: null }
     },
@@ -370,10 +532,12 @@
       pointsColumns: [
         { key: 'rank', label: '#' },
         { key: 'name', label: '姓名' },
+        { key: 'title', label: '職稱' },
         { key: 'region', label: '地區' },
         { key: 'office', label: '營業處' },
+        { key: 'caseCount', label: '案件數' },
         { key: 'points', label: '月累積點數' },
-        { key: 'note', label: '備註' }
+        { key: 'detail', label: '明細（件數／點數）' }
       ]
     },
     regionKpi: {
@@ -456,13 +620,25 @@
   ];
 
   /** 續約週格額外欄（不進續約分頁列，但供各地區 KPI 爬數） */
-  const LIVE_EXTRA_KEYS = ['toBaoRate', 'toBao', 'baoRenewBao'];
+  const LIVE_EXTRA_KEYS = ['toBaoRate', 'toBao', 'baoRenewBao', 'noRenewAll'];
 
   function emptyMetricRow() {
     const row = {};
     RENEW_METRICS.forEach(function (m) { row[m.key] = null; });
     LIVE_EXTRA_KEYS.forEach(function (k) { row[k] = null; });
     return row;
+  }
+
+  /** 若缺 toBaoRate 字串，用分子分母重算（避免舊快取缺欄時落到試算表錯誤值） */
+  function deriveToBaoRate(src) {
+    if (!src) return null;
+    if (src.toBaoRate != null && src.toBaoRate !== '') return src.toBaoRate;
+    const toBao = toNumber(src.toBao);
+    const due = toNumber(src.due);
+    if (toBao == null || due == null || due <= 0) return null;
+    const den = due - (toNumber(src.baoRenewBao) || 0) - (toNumber(src.noRenewAll) || 0);
+    if (den <= 0) return null;
+    return Math.round((toBao / den) * 1000) / 10 + '%';
   }
 
   function emptyRegionRow(columns) {
@@ -990,6 +1166,18 @@
       LIVE_EXTRA_KEYS.forEach(function (k) {
         if (src[k] != null && src[k] !== '') cell[k] = src[k];
       });
+      const derivedToBao = deriveToBaoRate(src) || deriveToBaoRate(cell);
+      if (derivedToBao != null) cell.toBaoRate = derivedToBao;
+      /* 月級快照：年報／月報優先吃這個，不要被試算表週格舊數字蓋掉 */
+      dest.live = dest.live || {};
+      RENEW_METRICS.forEach(function (met) {
+        if (SHEET_ONLY_KEYS[met.key]) return;
+        if (src[met.key] != null && src[met.key] !== '') dest.live[met.key] = src[met.key];
+      });
+      LIVE_EXTRA_KEYS.forEach(function (k) {
+        if (src[k] != null && src[k] !== '') dest.live[k] = src[k];
+      });
+      if (derivedToBao != null) dest.live.toBaoRate = derivedToBao;
       /* 即時覆蓋後，若表上已有異常轉業件數，重算扣除異常續約率 */
       const due = toNumber(cell.due);
       const done = toNumber(cell.done);
@@ -1075,6 +1263,64 @@
       });
   }
 
+  /** 租管師點數（結績日切業績月；有人工報表覆蓋則優先） */
+  function fetchRentmgrPoints(token, year, month, refresh) {
+    const y = Number(year) || 115;
+    const m = Number(month);
+    if (!(m >= 1 && m <= 12)) return Promise.resolve(null);
+    /* 115/10：先用考核點數表數字 */
+    if (y === 115) {
+      const sheet = sheetPointsPack(m);
+      if (sheet) return Promise.resolve(sheet);
+    }
+    const q = new URLSearchParams({ year: String(y), month: String(m) });
+    let force = !!refresh;
+    try {
+      const dayKey = 'rmp-points-refresh-v2-' + todayIsoLocal();
+      if (!force && typeof localStorage !== 'undefined' && localStorage.getItem(dayKey) !== '1') {
+        force = true;
+        localStorage.setItem(dayKey, '1');
+      }
+    } catch (_) {}
+    if (force) q.set('refresh', '1');
+    const headers = {};
+    if (token) headers['X-Skyfun-Session'] = token;
+    return fetch(RPA_BASE + '/admin-points/rentmgr-points?' + q.toString(), { headers: headers })
+      .then(function (res) {
+        if (!res.ok) throw new Error('rentmgr-points HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || data.ok === false) throw new Error((data && data.error) || 'rentmgr-points');
+        const titleByName = {};
+        RENTMGR_POINTS_ROSTER.forEach(function (r) { titleByName[r.name] = r.title || '租管師'; });
+        if (Array.isArray(data.people)) {
+          data.people = data.people.map(function (p) {
+            const enriched = enrichPointsPerson({
+              name: p.name,
+              region: p.region,
+              office: p.office,
+              title: p.title || titleByName[p.name] || '租管師',
+              points: p.points,
+              note: p.note,
+              breakdown: p.breakdown
+            }, {
+              points: p.points,
+              note: p.note,
+              items: p.items,
+              breakdown: p.breakdown
+            });
+            enriched.rank = p.rank;
+            return enriched;
+          });
+        }
+        return data;
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
   function fetchLiveRenewKpi(token, monthsCsv, year) {
     const y = Number(year) || 115;
     const cur = currentSheetWeekIndex();
@@ -1089,7 +1335,7 @@
     }
     /* 每天第一次進績效中心強制重爬，讓續轉包／領先續約吃到最新系統數字 */
     try {
-      const dayKey = 'rmp-renew-kpi-refresh-v4-' + todayIsoLocal();
+      const dayKey = 'rmp-renew-kpi-refresh-v11-release-caseType-' + todayIsoLocal();
       if (!sessionStorage.getItem(dayKey)) {
         q.set('refresh', '1');
         sessionStorage.setItem(dayKey, '1');
@@ -1963,12 +2209,21 @@
 
   /** 從續約某月各地區取即時／最近一週比率（領先月常用） */
   function pickLiveRenewRate(renewByMonth, monthId, regionId, metricKey) {
-    const weeks =
+    const region =
       renewByMonth &&
       renewByMonth[monthId] &&
       renewByMonth[monthId].byRegion &&
-      renewByMonth[monthId].byRegion[regionId] &&
-      renewByMonth[monthId].byRegion[regionId].weeks;
+      renewByMonth[monthId].byRegion[regionId];
+    /* 優先月級系統快照（含 0%）；避免落到試算表週格舊值（例如誤顯示 10%） */
+    if (region && region.live) {
+      let raw = region.live[metricKey];
+      if (metricKey === 'toBaoRate' && (raw == null || raw === '')) {
+        raw = deriveToBaoRate(region.live);
+      }
+      const fromLive = parseOverviewNumber(raw, 'rate');
+      if (fromLive != null) return fromLive;
+    }
+    const weeks = region && region.weeks;
     if (!weeks || !weeks.length) return null;
     const cur = currentSheetWeekIndex();
     const order = [];
@@ -1977,7 +2232,12 @@
       if (order.indexOf(wi) < 0) order.push(wi);
     }
     for (let i = 0; i < order.length; i++) {
-      const v = parseOverviewNumber((weeks[order[i]] || {})[metricKey], 'rate');
+      const cell = weeks[order[i]] || {};
+      let raw = cell[metricKey];
+      if (metricKey === 'toBaoRate' && (raw == null || raw === '')) {
+        raw = deriveToBaoRate(cell);
+      }
+      const v = parseOverviewNumber(raw, 'rate');
       if (v != null) return v;
     }
     return null;
@@ -2089,18 +2349,20 @@
         return pickLiveRenewRate(renewByMonth, next2Id, rid, 'renewRateAll');
       }
       if (rowKey === 'toBaoRate') {
+        /* 月級系統實績優先：避免週快照／試算表舊 0% 蓋掉正確續轉包率（例如嘉義 14.3%） */
+        const fromLive = pickLiveRenewRate(renewByMonth, monthId, rid, 'toBaoRate');
+        if (fromLive != null) return fromLive;
         const cell = renewBlock && renewBlock.byRegion && renewBlock.byRegion[rid] &&
           renewBlock.byRegion[rid].weeks && renewBlock.byRegion[rid].weeks[wi];
-        const fromWeek = parseOverviewNumber(cell && cell.toBaoRate, 'rate');
-        if (fromWeek != null) return fromWeek;
-        return pickLiveRenewRate(renewByMonth, monthId, rid, 'toBaoRate');
+        return parseOverviewNumber(cell && cell.toBaoRate, 'rate');
       }
       if (rowKey === 'reLeaseRate') {
+        /* 月級系統實績優先：避免週快照／試算表舊 0% 蓋掉再媒合完成招租 */
+        const fromLive = pickLiveRenewRate(renewByMonth, monthId, rid, 'reLeaseRate');
+        if (fromLive != null) return fromLive;
         const cell = renewBlock && renewBlock.byRegion && renewBlock.byRegion[rid] &&
           renewBlock.byRegion[rid].weeks && renewBlock.byRegion[rid].weeks[wi];
-        const fromWeek = parseOverviewNumber(cell && cell.reLeaseRate, 'rate');
-        if (fromWeek != null) return fromWeek;
-        return pickLiveRenewRate(renewByMonth, monthId, rid, 'reLeaseRate');
+        return parseOverviewNumber(cell && cell.reLeaseRate, 'rate');
       }
       if (rowKey === 'collectOver30') {
         if (!collectMap) return null;
@@ -2125,8 +2387,17 @@
             const isLive = liveWis.indexOf(wi) >= 0 || wi >= SHEET_WEEK_COLS;
             /* 催收：空白週也補系統快照（試算表常漏填） */
             const forceCollect = row.key === 'collectOver30' && weeks[wi] == null && collectMap;
-            if (!isLive && !forceCollect && weeks[wi] != null) continue;
-            if (!isLive && !forceCollect && wi < SHEET_WEEK_COLS) continue;
+            /*
+             * 續轉包：試算表常填 0% 佔位；10 月起有系統實績時，連第 1–3 週一併蓋上月級數字，
+             * 避免嘉義等小區整排 0%、只剩一格才對。
+             */
+            const sheetToBaoZero =
+              row.key === 'toBaoRate' &&
+              Number(monthId) >= 10 &&
+              weeks[wi] != null &&
+              Number(weeks[wi]) === 0;
+            if (!isLive && !forceCollect && !sheetToBaoZero && weeks[wi] != null) continue;
+            if (!isLive && !forceCollect && !sheetToBaoZero && wi < SHEET_WEEK_COLS) continue;
             const v = liveValueForRow(row.key, rid, Math.min(wi, weekN - 1));
             if (v != null) weeks[wi] = v;
           }
@@ -2171,7 +2442,7 @@
     if (key === 'renewRate' || key === 'renewRateExcl') return month <= 6 ? 80 : 85;
     if (key === 'leadRenewNext') return 60;
     if (key === 'leadRenewNext2') return 35;
-    if (key === 'toBaoRate') return 20;
+    if (key === 'toBaoRate') return month >= 10 ? 25 : 20;
     if (key === 'reLeaseRate') return 70;
     if (key === 'collectOver30') return 5;
     return null;
@@ -2595,16 +2866,19 @@
         ? window.skyfunAuth.getToken()
         : '') || '';
 
+    const defaultMonth = defaultOverviewMonthId();
     return Promise.all([
       fetchRenewSheet(token).catch(function () { return emptyModulePayload(MODULES.renew).byMonth; }),
       fetchLiveRenewKpi(token),
       fetchRegionKpiOverview(),
-      loadCollectDashboard().catch(function () { return null; })
+      loadCollectDashboard().catch(function () { return null; }),
+      fetchRentmgrPoints(token, 115, Number(defaultMonth))
     ]).then(function (pair) {
       const byMonth = pair[0] || emptyModulePayload(MODULES.renew).byMonth;
       const live = pair[1];
       const sheetPack = pair[2] || {};
       const collectDash = pair[3];
+      const pointsPack = pair[4];
       const collectByRegion = collectDash && collectDash.summary
         ? collectOver30ByRegion(collectDash.summary)
         : null;
@@ -2626,14 +2900,26 @@
       applyWeekSnapshots(byMonth, live && live.weekSnapshots);
       modules.renew = { byMonth: byMonth };
       const overviewByMonth = buildOverviewByMonth(sheetByMonth, byMonth);
-      const defaultMonth = defaultOverviewMonthId();
       const overview = overviewByMonth[defaultMonth] || emptyModulePayload(MODULES.overview);
+      const pointsRows = (pointsPack && pointsPack.people) || [];
+      if (overviewByMonth[defaultMonth]) {
+        overviewByMonth[defaultMonth].points = pointsRows;
+        overviewByMonth[defaultMonth].pointsMeta = pointsPack
+          ? { period: pointsPack.period, note: pointsPack.note, unassigned: pointsPack.unassigned }
+          : null;
+      }
       modules.overview = {
         kpis: overview.kpis,
-        points: overview.points || [],
+        points: pointsRows,
+        pointsMeta: pointsPack
+          ? { period: pointsPack.period, note: pointsPack.note, unassigned: pointsPack.unassigned }
+          : null,
         monthId: defaultMonth,
         byMonth: overviewByMonth,
-        monthIds: RENEW_MONTH_IDS.slice()
+        monthIds: RENEW_MONTH_IDS.slice(),
+        fetchPoints: function (monthId, refresh) {
+          return fetchRentmgrPoints(token, 115, Number(monthId), refresh);
+        }
       };
       /* 各地區 KPI：試算表週報＋月報矩陣 */
       let regionMonth = defaultMonth;

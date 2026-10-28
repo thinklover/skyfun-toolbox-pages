@@ -119,6 +119,7 @@
 .apt-op-text { text-align: left !important; white-space: pre-wrap; min-width: 10rem; max-width: 22rem; }
 .apt-op-measure { background: #fefce8; }
 .apt-op-edit-cat { width: 100%; min-width: 9rem; max-width: 14rem; padding: 0.3rem 0.4rem; border: 1.5px solid #cbd5e1; border-radius: 0.45rem; font: inherit; font-size: 0.8rem; background: #fff; }
+.apt-op-edit-caseno { min-width: 11rem; max-width: 16rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .apt-op-edit-text { width: 100%; min-width: 10rem; min-height: 2.8rem; padding: 0.3rem 0.4rem; border: 1.5px solid #cbd5e1; border-radius: 0.45rem; font: inherit; font-size: 0.8rem; line-height: 1.4; resize: vertical; background: #fff; }
 .apt-op-edit-cat:focus, .apt-op-edit-text:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18); }
 .apt-op-measure .apt-op-edit-text { background: #fefce8; border-color: #facc15; }
@@ -153,6 +154,27 @@
 .apt-group-title:first-child, .apt-sub-bar + .apt-group-title { margin-top: 0.4rem; }
 .apt-proj { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.35rem; background: #fce5cd; color: #7c2d12; font-size: 0.72rem; font-weight: 800; }
 .apt-proj--list { background: #ddebf7; color: #1e3a8a; }
+.apt-proj--lvr { background: #fce5cd; color: #7c2d12; }
+.apt-proj--renew { background: #dcfce7; color: #166534; }
+.apt-proj--collect { background: #fce7f3; color: #9d174d; }
+.apt-proj-cell { min-width: 8.5rem; max-width: 14rem; }
+.apt-proj-cell .apt-proj { margin: 0.05rem 0.1rem 0.05rem 0; }
+.apt-proj-empty { color: #94a3b8; font-size: 0.75rem; font-weight: 700; }
+.apt-proj-multi { position: relative; display: inline-block; max-width: 100%; }
+.apt-proj-multi-sum { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 0.15rem; padding: 0.2rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 0.45rem; background: #fff; min-height: 1.7rem; }
+.apt-proj-multi-sum::-webkit-details-marker { display: none; }
+.apt-proj-multi[open] .apt-proj-multi-sum { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
+.apt-proj-multi-panel { position: absolute; z-index: 20; left: 0; top: calc(100% + 0.25rem); min-width: 12rem; padding: 0.45rem; border: 1px solid #e2e8f0; border-radius: 0.55rem; background: #fff; box-shadow: 0 10px 24px -12px rgba(15, 23, 42, 0.45); display: grid; gap: 0.3rem; }
+.apt-proj-opt { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.25rem; border-radius: 0.35rem; cursor: pointer; font-size: 0.78rem; }
+.apt-proj-opt:hover { background: #f8fafc; }
+.apt-proj-opt input { accent-color: #4f46e5; }
+.apt-proj-clear { margin-top: 0.15rem; width: 100%; justify-content: center; }
+.apt-proj-sel { max-width: 9.5rem; padding: 0.2rem 0.35rem; border: 1px solid #cbd5e1; border-radius: 0.4rem; font: inherit; font-size: 0.75rem; font-weight: 700; background: #fff; color: #334155; }
+.apt-proj-sel--list { border-color: #93c5fd; background: #eff6ff; color: #1e3a8a; }
+.apt-proj-sel--lvr { border-color: #fdba74; background: #fff7ed; color: #9a3412; }
+.apt-proj-sel--renew { border-color: #86efac; background: #f0fdf4; color: #166534; }
+.apt-proj-sel--collect { border-color: #f9a8d4; background: #fdf2f8; color: #9d174d; }
+.apt-proj-sel:disabled { opacity: 0.6; }
 .apt-level { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.35rem; font-size: 0.72rem; font-weight: 800; background: #fef3c7; color: #92400e; }
 .apt-level--1 { background: #dbeafe; color: #1e40af; }
 .apt-level--2 { background: #dcfce7; color: #166534; }
@@ -215,6 +237,8 @@
 .apt-table tbody tr.apt-band--red td, .apt-tone-chip.apt-band--red { background: #fef2f2; }
 .apt-name { border: none; background: none; padding: 0; font-weight: 800; color: #0f172a; cursor: pointer; text-decoration: underline dotted #94a3b8; }
 .apt-name:hover { color: #4338ca; }
+/* 行政績效中心整頁加寬（所有頁籤） */
+#page-admin-points,
 #page-admin-points.apt-wide { max-width: min(96vw, 94rem); }
 .apt-table.apt-month-table { font-size: 1.08rem; }
 .apt-table.apt-month-table th, .apt-table.apt-month-table td { padding: 0.5rem 0.4rem; }
@@ -903,6 +927,8 @@
 .apc-tr-zone { fill: #f0fdf4; }
 .apc-tr-grid { stroke: #e2e8f0; stroke-dasharray: 3 4; }
 .apc-tr-axis { font-size: 12px; font-weight: 700; fill: #94a3b8; }
+.apc-tr-xlabel { font-size: 11px; font-weight: 800; fill: #64748b; }
+.apc-tr-xlabel.is-on { fill: #0f172a; }
 .apc-tr-goal { stroke: #16a34a; stroke-width: 1.6; stroke-dasharray: 7 5; }
 .apc-tr-goal-tag { fill: #dcfce7; stroke: #86efac; }
 .apc-tr-goal-text { font-size: 12px; font-weight: 900; fill: #15803d; }

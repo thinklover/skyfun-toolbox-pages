@@ -245,6 +245,8 @@
     function parseRocDateText(raw) {
         const s = String(raw || '').trim();
         if (!s) return null;
+        const west = s.match(/^(\d{4})\s*[\/.-]\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})/);
+        if (west) return { y: Number(west[1]) - 1911, m: Number(west[2]), d: Number(west[3]) };
         const m = s.match(/(\d{2,3})\s*[\/年.-]\s*(\d{1,2})\s*[\/月.-]\s*(\d{1,2})/);
         if (m) return { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) };
         const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -919,6 +921,104 @@
         updateAmountSummary();
     }
 
+    function applyArrearsPrefill() {
+        try {
+            const raw = sessionStorage.getItem('skyfun_arrears_prefill');
+            if (!raw) return;
+            const p = JSON.parse(raw);
+            if (p.type !== 'ep') return;
+            sessionStorage.removeItem('skyfun_arrears_prefill');
+            prefillFromCase({
+                caseId: p.caseId || '',
+                tenant: p.tenant || '',
+                address: p.address || '',
+                city: p.city || '',
+                type: p.typeLabel || '',
+                leaseStart: p.leaseStart || '',
+                leaseEnd: p.leaseEnd || '',
+                amount: p.amount || 0,
+                dueDate: p.dueDate || '',
+                lines: Array.isArray(p.lines) ? p.lines : []
+            });
+        } catch { /* ignore */ }
+    }
+
+    function cityToRegion(city) {
+        const s = String(city || '');
+        const keys = Object.keys(window.ENFORCEMENT_REGION_PRESETS || {});
+        for (const k of keys) {
+            if (s.includes(k) || s.includes(k.replace('臺', '台'))) return k;
+        }
+        return '';
+    }
+
+    function setField(id, v) {
+        const el = $(id);
+        if (el && v != null && v !== '') el.value = String(v);
+    }
+
+    function prefillFromCase(c) {
+        if (!$('ep-form') || !c) return;
+        const region = cityToRegion(c.city || c.address || '');
+        if (region) {
+            setField('ep-region', region);
+            $('ep-region')?.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        setField('ep-property-addr', c.address || '');
+        const lease = parseRocDateText(c.leaseStart);
+        if (lease) {
+            setField('ep-contract-y', lease.y);
+            setField('ep-contract-m', lease.m);
+            setField('ep-contract-d', lease.d);
+        }
+        if (/轉租/.test(String(c.type || ''))) setField('ep-lease-type', '轉租');
+        else if (c.type) setField('ep-lease-type', '租賃');
+
+        const rents = (c.lines || []).map((l) => Number(l.rent) || 0).filter((n) => n > 0);
+        if (rents.length) setField('ep-monthly-rent', rents[0]);
+
+        const firstDue = parseRocDateText(c.dueDate || (c.lines && c.lines[0] && c.lines[0].dueDate));
+        if (firstDue) {
+            setField('ep-arrears-start-y', firstDue.y);
+            setField('ep-arrears-start-m', firstDue.m);
+        }
+        const today = todayRocParts();
+        setField('ep-arrears-end-y', today.y);
+        setField('ep-arrears-end-m', today.m);
+        setField('ep-arrears-end-d', today.day);
+        setField('ep-filing-y', today.y);
+        setField('ep-filing-m', today.m);
+        setField('ep-filing-d', today.day);
+        setField('ep-case-year', today.y);
+
+        const wrapD = $('ep-debtors-list');
+        if (wrapD) {
+            wrapD.innerHTML = '';
+            addDebtorRow({ name: c.tenant || '', id: '' }, 0);
+            updateAddDebtorButton();
+        }
+
+        const wrapA = $('ep-arrears-rows');
+        if (wrapA) {
+            wrapA.innerHTML = '';
+            const lines = Array.isArray(c.lines) ? c.lines : [];
+            lines.forEach((l) => {
+                const amt = Number(l.arrears) || 0;
+                if (!amt) return;
+                const label = [l.dueDate || '', l.status || '欠租'].filter(Boolean).join(' ').trim() || '欠租';
+                addArrearsRow(label, amt);
+            });
+            if (!wrapA.children.length && Number(c.amount) > 0) {
+                addArrearsRow('欠租合計', Math.round(Number(c.amount)));
+            }
+            if (!wrapA.children.length) ensureArrearsRows();
+            updateAmountSummary();
+        }
+
+        const st = $('ep-status');
+        if (st) st.textContent = '已帶入案件地址、承租人、合約日與欠款；請補填公證書與聲請人資料後產生 PDF';
+    }
+
     window.initEnforcementPetition = function () {
         if (!$('ep-form')) return;
         populateRegionSelect();
@@ -926,7 +1026,10 @@
         ensureArrearsRows();
         bind();
         updateAmountSummary();
+        applyArrearsPrefill();
     };
+
+    window.prefillEnforcementPetitionFromCase = prefillFromCase;
 
     window.enforcementPetitionFormHtml = function () {
         return '' +

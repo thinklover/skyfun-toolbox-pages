@@ -264,30 +264,91 @@
 
     const cols = mod.pointsColumns || [];
     const points = (monthBundle.points != null ? monthBundle.points : (modData && modData.points)) || [];
+    const pointsMeta = monthBundle.pointsMeta || (modData && modData.pointsMeta) || null;
+    const colClass = {
+      rank: 'rmp-pt-rank',
+      name: 'rmp-pt-name',
+      title: 'rmp-pt-title',
+      region: 'rmp-pt-region',
+      office: 'rmp-pt-office',
+      caseCount: 'rmp-pt-cases',
+      points: 'rmp-pt-points',
+      detail: 'rmp-pt-detail',
+      note: 'rmp-pt-note'
+    };
     let head = '';
     cols.forEach(function (c) {
-      head += '<th scope="col">' + esc(c.label) + '</th>';
+      head += '<th scope="col" class="' + esc(colClass[c.key] || '') + '">' + esc(c.label) + '</th>';
     });
+
+    function pointsDetailPanel(p) {
+      const items = Array.isArray(p.items) ? p.items : [];
+      if (!items.length) {
+        return '<div class="rmp-pt-detail-empty">' + esc(p.note || '無明細') + '</div>';
+      }
+      const rows = items.map(function (it) {
+        const casesTxt = it.cases != null ? String(it.cases) : '—';
+        const unitTxt = it.unit != null ? ('每件 ' + it.unit + ' 點') : '單價不一';
+        return (
+          '<tr>' +
+            '<td class="left">' + esc(it.label || '') + '</td>' +
+            '<td class="num">' + esc(casesTxt) + '</td>' +
+            '<td class="num">' + esc(it.points) + '</td>' +
+            '<td class="rmp-pt-unit">' + esc(unitTxt) + (it.ambiguous ? '（估）' : '') + '</td>' +
+          '</tr>'
+        );
+      }).join('');
+      return (
+        '<table class="rmp-pt-detail-table" aria-label="點數明細">' +
+          '<thead><tr>' +
+            '<th class="left">項目</th><th>件數</th><th>點數</th><th class="left">核對口徑</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>'
+      );
+    }
+
     let body;
     if (!points.length) {
       body =
         '<tr><td colspan="' + cols.length + '" class="rmp-empty-row">' +
-          '租管師點數表尚無資料，之後會自動帶入' +
+          '租管師點數表尚無資料（登入後依系統續約／再媒合計算）' +
         '</td></tr>';
     } else {
       body = points.map(function (p, idx) {
+        const pts = p.points == null ? null : Number(p.points);
+        const ptsCls = 'rmp-pt-points num' + (pts > 0 ? ' is-pos' : pts < 0 ? ' is-neg' : ' is-zero');
+        const cases = p.caseCount != null ? Number(p.caseCount) : null;
+        const detailTxt = p.detail || p.note || '';
         return (
-          '<tr>' +
-            '<td>' + esc(p.rank != null ? p.rank : idx + 1) + '</td>' +
-            '<td>' + esc(p.name || EMPTY) + '</td>' +
-            '<td>' + esc(p.region || EMPTY) + '</td>' +
-            '<td>' + esc(p.office || EMPTY) + '</td>' +
-            '<td class="num">' + (p.points == null ? displayVal(null) : esc(p.points)) + '</td>' +
-            '<td>' + esc(p.note || '') + '</td>' +
+          '<tr class="rmp-pt-row">' +
+            '<td class="rmp-pt-rank">' + esc(p.rank != null ? p.rank : idx + 1) + '</td>' +
+            '<td class="rmp-pt-name">' + esc(p.name || EMPTY) + '</td>' +
+            '<td class="rmp-pt-title">' + esc(p.title || '租管師') + '</td>' +
+            '<td class="rmp-pt-region">' + esc(p.region || EMPTY) + '</td>' +
+            '<td class="rmp-pt-office">' + esc(p.office || EMPTY) + '</td>' +
+            '<td class="rmp-pt-cases num">' + (cases == null || !Number.isFinite(cases) ? displayVal(null) : esc(cases)) + '</td>' +
+            '<td class="' + ptsCls + '">' + (pts == null ? displayVal(null) : esc(pts)) + '</td>' +
+            '<td class="rmp-pt-detail">' +
+              '<details class="rmp-pt-details">' +
+                '<summary>' + esc(detailTxt || '展開明細') + '</summary>' +
+                pointsDetailPanel(p) +
+              '</details>' +
+            '</td>' +
           '</tr>'
         );
       }).join('');
     }
+    const settleHint = pointsMeta && pointsMeta.period
+      ? ('結績區間 ' + (pointsMeta.period.start || '') + '～' + (pointsMeta.period.end || '') +
+        '（結績日 ' + (pointsMeta.period.settle || '') + '）')
+      : '結績日切業績月';
+    const noteParts = pointsMeta && pointsMeta.note
+      ? String(pointsMeta.note).split('；').map(function (s) { return s.trim(); }).filter(Boolean)
+      : ['依獎金辦法自動計 B 續約／轉包租、C 再媒合', '客訴／家訪／新媒合尚未納入'];
+    const chipsHtml = noteParts.map(function (t) {
+      return '<span class="rmp-points-chip">' + esc(t) + '</span>';
+    }).join('');
 
     tableWrap.innerHTML =
       '<section class="rmp-overview" aria-label="績效總覽">' +
@@ -300,9 +361,10 @@
         '<div class="rmp-points">' +
           '<div class="rmp-points-head">' +
             '<h3 class="rmp-points-title">租管師點數表</h3>' +
-            '<p class="rmp-points-sub">資料就緒後自動帶入；目前顯示空表</p>' +
+            '<p class="rmp-points-sub">' + esc(settleHint) + '</p>' +
+            '<div class="rmp-points-chips">' + chipsHtml + '</div>' +
           '</div>' +
-          '<div class="rmp-month-scroll">' +
+          '<div class="rmp-points-scroll">' +
             '<table class="rmp-table rmp-points-table" aria-label="租管師點數表">' +
               '<thead><tr>' + head + '</tr></thead>' +
               '<tbody>' + body + '</tbody>' +
@@ -316,6 +378,29 @@
         const next = sel.value;
         if (!next) return;
         activeOverviewMonthId = next;
+        const api = dataApi();
+        const fetchPts = modData && typeof modData.fetchPoints === 'function'
+          ? modData.fetchPoints
+          : (cache && cache.modules && cache.modules.overview && cache.modules.overview.fetchPoints);
+        if (typeof fetchPts === 'function') {
+          fetchPts(next, false).then(function (pack) {
+            if (!modData.byMonth) modData.byMonth = {};
+            if (!modData.byMonth[next]) modData.byMonth[next] = { kpis: {}, points: [] };
+            modData.byMonth[next].points = (pack && pack.people) || [];
+            modData.byMonth[next].pointsMeta = pack
+              ? { period: pack.period, note: pack.note, unassigned: pack.unassigned }
+              : null;
+            if (cache && cache.modules && cache.modules.overview) {
+              cache.modules.overview.byMonth = modData.byMonth;
+              cache.modules.overview.points = modData.byMonth[next].points;
+              cache.modules.overview.pointsMeta = modData.byMonth[next].pointsMeta;
+            }
+            renderOverview(mod, modData);
+          }).catch(function () {
+            renderOverview(mod, modData);
+          });
+          return;
+        }
         renderOverview(mod, modData);
       });
     });
