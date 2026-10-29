@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>帳號一覽 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/skyfun-departments.js"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
+  <style>
+    table { font-size: 0.875rem; }
+    th, td { padding: 0.55rem 0.5rem; vertical-align: middle; }
+    .name-cell { font-size: 1rem; font-weight: 900; color: #0f172a; line-height: 1.25; }
+    .acct-cell {
+      font-size: 0.78rem; color: #64748b; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+    }
+    .team-chip {
+      border: 1px solid #e2e8f0; border-radius: 999px; padding: 0.28rem 0.7rem;
+      background: #fff; font-size: 0.75rem; font-weight: 800; color: #475569; cursor: pointer;
+    }
+    .team-chip.is-active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .team-chip .n { opacity: 0.75; margin-left: 0.25rem; }
+    .table-shell {
+      border: 1px solid #e2e8f0; border-radius: 0.85rem; overflow: auto; background: #fff;
+      max-height: min(70vh, 52rem);
+    }
+    .table-shell thead th {
+      position: sticky; top: 0; z-index: 1; background: #f1f5f9; box-shadow: inset 0 -1px 0 #e2e8f0;
+    }
+    .readonly-banner {
+      border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3;
+      border-radius: 0.65rem; padding: 0.55rem 0.75rem; font-size: 0.78rem; font-weight: 700;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+  <header>
+    <div class="topbar">
+      <h1>帳號一覽（唯讀）</h1>
+      <a class="back" href="../index.html">← 回工具箱</a>
+    </div>
+    <p class="lead">用總管密碼查看已核准帳號：營業處、姓名、帳號、最近登入。此頁不能核准／停用／改資料。</p>
+  </header>
+
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">總管密碼</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="總管密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm err hidden"></p>
+  </section>
+
+  <section class="hidden space-y-4" id="main-panel">
+    <p class="readonly-banner">唯讀模式：僅可瀏覽與匯出，沒有修改權限。若要核准帳號請用「帳號核准後台」與專用密碼。</p>
+
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 class="section-h" style="margin:0">有帳號的營業處</h2>
+          <p class="text-xs text-slate-500 mt-1" id="stats-line">—</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+          <button type="button" id="btn-export" class="btn btn-main">匯出 CSV</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2" id="team-chips"></div>
+    </div>
+
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="section-h" style="margin:0">帳號名單</h2>
+        <input type="search" id="search" placeholder="搜尋姓名／帳號／處別" class="max-w-xs" autocomplete="off" />
+      </div>
+      <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>營業處</th>
+              <th>姓名</th>
+              <th>帳號</th>
+              <th>最近登入</th>
+              <th>最近活動</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-pages-admin-secret-overview';
+      let client = null;
+      let secret = '';
+      let allUsers = [];
+      let teams = [];
+      let selectedTeam = null;
+
+      const DETAIL_LABEL = {
+        login_ok: '登入成功',
+        bad_password: '密碼錯誤',
+        pending: '審核中嘗試登入',
+        rejected: '已拒絕嘗試登入',
+        disabled: '已停用嘗試登入'
+      };
+
+      function cfg() {
+        const c = window.SKYFUN_SUPABASE || {};
+        return { url: String(c.url || '').trim(), anonKey: String(c.anonKey || '').trim() };
+      }
+
+      function sb() {
+        if (client) return client;
+        const { url, anonKey } = cfg();
+        client = window.supabase.createClient(url, anonKey);
+        return client;
+      }
+
+      async function rpc(name, args) {
+        const { data, error } = await sb().rpc(name, args);
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        return data;
+      }
+
+      function esc(s) {
+        return String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function maskAccount(s) {
+        const t = String(s || '').trim();
+        if (!t) return '—';
+        if (t.length <= 4) return t[0] + '****';
+        if (t.length <= 6) return t.slice(0, 2) + '****' + t.slice(-1);
+        return t.slice(0, 3) + '****' + t.slice(-3);
+      }
+
+      function fmt(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('zh-TW'); } catch { return iso; }
+      }
+
+      function teamSortKey(name) {
+        const t = String(name || '').trim() || '（未填處別）';
+        if (t === '（未填處別）' || t === '未填處別') return 9000;
+        const known = Array.isArray(window.SKYFUN_DEPARTMENTS) ? window.SKYFUN_DEPARTMENTS : [];
+        const i = known.indexOf(t);
+        if (i >= 0) return i;
+        return 8000; // 名單外的處別：未填之前、已知之後
+      }
+
+      function sortTeams(list) {
+        return (list || []).slice().sort((a, b) => {
+          const ka = teamSortKey(a.team);
+          const kb = teamSortKey(b.team);
+          if (ka !== kb) return ka - kb;
+          return String(a.team || '').localeCompare(String(b.team || ''), 'zh-Hant');
+        });
+      }
+
+      function filteredUsers() {
+        let list = allUsers.slice();
+        if (selectedTeam) list = list.filter((u) => u.team === selectedTeam);
+        const q = document.getElementById('search').value.trim().toLowerCase();
+        if (q) {
+          list = list.filter((u) =>
+            [u.name, u.username, u.team].some((v) => String(v || '').toLowerCase().includes(q))
+          );
+        }
+        list.sort((a, b) => {
+          const ka = teamSortKey(a.team);
+          const kb = teamSortKey(b.team);
+          if (ka !== kb) return ka - kb;
+          return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+        });
+        return list;
+      }
+
+      function renderChips() {
+        const el = document.getElementById('team-chips');
+        const total = allUsers.length;
+        const chips = [{ team: null, count: total, label: '全部' }].concat(
+          sortTeams(teams).map((t) => ({ team: t.team, count: t.count, label: t.team }))
+        );
+        el.innerHTML = chips.map((c) => {
+          const active = selectedTeam === c.team || (c.team === null && !selectedTeam);
+          return '<button type="button" class="team-chip' + (active ? ' is-active' : '') + '" data-team="' + esc(c.team == null ? '' : c.team) + '">' +
+            esc(c.label) + '<span class="n">' + c.count + '</span></button>';
+        }).join('');
+        document.getElementById('stats-line').textContent =
+          '已核准 ' + total + ' 人 · 營業處 ' + (teams || []).length + ' 處（點處別可篩選）';
+      }
+
+      function renderRows() {
+        const list = filteredUsers();
+        document.getElementById('msg').textContent = list.length ? '共 ' + list.length + ' 筆' : '沒有符合的帳號';
+        document.getElementById('rows').innerHTML = list.map((u) => {
+          const detail = u.lastLoginDetail ? (DETAIL_LABEL[u.lastLoginDetail] || u.lastLoginDetail) : '';
+          const loginTxt = u.lastLoginAt
+            ? fmt(u.lastLoginAt) + (detail ? '（' + detail + '）' : '')
+            : '—';
+          return '<tr>' +
+            '<td>' + esc(u.team) + '</td>' +
+            '<td><div class="name-cell">' + (esc(u.name) || '—') + '</div></td>' +
+            '<td><div class="acct-cell" title="' + esc(u.username) + '">' + esc(maskAccount(u.username)) + '</div></td>' +
+            '<td>' + esc(loginTxt) + '</td>' +
+            '<td>' + fmt(u.lastActive) + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+
+      function csvEscape(v) {
+        const s = String(v == null ? '' : v);
+        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      }
+
+      function exportCsv() {
+        const list = filteredUsers();
+        const lines = [['營業處', '姓名', '帳號', '最近登入時間', '最近登入結果', '最近活動']];
+        list.forEach((u) => {
+          lines.push([
+            u.team || '',
+            u.name || '',
+            u.username || '',
+            u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('zh-TW') : '',
+            DETAIL_LABEL[u.lastLoginDetail] || u.lastLoginDetail || '',
+            u.lastActive ? new Date(u.lastActive).toLocaleString('zh-TW') : ''
+          ]);
+        });
+        const bom = '\uFEFF';
+        const body = lines.map((row) => row.map(csvEscape).join(',')).join('\r\n');
+        const blob = new Blob([bom + body], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        const stamp = new Date().toISOString().slice(0, 10);
+        a.href = URL.createObjectURL(blob);
+        a.download = '帳號一覽-' + stamp + '.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        document.getElementById('msg').textContent = '已匯出 ' + list.length + ' 筆（CSV 含完整帳號）';
+      }
+
+      async function loadList() {
+        const data = await rpc('toolbox_admin_accounts_overview', { p_secret: secret });
+        if (!data?.ok) throw new Error(data?.error || '讀取失敗');
+        allUsers = data.users || [];
+        teams = data.teams || [];
+        if (selectedTeam && !teams.some((t) => t.team === selectedTeam)) selectedTeam = null;
+        renderChips();
+        renderRows();
+      }
+
+      document.getElementById('btn-login').addEventListener('click', async () => {
+        secret = document.getElementById('admin-secret').value.trim();
+        const msg = document.getElementById('login-msg');
+        msg.classList.add('hidden');
+        try {
+          const data = await rpc('toolbox_admin_accounts_overview', { p_secret: secret });
+          if (!data?.ok) throw new Error(data?.error || '後台密碼錯誤');
+          sessionStorage.setItem(SECRET_KEY, secret);
+          document.getElementById('login-panel').classList.add('hidden');
+          document.getElementById('main-panel').classList.remove('hidden');
+          allUsers = data.users || [];
+          teams = data.teams || [];
+          renderChips();
+          renderRows();
+        } catch (e) {
+          msg.textContent = e.message || '連線失敗';
+          msg.classList.remove('hidden');
+        }
+      });
+
+      document.getElementById('btn-refresh').addEventListener('click', () => {
+        loadList().catch((e) => { document.getElementById('msg').textContent = e.message; });
+      });
+      document.getElementById('btn-export').addEventListener('click', exportCsv);
+      document.getElementById('search').addEventListener('input', renderRows);
+      document.getElementById('team-chips').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-team]');
+        if (!btn) return;
+        const t = btn.dataset.team;
+        selectedTeam = t ? t : null;
+        renderChips();
+        renderRows();
+      });
+
+      const saved = sessionStorage.getItem(SECRET_KEY);
+      if (saved) document.getElementById('admin-secret').value = saved;
+    })();
+  </script>
+</body>
+</html>
