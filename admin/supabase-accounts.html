@@ -12,7 +12,7 @@
   <style>
     input:not([type="checkbox"]):not([type="radio"]), select { width: 100%; }
     table { font-size: 0.875rem; }
-    th, td { padding: 0.65rem 0.5rem; vertical-align: top; }
+    th, td { padding: 0.55rem 0.45rem; vertical-align: top; }
     .badge-pending { background: #fef3c7; color: #92400e; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; font-weight: 800; }
     .badge-on { background: #d1fae5; color: #065f46; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; font-weight: 800; }
     .badge-off { background: #ffe4e6; color: #be123c; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 0.35rem; font-weight: 800; }
@@ -23,21 +23,26 @@
     .act-warn { background: #b45309; color: #fff; }
     .act-danger { background: #b91c1c; color: #fff; }
     .act-save { background: #4f46e5; color: #fff; }
+    .act-ghost { background: #e2e8f0; color: #334155; }
     .badge-double { background: #fef3c7; color: #b45309; border: 1px solid #fbbf24; font-size: 0.68rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; margin-left: 0.25rem; font-weight: 800; }
-    .qa-double-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: #334155; margin-top: 0.35rem; white-space: nowrap; }
+    .qa-double-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: #334155; margin-top: 0.2rem; white-space: nowrap; }
     .qa-double-toggle input { width: auto; }
-    .team-cell { min-width: 11rem; }
     .team-cell select { font-size: 0.75rem; padding: 0.35rem 0.45rem; margin-bottom: 0.25rem; }
     .row-missing td { background: #fffbeb; }
     .team-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); gap: 0.3rem; }
     .team-stat {
       border: 1px solid #e2e8f0; border-radius: 0.45rem; padding: 0.28rem 0.25rem;
       background: #f8fafc; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
-      font: inherit; color: inherit; width: 100%;
+      font: inherit; color: inherit; width: 100%; position: relative;
     }
     .team-stat:hover:not(.is-zero) { border-color: #a5b4fc; }
     .team-stat-name { font-size: 0.58rem; color: #64748b; line-height: 1.15; word-break: break-all; }
     .team-stat-num { font-size: 0.88rem; font-weight: 800; color: #1e1b4b; margin-top: 0.08rem; line-height: 1.1; }
+    .team-stat-pending {
+      position: absolute; top: -0.28rem; right: -0.2rem; min-width: 1.05rem; height: 1.05rem;
+      padding: 0 0.28rem; border-radius: 999px; background: #b45309; color: #fff;
+      font-size: 0.58rem; font-weight: 900; line-height: 1.05rem; display: inline-flex; align-items: center; justify-content: center;
+    }
     .team-stat.is-zero { cursor: default; opacity: 0.55; }
     .team-stat.is-zero .team-stat-num { color: #94a3b8; font-weight: 600; }
     .team-stat.is-hot { border-color: #fbbf24; background: #fffbeb; }
@@ -58,14 +63,14 @@
     .team-detail-item .user { color: #64748b; margin-left: 0.25rem; }
     .team-detail-item .st { margin-left: 0.35rem; }
     .row-team-highlight td { background: #eef2ff; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.2rem, 1fr)); gap: 0.55rem; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.6rem, 1fr)); gap: 0.5rem; }
     .kpi {
-      border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.7rem 0.65rem;
+      border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.65rem 0.55rem;
       background: linear-gradient(180deg, #fff 0%, #f8fafc 100%); text-align: left;
     }
-    .kpi-num { font-size: 1.45rem; font-weight: 900; color: #1e1b4b; line-height: 1; letter-spacing: -0.02em; }
-    .kpi-label { font-size: 0.72rem; color: #64748b; margin-top: 0.3rem; font-weight: 800; }
-    .kpi-hint { font-size: 0.65rem; color: #94a3b8; margin-top: 0.15rem; line-height: 1.35; }
+    .kpi-num { font-size: 1.35rem; font-weight: 900; color: #1e1b4b; line-height: 1; letter-spacing: -0.02em; }
+    .kpi-label { font-size: 0.72rem; color: #64748b; margin-top: 0.28rem; font-weight: 800; }
+    .kpi-hint { font-size: 0.62rem; color: #94a3b8; margin-top: 0.12rem; line-height: 1.35; }
     .kpi.is-pending { border-color: #fbbf24; background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%); }
     .kpi.is-pending .kpi-num { color: #b45309; }
     .kpi.is-pending.has-value { box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35); }
@@ -74,8 +79,12 @@
     .kpi.is-warn .kpi-num { color: #b91c1c; }
     .kpi.is-hot { border-color: #fcd34d; background: linear-gradient(180deg, #fffbeb 0%, #fef9c3 100%); }
     .kpi.is-hot .kpi-num { color: #b45309; }
+    .kpi.is-filter { border-color: #c7d2fe; }
+    .kpi.is-filter .kpi-num { color: #4338ca; }
+    .kpi.is-filter.has-value { border-color: #a5b4fc; background: linear-gradient(180deg, #eef2ff 0%, #e0e7ff 100%); }
     .kpi-click { cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 100%; font: inherit; text-align: left; }
     .kpi-click:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+    .kpi-click.is-active-filter { outline: 2px solid #4f46e5; outline-offset: 1px; }
     .fold { border: 1px solid #e2e8f0; border-radius: 0.85rem; background: #fff; overflow: hidden; }
     .fold > summary {
       list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center;
@@ -107,22 +116,16 @@
     .table-shell .row-missing:hover td { background: #fef9c3; }
     .table-shell .row-abnormal:hover td { background: #ffe4e6; }
     .table-shell .row-team-highlight:hover td { background: #e0e7ff; }
+    .table-shell tr.row-main { cursor: pointer; }
+    .table-shell tr.row-detail td { background: #f8fafc; padding: 0.65rem 0.75rem; }
+    .table-shell tr.row-detail[hidden] { display: none; }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.75rem 1rem; }
+    .detail-block h4 { font-size: 0.68rem; font-weight: 800; color: #64748b; margin: 0 0 0.35rem; }
     .msg-line { min-height: 1.25rem; font-size: 0.82rem; color: #64748b; }
     .count-pill {
       display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 800;
       color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 999px; padding: 0.28rem 0.7rem;
     }
-    .login-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.45rem; }
-    .login-stat {
-      border: 1px solid #e2e8f0; border-radius: 0.55rem; padding: 0.45rem 0.4rem;
-      background: #f8fafc; text-align: center;
-    }
-    .login-stat-num { font-size: 1.15rem; font-weight: 900; color: #1e1b4b; line-height: 1.1; }
-    .login-stat-label { font-size: 0.65rem; color: #64748b; margin-top: 0.15rem; font-weight: 700; }
-    .login-stat.is-hot { border-color: #f59e0b; background: #fffbeb; }
-    .login-stat.is-hot .login-stat-num { color: #b45309; }
-    .login-stat.is-warn { border-color: #f87171; background: #fef2f2; }
-    .login-stat.is-warn .login-stat-num { color: #b91c1c; }
     .badge-online { background: #d1fae5; color: #065f46; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
     .badge-idle { background: #e2e8f0; color: #475569; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
     .badge-abnormal { background: #fee2e2; color: #b91c1c; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 0.35rem; font-weight: 800; }
@@ -132,15 +135,70 @@
     .act-line { background: #06c755; color: #fff; }
     .act-line-cancel { background: #64748b; color: #fff; }
     .line-cell { min-width: 7.5rem; }
-    .login-events { max-height: 14rem; overflow-y: auto; font-size: 0.78rem; }
+    .login-events { max-height: 16rem; overflow-y: auto; font-size: 0.78rem; border: 1px solid #e2e8f0; border-radius: 0.65rem; padding: 0.55rem 0.6rem; background: #fff; }
     .login-events table { width: 100%; }
     .login-events .ok { color: #047857; font-weight: 800; }
     .login-events .ng { color: #b91c1c; font-weight: 800; }
+    .login-split {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; align-items: stretch;
+    }
     .row-abnormal td { background: #fff1f2; }
+
+    /* 待核准佇列 */
+    .pending-panel {
+      border: 1px solid #fbbf24; border-radius: 1rem; overflow: hidden;
+      background: linear-gradient(180deg, #fffbeb 0%, #fff 42%);
+      box-shadow: 0 8px 24px rgba(180, 83, 9, 0.08);
+    }
+    .pending-panel.is-empty {
+      border-color: #bbf7d0;
+      background: linear-gradient(180deg, #f0fdf4 0%, #fff 55%);
+      box-shadow: none;
+    }
+    .pending-head {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 0.55rem 0.9rem; padding: 0.9rem 1rem 0.7rem;
+    }
+    .pending-title { font-size: 1.05rem; font-weight: 900; color: #92400e; margin: 0; }
+    .pending-panel.is-empty .pending-title { color: #166534; }
+    .pending-sub { font-size: 0.75rem; color: #a16207; margin: 0.15rem 0 0; }
+    .pending-panel.is-empty .pending-sub { color: #15803d; }
+    .pending-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+    .pending-body { padding: 0 1rem 1rem; }
+    .pending-empty {
+      border: 1px dashed #86efac; border-radius: 0.75rem; padding: 1.1rem 1rem;
+      text-align: center; color: #166534; background: rgba(240, 253, 244, 0.7);
+    }
+    .pending-empty strong { display: block; font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .pending-list { display: grid; gap: 0.65rem; }
+    .pending-card {
+      display: grid; grid-template-columns: auto 1fr auto; gap: 0.65rem 0.85rem; align-items: start;
+      border: 1px solid #fde68a; border-radius: 0.85rem; padding: 0.75rem 0.85rem; background: #fff;
+    }
+    .pending-card.is-selected { border-color: #f59e0b; box-shadow: 0 0 0 1px #fbbf24; }
+    .pending-check { margin-top: 0.35rem; }
+    .pending-check input { width: auto; }
+    .pending-meta { min-width: 0; }
+    .pending-name { font-size: 0.95rem; font-weight: 900; color: #0f172a; line-height: 1.25; }
+    .pending-user { font-size: 0.78rem; color: #64748b; margin-top: 0.1rem; word-break: break-all; }
+    .pending-time { font-size: 0.68rem; color: #94a3b8; margin-top: 0.25rem; }
+    .pending-ops { display: flex; flex-direction: column; gap: 0.35rem; min-width: min(100%, 12.5rem); }
+    .pending-ops select { font-size: 0.78rem; padding: 0.4rem 0.5rem; }
+    .pending-btns { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .expand-hint { font-size: 0.65rem; color: #94a3b8; margin-top: 0.15rem; }
+    .cell-main { font-size: 0.95rem; font-weight: 900; color: #0f172a; line-height: 1.25; }
+    .cell-sub { font-size: 0.72rem; color: #64748b; margin-top: 0.12rem; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+    .cell-acct { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+
+    @media (max-width: 900px) {
+      .login-split { grid-template-columns: 1fr; }
+    }
     @media (max-width: 720px) {
       .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .toolbar { position: static; }
       .table-shell { max-height: none; }
+      .pending-card { grid-template-columns: auto 1fr; }
+      .pending-ops { grid-column: 1 / -1; min-width: 0; }
     }
   </style>
 </head>
@@ -150,32 +208,65 @@
       <h1>帳號核准後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">先看待核准與帳號名單；登入監控、各處統計需要時再展開。新註冊／異常登入會 LINE 通知簡為倢。</p>
+    <p class="lead">一進頁先處理待核准；日常維護與登入監控往下收。新註冊／異常登入會 LINE 通知簡為倢。</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
-    <label class="block text-sm text-slate-600 font-bold">後台密碼（Supabase admin_secret）</label>
+    <label class="block text-sm text-slate-600 font-bold">帳號核准專用密碼</label>
     <div class="flex flex-wrap gap-2">
-      <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" />
+      <input type="password" id="admin-secret" placeholder="帳號核准專用密碼" class="flex-1 min-w-[12rem]" />
       <button type="button" id="btn-login" class="btn btn-main">連線</button>
     </div>
+    <p class="text-xs text-slate-500">此頁只認核准專用密碼。專用密碼可進其他後台；總管密碼不能進本頁。</p>
     <p id="login-msg" class="text-sm err hidden"></p>
   </section>
 
   <section class="hidden space-y-4" id="main-panel">
+    <!-- 1. 待核准佇列（最優先） -->
+    <section class="pending-panel" id="pending-panel">
+      <div class="pending-head">
+        <div>
+          <h2 class="pending-title" id="pending-title">待核准</h2>
+          <p class="pending-sub" id="pending-sub">先選處別再核准；可勾選批次處理</p>
+        </div>
+        <div class="pending-actions">
+          <button type="button" class="btn btn-ghost" id="btn-pending-select-all">全選</button>
+          <button type="button" class="btn btn-main" id="btn-pending-batch-ok">核准已選</button>
+          <button type="button" class="btn btn-ghost" id="btn-pending-batch-reject" style="border-color:#fecaca;color:#b91c1c">拒絕已選</button>
+          <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+        </div>
+      </div>
+      <div class="pending-body" id="pending-body"></div>
+    </section>
+
+    <!-- 2. 捷徑 KPI -->
     <div class="card p-4 space-y-3">
       <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 class="section-h" style="margin:0">總覽</h2>
+          <h2 class="section-h" style="margin:0">捷徑總覽</h2>
           <p class="text-xs text-slate-500 mt-1" id="team-stats-total">—</p>
         </div>
-        <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
       </div>
       <div class="kpi-grid" id="kpi-grid">
-        <button type="button" class="kpi kpi-click is-pending" id="kpi-pending" title="點一下篩選待核准" data-filter-status="pending">
+        <button type="button" class="kpi kpi-click is-pending" id="kpi-pending" title="捲到待核准區">
           <div class="kpi-num" id="sum-pending">—</div>
           <div class="kpi-label">待核准</div>
-          <div class="kpi-hint">點此只看申請中帳號</div>
+          <div class="kpi-hint">點此回到佇列</div>
+        </button>
+        <button type="button" class="kpi kpi-click is-warn" id="kpi-abnormal" title="點一下只看異常帳號" data-filter-login="abnormal">
+          <div class="kpi-num" id="sum-abnormal">—</div>
+          <div class="kpi-label">15 分異常</div>
+          <div class="kpi-hint">點此篩選異常</div>
+        </button>
+        <button type="button" class="kpi kpi-click is-hot" id="kpi-missing" title="點一下只看缺處別">
+          <div class="kpi-num" id="sum-missing">—</div>
+          <div class="kpi-label">缺處別</div>
+          <div class="kpi-hint">點此篩選</div>
+        </button>
+        <button type="button" class="kpi kpi-click is-filter" id="kpi-unbound" title="點一下只看未綁 LINE">
+          <div class="kpi-num" id="sum-unbound">—</div>
+          <div class="kpi-label">未綁 LINE</div>
+          <div class="kpi-hint">已核准帳號</div>
         </button>
         <div class="kpi is-online">
           <div class="kpi-num" id="sum-online">—</div>
@@ -197,18 +288,14 @@
           <div class="kpi-label">15 分失敗次數</div>
           <div class="kpi-hint">密碼錯誤累計</div>
         </div>
-        <button type="button" class="kpi kpi-click" id="kpi-abnormal" title="點一下只看異常帳號" data-filter-login="abnormal">
-          <div class="kpi-num" id="sum-abnormal">—</div>
-          <div class="kpi-label">15 分異常帳號</div>
-          <div class="kpi-hint">點此篩選異常</div>
-        </button>
       </div>
     </div>
 
+    <!-- 3. 各處統計（在帳號維護上方，方便篩選） -->
     <details class="fold" id="fold-team" open>
       <summary>
         <span class="fold-title">各處申請帳號</span>
-        <span class="fold-sub">點處別可篩選名單</span>
+        <span class="fold-sub" id="fold-team-sub">點處別可篩選下方名單 · 角標＝待核准數</span>
       </summary>
       <div class="fold-body space-y-2" id="team-stats-panel">
         <div class="team-stats" id="team-stats-grid"></div>
@@ -222,18 +309,19 @@
       </div>
     </details>
 
-    <div class="card p-4 space-y-3">
+    <!-- 4. 帳號名單（緊湊＋展開） -->
+    <div class="card p-4 space-y-3" id="account-list-card">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="section-h" style="margin:0">帳號名單</h2>
+        <h2 class="section-h" style="margin:0">帳號維護</h2>
         <span class="count-pill" id="count">—</span>
       </div>
       <div class="toolbar" id="account-toolbar">
         <div class="field">
           <label class="field-l" for="filter">狀態</label>
           <select id="filter">
-            <option value="pending">待核准</option>
             <option value="active" selected>已核准</option>
             <option value="">全部</option>
+            <option value="pending">待核准</option>
             <option value="rejected">已拒絕</option>
             <option value="disabled">已停用</option>
           </select>
@@ -261,39 +349,46 @@
         <table>
           <thead>
             <tr>
-              <th>帳號</th><th>顯示名稱</th><th>處別</th><th>登入狀態</th><th>最近活動</th>
-              <th>QA 雙倍</th><th>QA 優質</th><th>LINE</th><th>狀態</th><th>註冊時間</th><th>操作</th>
+              <th>姓名／帳號</th>
+              <th>處別</th>
+              <th>狀態</th>
+              <th>登入</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
+      <p class="text-xs text-slate-400">點列可展開 QA、LINE、註冊／活動時間等細節。</p>
     </div>
 
+    <!-- 5. 登入監控（左右兩欄） -->
     <details class="fold" id="fold-login">
       <summary>
         <span class="fold-title">登入監控</span>
-        <span class="fold-sub">線上名單與異常事件 · LINE 通知簡為倢</span>
+        <span class="fold-sub">左：近期活躍 · 右：登入／異常 · LINE 通知簡為倢</span>
       </summary>
       <div class="fold-body space-y-3">
         <p class="text-xs text-slate-500">線上＝15 分鐘內有活動；註冊申請、密碼連錯／停用帳嘗試／1 小時登入≥4 次會 LINE 通知（同類型 30 分鐘內不重送）。數字已在上方總覽。</p>
-        <div class="login-events">
-          <p class="text-xs font-bold text-slate-500 mb-1">近期活躍帳號（依最近活動）</p>
-          <table>
-            <thead>
-              <tr><th>最近活動</th><th>帳號</th><th>姓名</th><th>處別</th><th>狀態</th></tr>
-            </thead>
-            <tbody id="active-user-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
-          </table>
-        </div>
-        <div class="login-events">
-          <p class="text-xs font-bold text-slate-500 mb-1">登入／異常事件（密碼錯誤、過頻等）</p>
-          <table>
-            <thead>
-              <tr><th>時間</th><th>帳號</th><th>姓名</th><th>處別</th><th>結果</th></tr>
-            </thead>
-            <tbody id="login-event-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
-          </table>
+        <div class="login-split">
+          <div class="login-events">
+            <p class="text-xs font-bold text-slate-500 mb-1">近期活躍帳號（依最近活動）</p>
+            <table>
+              <thead>
+                <tr><th>最近活動</th><th>帳號</th><th>姓名</th><th>處別</th><th>狀態</th></tr>
+              </thead>
+              <tbody id="active-user-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="login-events">
+            <p class="text-xs font-bold text-slate-500 mb-1">登入／異常事件（密碼錯誤、過頻等）</p>
+            <table>
+              <thead>
+                <tr><th>時間</th><th>帳號</th><th>姓名</th><th>處別</th><th>結果</th></tr>
+              </thead>
+              <tbody id="login-event-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </details>
@@ -308,6 +403,7 @@
       let statsUsers = [];
       let selectedTeamFilter = null;
       let loginSummary = null;
+      let expandedIds = new Set();
 
       const DETAIL_LABEL = {
         login_ok: '登入成功',
@@ -342,6 +438,15 @@
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;');
+      }
+
+      /** 帳號中間隱碼：F229502910 → F22****910 */
+      function maskAccount(s) {
+        const t = String(s || '').trim();
+        if (!t) return '—';
+        if (t.length <= 4) return t[0] + '****';
+        if (t.length <= 6) return t.slice(0, 2) + '****' + t.slice(-1);
+        return t.slice(0, 3) + '****' + t.slice(-3);
       }
 
       function badge(status) {
@@ -381,6 +486,15 @@
         return '<span class="badge-idle">離線</span>';
       }
 
+      function syncKpiFilterActive() {
+        const missing = document.getElementById('filter-missing-team')?.checked;
+        const unbound = document.getElementById('filter-line-unbound')?.checked;
+        const loginFilter = document.getElementById('filter-login')?.value || '';
+        document.getElementById('kpi-missing')?.classList.toggle('is-active-filter', !!missing);
+        document.getElementById('kpi-unbound')?.classList.toggle('is-active-filter', !!unbound);
+        document.getElementById('kpi-abnormal')?.classList.toggle('is-active-filter', loginFilter === 'abnormal');
+      }
+
       function renderLoginSummary(summary, pendingCount) {
         loginSummary = summary || {};
         const setNum = (id, n) => {
@@ -388,19 +502,26 @@
           if (el) el.textContent = n == null ? '—' : String(n);
         };
         const pending = pendingCount == null ? 0 : Number(pendingCount) || 0;
+        const missing = (statsUsers || []).filter((u) => !String(u.team || '').trim()).length;
+        const unbound = (statsUsers || []).filter((u) => u.status === 'active' && !u.lineBound).length;
         setNum('sum-pending', pending);
         setNum('sum-online', loginSummary.online);
         setNum('sum-active24h', loginSummary.active24h);
         setNum('sum-session', loginSummary.withSession);
         setNum('sum-fail', loginSummary.fail15m);
         setNum('sum-abnormal', loginSummary.abnormal15m);
+        setNum('sum-missing', missing);
+        setNum('sum-unbound', unbound);
         document.getElementById('kpi-pending')?.classList.toggle('has-value', pending > 0);
+        document.getElementById('kpi-missing')?.classList.toggle('has-value', missing > 0);
+        document.getElementById('kpi-unbound')?.classList.toggle('has-value', unbound > 0);
         const fail = Number(loginSummary.fail15m) || 0;
         const abn = Number(loginSummary.abnormal15m) || 0;
         document.getElementById('kpi-fail')?.classList.toggle('is-hot', fail > 0);
         document.getElementById('kpi-abnormal')?.classList.toggle('is-warn', abn > 0);
         const foldLogin = document.getElementById('fold-login');
         if (foldLogin && abn > 0) foldLogin.open = true;
+        syncKpiFilterActive();
       }
 
       function renderActiveUsers(users) {
@@ -421,7 +542,7 @@
             : (isAbnormalUser(u)
               ? '<span class="badge-abnormal">異常</span>'
               : (u.hasSession ? '<span class="badge-idle">離線（有憑證）</span>' : '<span class="badge-idle">離線</span>'));
-          return `<tr class="${u.isOnline ? '' : ''}${isAbnormalUser(u) ? ' row-abnormal' : ''}">
+          return `<tr class="${isAbnormalUser(u) ? 'row-abnormal' : ''}">
             <td>${fmt(u.lastActive)}</td>
             <td>${esc(u.username) || '—'}</td>
             <td>${esc(u.name) || '—'}</td>
@@ -452,11 +573,12 @@
         }).join('');
       }
 
-      function teamSelectHtml(userId, current) {
+      function teamSelectHtml(userId, current, attrName) {
+        const attr = attrName || 'data-team-for';
         const html = typeof window.buildSkyfunDepartmentSelectHtml === 'function'
           ? window.buildSkyfunDepartmentSelectHtml(current)
           : '<option value="">請選擇處別</option>';
-        return `<select data-team-for="${esc(userId)}">${html}</select>`;
+        return `<select ${attr}="${esc(userId)}">${html}</select>`;
       }
 
       function knownDepartments() {
@@ -472,6 +594,61 @@
 
       function usersForTeam(teamKey) {
         return statsUsers.filter((u) => userTeamKey(u) === teamKey);
+      }
+
+      function pendingUsers() {
+        return (statsUsers || [])
+          .filter((u) => u.status === 'pending')
+          .slice()
+          .sort((a, b) => {
+            const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return ta - tb;
+          });
+      }
+
+      function renderPendingQueue() {
+        const panel = document.getElementById('pending-panel');
+        const body = document.getElementById('pending-body');
+        const title = document.getElementById('pending-title');
+        const sub = document.getElementById('pending-sub');
+        if (!panel || !body) return;
+        const list = pendingUsers();
+        const n = list.length;
+        panel.classList.toggle('is-empty', n === 0);
+        if (title) title.textContent = n ? `待核准（${n}）` : '待核准已清空';
+        if (sub) {
+          sub.textContent = n
+            ? '先選處別再核准；可勾選批次處理。核准後對方即可登入。'
+            : '目前沒有新申請，可往下維護既有帳號。';
+        }
+        document.getElementById('btn-pending-select-all')?.classList.toggle('hidden', n === 0);
+        document.getElementById('btn-pending-batch-ok')?.classList.toggle('hidden', n === 0);
+        document.getElementById('btn-pending-batch-reject')?.classList.toggle('hidden', n === 0);
+
+        if (!n) {
+          body.innerHTML = '<div class="pending-empty"><strong>沒有待核准帳號</strong>新註冊申請會出現在這裡，並 LINE 通知簡為倢。</div>';
+          return;
+        }
+
+        body.innerHTML = '<div class="pending-list">' + list.map((u) => {
+          const missing = !String(u.team || '').trim();
+          return `<article class="pending-card" data-pending-id="${esc(u.id)}">
+            <label class="pending-check"><input type="checkbox" class="pending-pick" data-id="${esc(u.id)}" /></label>
+            <div class="pending-meta">
+              <div class="pending-name">${esc(u.name) || '—'}${missing ? '<span class="badge-missing">缺處別</span>' : ''}</div>
+              <div class="pending-user cell-acct" title="${esc(u.username)}">${esc(maskAccount(u.username))}</div>
+              <div class="pending-time">申請：${fmt(u.createdAt)}</div>
+            </div>
+            <div class="pending-ops">
+              ${teamSelectHtml(u.id, u.team || '', 'data-pending-team')}
+              <div class="pending-btns">
+                <button type="button" class="act-btn act-ok" data-act="pending-approve" data-id="${esc(u.id)}">核准</button>
+                <button type="button" class="act-btn act-danger" data-act="pending-reject" data-id="${esc(u.id)}">拒絕</button>
+              </div>
+            </div>
+          </article>`;
+        }).join('') + '</div>';
       }
 
       function renderTeamDetail(teamKey) {
@@ -510,6 +687,7 @@
         renderRows(allUsers);
         if (selectedTeamFilter) {
           document.getElementById('msg').textContent = '已篩選：' + selectedTeamFilter;
+          document.getElementById('account-list-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
 
@@ -554,17 +732,23 @@
         const total = (allUsersForStats || []).length;
         const pendingTotal = (allUsersForStats || []).filter((u) => u.status === 'pending').length;
         totalEl.textContent = '合計 ' + total + ' 個帳號' + (pendingTotal ? '（待核准 ' + pendingTotal + ' 個）' : '');
+        const foldSub = document.getElementById('fold-team-sub');
+        if (foldSub) {
+          foldSub.textContent = pendingTotal
+            ? '待核准 ' + pendingTotal + ' · 點處別篩選 · 角標＝待核准數'
+            : '點處別可篩選名單 · 角標＝待核准數';
+        }
         grid.innerHTML = rows.map((row) => {
           const cls = [
             'team-stat',
             row.count === 0 ? 'is-zero' : '',
-            row.count > 0 && row.kind === 'dept' ? 'is-hot' : '',
+            row.pending > 0 ? 'is-hot' : '',
             row.kind === 'missing' && row.count > 0 ? 'is-missing' : '',
-            row.kind === 'other' && row.count > 0 ? 'is-hot' : '',
             selectedTeamFilter === row.name ? 'is-active' : ''
           ].filter(Boolean).join(' ');
           const title = row.pending > 0 ? '點擊查看 · 待核准 ' + row.pending : '點擊查看申請名單';
-          return '<button type="button" class="' + cls + '" data-team="' + esc(row.name) + '" title="' + title + '" ' + (row.count === 0 ? 'disabled' : '') + '><div class="team-stat-name">' + esc(row.name) + '</div><div class="team-stat-num">' + row.count + '</div></button>';
+          const badgeHtml = row.pending > 0 ? '<span class="team-stat-pending">' + row.pending + '</span>' : '';
+          return '<button type="button" class="' + cls + '" data-team="' + esc(row.name) + '" title="' + title + '" ' + (row.count === 0 ? 'disabled' : '') + '>' + badgeHtml + '<div class="team-stat-name">' + esc(row.name) + '</div><div class="team-stat-num">' + row.count + '</div></button>';
         }).join('');
       }
 
@@ -585,6 +769,39 @@
           btn = `<button type="button" class="act-btn act-line" data-act="line-force-on" data-id="${u.id}">下次強制綁定</button>`;
         }
         return `<div class="line-cell">${status}${forceTag}${btn}</div>`;
+      }
+
+      function detailHtml(u) {
+        return `<div class="detail-grid">
+          <div class="detail-block">
+            <h4>處別</h4>
+            <div class="team-cell">
+              ${teamSelectHtml(u.id, u.team || '')}
+              <button type="button" class="act-btn act-save" data-act="save-team" data-id="${u.id}">儲存處別</button>
+            </div>
+          </div>
+          <div class="detail-block">
+            <h4>QA 權限</h4>
+            <label class="qa-double-toggle">
+              <input type="checkbox" data-act="toggle-double" data-id="${u.id}"${u.adminQaDoublePoints ? ' checked' : ''} />
+              檢核雙倍點數
+            </label>
+            <label class="qa-double-toggle">
+              <input type="checkbox" data-act="toggle-quality" data-id="${u.id}"${u.adminQaCanSetQuality ? ' checked' : ''} />
+              可認定優質
+            </label>
+          </div>
+          <div class="detail-block">
+            <h4>LINE</h4>
+            ${lineCellHtml(u)}
+          </div>
+          <div class="detail-block">
+            <h4>時間</h4>
+            <div class="cell-sub">註冊 ${fmt(u.createdAt)}</div>
+            <div class="cell-sub">最近活動 ${fmt(u.lastActive)}</div>
+            ${u.lastLoginDetail ? `<div class="cell-sub">${esc(DETAIL_LABEL[u.lastLoginDetail] || u.lastLoginDetail)} · ${fmt(u.lastLoginAt)}</div>` : ''}
+          </div>
+        </div>`;
       }
 
       function renderRows(users) {
@@ -618,10 +835,14 @@
         document.getElementById('count').textContent =
           `共 ${list.length} 筆` + (suffix ? `（${suffix}）` : '') +
           (q && !list.length && status.value ? `；目前只查「${status.selectedOptions[0].text}」，篩選狀態改成「全部」可查所有帳號` : '');
+        syncKpiFilterActive();
+
+        const keepOpen = new Set(expandedIds);
         document.getElementById('rows').innerHTML = list.map((u) => {
           const missing = !String(u.team || '').trim();
           const teamHit = selectedTeamFilter && userTeamKey(u) === selectedTeamFilter;
           const abnormal = isAbnormalUser(u);
+          const open = keepOpen.has(String(u.id));
           const acts = [];
           if (u.status === 'pending') {
             acts.push(`<button type="button" class="act-btn act-ok" data-act="active" data-id="${u.id}">核准</button>`);
@@ -631,35 +852,21 @@
           } else if (u.status === 'disabled' || u.status === 'rejected') {
             acts.push(`<button type="button" class="act-btn act-ok" data-act="active" data-id="${u.id}">重新核准</button>`);
           }
+          acts.push(`<button type="button" class="act-btn act-ghost" data-act="toggle-detail" data-id="${u.id}">${open ? '收合' : '細節'}</button>`);
           acts.push(`<button type="button" class="act-btn act-danger" data-act="delete" data-id="${u.id}" data-user="${esc(u.username)}" data-name="${esc(u.name)}">刪除</button>`);
-          return `<tr class="${missing ? 'row-missing' : ''}${teamHit ? ' row-team-highlight' : ''}${abnormal ? ' row-abnormal' : ''}">
-            <td>${esc(u.username) || '—'}${missing ? '<span class="badge-missing">缺處別</span>' : ''}${u.adminQaDoublePoints ? '<span class="badge-double">✓ 雙倍</span>' : ''}</td>
-            <td>${esc(u.name) || '—'}</td>
-            <td class="team-cell">
-              ${teamSelectHtml(u.id, u.team || '')}
-              <button type="button" class="act-btn act-save" data-act="save-team" data-id="${u.id}">儲存處別</button>
-            </td>
-            <td>${loginBadge(u)}</td>
+          return `<tr class="row-main ${missing ? 'row-missing' : ''}${teamHit ? ' row-team-highlight' : ''}${abnormal ? ' row-abnormal' : ''}" data-row-id="${esc(u.id)}">
             <td>
-              <div>${fmt(u.lastActive)}</div>
-              ${u.lastLoginDetail ? `<div class="text-[11px] text-slate-500 mt-0.5">${esc(DETAIL_LABEL[u.lastLoginDetail] || u.lastLoginDetail)} · ${fmt(u.lastLoginAt)}</div>` : ''}
+              <div class="cell-main">${esc(u.name) || '—'}${missing ? '<span class="badge-missing">缺處別</span>' : ''}${u.adminQaDoublePoints ? '<span class="badge-double">✓ 雙倍</span>' : ''}${!u.lineBound && u.status === 'active' ? '<span class="badge-missing">未綁 LINE</span>' : ''}</div>
+              <div class="cell-sub cell-acct" title="${esc(u.username)}">${esc(maskAccount(u.username))}</div>
+              <div class="expand-hint">${open ? '細節已展開' : '點列展開細節'}</div>
             </td>
-            <td>
-              <label class="qa-double-toggle">
-                <input type="checkbox" data-act="toggle-double" data-id="${u.id}"${u.adminQaDoublePoints ? ' checked' : ''} />
-                檢核雙倍點數
-              </label>
-            </td>
-            <td>
-              <label class="qa-double-toggle">
-                <input type="checkbox" data-act="toggle-quality" data-id="${u.id}"${u.adminQaCanSetQuality ? ' checked' : ''} />
-                可認定優質
-              </label>
-            </td>
-            <td>${lineCellHtml(u)}</td>
+            <td>${esc(u.team) || '<span class="text-amber-700 font-bold">未填</span>'}</td>
             <td>${badge(u.status)}</td>
-            <td>${fmt(u.createdAt)}</td>
+            <td>${loginBadge(u)}</td>
             <td>${acts.join('') || '—'}</td>
+          </tr>
+          <tr class="row-detail" data-detail-for="${esc(u.id)}"${open ? '' : ' hidden'}>
+            <td colspan="5">${detailHtml(u)}</td>
           </tr>`;
         }).join('');
       }
@@ -673,6 +880,7 @@
         }
         renderTeamStats(statsUsers);
         renderTeamDetail(selectedTeamFilter);
+        renderPendingQueue();
       }
 
       async function loadLoginEvents() {
@@ -695,7 +903,6 @@
         allUsers = listData.users || [];
         const pendingCount = (statsUsers || []).filter((u) => u.status === 'pending').length;
         renderLoginSummary(listData.summary || null, pendingCount);
-        // 活躍名單用「全部狀態」的 statsUsers（含 lastActive），避免篩成待核准時上面空白
         renderActiveUsers(statsUsers.length ? statsUsers : allUsers);
         renderRows(allUsers);
         document.getElementById('msg').textContent =
@@ -723,17 +930,80 @@
         await loadList();
       }
 
-      async function saveTeam(id) {
-        const sel = document.querySelector(`select[data-team-for="${id}"]`);
-        const team = sel?.value?.trim() || '';
-        if (!team) throw new Error('請先選擇處別');
+      async function saveTeamValue(id, team) {
         const data = await rpc('toolbox_admin_set_team', {
           p_secret: secret,
           p_user_id: id,
           p_team: team
         });
         if (!data?.ok) throw new Error(data?.error || '儲存失敗');
+      }
+
+      async function saveTeam(id) {
+        const sel = document.querySelector(`select[data-team-for="${id}"]`);
+        const team = sel?.value?.trim() || '';
+        if (!team) throw new Error('請先選擇處別');
+        await saveTeamValue(id, team);
         document.getElementById('msg').textContent = '已更新處別：' + team;
+        await loadList();
+      }
+
+      async function approvePending(id, requireTeam) {
+        const sel = document.querySelector(`select[data-pending-team="${id}"]`);
+        const team = sel?.value?.trim() || '';
+        if (requireTeam && !team) throw new Error('請先選擇處別再核准');
+        if (team) await saveTeamValue(id, team);
+        await setStatus(id, 'active');
+        document.getElementById('msg').textContent = team
+          ? '已核准並設定處別：' + team
+          : '已核准（尚未指定處別，可之後補）';
+      }
+
+      async function rejectPending(id) {
+        await setStatus(id, 'rejected');
+        document.getElementById('msg').textContent = '已拒絕申請';
+      }
+
+      function selectedPendingIds() {
+        return Array.from(document.querySelectorAll('.pending-pick:checked')).map((el) => el.dataset.id);
+      }
+
+      async function batchPending(action) {
+        const ids = selectedPendingIds();
+        if (!ids.length) {
+          document.getElementById('msg').textContent = '請先勾選要處理的待核准帳號';
+          return;
+        }
+        if (action === 'reject') {
+          if (!confirm('確定拒絕已選的 ' + ids.length + ' 個申請？')) return;
+          for (const id of ids) {
+            const data = await rpc('toolbox_admin_set_status', {
+              p_secret: secret, p_user_id: id, p_status: 'rejected', p_note: null
+            });
+            if (!data?.ok) throw new Error(data?.error || '拒絕失敗');
+          }
+          document.getElementById('msg').textContent = '已拒絕 ' + ids.length + ' 筆';
+          await loadList();
+          return;
+        }
+        const missingTeam = ids.filter((id) => {
+          const sel = document.querySelector(`select[data-pending-team="${id}"]`);
+          return !(sel?.value?.trim());
+        });
+        if (missingTeam.length) {
+          throw new Error('批次核准前，請為已選帳號都選好處別（尚缺 ' + missingTeam.length + ' 筆）');
+        }
+        if (!confirm('確定核准已選的 ' + ids.length + ' 個帳號？')) return;
+        for (const id of ids) {
+          const sel = document.querySelector(`select[data-pending-team="${id}"]`);
+          const team = sel?.value?.trim() || '';
+          if (team) await saveTeamValue(id, team);
+          const data = await rpc('toolbox_admin_set_status', {
+            p_secret: secret, p_user_id: id, p_status: 'active', p_note: null
+          });
+          if (!data?.ok) throw new Error(data?.error || '核准失敗');
+        }
+        document.getElementById('msg').textContent = '已核准 ' + ids.length + ' 筆';
         await loadList();
       }
 
@@ -775,6 +1045,37 @@
         await loadList();
       }
 
+      function toggleRowDetail(id) {
+        const key = String(id);
+        if (expandedIds.has(key)) expandedIds.delete(key);
+        else expandedIds.add(key);
+        const detail = document.querySelector(`tr.row-detail[data-detail-for="${key}"]`);
+        const btn = document.querySelector(`button[data-act="toggle-detail"][data-id="${key}"]`);
+        if (detail) detail.hidden = !expandedIds.has(key);
+        if (btn) btn.textContent = expandedIds.has(key) ? '收合' : '細節';
+      }
+
+      function applyQuickFilter(kind) {
+        document.getElementById('filter-login').value = '';
+        document.getElementById('filter-missing-team').checked = false;
+        document.getElementById('filter-line-unbound').checked = false;
+        if (kind === 'abnormal') {
+          document.getElementById('filter').value = '';
+          document.getElementById('filter-login').value = 'abnormal';
+          document.getElementById('fold-login').open = true;
+        } else if (kind === 'missing') {
+          document.getElementById('filter').value = '';
+          document.getElementById('filter-missing-team').checked = true;
+        } else if (kind === 'unbound') {
+          document.getElementById('filter').value = 'active';
+          document.getElementById('filter-line-unbound').checked = true;
+        }
+        loadList().catch((e) => { document.getElementById('msg').textContent = e.message; })
+          .then(() => {
+            document.getElementById('account-list-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+      }
+
       document.getElementById('btn-login').addEventListener('click', async () => {
         secret = document.getElementById('admin-secret').value.trim();
         const msg = document.getElementById('login-msg');
@@ -787,12 +1088,6 @@
           document.getElementById('main-panel').classList.remove('hidden');
           document.getElementById('filter').value = 'active';
           await loadList();
-          /* 有待核准時預設切到待核准，方便一進頁就核 */
-          const pendingCount = (statsUsers || []).filter((u) => u.status === 'pending').length;
-          if (pendingCount > 0) {
-            document.getElementById('filter').value = 'pending';
-            await loadList();
-          }
         } catch (e) {
           msg.textContent = e.message || '連線失敗';
           msg.classList.remove('hidden');
@@ -810,15 +1105,47 @@
       document.getElementById('search').addEventListener('input', () => renderRows(allUsers));
 
       document.getElementById('kpi-pending')?.addEventListener('click', () => {
-        document.getElementById('filter').value = 'pending';
-        document.getElementById('filter-login').value = '';
-        loadList().catch((e) => { document.getElementById('msg').textContent = e.message; });
+        document.getElementById('pending-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
-      document.getElementById('kpi-abnormal')?.addEventListener('click', () => {
-        document.getElementById('filter').value = '';
-        document.getElementById('filter-login').value = 'abnormal';
-        loadList().catch((e) => { document.getElementById('msg').textContent = e.message; });
-        document.getElementById('fold-login').open = true;
+      document.getElementById('kpi-abnormal')?.addEventListener('click', () => applyQuickFilter('abnormal'));
+      document.getElementById('kpi-missing')?.addEventListener('click', () => applyQuickFilter('missing'));
+      document.getElementById('kpi-unbound')?.addEventListener('click', () => applyQuickFilter('unbound'));
+
+      document.getElementById('btn-pending-select-all')?.addEventListener('click', () => {
+        const boxes = Array.from(document.querySelectorAll('.pending-pick'));
+        const allOn = boxes.length && boxes.every((b) => b.checked);
+        boxes.forEach((b) => { b.checked = !allOn; });
+        document.querySelectorAll('.pending-card').forEach((card) => {
+          const cb = card.querySelector('.pending-pick');
+          card.classList.toggle('is-selected', !!(cb && cb.checked));
+        });
+        document.getElementById('btn-pending-select-all').textContent = allOn ? '全選' : '取消全選';
+      });
+      document.getElementById('btn-pending-batch-ok')?.addEventListener('click', () => {
+        batchPending('approve').catch((e) => { document.getElementById('msg').textContent = e.message; });
+      });
+      document.getElementById('btn-pending-batch-reject')?.addEventListener('click', () => {
+        batchPending('reject').catch((e) => { document.getElementById('msg').textContent = e.message; });
+      });
+
+      document.getElementById('pending-body')?.addEventListener('change', (e) => {
+        if (e.target.classList.contains('pending-pick')) {
+          e.target.closest('.pending-card')?.classList.toggle('is-selected', e.target.checked);
+        }
+      });
+
+      document.getElementById('pending-body')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const msgEl = document.getElementById('msg');
+        if (btn.dataset.act === 'pending-approve') {
+          approvePending(id, false).catch((err) => { msgEl.textContent = err.message; });
+          return;
+        }
+        if (btn.dataset.act === 'pending-reject') {
+          rejectPending(id).catch((err) => { msgEl.textContent = err.message; });
+        }
       });
 
       document.getElementById('team-stats-grid').addEventListener('click', (e) => {
@@ -832,32 +1159,42 @@
 
       document.getElementById('rows').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-act]');
-        if (!btn) return;
-        const id = btn.dataset.id;
         const msgEl = document.getElementById('msg');
-        if (btn.dataset.act === 'save-team') {
-          saveTeam(id).catch((err) => { msgEl.textContent = err.message; });
+        if (btn) {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          if (btn.dataset.act === 'toggle-detail') {
+            toggleRowDetail(id);
+            return;
+          }
+          if (btn.dataset.act === 'save-team') {
+            saveTeam(id).catch((err) => { msgEl.textContent = err.message; });
+            return;
+          }
+          if (btn.dataset.act === 'delete') {
+            deleteUser(id, btn.dataset.user, btn.dataset.name).catch((err) => { msgEl.textContent = err.message; });
+            return;
+          }
+          if (btn.dataset.act === 'line-force-on') {
+            setForceLineBind(id, true, false).catch((err) => { msgEl.textContent = err.message; });
+            return;
+          }
+          if (btn.dataset.act === 'line-force-off') {
+            setForceLineBind(id, false, false).catch((err) => { msgEl.textContent = err.message; });
+            return;
+          }
+          if (btn.dataset.act === 'line-force-rebind') {
+            setForceLineBind(id, true, true, btn.dataset.user, btn.dataset.name).catch((err) => { msgEl.textContent = err.message; });
+            return;
+          }
+          setStatus(id, btn.dataset.act).catch((err) => {
+            msgEl.textContent = err.message;
+          });
           return;
         }
-        if (btn.dataset.act === 'delete') {
-          deleteUser(id, btn.dataset.user, btn.dataset.name).catch((err) => { msgEl.textContent = err.message; });
-          return;
-        }
-        if (btn.dataset.act === 'line-force-on') {
-          setForceLineBind(id, true, false).catch((err) => { msgEl.textContent = err.message; });
-          return;
-        }
-        if (btn.dataset.act === 'line-force-off') {
-          setForceLineBind(id, false, false).catch((err) => { msgEl.textContent = err.message; });
-          return;
-        }
-        if (btn.dataset.act === 'line-force-rebind') {
-          setForceLineBind(id, true, true, btn.dataset.user, btn.dataset.name).catch((err) => { msgEl.textContent = err.message; });
-          return;
-        }
-        setStatus(id, btn.dataset.act).catch((err) => {
-          msgEl.textContent = err.message;
-        });
+        if (e.target.closest('input, select, label, a')) return;
+        const row = e.target.closest('tr.row-main');
+        if (row?.dataset.rowId) toggleRowDetail(row.dataset.rowId);
       });
 
       document.getElementById('rows').addEventListener('change', (e) => {
