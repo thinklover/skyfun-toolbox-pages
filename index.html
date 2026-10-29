@@ -37,22 +37,24 @@
         .tab-inactive:hover {
             color: #334155;
         }
+        /* 全站 hidden（含登入閘門）；!important 避免被 utility 蓋掉 */
         .hidden {
-            display: none;
+            display: none !important;
         }
 
-        /* 統一按鈕外觀（依專區配色） */
+        /* 統一按鈕外觀（依專區配色；含全站視覺升級後的最終值） */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            font-weight: 800;
-            border-radius: 1.25rem;
+            font-weight: 700;
+            border-radius: 9999px;
             padding: 1rem 1.25rem;
             line-height: 1.2;
+            letter-spacing: 0.02em;
             border: 2px solid transparent;
-            box-shadow: 0 10px 25px rgba(2, 6, 23, 0.10);
+            box-shadow: 0 8px 20px rgba(30, 41, 59, 0.08);
             transition: background-color 200ms ease, border-color 200ms ease, transform 120ms ease, box-shadow 200ms ease, color 200ms ease;
             user-select: none;
             text-decoration: none;
@@ -64,7 +66,7 @@
         .btn-block { width: 100%; }
         .btn-left { justify-content: flex-start; text-align: left; }
         .btn-center { justify-content: center; text-align: center; }
-        .btn-xl { font-size: 1.4rem; }
+        .btn-xl { font-size: 1.2rem; font-weight: 700; }
 
         .tone-slate { background: #0f172a; color: #fff; border-color: #0f172a; }
         .tone-slate:hover { background: #111c33; border-color: #111c33; }
@@ -2601,15 +2603,7 @@
         .nb-step-readings .nb-reading-item[open] { background: #fffbeb; }
         .nb-playbook-section { border-left: 3px solid #10b981; padding-left: 1rem; }
 
-        /* 全站字體與重點標示 */
-        body {
-            font-family: var(--font-sans, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif);
-            letter-spacing: 0.01em;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            word-break: keep-all;
-            overflow-wrap: anywhere;
-        }
+        /* 全站字體與重點標示（body／h1–h4／:root 見下方「全站視覺升級」合併定義） */
         /* 隱藏 number 欄位右側上下箭頭；滾輪改值由 JS 停用（見 initDisableNumberInputWheel） */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
@@ -2619,10 +2613,6 @@
         input[type="number"] {
             -moz-appearance: textfield;
             appearance: textfield;
-        }
-        h1, h2, h3, h4 {
-            font-family: "Noto Serif TC", "Noto Sans TC", "Microsoft JhengHei", serif;
-            letter-spacing: 0.02em;
         }
         .key {
             display: inline-block;
@@ -2679,15 +2669,7 @@
             color: #881337;
         }
 
-        /* ── 三種版面：手機 / 平板 / 電腦（依視窗寬度自動套用） ── */
-        :root {
-            --app-shell-max: 1600px;
-            --app-pad-x: 2rem;
-            --app-pad-y: 2rem;
-            --app-radius: 2rem;
-            --app-home-gap: 1.5rem;
-        }
-
+        /* ── 三種版面：手機 / 平板 / 電腦（依視窗寬度自動套用；:root 變數見「全站視覺升級」） ── */
         .app-shell {
             width: 100%;
             max-width: min(var(--app-shell-max), 100%);
@@ -3566,15 +3548,7 @@
             padding: 0.5rem 0.45rem;
         }
 
-        /* ── 全站視覺與中文排版（減少不當斷行、行尾單字） ── */
-        .app-panel {
-            background: linear-gradient(165deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 250, 252, 0.97) 45%, rgba(241, 245, 249, 0.96) 100%);
-            border: 1px solid rgba(148, 163, 184, 0.28);
-            box-shadow:
-                0 28px 60px -18px rgba(15, 23, 42, 0.16),
-                0 0 0 1px rgba(255, 255, 255, 0.55) inset;
-        }
-
+        /* ── 全站視覺與中文排版（減少不當斷行、行尾單字；.app-panel 見下方視覺升級） ── */
         /* 首頁外部系統捷徑（ext-link-*）樣式見下方全站視覺升級區塊 */
 
         .sponsor-tagline {
@@ -3812,8 +3786,13 @@
             text-underline-offset: 0.2em;
         }
 
-        /* ═══ 全站視覺升級：配色 · 字體 · 排版 · 插圖 ═══ */
+        /* ═══ 全站視覺升級：配色 · 字體 · 排版 · 插圖（:root／body／h1–h4 只留這一份） ═══ */
         :root {
+            --app-shell-max: 1600px;
+            --app-pad-x: 2rem;
+            --app-pad-y: 2rem;
+            --app-radius: 2rem;
+            --app-home-gap: 1.5rem;
             --ink: #1e293b;
             --ink-muted: #64748b;
             --ink-soft: #94a3b8;
@@ -3834,7 +3813,12 @@
             font-weight: 400;
             font-size: 1rem;
             line-height: 1.65;
+            letter-spacing: 0.01em;
             color: var(--ink);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            word-break: keep-all;
+            overflow-wrap: anywhere;
             background:
                 radial-gradient(ellipse 90% 55% at 0% -5%, rgba(186, 230, 253, 0.5), transparent 55%),
                 radial-gradient(ellipse 70% 45% at 100% 5%, rgba(199, 210, 254, 0.38), transparent 50%),
@@ -4135,14 +4119,6 @@
             margin-bottom: 1.25rem;
         }
 
-        .btn {
-            font-weight: 700;
-            border-radius: 9999px;
-            letter-spacing: 0.02em;
-            box-shadow: 0 8px 20px rgba(30, 41, 59, 0.08);
-        }
-        .btn-xl { font-size: 1.2rem; font-weight: 700; }
-
         .ext-links {
             --ext-accent: #64748b;
             --ext-accent-soft: #f1f5f9;
@@ -4419,13 +4395,35 @@
             color: var(--ink-muted);
         }
 
-        .app-panel [id^="page-"] h2 {
+        /* 經典工具頁（有大圓角內容卡）的標題字距與卡片邊線；不套新人／行政／績效等模組頁 */
+        .app-panel :is(
+            #page-landlord, #page-announcement, #page-manager-bonus, #page-landlord-house-tax,
+            #page-tenant, #page-tenant-kinship, #page-tenant-criteria, #page-tenant-eligibility,
+            #page-business, #page-business-forms, #page-business-591-listing, #page-business-notary-fee,
+            #page-business-deposit-refund, #page-business-bao-deposit-refund, #page-business-income-standards,
+            #page-business-guide-exam, #page-business-land-value-tax,
+            #page-rentmanager-links, #page-rentmanager-crossarea-bonus, #page-rentmanager-line-endorse
+        ) h2 {
             font-family: var(--font-display);
             letter-spacing: 0.02em;
         }
 
-        .app-panel [id^="page-"] > div.rounded-\[2rem\],
-        .app-panel [id^="page-"] > .bg-gradient-to-br.rounded-\[2rem\] {
+        .app-panel :is(
+            #page-landlord, #page-announcement, #page-manager-bonus, #page-landlord-house-tax,
+            #page-tenant, #page-tenant-kinship, #page-tenant-criteria, #page-tenant-eligibility,
+            #page-business, #page-business-forms, #page-business-591-listing, #page-business-notary-fee,
+            #page-business-deposit-refund, #page-business-bao-deposit-refund, #page-business-income-standards,
+            #page-business-guide-exam, #page-business-land-value-tax,
+            #page-rentmanager-links, #page-rentmanager-crossarea-bonus, #page-rentmanager-line-endorse
+        ) > div.rounded-\[2rem\],
+        .app-panel :is(
+            #page-landlord, #page-announcement, #page-manager-bonus, #page-landlord-house-tax,
+            #page-tenant, #page-tenant-kinship, #page-tenant-criteria, #page-tenant-eligibility,
+            #page-business, #page-business-forms, #page-business-591-listing, #page-business-notary-fee,
+            #page-business-deposit-refund, #page-business-bao-deposit-refund, #page-business-income-standards,
+            #page-business-guide-exam, #page-business-land-value-tax,
+            #page-rentmanager-links, #page-rentmanager-crossarea-bonus, #page-rentmanager-line-endorse
+        ) > .bg-gradient-to-br.rounded-\[2rem\] {
             border: 1px solid var(--line);
             box-shadow: var(--shadow-card);
         }
@@ -4577,12 +4575,11 @@
 .lite-auth-switch{margin:.85rem 0 0;text-align:center}
 .lite-auth-linkbtn{border:0;background:none;padding:0;color:#0f766e;font-size:.82rem;font-weight:700;text-decoration:underline;cursor:pointer}
 #toolbox-auth-admin-link{display:block;margin-top:.65rem;text-align:center;font-size:.72rem;color:#94a3b8}
-.hidden{display:none!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261029-other-hide">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261026-gap">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261029-css-dedupe">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
@@ -12036,19 +12033,19 @@
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
-        <script src="./js/admin-points-core.js?v=20261029-other-cat"></script>
+        <script src="./js/admin-points-core.js?v=20261029-disable-pts"></script>
         <script src="./js/admin-points-charts.js?v=20261026-xlabel"></script>
         <script src="./js/admin-training-content.js?v=20261027-lvr"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
         <script src="./js/guide-exam.js?v=20261015-1"></script>
         <script src="./js/biz-guide-exam.js?v=20261027-biz1"></script>
-        <script src="./js/course-exam-data.js?v=20261027-lvr"></script>
+        <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261014-1"></script>
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261029-other-cat"></script>
+        <script src="./js/admin-points.js?v=20261029-disable-pts"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
@@ -13842,8 +13839,6 @@
             { external: 'https://pip.moi.gov.tw/Publicize/Info/B1021', title: '300億租金補貼試算', category: '房客專區', keywords: '300億 租補 租金補貼 內政部 試算 pip' },
             { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
             { page: 'rent', title: '租金水準試算器', category: '業務專區', keywords: '租金水準試算器 租金水準 試算器 計算器 租金 坪數 行情 估租 單坪 屋齡 行政區 評定 待租 評定結果 擬定月租 收件上限 社宅' },
-            // 591 僅測試站顯示（見 enableSf591OnPreviewHost）
-            { page: 'business-591-listing', title: '591 自動上架工作台', category: '業務專區', keywords: '591 上架 自動上架 刊登 套餐 單筆 營業員 證號 經紀人 制式模板 桃園 高雄 AI 文案 RPA 工作台', previewOnly: true },
             { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1151001 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案 報名表 財補報名表 報名 下載報名表 上傳報名表' },
             { page: 'newbie-quest', title: '業績任務板', category: '新人專區', keywords: '業績 任務板 打卡 新人 考核 kpi 追蹤 任務 新人任務' },
             { file: './admin/accounts-dashboard.html', title: '帳號管理後台', category: '管理工具', keywords: '後台 admin 帳號 開通 停用 登入紀錄 管理員' },
@@ -14082,8 +14077,14 @@
                 home.textContent =
                     '租金水準、公證費、591 自動上架、表單與周會檔案；解約退還試算請至「催收解約專區」。';
             }
-            if (!on && Array.isArray(window.SITE_SEARCH_INDEX)) {
-                window.SITE_SEARCH_INDEX = window.SITE_SEARCH_INDEX.filter((x) => !x.previewOnly);
+            /* 591 搜尋列只在測試站追加，不重寫 SITE_SEARCH_INDEX */
+            if (on && Array.isArray(window.SITE_SEARCH_INDEX) && !window.SITE_SEARCH_INDEX.some((x) => x.page === 'business-591-listing')) {
+                window.SITE_SEARCH_INDEX.push({
+                    page: 'business-591-listing',
+                    title: '591 自動上架工作台',
+                    category: '業務專區',
+                    keywords: '591 上架 自動上架 刊登 套餐 單筆 營業員 證號 經紀人 制式模板 桃園 高雄 AI 文案 RPA 工作台'
+                });
             }
         }
 

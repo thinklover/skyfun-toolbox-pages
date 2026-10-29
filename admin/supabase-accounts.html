@@ -45,7 +45,7 @@
     .team-stat.is-missing { border-color: #f87171; background: #fef2f2; }
     .team-stat.is-active { border-color: #4f46e5; background: #eef2ff; box-shadow: 0 0 0 1px #c7d2fe; }
     .team-stat.is-active .team-stat-num { color: #4338ca; }
-    .team-detail { border: 1px solid #e2e8f0; border-radius: 0.65rem; background: #f8fafc; padding: 0.55rem 0.65rem; }
+    .team-detail { border: 1px solid #e2e8f0; border-radius: 0.65rem; background: #f8fafc; padding: 0.55rem 0.65rem; margin-top: 0.55rem; }
     .team-detail-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.35rem; margin-bottom: 0.45rem; }
     .team-detail-title { font-size: 0.78rem; font-weight: 800; color: #3730a3; }
     .team-detail-clear { border: 0; background: transparent; color: #64748b; font-size: 0.72rem; cursor: pointer; text-decoration: underline; }
@@ -58,6 +58,60 @@
     .team-detail-item .user { color: #64748b; margin-left: 0.25rem; }
     .team-detail-item .st { margin-left: 0.35rem; }
     .row-team-highlight td { background: #eef2ff; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.2rem, 1fr)); gap: 0.55rem; }
+    .kpi {
+      border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.7rem 0.65rem;
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%); text-align: left;
+    }
+    .kpi-num { font-size: 1.45rem; font-weight: 900; color: #1e1b4b; line-height: 1; letter-spacing: -0.02em; }
+    .kpi-label { font-size: 0.72rem; color: #64748b; margin-top: 0.3rem; font-weight: 800; }
+    .kpi-hint { font-size: 0.65rem; color: #94a3b8; margin-top: 0.15rem; line-height: 1.35; }
+    .kpi.is-pending { border-color: #fbbf24; background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%); }
+    .kpi.is-pending .kpi-num { color: #b45309; }
+    .kpi.is-pending.has-value { box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35); }
+    .kpi.is-online .kpi-num { color: #047857; }
+    .kpi.is-warn { border-color: #fca5a5; background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%); }
+    .kpi.is-warn .kpi-num { color: #b91c1c; }
+    .kpi.is-hot { border-color: #fcd34d; background: linear-gradient(180deg, #fffbeb 0%, #fef9c3 100%); }
+    .kpi.is-hot .kpi-num { color: #b45309; }
+    .kpi-click { cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 100%; font: inherit; text-align: left; }
+    .kpi-click:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+    .fold { border: 1px solid #e2e8f0; border-radius: 0.85rem; background: #fff; overflow: hidden; }
+    .fold > summary {
+      list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center;
+      justify-content: space-between; gap: 0.4rem 0.8rem; padding: 0.7rem 0.9rem;
+      background: #f8fafc; font-weight: 800; color: #1e1b4b; user-select: none;
+    }
+    .fold > summary::-webkit-details-marker { display: none; }
+    .fold > summary::after { content: '展開 ▾'; font-size: 0.72rem; font-weight: 800; color: #64748b; }
+    .fold[open] > summary::after { content: '收合 ▴'; }
+    .fold > summary .fold-title { font-size: 0.95rem; }
+    .fold > summary .fold-sub { font-size: 0.72rem; font-weight: 600; color: #64748b; }
+    .fold-body { padding: 0.75rem 0.9rem 0.95rem; border-top: 1px solid #e2e8f0; }
+    .toolbar {
+      position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: end; gap: 0.55rem 0.75rem;
+      padding: 0.75rem 0.85rem; margin: 0 -0.15rem; border: 1px solid #e2e8f0; border-radius: 0.85rem;
+      background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    }
+    .toolbar .field { min-width: 9.5rem; }
+    .toolbar .field-grow { flex: 1 1 14rem; min-width: 12rem; max-width: 22rem; }
+    .toolbar label.field-l { display: block; font-size: 0.68rem; font-weight: 800; color: #64748b; margin-bottom: 0.25rem; }
+    .toolbar .checks { display: flex; flex-wrap: wrap; gap: 0.55rem 0.85rem; align-items: center; padding-bottom: 0.2rem; }
+    .toolbar .checks label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 700; color: #475569; }
+    .table-shell { border: 1px solid #e2e8f0; border-radius: 0.85rem; overflow: auto; background: #fff; max-height: min(70vh, 52rem); }
+    .table-shell table { margin: 0; }
+    .table-shell thead th {
+      position: sticky; top: 0; z-index: 1; background: #f1f5f9; box-shadow: inset 0 -1px 0 #e2e8f0;
+    }
+    .table-shell tbody tr:hover td { background: #f8fafc; }
+    .table-shell .row-missing:hover td { background: #fef9c3; }
+    .table-shell .row-abnormal:hover td { background: #ffe4e6; }
+    .table-shell .row-team-highlight:hover td { background: #e0e7ff; }
+    .msg-line { min-height: 1.25rem; font-size: 0.82rem; color: #64748b; }
+    .count-pill {
+      display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 800;
+      color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 999px; padding: 0.28rem 0.7rem;
+    }
     .login-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.45rem; }
     .login-stat {
       border: 1px solid #e2e8f0; border-radius: 0.55rem; padding: 0.45rem 0.4rem;
@@ -65,7 +119,7 @@
     }
     .login-stat-num { font-size: 1.15rem; font-weight: 900; color: #1e1b4b; line-height: 1.1; }
     .login-stat-label { font-size: 0.65rem; color: #64748b; margin-top: 0.15rem; font-weight: 700; }
-    .login-stat.is-hot { border-color: #fbbf24; background: #fffbeb; }
+    .login-stat.is-hot { border-color: #f59e0b; background: #fffbeb; }
     .login-stat.is-hot .login-stat-num { color: #b45309; }
     .login-stat.is-warn { border-color: #f87171; background: #fef2f2; }
     .login-stat.is-warn .login-stat-num { color: #b91c1c; }
@@ -83,6 +137,11 @@
     .login-events .ok { color: #047857; font-weight: 800; }
     .login-events .ng { color: #b91c1c; font-weight: 800; }
     .row-abnormal td { background: #fff1f2; }
+    @media (max-width: 720px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .toolbar { position: static; }
+      .table-shell { max-height: none; }
+    }
   </style>
 </head>
 <body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
@@ -91,7 +150,7 @@
       <h1>帳號核准後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">可看全員登入狀態 · 新註冊／異常登入會 LINE 通知簡為倢 · 與 Render 完整版共用 Supabase 帳號</p>
+    <p class="lead">先看待核准與帳號名單；登入監控、各處統計需要時再展開。新註冊／異常登入會 LINE 通知簡為倢。</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
@@ -103,99 +162,141 @@
     <p id="login-msg" class="text-sm err hidden"></p>
   </section>
 
-  <section class="card p-4 hidden space-y-3" id="main-panel">
-    <div class="space-y-2 pb-2 border-b border-slate-200">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="section-h">全員登入狀態</h2>
-        <p class="text-xs text-slate-500">線上＝15 分鐘內有活動；有人申請註冊、或密碼連錯／停用帳嘗試／1 小時登入≥4 次（疑似共用）會 LINE 通知簡為倢（同類型 30 分鐘內不重送）</p>
-      </div>
-      <div class="login-summary" id="login-summary">
-        <div class="login-stat"><div class="login-stat-num" id="sum-online">—</div><div class="login-stat-label">線上</div></div>
-        <div class="login-stat"><div class="login-stat-num" id="sum-active24h">—</div><div class="login-stat-label">24 小時活躍</div></div>
-        <div class="login-stat"><div class="login-stat-num" id="sum-session">—</div><div class="login-stat-label">仍有登入憑證</div></div>
-        <div class="login-stat is-hot"><div class="login-stat-num" id="sum-fail">—</div><div class="login-stat-label">15 分失敗次數</div></div>
-        <div class="login-stat is-warn"><div class="login-stat-num" id="sum-abnormal">—</div><div class="login-stat-label">15 分異常帳號</div></div>
-      </div>
-      <div class="login-events">
-        <p class="text-xs font-bold text-slate-500 mb-1">近期活躍帳號（依最近活動）</p>
-        <table>
-          <thead>
-            <tr><th>最近活動</th><th>帳號</th><th>姓名</th><th>處別</th><th>狀態</th></tr>
-          </thead>
-          <tbody id="active-user-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="login-events mt-2">
-        <p class="text-xs font-bold text-slate-500 mb-1">登入／異常事件（密碼錯誤、過頻等）</p>
-        <table>
-          <thead>
-            <tr><th>時間</th><th>帳號</th><th>姓名</th><th>處別</th><th>結果</th></tr>
-          </thead>
-          <tbody id="login-event-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-    <div id="team-stats-panel" class="space-y-2 pb-1 border-b border-slate-200">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="section-h">各處申請帳號總數</h2>
-        <p class="text-xs text-slate-500" id="team-stats-total">—</p>
-      </div>
-      <div class="team-stats" id="team-stats-grid"></div>
-      <div class="team-detail hidden" id="team-detail-panel">
-        <div class="team-detail-head">
-          <p class="team-detail-title" id="team-detail-title">—</p>
-          <button type="button" class="team-detail-clear" id="team-detail-clear">清除篩選</button>
+  <section class="hidden space-y-4" id="main-panel">
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 class="section-h" style="margin:0">總覽</h2>
+          <p class="text-xs text-slate-500 mt-1" id="team-stats-total">—</p>
         </div>
-        <div class="team-detail-list" id="team-detail-list"></div>
+        <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+      </div>
+      <div class="kpi-grid" id="kpi-grid">
+        <button type="button" class="kpi kpi-click is-pending" id="kpi-pending" title="點一下篩選待核准" data-filter-status="pending">
+          <div class="kpi-num" id="sum-pending">—</div>
+          <div class="kpi-label">待核准</div>
+          <div class="kpi-hint">點此只看申請中帳號</div>
+        </button>
+        <div class="kpi is-online">
+          <div class="kpi-num" id="sum-online">—</div>
+          <div class="kpi-label">線上</div>
+          <div class="kpi-hint">15 分鐘內有活動</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-num" id="sum-active24h">—</div>
+          <div class="kpi-label">24 小時活躍</div>
+          <div class="kpi-hint">今日有進工具箱</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-num" id="sum-session">—</div>
+          <div class="kpi-label">仍有憑證</div>
+          <div class="kpi-hint">登入尚未過期</div>
+        </div>
+        <div class="kpi" id="kpi-fail">
+          <div class="kpi-num" id="sum-fail">—</div>
+          <div class="kpi-label">15 分失敗次數</div>
+          <div class="kpi-hint">密碼錯誤累計</div>
+        </div>
+        <button type="button" class="kpi kpi-click" id="kpi-abnormal" title="點一下只看異常帳號" data-filter-login="abnormal">
+          <div class="kpi-num" id="sum-abnormal">—</div>
+          <div class="kpi-label">15 分異常帳號</div>
+          <div class="kpi-hint">點此篩選異常</div>
+        </button>
       </div>
     </div>
-    <div class="flex flex-wrap items-end gap-3">
-      <div class="min-w-[10rem]">
-        <label class="block text-xs text-slate-400 mb-1">篩選狀態</label>
-        <select id="filter">
-          <option value="active" selected>已核准</option>
-          <option value="">全部</option>
-          <option value="pending">待核准</option>
-          <option value="rejected">已拒絕</option>
-          <option value="disabled">已停用</option>
-        </select>
+
+    <details class="fold" id="fold-team" open>
+      <summary>
+        <span class="fold-title">各處申請帳號</span>
+        <span class="fold-sub">點處別可篩選名單</span>
+      </summary>
+      <div class="fold-body space-y-2" id="team-stats-panel">
+        <div class="team-stats" id="team-stats-grid"></div>
+        <div class="team-detail hidden" id="team-detail-panel">
+          <div class="team-detail-head">
+            <p class="team-detail-title" id="team-detail-title">—</p>
+            <button type="button" class="team-detail-clear" id="team-detail-clear">清除篩選</button>
+          </div>
+          <div class="team-detail-list" id="team-detail-list"></div>
+        </div>
       </div>
-      <div class="min-w-[10rem]">
-        <label class="block text-xs text-slate-400 mb-1">登入篩選</label>
-        <select id="filter-login">
-          <option value="">全部</option>
-          <option value="online">僅線上</option>
-          <option value="abnormal">僅異常</option>
-          <option value="session">仍有憑證</option>
-        </select>
+    </details>
+
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="section-h" style="margin:0">帳號名單</h2>
+        <span class="count-pill" id="count">—</span>
       </div>
-      <div class="flex-1 min-w-[14rem] max-w-md">
-        <label class="block text-xs text-slate-400 mb-1" for="search">搜尋帳號</label>
-        <input type="search" id="search" placeholder="帳號／姓名／處別" autocomplete="off" />
+      <div class="toolbar" id="account-toolbar">
+        <div class="field">
+          <label class="field-l" for="filter">狀態</label>
+          <select id="filter">
+            <option value="pending">待核准</option>
+            <option value="active" selected>已核准</option>
+            <option value="">全部</option>
+            <option value="rejected">已拒絕</option>
+            <option value="disabled">已停用</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-l" for="filter-login">登入</label>
+          <select id="filter-login">
+            <option value="">全部</option>
+            <option value="online">僅線上</option>
+            <option value="abnormal">僅異常</option>
+            <option value="session">仍有憑證</option>
+          </select>
+        </div>
+        <div class="field field-grow">
+          <label class="field-l" for="search">搜尋</label>
+          <input type="search" id="search" placeholder="帳號／姓名／處別" autocomplete="off" />
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" id="filter-missing-team" class="w-auto" />缺處別</label>
+          <label><input type="checkbox" id="filter-line-unbound" class="w-auto" />未綁 LINE</label>
+        </div>
       </div>
-      <label class="flex items-center gap-2 text-sm text-slate-300 pb-2">
-        <input type="checkbox" id="filter-missing-team" class="w-auto" />
-        只顯示缺處別
-      </label>
-      <label class="flex items-center gap-2 text-sm text-slate-300 pb-2">
-        <input type="checkbox" id="filter-line-unbound" class="w-auto" />
-        只顯示未綁 LINE
-      </label>
-      <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
-      <p class="text-sm text-slate-400" id="count">—</p>
+      <p id="msg" class="msg-line"></p>
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>帳號</th><th>顯示名稱</th><th>處別</th><th>登入狀態</th><th>最近活動</th>
+              <th>QA 雙倍</th><th>QA 優質</th><th>LINE</th><th>狀態</th><th>註冊時間</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
     </div>
-    <p id="msg" class="text-sm text-slate-400"></p>
-    <div class="overflow-x-auto">
-      <table>
-        <thead>
-          <tr>
-            <th>帳號</th><th>顯示名稱</th><th>處別</th><th>登入狀態</th><th>最近活動</th>
-            <th>QA 雙倍</th><th>QA 優質</th><th>LINE</th><th>狀態</th><th>註冊時間</th><th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
+
+    <details class="fold" id="fold-login">
+      <summary>
+        <span class="fold-title">登入監控</span>
+        <span class="fold-sub">線上名單與異常事件 · LINE 通知簡為倢</span>
+      </summary>
+      <div class="fold-body space-y-3">
+        <p class="text-xs text-slate-500">線上＝15 分鐘內有活動；註冊申請、密碼連錯／停用帳嘗試／1 小時登入≥4 次會 LINE 通知（同類型 30 分鐘內不重送）。數字已在上方總覽。</p>
+        <div class="login-events">
+          <p class="text-xs font-bold text-slate-500 mb-1">近期活躍帳號（依最近活動）</p>
+          <table>
+            <thead>
+              <tr><th>最近活動</th><th>帳號</th><th>姓名</th><th>處別</th><th>狀態</th></tr>
+            </thead>
+            <tbody id="active-user-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="login-events">
+          <p class="text-xs font-bold text-slate-500 mb-1">登入／異常事件（密碼錯誤、過頻等）</p>
+          <table>
+            <thead>
+              <tr><th>時間</th><th>帳號</th><th>姓名</th><th>處別</th><th>結果</th></tr>
+            </thead>
+            <tbody id="login-event-rows"><tr><td colspan="5" class="text-slate-400">載入中…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </details>
   </section>
 
   <script>
@@ -280,22 +381,26 @@
         return '<span class="badge-idle">離線</span>';
       }
 
-      function renderLoginSummary(summary) {
+      function renderLoginSummary(summary, pendingCount) {
         loginSummary = summary || {};
-        const set = (id, n, hot) => {
+        const setNum = (id, n) => {
           const el = document.getElementById(id);
-          if (!el) return;
-          el.textContent = n == null ? '—' : String(n);
-          const box = el.closest('.login-stat');
-          if (!box || !hot) return;
-          box.classList.toggle('is-warn', Number(n) > 0 && hot === 'warn');
-          box.classList.toggle('is-hot', Number(n) > 0 && hot === 'hot');
+          if (el) el.textContent = n == null ? '—' : String(n);
         };
-        set('sum-online', loginSummary.online);
-        set('sum-active24h', loginSummary.active24h);
-        set('sum-session', loginSummary.withSession);
-        set('sum-fail', loginSummary.fail15m, 'hot');
-        set('sum-abnormal', loginSummary.abnormal15m, 'warn');
+        const pending = pendingCount == null ? 0 : Number(pendingCount) || 0;
+        setNum('sum-pending', pending);
+        setNum('sum-online', loginSummary.online);
+        setNum('sum-active24h', loginSummary.active24h);
+        setNum('sum-session', loginSummary.withSession);
+        setNum('sum-fail', loginSummary.fail15m);
+        setNum('sum-abnormal', loginSummary.abnormal15m);
+        document.getElementById('kpi-pending')?.classList.toggle('has-value', pending > 0);
+        const fail = Number(loginSummary.fail15m) || 0;
+        const abn = Number(loginSummary.abnormal15m) || 0;
+        document.getElementById('kpi-fail')?.classList.toggle('is-hot', fail > 0);
+        document.getElementById('kpi-abnormal')?.classList.toggle('is-warn', abn > 0);
+        const foldLogin = document.getElementById('fold-login');
+        if (foldLogin && abn > 0) foldLogin.open = true;
       }
 
       function renderActiveUsers(users) {
@@ -588,12 +693,13 @@
         ]);
         if (!listData?.ok) throw new Error(listData?.error || '讀取失敗');
         allUsers = listData.users || [];
-        renderLoginSummary(listData.summary || null);
+        const pendingCount = (statsUsers || []).filter((u) => u.status === 'pending').length;
+        renderLoginSummary(listData.summary || null, pendingCount);
         // 活躍名單用「全部狀態」的 statsUsers（含 lastActive），避免篩成待核准時上面空白
         renderActiveUsers(statsUsers.length ? statsUsers : allUsers);
         renderRows(allUsers);
         document.getElementById('msg').textContent =
-          allUsers.length ? '' : '這篩選目前沒有帳號；可把「篩選狀態」改成「已核准」或「全部」。';
+          allUsers.length ? '' : '這篩選目前沒有帳號；可把「狀態」改成「待核准」「已核准」或「全部」。';
       }
 
       async function deleteUser(id, username, name) {
@@ -681,6 +787,12 @@
           document.getElementById('main-panel').classList.remove('hidden');
           document.getElementById('filter').value = 'active';
           await loadList();
+          /* 有待核准時預設切到待核准，方便一進頁就核 */
+          const pendingCount = (statsUsers || []).filter((u) => u.status === 'pending').length;
+          if (pendingCount > 0) {
+            document.getElementById('filter').value = 'pending';
+            await loadList();
+          }
         } catch (e) {
           msg.textContent = e.message || '連線失敗';
           msg.classList.remove('hidden');
@@ -697,10 +809,23 @@
       document.getElementById('filter-line-unbound').addEventListener('change', () => renderRows(allUsers));
       document.getElementById('search').addEventListener('input', () => renderRows(allUsers));
 
+      document.getElementById('kpi-pending')?.addEventListener('click', () => {
+        document.getElementById('filter').value = 'pending';
+        document.getElementById('filter-login').value = '';
+        loadList().catch((e) => { document.getElementById('msg').textContent = e.message; });
+      });
+      document.getElementById('kpi-abnormal')?.addEventListener('click', () => {
+        document.getElementById('filter').value = '';
+        document.getElementById('filter-login').value = 'abnormal';
+        loadList().catch((e) => { document.getElementById('msg').textContent = e.message; });
+        document.getElementById('fold-login').open = true;
+      });
+
       document.getElementById('team-stats-grid').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-team]');
         if (!btn || btn.disabled) return;
         setTeamFilter(btn.dataset.team);
+        document.getElementById('fold-team').open = true;
       });
 
       document.getElementById('team-detail-clear').addEventListener('click', clearTeamFilter);

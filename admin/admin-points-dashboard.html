@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261029-other-cat"></script>
+  <script src="../js/admin-points-core.js?v=20261029-disable-pts"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -1001,17 +1001,18 @@
         const key = monthKey(r);
         if (!force && calcCache.has(key)) return calcCache.get(key);
         if (!toolboxToken()) throw new Error('請先在同一個瀏覽器登入工具箱，才能讀星鴻資料（報表與評等都需要）');
-        const [audit, expenses, term, raw] = await Promise.all([
+        const [audit, expenses, term, dis, raw] = await Promise.all([
           fetchWorker('/admin-points/audit-log', '審核時間紀錄', r),
           fetchWorker('/admin-points/expenses', '補助審核', r),
           fetchWorker('/admin-points/terminations', '解約', r).catch((e) => ({ fields: [], rows: [], error: e.message })),
+          fetchWorker('/admin-points/disable-credits', '同租期停用認點', r).catch((e) => ({ fields: [], rows: [], suppressIds: [], error: e.message })),
           key === monthKey(range()) ? data : rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end })
         ]);
         const src = Core.stripExcluded(raw);
         const auditRows = Core.dropExcludedRows(Core.rowsFromPayload(audit), src.excluded);
         const expenseRows = Core.dropExcludedRows(Core.rowsFromPayload(expenses), src.excluded);
         const staff = src.staff || [];
-        const result = Core.compute(auditRows, {
+        const result = Core.computePoints(auditRows, {
           start: r.start,
           end: r.end,
           staff,
@@ -1019,7 +1020,8 @@
           manual: src.manual || [],
           opinions: src.opinions || [],
           expenses: expenseRows,
-          terminations: Core.dropExcludedRows(Core.rowsFromPayload(term), src.excluded)
+          terminations: Core.dropExcludedRows(Core.rowsFromPayload(term), src.excluded),
+          ...Core.disableCreditOpts(dis, src.excluded)
         });
         const dur = Core.durationReport(auditRows, { start: r.start, end: r.end, staff });
         const today = Core.isoDate(new Date());
@@ -1030,7 +1032,8 @@
             name: s.name, staff, checks: src.checks || [], incidents: src.incidents || [], weeks
           }));
         }
-        const calc = { range: r, result, profiles, staff, auditRows, expenseRows, termError: term.error || '', at: new Date() };
+        const disableNote = dis.error ? `；同租期停用認點暫時讀不到（${dis.error}）` : '';
+        const calc = { range: r, result, profiles, staff, auditRows, expenseRows, termError: (term.error || '') + disableNote, at: new Date() };
         calcCache.set(key, calc);
         return calc;
       }
@@ -4860,6 +4863,6 @@
       }
     })();
   </script>
-<script src="../js/reveal.js?v=20261018-29"></script>
+<script src="../js/reveal.js?v=20261019-8"></script>
 </body>
 </html>

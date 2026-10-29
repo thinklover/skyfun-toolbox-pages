@@ -340,9 +340,45 @@
   }
 
   /**
+   * 把 GET /admin-points/disable-credits 回應轉成 computePoints 用的認點參數。
+   * @param payload Worker 回傳（fields／rows／suppressIds）
+   * @param excluded 不列入統計的姓名（Set 或陣列）
+   */
+  function disableCreditOpts(payload, excluded) {
+    return {
+      disableCredits: dropExcludedRows(rowsFromPayload(payload), excluded),
+      disableSuppressIds: Array.isArray(payload?.suppressIds) ? payload.suppressIds : []
+    };
+  }
+
+  /**
+   * 標準月點數計算（含同租期停用後重新審核 +1）。
+   * disableCredits／disableSuppressIds 請用 disableCreditOpts() 從 /admin-points/disable-credits 帶入；
+   * 沒帶就當 0 件，月報／前台會差一截。
+   * @param auditRows  rowsFromPayload 結果
+   * @param opts 同 compute，另含 disableCredits、disableSuppressIds
+   */
+  function computePoints(auditRows, opts) {
+    const o = opts || {};
+    return compute(auditRows, {
+      start: o.start,
+      end: o.end,
+      staff: o.staff || [],
+      exclude: o.exclude,
+      manual: o.manual || [],
+      opinions: o.opinions || [],
+      expenses: o.expenses || [],
+      terminations: o.terminations || [],
+      disableCredits: o.disableCredits || [],
+      disableSuppressIds: Array.isArray(o.disableSuppressIds) ? o.disableSuppressIds : []
+    });
+  }
+
+  /**
    * @param auditRows  rowsFromPayload 結果
    * @param opts { start, end, staff:[{name,status,kind}], manual:[{date,name,item,qty,points}],
    *               expenses: 補助審核 rowsFromPayload 結果（已生效五類費用，date 為審核日期）,
+   *               disableCredits: /admin-points/disable-credits 的 rowsFromPayload 結果,
    *               exclude: 不列入統計的姓名（staff 裡的駐府人員也會自動排除） }
    */
   function compute(auditRows, opts) {
@@ -426,7 +462,7 @@
       });
     }
 
-    /** 同租期最終已生效時：每個已停用另給「重新審核通過」者 1 點（不是點停用的人） */
+    /** 同租期最終已生效時：每個已停用另給「重新審核通過」者 1 點（認點日＝審核日，不是起租日；不是點停用的人） */
     const disableCredits = dropExcludedRows(opts.disableCredits, excluded)
       .filter((r) => r.date >= start && r.date <= end && r.auditor && String(r.kind || 'disable') !== 'effective')
       .slice()
@@ -2095,6 +2131,8 @@
     isExcludedStaff,
     stripExcluded,
     dropExcludedRows,
+    disableCreditOpts,
+    computePoints,
     compute,
     isoDate
   };

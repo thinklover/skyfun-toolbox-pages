@@ -203,7 +203,7 @@
       state.disableSuppressIds = Array.isArray(dis.suppressIds) ? dis.suppressIds : [];
       state.lkpi = null;
       state.lease = null;
-      state.result = Core.compute(state.auditRows, {
+      state.result = Core.computePoints(state.auditRows, {
         start: range.start,
         end: range.end,
         staff: sb.staff || [],
@@ -212,8 +212,7 @@
         opinions: sb.opinions || [],
         expenses: state.expenseRows,
         terminations: state.termRows,
-        disableCredits: state.disableRows,
-        disableSuppressIds: state.disableSuppressIds
+        ...Core.disableCreditOpts(dis, sb.excluded)
       });
       state.termNote = mergeNotes(termNote(term), disableNote(dis));
       state.meta = { range, fetchedAt: audit.fetchedAt, total: audit.total, staffCount: (sb.staff || []).length };
@@ -1171,7 +1170,7 @@
           ]);
           auditRows = auditRowsOf(audit);
           sb = sbData;
-          result = Core.compute(auditRows, {
+          result = Core.computePoints(auditRows, {
             start: mr.start,
             end: mr.end,
             staff: sb.staff || [],
@@ -1180,8 +1179,7 @@
             opinions: sb.opinions || [],
             expenses: auditRowsOf(expenses),
             terminations: auditRowsOf(term),
-            disableCredits: auditRowsOf(dis),
-            disableSuppressIds: Array.isArray(dis.suppressIds) ? dis.suppressIds : []
+            ...Core.disableCreditOpts(dis, sb.excluded)
           });
         }
         const dur = Core.durationReport(auditRows, { start: mr.start, end: mr.end, staff: sb.staff || [] });
@@ -2064,7 +2062,7 @@
         fetchDisableCredits(pr, false),
         fetchSupabase(pr)
       ]);
-      const res = Core.compute(auditRowsOf(audit), {
+      const res = Core.computePoints(auditRowsOf(audit), {
         start: pr.start,
         end: pr.end,
         staff: sb.staff || [],
@@ -2073,8 +2071,7 @@
         opinions: sb.opinions || [],
         expenses: auditRowsOf(expenses),
         terminations: auditRowsOf(term),
-        disableCredits: auditRowsOf(dis),
-        disableSuppressIds: Array.isArray(dis.suppressIds) ? dis.suppressIds : []
+        ...Core.disableCreditOpts(dis, sb.excluded)
       });
       state.prev = { key, totals: new Map(res.people.map((p) => [p.name, p.month.total])) };
     } catch (err) {
@@ -7048,7 +7045,7 @@
       fetchDisableCredits(range, false),
       fetchSupabase(range)
     ]);
-    const result = Core.compute(auditRowsOf(audit), {
+    const result = Core.computePoints(auditRowsOf(audit), {
       start: range.start,
       end: range.end,
       staff: sb.staff || [],
@@ -7057,8 +7054,7 @@
       opinions: sb.opinions || [],
       expenses: auditRowsOf(expenses),
       terminations: auditRowsOf(term),
-      disableCredits: auditRowsOf(dis),
-      disableSuppressIds: Array.isArray(dis.suppressIds) ? dis.suppressIds : []
+      ...Core.disableCreditOpts(dis, sb.excluded)
     });
     const top = result.people.filter((p) => p.month.total > 0).slice(0, 3).map((p) => ({ name: p.name, points: p.month.total }));
     try { sessionStorage.setItem(TOP_KEY, JSON.stringify({ key, at: Date.now(), top })); } catch { /* 存不了就算了 */ }
