@@ -7,7 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="../js/supabase-config.js"></script>
-  <script src="../js/subsidy-checkin-xlsx.js?v=20260930-1"></script>
+  <script src="../js/admin-calendar-sheet.js?v=20261011-1"></script>
+  <script src="../js/subsidy-checkin-xlsx.js?v=20261030-1"></script>
   <script src="../js/subsidy-settle.js?v=20261001-2"></script>
   <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
   <style>
@@ -27,10 +28,22 @@
     .cal td.out { border: 0; background: transparent; }
     .cal td.miss { background: #fef2f2; border-color: #fecaca; }
     .cal td.future { opacity: 0.45; }
+    .cal td.holiday {
+      background:
+        linear-gradient(to top right, transparent calc(50% - 0.6px), #94a3b8 50%, transparent calc(50% + 0.6px)),
+        #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .cal td.holiday.miss { background:
+        linear-gradient(to top right, transparent calc(50% - 0.6px), #94a3b8 50%, transparent calc(50% + 0.6px)),
+        #f1f5f9; border-color: #cbd5e1; }
+    .cal td.holiday .hol-label { position: absolute; left: 2px; right: 2px; bottom: 2px; font-size: 0.58rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cal td b { position: absolute; top: 2px; left: 4px; font-size: 0.7rem; color: #0f172a; z-index: 1; }
     .cal td img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .cal td .note { position: absolute; left: 2px; right: 2px; bottom: 2px; background: rgba(79, 70, 229, 0.92); color: #fff; border-radius: 0.25rem; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cal td.text-only .note { position: static; white-space: normal; background: none; color: #4338ca; font-weight: 800; }
+    .btn-danger { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+    .btn-danger:hover { background: #ffe4e6; }
   </style>
 </head>
 <body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
@@ -39,7 +52,7 @@
       <h1>財補打卡紀錄後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">財補計畫每日打卡照片 · 可依《財補計畫照片上傳》格式匯出 Excel</p>
+    <p class="lead">財補計畫每日打卡照片 · 可依《財補計畫照片上傳》格式匯出 Excel · 國定假日格子畫斜線、不計入應上傳 · 重複帳號可刪除</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
@@ -105,6 +118,8 @@
       let trainSync = null;
       let openUser = null;
       let busy = false;
+      let holidays = new Set();
+      let holidayNames = {};
 
       const $ = (id) => document.getElementById(id);
       function esc(s) {
@@ -116,6 +131,14 @@
       }
       function taipeiToday() { return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10); }
 
+      function refreshHolidays() {
+        holidays = X.holidaySet();
+        holidayNames = {};
+        ((window.AdminCalendarSheet && window.AdminCalendarSheet.days) || []).forEach((row) => {
+          if (row && row[0] && row[1]) holidayNames[row[0]] = row[1];
+        });
+      }
+
       function start() {
         const v = $('start-month').value || '2026-10';
         return { y: Number(v.slice(0, 4)), m: Number(v.slice(5, 7)) };
@@ -125,7 +148,8 @@
 
       function workdays() {
         const today = taipeiToday();
-        return months().flatMap((mm) => X.monthWeeks(mm.y, mm.m).flat()).filter((s) => s && s <= today);
+        return months().flatMap((mm) => X.monthWeeks(mm.y, mm.m).flat())
+          .filter((s) => s && s <= today && !holidays.has(s));
       }
 
       async function call(body) {
@@ -239,11 +263,17 @@
             weeks.map((row) => '<tr>' + row.map((s) => {
               if (!s) return '<td class="out"></td>';
               const e = byDay[s];
+              const hol = holidays.has(s);
+              const holName = holidayNames[s] || '國定假日';
               const d = '<b>' + Number(s.slice(8)) + '</b>';
-              if (!e) return '<td class="' + (s > today ? 'future' : 'miss') + '">' + d + '</td>';
+              if (!e) {
+                const cls = (hol ? 'holiday' : '') + (s > today ? ' future' : hol ? '' : ' miss');
+                return '<td class="' + cls.trim() + '" title="' + esc(hol ? holName : s) + '">' + d +
+                  (hol ? '<span class="hol-label">' + esc(holName) + '</span>' : '') + '</td>';
+              }
               const img = e.thumbUrl ? '<a href="' + esc(e.photoUrl || e.thumbUrl) + '" target="_blank" rel="noopener"><img src="' + esc(e.thumbUrl) + '" alt="' + s + '" loading="lazy"></a>' : '';
               const note = e.note ? '<span class="note">' + esc(e.note) + '</span>' : '';
-              return '<td class="' + (img ? '' : 'text-only') + '" title="' + esc(s + ' 上傳於 ' + fmt(e.updatedAt)) + '">' + d + img + note + '</td>';
+              return '<td class="' + (hol ? 'holiday ' : '') + (img ? '' : 'text-only') + '" title="' + esc((hol ? holName + ' · ' : '') + s + ' 上傳於 ' + fmt(e.updatedAt)) + '">' + d + img + note + '</td>';
             }).join('') + '</tr>').join('') +
             '</tbody></table></div>';
         }).join('') + '</div>';
@@ -263,13 +293,15 @@
             '<td>' + done + ' / ' + due.length + ' 天</td>' +
             '<td><div class="bar"><i style="width:' + pct + '%"></i></div></td>' +
             '<td>' + fmt(p.last) + '</td>' +
-            '<td class="text-right space-x-1"><button type="button" class="btn" data-view="' + esc(p.userId) + '">' + (open ? '收起' : '預覽') + '</button>' +
-            '<button type="button" class="btn btn-main" data-xlsx="' + esc(p.userId) + '">⬇ Excel</button></td></tr>' +
+            '<td class="text-right space-x-1 whitespace-nowrap"><button type="button" class="btn" data-view="' + esc(p.userId) + '">' + (open ? '收起' : '預覽') + '</button>' +
+            '<button type="button" class="btn btn-main" data-xlsx="' + esc(p.userId) + '">⬇ Excel</button>' +
+            '<button type="button" class="btn btn-danger" data-del="' + esc(p.userId) + '" data-del-label="' + esc((p.userName || '') + '／' + (p.username || '')) + '">刪除</button></td></tr>' +
             (open ? '<tr><td colspan="8" class="detail">' + calendarHtml(p) + '</td></tr>' : '');
         }).join('') || '<tr><td colspan="8" class="muted">這四個月還沒有人上傳打卡紀錄</td></tr>';
       }
 
       async function loadList() {
+        refreshHolidays();
         renderRange();
         $('msg').textContent = '讀取中…';
         try {
@@ -286,6 +318,28 @@
           renderPetitions();
         } catch (e) {
           $('msg').textContent = e.message;
+        }
+      }
+
+      async function deleteUser(userId, label) {
+        if (busy) return;
+        const tip = '確定要刪除帳號「' + label + '」？\n會一併刪除其打卡紀錄、簽呈與考試紀錄，且無法復原。\n（重複註冊時請留下正確帳號、刪掉多餘的）';
+        if (!window.confirm(tip)) return;
+        busy = true;
+        $('msg').textContent = '刪除中…';
+        try {
+          const res = await call({ action: 'admin_delete_user', secret, userId });
+          if (openUser === userId) openUser = null;
+          entries = entries.filter((e) => e.userId !== userId);
+          petitions = petitions.filter((p) => p.userId !== userId);
+          trainEnds.delete(userId);
+          $('msg').textContent = res.message || '已刪除';
+          renderRows();
+          renderPetitions();
+        } catch (e) {
+          $('msg').textContent = '刪除失敗：' + e.message;
+        } finally {
+          busy = false;
         }
       }
 
@@ -344,7 +398,10 @@
         if (x) {
           const p = people().find((pp) => pp.userId === x.dataset.xlsx);
           if (p) exportXlsx([p], p.userName || p.username);
+          return;
         }
+        const d = e.target.closest('[data-del]');
+        if (d) deleteUser(d.dataset.del, d.dataset.delLabel || d.dataset.del);
       });
       $('btn-all').addEventListener('click', () => {
         const list = people();

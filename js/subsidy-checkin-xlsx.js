@@ -47,6 +47,22 @@
         return weeks;
     }
 
+    /** 公司年度行事曆「國定假日」欄有值的日期（YYYY-MM-DD） */
+    function holidaySet() {
+        const set = new Set();
+        const days = (global.AdminCalendarSheet && global.AdminCalendarSheet.days) || [];
+        days.forEach((row) => {
+            const date = row && row[0];
+            const holiday = row && row[1];
+            if (date && holiday) set.add(String(date));
+        });
+        return set;
+    }
+
+    function isHoliday(s, set) {
+        return !!(s && (set || holidaySet()).has(s));
+    }
+
     function rangeOf(startY, startM) {
         const end = addMonths(startY, startM, 3);
         return { from: ymd(startY, startM, 1), to: ymd(end.y, end.m, new Date(Date.UTC(end.y, end.m, 0)).getUTCDate()) };
@@ -86,6 +102,11 @@
     function buildSheet(wb, ws, person, startY, startM, images) {
         const byDay = {};
         (person.entries || []).forEach((e) => { byDay[e.day] = e; });
+        const holidays = holidaySet();
+        const slashBorder = Object.assign({}, BOX, {
+            diagonal: { style: 'thin', color: BLACK },
+            diagonalDown: true
+        });
 
         ws.properties.defaultRowHeight = 15.75;
         ws.columns = [
@@ -141,9 +162,11 @@
                         const s = week[k];
                         const dc = ws.getCell(dateRow, col);
                         const pc = ws.getCell(photoRow, col);
+                        const hol = s && holidays.has(s);
+                        const cellBorder = hol ? slashBorder : BOX;
                         if (s) dc.value = Number(s.slice(8));
-                        style(dc, { border: BOX, alignment: { vertical: 'middle' } });
-                        style(pc, { border: BOX, alignment: { vertical: 'middle', wrapText: true } });
+                        style(dc, { border: cellBorder, alignment: { vertical: 'middle' } });
+                        style(pc, { border: cellBorder, alignment: { vertical: 'middle', wrapText: true } });
                         const e = s ? byDay[s] : null;
                         if (!e) continue;
                         const img = images && images[e.day + '|' + (person.userId || '')];
@@ -182,7 +205,7 @@
         return '財補計畫照片上傳' + rocYm(startY, startM) + '開始_' + String(suffix || '').replace(/[\\/:*?"<>|]/g, '') + '.xlsx';
     }
 
-    const api = { buildWorkbook, monthWeeks, rangeOf, addMonths, rocMonth, rocYm, fileName };
+    const api = { buildWorkbook, monthWeeks, rangeOf, addMonths, rocMonth, rocYm, fileName, holidaySet, isHoliday };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     else global.SubsidyCheckinXlsx = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -171,9 +171,10 @@
     function renderRegionPick(team) {
         const box = document.getElementById('nb-exam-region-pick');
         if (!box) return;
+        const cities = ['台北', '新北', '基隆', '宜蘭', '桃園', '新竹', '台中', '彰化', '嘉義', '台南', '高雄'];
         box.innerHTML = '<div class="nb-exam-region">' +
-            '<p>您的處別「' + esc(team || '未設定') + '」無法自動判斷地區，請選擇作答地區：</p>' +
-            ['雙北', '桃園', '台中台南'].map((r) =>
+            '<p>您的處別「' + esc(team || '未設定') + '」無法自動判斷地區，請選擇作答縣市：</p>' +
+            cities.map((r) =>
                 '<label><input type="radio" name="nb-exam-region" value="' + r + '"> ' + r + '</label>').join('') +
             '</div>';
     }

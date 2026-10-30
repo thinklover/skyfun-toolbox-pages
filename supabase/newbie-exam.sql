@@ -94,9 +94,27 @@ insert into public.newbie_exam_keys (paper, qid, qtype, points, answer) values
 create or replace function public.newbie_exam_region_for_team(p_team text)
 returns text language sql immutable as $$
   select case
-    when p_team in ('北一處', '北二處', '北三處', '基一處', '宜一處') then '雙北'
-    when p_team in ('桃一處', '竹一處') then '桃園'
-    when p_team ~ '^(中[一二三四五六]|彰一|嘉一|南[一二]|高[一二])處$' then '台中台南'
+    when p_team in ('北一處', '北二處', '北三處') then '台北'
+    when p_team = '基一處' then '基隆'
+    when p_team = '宜一處' then '宜蘭'
+    when p_team = '桃一處' then '桃園'
+    when p_team = '竹一處' then '新竹'
+    when p_team in ('中一處', '中二處', '中三處', '中四處', '中五處', '中六處') then '台中'
+    when p_team = '彰一處' then '彰化'
+    when p_team = '嘉一處' then '嘉義'
+    when p_team in ('南一處', '南二處') then '台南'
+    when p_team in ('高一處', '高二處') then '高雄'
+    else null
+  end;
+$$;
+
+-- 門牌複選題答案分區（縣市 → 雙北／桃園／台中台南）
+create or replace function public.newbie_exam_score_region(p_region text)
+returns text language sql immutable as $$
+  select case
+    when p_region in ('台北', '新北', '基隆', '宜蘭', '雙北') then '雙北'
+    when p_region in ('桃園', '新竹') then '桃園'
+    when p_region in ('台中', '彰化', '嘉義', '台南', '高雄', '台中台南') then '台中台南'
     else null
   end;
 $$;
@@ -129,7 +147,7 @@ begin
   v_region := newbie_exam_region_for_team(coalesce(v_acc.team, ''));
   if v_region is null then
     v_region := nullif(trim(coalesce(p_region, '')), '');
-    if v_region is null or v_region not in ('雙北', '桃園', '台中台南') then
+    if v_region is null or newbie_exam_score_region(v_region) is null then
       return json_build_object('ok', false, 'needRegion', true, 'team', coalesce(v_acc.team, ''),
         'error', '請先選擇作答地區');
     end if;
@@ -161,12 +179,15 @@ declare
   v_given jsonb; v_correct jsonb; v_text text; v_norm text;
   v_earned numeric; v_total numeric := 0; v_hit int; v_need int; g text;
   v_results jsonb := '{}'::jsonb; v_sections jsonb := '{}'::jsonb; v_sec jsonb;
+  v_score_region text;
 begin
   v_uid := admin_qa_user_id(p_token);
   if v_uid is null then return json_build_object('ok', false, 'error', '請先登入'); end if;
   select * into v_row from public.newbie_exam_attempts where id = p_attempt_id and user_id = v_uid for update;
   if not found then return json_build_object('ok', false, 'error', '找不到這份考卷'); end if;
   if v_row.status <> 'in_progress' then return json_build_object('ok', false, 'error', '這份考卷已交卷或已作廢'); end if;
+
+  v_score_region := coalesce(newbie_exam_score_region(v_row.region), v_row.region);
 
   for k in select * from public.newbie_exam_keys where paper = v_row.paper order by qid loop
     v_given := v_answers -> k.qid;
@@ -176,7 +197,7 @@ begin
       v_correct := k.answer -> 'v';
       if v_given is not null and jsonb_typeof(v_given) = 'string' and v_given = v_correct then v_earned := k.points; end if;
     elsif k.qtype = 'multi' then
-      v_correct := coalesce(k.answer -> 'v', k.answer -> 'regions' -> v_row.region);
+      v_correct := coalesce(k.answer -> 'v', k.answer -> 'regions' -> v_score_region);
       if v_given is not null and jsonb_typeof(v_given) = 'array'
         and (select coalesce(array_agg(x order by x), '{}') from (select distinct jsonb_array_elements_text(v_given) x) s)
           = (select coalesce(array_agg(x order by x), '{}') from jsonb_array_elements_text(v_correct) x) then
@@ -271,6 +292,7 @@ begin
 end; $$;
 
 revoke all on function public.newbie_exam_region_for_team(text) from public, anon, authenticated;
+revoke all on function public.newbie_exam_score_region(text) from public, anon, authenticated;
 revoke all on function public.newbie_exam_norm(text) from public, anon, authenticated;
 grant execute on function public.newbie_exam_start(text, text) to anon, authenticated;
 grant execute on function public.newbie_exam_submit(text, bigint, jsonb, boolean) to anon, authenticated;

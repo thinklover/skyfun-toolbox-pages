@@ -264,6 +264,53 @@ async function handleAdminList(body: Record<string, string>) {
   return json({ ok: true, entries: withLinks });
 }
 
+/** 後台刪除重複帳號：清打卡／簽呈檔案後刪 toolbox_accounts（相關紀錄 CASCADE） */
+async function handleAdminDeleteUser(body: Record<string, string>) {
+  if (!(await isAdmin(String(body.secret || "")))) return fail("後台密碼錯誤");
+  const uid = String(body.userId || "").trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid)) {
+    return fail("帳號編號錯誤");
+  }
+  const { data: acc, error: accErr } = await sb
+    .from("toolbox_accounts")
+    .select("id, username, name, team")
+    .eq("id", uid)
+    .maybeSingle();
+  if (accErr) return fail(accErr.message);
+  if (!acc) return fail("找不到帳號");
+
+  const paths: string[] = [];
+  const { data: checkins } = await sb
+    .from("subsidy_checkins")
+    .select("photo_path, thumb_path")
+    .eq("user_id", uid);
+  (checkins || []).forEach((r: { photo_path: string | null; thumb_path: string | null }) => {
+    if (r.photo_path) paths.push(r.photo_path);
+    if (r.thumb_path) paths.push(r.thumb_path);
+  });
+  const { data: petitions } = await sb
+    .from("subsidy_petitions")
+    .select("file_path")
+    .eq("user_id", uid);
+  (petitions || []).forEach((r: { file_path: string | null }) => {
+    if (r.file_path) paths.push(r.file_path);
+  });
+  await removeFiles(paths);
+
+  const { error: delErr } = await sb.from("toolbox_accounts").delete().eq("id", uid);
+  if (delErr) return fail(delErr.message);
+
+  return json({
+    ok: true,
+    deleted: true,
+    userId: uid,
+    username: acc.username,
+    name: acc.name,
+    team: acc.team,
+    message: "已刪除帳號 " + acc.username + "（" + (acc.name || "") + "）",
+  });
+}
+
 const PETITION_MAX_BYTES = 10 * 1024 * 1024;
 
 type PetitionRow = {
@@ -418,6 +465,8 @@ Deno.serve(async (req) => {
         return await handleDelete(body);
       case "admin_list":
         return await handleAdminList(body);
+      case "admin_delete_user":
+        return await handleAdminDeleteUser(body);
       case "petition_mine":
         return await handlePetitionMine(body);
       case "petition_delete":
