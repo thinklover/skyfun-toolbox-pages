@@ -169,7 +169,8 @@
 .apt-proj-multi-sum { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 0.15rem; padding: 0.2rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 0.45rem; background: #fff; min-height: 1.7rem; }
 .apt-proj-multi-sum::-webkit-details-marker { display: none; }
 .apt-proj-multi[open] .apt-proj-multi-sum { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
-.apt-proj-multi-panel { position: absolute; z-index: 20; left: 0; top: calc(100% + 0.25rem); min-width: 12rem; padding: 0.45rem; border: 1px solid #e2e8f0; border-radius: 0.55rem; background: #fff; box-shadow: 0 10px 24px -12px rgba(15, 23, 42, 0.45); display: grid; gap: 0.3rem; }
+.apt-proj-multi-panel { position: absolute; z-index: 40; left: 0; top: calc(100% + 0.25rem); min-width: 12rem; padding: 0.45rem; border: 1px solid #e2e8f0; border-radius: 0.55rem; background: #fff; box-shadow: 0 10px 24px -12px rgba(15, 23, 42, 0.45); display: grid; gap: 0.3rem; }
+.apt-proj-multi--up .apt-proj-multi-panel { top: auto; bottom: calc(100% + 0.25rem); box-shadow: 0 -10px 24px -12px rgba(15, 23, 42, 0.45); }
 .apt-proj-opt { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.25rem; border-radius: 0.35rem; cursor: pointer; font-size: 0.78rem; }
 .apt-proj-opt:hover { background: #f8fafc; }
 .apt-proj-opt input { accent-color: #4f46e5; }

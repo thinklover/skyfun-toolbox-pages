@@ -6661,6 +6661,20 @@
     });
     $('apt-body').addEventListener('toggle', (e) => {
       if (e.target.matches?.('[data-apt-board-fold]')) state.examBoardOpen = e.target.open;
+      const proj = e.target.closest?.('details.apt-proj-multi');
+      if (proj && e.target === proj) {
+        proj.classList.remove('apt-proj-multi--up');
+        if (!proj.open) return;
+        $('apt-body').querySelectorAll('details.apt-proj-multi[open]').forEach((d) => {
+          if (d !== proj) d.open = false;
+        });
+        requestAnimationFrame(() => {
+          const panel = proj.querySelector('.apt-proj-multi-panel');
+          if (!panel || !proj.open) return;
+          const rect = panel.getBoundingClientRect();
+          if (rect.bottom > window.innerHeight - 8) proj.classList.add('apt-proj-multi--up');
+        });
+      }
     }, true);
     $('apt-body').addEventListener('click', (e) => {
       if (state.leaseDueCell && !state.lease?.dueSaving && !e.target.closest('.apt-lease-due-editing, [data-lease-due-cell]')) {
