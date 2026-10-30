@@ -264,7 +264,7 @@ async function handleAdminList(body: Record<string, string>) {
   return json({ ok: true, entries: withLinks });
 }
 
-/** 後台刪除重複帳號：清打卡／簽呈檔案後刪 toolbox_accounts（相關紀錄 CASCADE） */
+/** 後台從財補移除：只清打卡／簽呈／考試紀錄與檔案，不刪工具箱帳號 */
 async function handleAdminDeleteUser(body: Record<string, string>) {
   if (!(await isAdmin(String(body.secret || "")))) return fail("後台密碼錯誤");
   const uid = String(body.userId || "").trim();
@@ -277,37 +277,45 @@ async function handleAdminDeleteUser(body: Record<string, string>) {
     .eq("id", uid)
     .maybeSingle();
   if (accErr) return fail(accErr.message);
-  if (!acc) return fail("找不到帳號");
+
+  const labelName = acc?.name || acc?.username || uid;
+  const labelUser = acc?.username || uid;
 
   const paths: string[] = [];
-  const { data: checkins } = await sb
+  const { data: checkins, error: ckErr } = await sb
     .from("subsidy_checkins")
     .select("photo_path, thumb_path")
     .eq("user_id", uid);
+  if (ckErr) return fail(ckErr.message);
   (checkins || []).forEach((r: { photo_path: string | null; thumb_path: string | null }) => {
     if (r.photo_path) paths.push(r.photo_path);
     if (r.thumb_path) paths.push(r.thumb_path);
   });
-  const { data: petitions } = await sb
+  const { data: petitions, error: petErr } = await sb
     .from("subsidy_petitions")
     .select("file_path")
     .eq("user_id", uid);
+  if (petErr) return fail(petErr.message);
   (petitions || []).forEach((r: { file_path: string | null }) => {
     if (r.file_path) paths.push(r.file_path);
   });
   await removeFiles(paths);
 
-  const { error: delErr } = await sb.from("toolbox_accounts").delete().eq("id", uid);
-  if (delErr) return fail(delErr.message);
+  const { error: delCk } = await sb.from("subsidy_checkins").delete().eq("user_id", uid);
+  if (delCk) return fail(delCk.message);
+  const { error: delPet } = await sb.from("subsidy_petitions").delete().eq("user_id", uid);
+  if (delPet) return fail(delPet.message);
+  const { error: delExam } = await sb.from("newbie_exam_attempts").delete().eq("user_id", uid);
+  if (delExam) return fail(delExam.message);
 
   return json({
     ok: true,
     deleted: true,
     userId: uid,
-    username: acc.username,
-    name: acc.name,
-    team: acc.team,
-    message: "已刪除帳號 " + acc.username + "（" + (acc.name || "") + "）",
+    username: labelUser,
+    name: labelName,
+    team: acc?.team || "",
+    message: "已從財補移除 " + labelUser + "（" + labelName + "），工具箱帳號仍保留",
   });
 }
 

@@ -52,7 +52,7 @@
       <h1>財補打卡紀錄後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">財補計畫每日打卡照片 · 可依《財補計畫照片上傳》格式匯出 Excel · 國定假日格子畫斜線、不計入應上傳 · 重複帳號可刪除</p>
+    <p class="lead">財補計畫每日打卡照片 · 可依《財補計畫照片上傳》格式匯出 Excel · 國定假日格子畫斜線、不計入應上傳 · 「移除」只清財補紀錄，不刪工具箱帳號</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
@@ -295,7 +295,7 @@
             '<td>' + fmt(p.last) + '</td>' +
             '<td class="text-right space-x-1 whitespace-nowrap"><button type="button" class="btn" data-view="' + esc(p.userId) + '">' + (open ? '收起' : '預覽') + '</button>' +
             '<button type="button" class="btn btn-main" data-xlsx="' + esc(p.userId) + '">⬇ Excel</button>' +
-            '<button type="button" class="btn btn-danger" data-del="' + esc(p.userId) + '" data-del-label="' + esc((p.userName || '') + '／' + (p.username || '')) + '">刪除</button></td></tr>' +
+            '<button type="button" class="btn btn-danger" data-del="' + esc(p.userId) + '" data-del-label="' + esc((p.userName || '') + '／' + (p.username || '')) + '">移除</button></td></tr>' +
             (open ? '<tr><td colspan="8" class="detail">' + calendarHtml(p) + '</td></tr>' : '');
         }).join('') || '<tr><td colspan="8" class="muted">這四個月還沒有人上傳打卡紀錄</td></tr>';
       }
@@ -323,21 +323,21 @@
 
       async function deleteUser(userId, label) {
         if (busy) return;
-        const tip = '確定要刪除帳號「' + label + '」？\n會一併刪除其打卡紀錄、簽呈與考試紀錄，且無法復原。\n（重複註冊時請留下正確帳號、刪掉多餘的）';
+        const tip = '確定要將「' + label + '」從財補移除？\n會清除其打卡、簽呈與財補考試紀錄（無法復原），工具箱登入帳號仍保留。';
         if (!window.confirm(tip)) return;
         busy = true;
-        $('msg').textContent = '刪除中…';
+        $('msg').textContent = '移除中…';
         try {
           const res = await call({ action: 'admin_delete_user', secret, userId });
           if (openUser === userId) openUser = null;
           entries = entries.filter((e) => e.userId !== userId);
           petitions = petitions.filter((p) => p.userId !== userId);
           trainEnds.delete(userId);
-          $('msg').textContent = res.message || '已刪除';
+          $('msg').textContent = res.message || '已從財補移除';
           renderRows();
           renderPetitions();
         } catch (e) {
-          $('msg').textContent = '刪除失敗：' + e.message;
+          $('msg').textContent = '移除失敗：' + e.message;
         } finally {
           busy = false;
         }
