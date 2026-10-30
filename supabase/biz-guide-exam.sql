@@ -185,6 +185,7 @@ begin
         ) as "inProgress"
       from public.toolbox_accounts acc
       where exists (select 1 from public.biz_guide_exam_attempts a where a.user_id = acc.id)
+        and coalesce(nullif(acc.name, ''), acc.username) <> '簡為倢'
     ) x), '[]'::json));
 end; $$;
 

@@ -153,7 +153,11 @@
       el.innerHTML = `<p class="gx-warn">成績板讀取失敗：${esc(board.error)}</p>`;
       return;
     }
-    const items = (board.items || []).slice().sort((a, b) => {
+    const HIDE_BOARD_NAMES = new Set(['簡為倢']);
+    const items = (board.items || [])
+      .filter((r) => !HIDE_BOARD_NAMES.has(String(r.name || '').trim()))
+      .slice()
+      .sort((a, b) => {
       const ap = a.passed ? 1 : 0;
       const bp = b.passed ? 1 : 0;
       if (bp !== ap) return bp - ap;

@@ -592,9 +592,7 @@
       id: 'collect',
       label: '催收',
       layout: 'collectDashboard',
-      cards: [],
-      /** 介面參考 AI 催收系統全國總覽；資料同源 latest.json */
-      dashboardUrl: 'https://dahwork123-hash.github.io/skyfun-arrears-dashboard/'
+      cards: []
     },
     org: {
       id: 'org',
@@ -612,10 +610,6 @@
     {
       label: '管理師表_組織報告',
       url: 'https://docs.google.com/spreadsheets/d/1KkZNgTXlFWbFVecw5p-fa0cE8LTPGJnv75EVPPdaHnk/edit'
-    },
-    {
-      label: 'AI 催收系統（全國呆帳）',
-      url: 'https://dahwork123-hash.github.io/skyfun-arrears-dashboard/'
     }
   ];
 
@@ -691,10 +685,8 @@
       'https://skyfun-arrears-rpa.dahwork123.workers.dev'
   ).replace(/\/$/, '');
 
-  /** 與 AI 催收系統相同資料源 */
+  /** 欠租資料只從需登入的 Worker 讀取（禁止改抓公開網址） */
   const ARREARS_DATA_URL = RPA_BASE + '/data/latest.json';
-  const ARREARS_DATA_FALLBACK =
-    'https://dahwork123-hash.github.io/skyfun-arrears-dashboard/data/latest.json';
 
   const COLLECT_ALERTS = [
     { key: '1', label: '1～6天', short: '初期', min: 1, max: 6 },
@@ -893,19 +885,16 @@
   }
 
   function fetchArrearsLatestJson(token) {
-    const headers = {};
-    if (token) headers['X-Skyfun-Session'] = token;
-    return fetch(ARREARS_DATA_URL, { headers: headers, credentials: 'omit' })
-      .then(function (res) {
-        if (!res.ok) throw new Error('arrears worker HTTP ' + res.status);
-        return res.json();
-      })
-      .catch(function () {
-        return fetch(ARREARS_DATA_FALLBACK, { credentials: 'omit' }).then(function (res) {
-          if (!res.ok) throw new Error('arrears fallback HTTP ' + res.status);
-          return res.json();
-        });
-      });
+    if (!token) {
+      return Promise.reject(new Error('尚未登入工具箱，無法讀取欠租資料'));
+    }
+    return fetch(ARREARS_DATA_URL, {
+      headers: { 'X-Skyfun-Session': token },
+      credentials: 'omit'
+    }).then(function (res) {
+      if (!res.ok) throw new Error('欠租資料讀取失敗（HTTP ' + res.status + '）');
+      return res.json();
+    });
   }
 
   /** 租管師績效中心催收：只看業務支援管理部 */
@@ -974,8 +963,7 @@
           syncedAt: data.syncedAt || null,
           source: data.source || null,
           scopeLabel: COLLECT_OFFICE_FILTER,
-          error: null,
-          dashboardUrl: MODULES.collect.dashboardUrl
+          error: null
         };
       });
     });

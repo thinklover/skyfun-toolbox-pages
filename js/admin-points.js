@@ -6190,13 +6190,37 @@
       const otherOn = Core.isOpinionOtherCat(o.category);
       const selVal = otherOn ? '其他' : o.category || '';
       const note = Core.opinionOtherNote(o.category);
+      const cats = [...(Core.OPINION_CATEGORIES[kind] || [])];
+      if (selVal && selVal !== '其他' && !cats.includes(selVal)) cats.push(selVal);
       return `<div class="apt-op-cat-wrap">
           <select class="apt-op-edit-cat" data-op-edit="${o.id}" data-op-field="category" aria-label="缺失類別">
             <option value="">（未分類）</option>
-            ${(Core.OPINION_CATEGORIES[kind] || []).map((c) => `<option${c === selVal ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+            ${cats.map((c) => `<option${c === selVal ? ' selected' : ''}>${esc(c)}</option>`).join('')}
           </select>
           <input type="text" class="apt-op-other-note" data-op-edit="${o.id}" data-op-field="categoryOther" value="${esc(note)}" maxlength="60" placeholder="請填實際類別" aria-label="其他類別說明"${otherOn ? '' : ' hidden'}>
         </div>`;
+    };
+    const auditCell = (o) => {
+      if (!isCase) return '';
+      const cur = o.auditStatus || '';
+      if (!canEditOp(o)) return `<td>${cur ? esc(cur) : NIL}</td>`;
+      const opts = [...Core.OPINION_AUDIT_STATUSES];
+      if (cur && !opts.includes(cur)) opts.unshift(cur);
+      return `<td><select class="apt-op-edit-cat" data-op-edit="${o.id}" data-op-field="auditStatus" aria-label="審件狀態">
+            <option value="">請選擇</option>
+            ${opts.map((s) => `<option${s === cur ? ' selected' : ''}>${esc(s)}</option>`).join('')}
+          </select></td>`;
+    };
+    const systemPaperCell = (o) => {
+      if (!isCase) return '';
+      const cur = o.systemPaper || '';
+      if (!canEditOp(o)) return `<td>${cur ? esc(cur) : NIL}</td>`;
+      const opts = [...Core.OPINION_SYSTEM_PAPERS];
+      if (cur && !opts.includes(cur)) opts.unshift(cur);
+      return `<td><select class="apt-op-edit-cat" data-op-edit="${o.id}" data-op-field="systemPaper" aria-label="系統/紙本問題">
+            <option value="">請選擇</option>
+            ${opts.map((x) => `<option${x === cur ? ' selected' : ''}>${esc(x)}</option>`).join('')}
+          </select></td>`;
     };
     const caseNoCell = (o) =>
       canEditOp(o)
@@ -6216,7 +6240,7 @@
         : o[field]
           ? esc(o[field])
           : NIL;
-    const head = `<th>填寫日</th><th>公會期數</th><th>縣市</th>${isCase ? '<th>媒合編號</th>' : '<th>清冊期數</th><th>媒合編號</th>'}<th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th>已修正</th><th>點數</th><th></th>`;
+    const head = `<th>填寫日</th><th>公會期數</th><th>縣市</th>${isCase ? '<th>媒合編號</th>' : '<th>清冊期數</th><th>媒合編號</th>'}<th>意見時間</th>${isCase ? '<th>審件狀態</th><th>系統/紙本問題</th>' : ''}<th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th>已修正</th><th>點數</th><th></th>`;
     const rowCls = (o) => [o.noPoints && 'apt-op-nopts', opLate(o) && 'apt-op-late', ids.has(o.id) || 'apt-op-other'].filter((c) => typeof c === 'string');
     const rows = [...others, ...list]
       .map(
@@ -6228,6 +6252,8 @@
             ? `<td>${caseNoCell(o)}</td>`
             : `<td>${rosterCell(o)}</td><td>${caseNoCell(o)}${o.rosterItem ? `<small class="apt-op-item-note">${esc(o.rosterItem)}</small>` : ''}</td>`}
           <td>${dateCell(o)}</td>
+          ${auditCell(o)}
+          ${systemPaperCell(o)}
           <td>${catCell(o)}</td>
           <td class="apt-op-text">${textCell(o, 'content')}</td>
           <td class="apt-op-text apt-op-measure">${textCell(o, 'measure')}</td>
@@ -6243,7 +6269,7 @@
       <p class="apt-op-fix-tip${late ? ' is-late' : ''}">${late ? `⚠️ 有 <b>${late}</b> 筆超過一天還沒勾「已修正」，請盡快修正。` : '修正完成後請勾「已修正」。'}填寫滿一天還沒勾，會用 LINE 提醒填寫的人（每天最多一次）。${others.length ? '其他業績月還沒勾的也列在最上面。' : ''}</p>
       <div class="apt-table-wrap"><table class="apt-table apt-op-table">
         <thead><tr>${head}</tr></thead>
-        <tbody>${rows || `<tr><td colspan="${isCase ? 11 : 12}" class="apt-empty">還沒有填寫</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="${isCase ? 13 : 12}" class="apt-empty">還沒有填寫</td></tr>`}</tbody>
       </table></div>`;
   }
 
@@ -6268,6 +6294,10 @@
               <small class="apt-op-auto apt-op-roster-hint" hidden></small></label>
             <div class="apt-op-items" hidden></div>
           </div>`}
+          ${isCase
+            ? `<label class="apt-op-wide"><span>審件狀態 <em>*</em><small class="apt-op-auto">這筆意見對應的審件節點</small></span><select name="auditStatus" required><option value="">請選擇</option>${Core.OPINION_AUDIT_STATUSES.map((s) => `<option>${esc(s)}</option>`).join('')}</select></label>
+          <label class="apt-op-wide"><span>系統/紙本問題 <em>*</em><small class="apt-op-auto">填寫意見前請先選</small></span><select name="systemPaper" required><option value="">請選擇</option>${Core.OPINION_SYSTEM_PAPERS.map((x) => `<option>${esc(x)}</option>`).join('')}</select></label>`
+            : ''}
           <label class="apt-op-wide"><span>缺失類別 <em>*</em><small class="apt-op-auto">同公會月報的${isCase ? '審件' : '清冊'}缺失分類，一筆意見選最主要的一項</small></span><select name="category" required><option value="">請選擇</option>${Core.OPINION_CATEGORIES[kind].map((c) => `<option>${esc(c)}</option>`).join('')}</select></label>
           <label class="apt-op-wide apt-op-other-cat" hidden><span>其他類別說明 <em>*</em><small class="apt-op-auto">選「其他」時請寫這筆實際屬於哪一類</small></span><input name="categoryOther" maxlength="60" autocomplete="off" placeholder="例如：地址誤繕、附件格式錯誤…"></label>
           <label class="apt-op-wide"><span>公會意見內容 <em>*</em></span><textarea name="content" rows="3" maxlength="2000" placeholder="照公會回傳的意見填寫"></textarea></label>
@@ -6324,7 +6354,7 @@
         return;
       }
       const edit = e.target.closest(
-        '[data-op-edit][data-op-field="guildPeriod"], [data-op-edit][data-op-field="opinionDate"], [data-op-edit][data-op-field="rosterPeriod"]'
+        '[data-op-edit][data-op-field="guildPeriod"], [data-op-edit][data-op-field="opinionDate"], [data-op-edit][data-op-field="rosterPeriod"], [data-op-edit][data-op-field="auditStatus"], [data-op-edit][data-op-field="systemPaper"]'
       );
       if (edit) saveOpinionFields(kind, edit);
     });
@@ -6441,7 +6471,9 @@
         p_guild_period: null,
         p_opinion_date: null,
         p_case_no: null,
-        p_roster_period: null
+        p_roster_period: null,
+        p_audit_status: null,
+        p_system_paper: null
       };
       if (field === 'category') patch.p_category = next;
       if (field === 'content') patch.p_content = next;
@@ -6450,6 +6482,8 @@
       if (field === 'opinionDate') patch.p_opinion_date = next;
       if (field === 'caseNo') patch.p_case_no = next;
       if (field === 'rosterPeriod') patch.p_roster_period = next;
+      if (field === 'auditStatus') patch.p_audit_status = next;
+      if (field === 'systemPaper') patch.p_system_paper = next;
       const res = await window.skyfunAuth.rpc('admin_points_opinion_update', patch);
       if (!res?.ok) throw new Error(res?.error || '更新失敗');
       for (const row of [...(state.sb?.opinions || []), ...(state.opOpen || [])]) {
@@ -6515,6 +6549,27 @@
       form.elements.opinionDate.focus();
       return fail('請填意見時間');
     }
+    if (kind === 'case') {
+      if (!data.auditStatus) {
+        form.elements.auditStatus?.focus();
+        return fail('請選審件狀態');
+      }
+      if (!Core.OPINION_AUDIT_STATUSES.includes(data.auditStatus)) {
+        form.elements.auditStatus?.focus();
+        return fail('審件狀態不正確');
+      }
+      if (!data.systemPaper) {
+        form.elements.systemPaper?.focus();
+        return fail('請選系統/紙本問題');
+      }
+      if (!Core.OPINION_SYSTEM_PAPERS.includes(data.systemPaper)) {
+        form.elements.systemPaper?.focus();
+        return fail('系統/紙本問題不正確');
+      }
+    } else {
+      delete data.auditStatus;
+      delete data.systemPaper;
+    }
     if (!data.category) {
       form.elements.category.focus();
       return fail('請選缺失類別');
@@ -6539,7 +6594,7 @@
     try {
       const res = await window.skyfunAuth.rpc('admin_points_opinion_save', { p_token: token(), p_kind: kind, p_data: data });
       if (!res?.ok) throw new Error(res?.error || '送出失敗');
-      ['caseNo', 'opinionDate', 'category', 'categoryOther', 'content', 'measure'].concat(kind === 'case' ? ['rosterPeriod'] : []).forEach((k) => {
+      ['caseNo', 'opinionDate', 'auditStatus', 'systemPaper', 'category', 'categoryOther', 'content', 'measure'].concat(kind === 'case' ? ['rosterPeriod'] : []).forEach((k) => {
         if (form.elements[k]) form.elements[k].value = '';
       });
       form._roster?.reset();

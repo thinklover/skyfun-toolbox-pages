@@ -942,13 +942,19 @@
     case: [
       '資料缺漏、重複(未檢附)', '未附原租約、不完整', '房東/客資料誤繕、過期、缺漏', '編號誤繕、未填(物編客編媒編)',
       '金額/費用誤繕', '日期未填、誤繕', '未蓋章/未簽章(含章糊)', '表單勾選有誤(未勾、勾錯)', '擺放順序有誤',
-      '消防三寶(熱水器滅火器偵煙器)', '產編與紙本不一致', '掃描檔缺失', '營建署/中心系統未送出', '是否待租約', '其他'
+      '消防三寶(熱水器滅火器偵煙器)', '產編與紙本不一致', '掃描檔缺失', '其他'
     ],
     roster: [
       '資料缺漏、重複(未檢附)', '有檢附資料未KEY經控表', '房東/客資料誤繕', '編號誤繕、未填(物編客編媒編)',
       '金額/費用誤繕', '日期未填、誤繕', '未蓋章/未簽章(含章糊)', '表單勾選有誤(未勾、勾錯)', '擺放順序有誤', '其他'
     ]
   };
+
+  /** 案件意見的審件狀態（填寫時必選；資料庫 admin_points_opinion_audit_statuses 要一致） */
+  const OPINION_AUDIT_STATUSES = ['產編', '預審', '複審', '客審', '物審'];
+
+  /** 案件意見：填寫前必選的系統／紙本問題（資料庫 admin_points_opinion_system_papers 要一致） */
+  const OPINION_SYSTEM_PAPERS = ['星鴻系統', '紙本', '秘書疏失', '營建署/中心系統', '是否待租約'];
 
   /** 選「其他」時可填說明，存成「其他：說明」；圖表仍歸「其他」 */
   const isOpinionOtherCat = (c) => {
@@ -2072,6 +2078,8 @@
     auditTotalsFromLeaseRows,
     contractPeriod,
     OPINION_CATEGORIES,
+    OPINION_AUDIT_STATUSES,
+    OPINION_SYSTEM_PAPERS,
     isOpinionOtherCat,
     opinionOtherNote,
     formatOpinionOtherCat,

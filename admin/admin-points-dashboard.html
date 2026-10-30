@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261029-disable-pts"></script>
+  <script src="../js/admin-points-core.js?v=20261030-syspaper"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -559,7 +559,7 @@
       </table></div>
       <h3 class="list-title">行政填寫的案件意見<span class="muted" id="op-case-count"></span></h3>
       <div class="overflow-x-auto"><table>
-        <thead><tr><th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th></th></tr></thead>
+        <thead><tr><th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號</th><th>意見時間</th><th>審件狀態</th><th>系統/紙本問題</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th></th></tr></thead>
         <tbody id="op-case-list"></tbody>
       </table></div>
       <h3 class="list-title">行政填寫的清冊意見<span class="muted" id="op-roster-count"></span></h3>
@@ -1968,12 +1968,13 @@
             ? rows.map((o) => `<tr${o.noPoints ? ' class="op-nopts"' : ''}>
                 <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${esc(o.guildPeriod)}</td><td>${esc(o.region || '—')}</td>
                 <td>${esc(kind === 'case' ? o.caseNo : [o.rosterPeriod, o.caseNo].filter(Boolean).join('・'))}${o.rosterItem ? `<div class="muted" style="font-size:.75rem">${esc(o.rosterItem)}</div>` : ''}</td><td>${esc(o.opinionDate || '')}</td>
+                ${kind === 'case' ? `<td>${esc(o.auditStatus || '—')}</td><td>${esc(o.systemPaper || '—')}</td>` : ''}
                 <td>${o.category ? esc(o.category) : '<span class="muted">未分類</span>'}</td>
                 <td style="white-space:pre-wrap;min-width:12rem">${esc(o.content)}</td>
                 <td style="white-space:pre-wrap;min-width:12rem;background:#fefce8">${esc(o.measure || '')}</td>
                 <td>${o.noPoints ? '<span class="badge op-k-nopts">不給點</span> ' : ''}<button type="button" class="btn btn-del" data-del-opinion="${o.id}">刪除</button></td>
               </tr>`).join('')
-            : `<tr><td colspan="10" class="muted">本業績月尚無行政填寫的${kind === 'case' ? '案件' : '清冊'}意見</td></tr>`;
+            : `<tr><td colspan="${kind === 'case' ? 12 : 10}" class="muted">本業績月尚無行政填寫的${kind === 'case' ? '案件' : '清冊'}意見</td></tr>`;
         });
       }
 
@@ -4203,13 +4204,35 @@
         const otherOn = Core.isOpinionOtherCat?.(o.category);
         const selVal = otherOn ? '其他' : (o.category || '');
         const note = Core.opinionOtherNote?.(o.category) || '';
+        const cats = [...(Core.OPINION_CATEGORIES[o.kind] || [])];
+        if (selVal && selVal !== '其他' && !cats.includes(selVal)) cats.push(selVal);
         return `<div class="op-cat-wrap">
           <select class="op-cat" data-op-cat="${o.id}" aria-label="缺失類別">
             <option value=""${!o.category ? ' selected' : ''}>（未分類）</option>
-            ${(Core.OPINION_CATEGORIES[o.kind] || []).map((c) => `<option${c === selVal ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+            ${cats.map((c) => `<option${c === selVal ? ' selected' : ''}>${esc(c)}</option>`).join('')}
           </select>
           <input type="text" class="op-cat-other" data-op-cat-other="${o.id}" value="${esc(note)}" maxlength="60" placeholder="請填實際類別" aria-label="其他類別說明"${otherOn ? '' : ' hidden'}>
         </div>`;
+      };
+      const opAuditSelect = (o) => {
+        if (o.kind !== 'case') return '<span class="muted">—</span>';
+        const cur = o.auditStatus || '';
+        const opts = [...(Core.OPINION_AUDIT_STATUSES || [])];
+        if (cur && !opts.includes(cur)) opts.unshift(cur);
+        return `<select class="op-audit" data-op-audit="${o.id}" aria-label="審件狀態">
+            <option value=""${!cur ? ' selected' : ''}>請選擇</option>
+            ${opts.map((s) => `<option${s === cur ? ' selected' : ''}>${esc(s)}</option>`).join('')}
+          </select>`;
+      };
+      const opSystemPaperSelect = (o) => {
+        if (o.kind !== 'case') return '<span class="muted">—</span>';
+        const cur = o.systemPaper || '';
+        const opts = [...(Core.OPINION_SYSTEM_PAPERS || [])];
+        if (cur && !opts.includes(cur)) opts.unshift(cur);
+        return `<select class="op-syspaper" data-op-syspaper="${o.id}" aria-label="系統/紙本問題">
+            <option value=""${!cur ? ' selected' : ''}>請選擇</option>
+            ${opts.map((s) => `<option${s === cur ? ' selected' : ''}>${esc(s)}</option>`).join('')}
+          </select>`;
       };
       const opContentArea = (o) =>
         `<textarea class="op-edit" data-op-content="${o.id}" rows="3" aria-label="公會意見內容">${esc(o.content || '')}</textarea>`;
@@ -4329,7 +4352,7 @@
           map.get(k).push(o);
         });
         const showKind = op.kind === 'all';
-        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th>點數</th><th></th></tr>`;
+        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>審件狀態</th><th>系統/紙本問題</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th>點數</th><th></th></tr>`;
         $('op-groups').innerHTML = [...map.keys()].sort(grp.sort).map((k, gi) => {
           const list = map.get(k);
           const c = list.filter((o) => o.kind === 'case').length;
@@ -4340,6 +4363,8 @@
               ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
               <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${opGuildSelect(o)}</td><td>${opRegionEdit(o)}</td>
               <td style="min-width:10rem;max-width:14rem">${opRefEdit(o)}</td><td>${opDateInput(o)}</td>
+              <td style="max-width:7rem">${opAuditSelect(o)}</td>
+              <td style="max-width:8rem">${opSystemPaperSelect(o)}</td>
               <td style="max-width:10rem">${opCatSelect(o)}</td>
               <td style="min-width:10rem;max-width:18rem">${opContentArea(o)}</td>
               <td style="min-width:8rem;max-width:14rem;background:#fefce8">${opMeasureArea(o)}</td>
@@ -4385,7 +4410,9 @@
             p_opinion_date: patch.opinionDate !== undefined ? patch.opinionDate : null,
             p_case_no: patch.caseNo !== undefined ? patch.caseNo : null,
             p_roster_period: patch.rosterPeriod !== undefined ? patch.rosterPeriod : null,
-            p_region: patch.region !== undefined ? patch.region : null
+            p_region: patch.region !== undefined ? patch.region : null,
+            p_audit_status: patch.auditStatus !== undefined ? patch.auditStatus : null,
+            p_system_paper: patch.systemPaper !== undefined ? patch.systemPaper : null
           });
           if (!res?.ok) throw new Error(res?.error || '更新失敗');
           const o = op.all.find((x) => String(x.id) === String(id));
@@ -4398,6 +4425,8 @@
             caseNo: res.opinion.caseNo,
             rosterPeriod: res.opinion.rosterPeriod,
             region: res.opinion.region,
+            auditStatus: res.opinion.auditStatus,
+            systemPaper: res.opinion.systemPaper,
             noPoints: res.opinion.noPoints,
             noPointsReason: res.opinion.noPointsReason
           });
@@ -4446,6 +4475,28 @@
         if (roster) {
           const o = op.all.find((x) => String(x.id) === roster.dataset.opRoster);
           await opSaveFields(roster.dataset.opRoster, { rosterPeriod: roster.value }, roster, o?.rosterPeriod || '').catch(() => {});
+          return;
+        }
+        const audit = e.target.closest('[data-op-audit]');
+        if (audit) {
+          const o = op.all.find((x) => String(x.id) === audit.dataset.opAudit);
+          if (!audit.value) {
+            window.alert('請選審件狀態');
+            audit.value = o?.auditStatus || '';
+            return;
+          }
+          await opSaveFields(audit.dataset.opAudit, { auditStatus: audit.value }, audit, o?.auditStatus || '').catch(() => {});
+          return;
+        }
+        const syspaper = e.target.closest('[data-op-syspaper]');
+        if (syspaper) {
+          const o = op.all.find((x) => String(x.id) === syspaper.dataset.opSyspaper);
+          if (!syspaper.value) {
+            window.alert('請選系統/紙本問題');
+            syspaper.value = o?.systemPaper || '';
+            return;
+          }
+          await opSaveFields(syspaper.dataset.opSyspaper, { systemPaper: syspaper.value }, syspaper, o?.systemPaper || '').catch(() => {});
           return;
         }
         const sel = e.target.closest('[data-op-cat]');
