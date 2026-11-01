@@ -954,7 +954,7 @@
   const OPINION_AUDIT_STATUSES = ['產編', '預審', '複審', '客審', '物審'];
 
   /** 案件意見：填寫前必選的系統／紙本問題（資料庫 admin_points_opinion_system_papers 要一致） */
-  const OPINION_SYSTEM_PAPERS = ['星鴻系統', '紙本', '秘書疏失', '營建署/中心系統', '是否待租約'];
+  const OPINION_SYSTEM_PAPERS = ['星鴻系統', '紙本', '營建署/中心系統', '是否待租約'];
 
   /** 選「其他」時可填說明，存成「其他：說明」；圖表仍歸「其他」 */
   const isOpinionOtherCat = (c) => {
