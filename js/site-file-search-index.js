@@ -5,7 +5,7 @@
     'use strict';
 
     window.SITE_FILE_SEARCH_INDEX = [
-        { file: './docs/weekly-meeting/files/1102業務週會.pdf', title: '115/11/02 1102業務週會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1102 獎金 結績 紙本合約 點交 糾紛 折舊' },
+        { file: './docs/weekly-meeting/files/1102業務週會.pdf', title: '115/11/02 1102業務週會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1102 獎金 結績 紙本合約 高專 代管 1101 包租率 55% 季考核 公會 退件 複審 實價登錄 獎懲 領款收據 青年婚育 競賽 工具箱 手機版' },
         { file: './docs/weekly-meeting/files/1012業務周會.pdf', title: '115/10/12 1012業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1012 獎金 結績 紙本合約 工具箱 手機版 官方LINE 退件 1019 包租 解約 退押 押金 新制 虛擬帳號 帳號查詢 財產 所得 資格審查 家庭成員 限額 所得清單 給付總額 平均每人每月所得 動產 利息 存款本金 不動產 房屋現值 土地現值 自有住宅 更換房東 更換房客 死亡 繼承 買賣 更名 代管 轉租 異動 契約起日 行政審核' },
         { file: './docs/weekly-meeting/files/1005業務周會.pdf', title: '115/10/05 1005業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1005 獎金 結績 工具箱 手機版 官方LINE 退件 星財補 財補 證照補助 代管 1101 證照 公司登錄 代管費 雙證照 點交 糾紛 自然耗損 人為毀損 折舊 殘值 窗簾 油漆 壁癌 補漆 判決 調解 押金返還 虛擬帳戶 匯錯 帳戶凍結 配偶 賣屋 換約' },
         { file: './docs/weekly-meeting/files/人員登錄及配置異動同意書_合併版.docx', title: '人員登錄及配置異動同意書（合併版）', category: '檔案 · Word · 業務周會', keywords: '人員登錄 配置異動 租賃管理人員 配置調整 同意書 證照 代管 合併版 表單 周會' },
