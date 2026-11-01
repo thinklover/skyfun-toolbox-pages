@@ -1,0 +1,238 @@
+/* 專區入口共用樣式：業務／房東／房客 */
+:is(#page-business, #page-landlord, #page-tenant) {
+  --bz-ink: #0f172a;
+  --bz-muted: #64748b;
+  --bz-line: #e8ecf4;
+  --bz-card: #ffffff;
+  --bz-shadow: 0 10px 28px -18px rgba(15, 23, 42, 0.35);
+  --bz-accent: #6d28d9;
+  --bz-accent-soft: #f5f3ff;
+  --bz-accent-mid: #ede9fe;
+  --bz-glow-a: rgba(167, 139, 250, 0.28);
+  --bz-glow-b: rgba(196, 181, 253, 0.22);
+  --bz-dot: rgba(109, 40, 217, 0.06);
+  --bz-hover-line: #c4b5fd;
+  --bz-hover-shadow: rgba(109, 40, 217, 0.45);
+}
+
+#page-landlord {
+  --bz-accent: #0284c7;
+  --bz-accent-soft: #e0f2fe;
+  --bz-accent-mid: #bae6fd;
+  --bz-glow-a: rgba(56, 189, 248, 0.28);
+  --bz-glow-b: rgba(125, 211, 252, 0.2);
+  --bz-dot: rgba(2, 132, 199, 0.07);
+  --bz-hover-line: #7dd3fc;
+  --bz-hover-shadow: rgba(2, 132, 199, 0.4);
+}
+
+#page-tenant {
+  --bz-accent: #059669;
+  --bz-accent-soft: #d1fae5;
+  --bz-accent-mid: #a7f3d0;
+  --bz-glow-a: rgba(52, 211, 153, 0.28);
+  --bz-glow-b: rgba(110, 231, 183, 0.2);
+  --bz-dot: rgba(5, 150, 105, 0.07);
+  --bz-hover-line: #6ee7b7;
+  --bz-hover-shadow: rgba(5, 150, 105, 0.4);
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  border: 1px solid var(--bz-line);
+  background:
+    radial-gradient(120% 80% at 100% -10%, var(--bz-glow-a), transparent 55%),
+    radial-gradient(90% 60% at -10% 110%, var(--bz-glow-b), transparent 50%),
+    linear-gradient(180deg, #fbfaff 0%, #ffffff 42%, #f8fafc 100%);
+  box-shadow: var(--bz-shadow);
+  padding: 1.35rem 1.2rem 1.4rem;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--bz-dot) 1px, transparent 1px);
+  background-size: 18px 18px;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-head,
+:is(#page-business, #page-landlord, #page-tenant) .bz-tools,
+:is(#page-business, #page-landlord, #page-tenant) .bz-forms {
+  position: relative;
+  z-index: 1;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-head {
+  text-align: center;
+  margin-bottom: 1.15rem;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: var(--bz-accent-mid);
+  color: var(--bz-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-title {
+  margin: 0;
+  font-family: var(--font-display, "Noto Sans TC", sans-serif);
+  font-size: clamp(1.65rem, 4vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: var(--bz-ink);
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-sub {
+  margin: 0.55rem auto 0;
+  max-width: 34rem;
+  color: var(--bz-muted);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-sec {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--bz-accent);
+  text-transform: none;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-tools {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+  margin-bottom: 0.25rem;
+}
+
+#page-business .bz-tools {
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 720px) {
+  :is(#page-business, #page-landlord, #page-tenant) .bz-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 4.6rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--bz-line);
+  border-radius: 1.15rem;
+  background: var(--bz-card);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 20px -16px rgba(15, 23, 42, 0.28);
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--bz-hover-line);
+  box-shadow: 0 14px 28px -18px var(--bz-hover-shadow);
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-card:active {
+  transform: translateY(0);
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-ico {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(160deg, var(--bz-accent-soft), #fff);
+  border: 1px solid color-mix(in srgb, var(--bz-accent) 22%, #ffffff);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-name {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--bz-ink);
+  letter-spacing: 0.02em;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-hint {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bz-muted);
+  line-height: 1.4;
+}
+
+:is(#page-business, #page-landlord, #page-tenant) .bz-go {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  height: 2.1rem;
+  padding: 0 0.65rem;
+  border-radius: 999px;
+  background: var(--bz-accent);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+#page-business .bz-forms {
+  border-radius: 1.25rem;
+  border: 1px solid var(--bz-line);
+  background: rgba(255, 255, 255, 0.88);
+  padding: 1rem;
+}
+
+#page-business .bz-forms > h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--bz-ink);
+}
+
+@media (max-width: 420px) {
+  :is(#page-business, #page-landlord, #page-tenant) .bz-shell {
+    padding: 1.1rem 0.85rem 1.15rem;
+  }
+  :is(#page-business, #page-landlord, #page-tenant) .bz-card {
+    gap: 0.65rem;
+    padding: 0.85rem 0.75rem;
+  }
+  :is(#page-business, #page-landlord, #page-tenant) .bz-name {
+    font-size: 0.98rem;
+  }
+  :is(#page-business, #page-landlord, #page-tenant) .bz-hint {
+    font-size: 0.78rem;
+  }
+}

@@ -65,6 +65,84 @@
     const img = (m, i) => `./assets/meetings/${m.id}/${String(i + 1).padStart(2, '0')}.jpg`;
     const view = { id: MEETINGS[0]?.id, tab: 'slides', slide: 0, q: '' };
     const meeting = () => MEETINGS.find((m) => m.id === view.id) || MEETINGS[0];
+    const HIDE_BOARD_NAMES = new Set(['簡為倢']);
+
+    function fmtBoardTime(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return iso;
+        const p = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear() - 1911}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+    function scoreTone(score) {
+        if (score >= 100) return 'is-full';
+        if (score >= 60) return 'is-good';
+        if (score > 0) return 'is-low';
+        return 'is-zero';
+    }
+    function hueOf(name) {
+        let h = 0;
+        for (const ch of String(name)) h = (h * 31 + ch.codePointAt(0)) % 360;
+        return h;
+    }
+    function myName() {
+        try {
+            return window.skyfunAuth?.getSession?.()?.name || window.skyfunAuth?.getUser?.()?.name || '';
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function boardHtml(course) {
+        if (!course) return '';
+        const title = window.COURSE_EXAM?.[course]?.title || '本週小考';
+        if (!window.CourseExam?.boardOf) {
+            return `<div class="amt-board"><h3 class="amt-board-title">公開成績板</h3><p class="gx-muted">成績板元件尚未載入。</p></div>`;
+        }
+        const board = window.CourseExam.boardOf(course);
+        if (!board.loaded) {
+            return `<div class="amt-board"><h3 class="amt-board-title">公開成績板 · ${esc(title)}</h3><p class="gx-muted">讀取成績板中…</p></div>`;
+        }
+        if (board.error) {
+            return `<div class="amt-board"><h3 class="amt-board-title">公開成績板 · ${esc(title)}</h3><p class="gx-warn">成績板讀取失敗：${esc(board.error)}</p></div>`;
+        }
+        const items = (board.items || []).filter((r) => !HIDE_BOARD_NAMES.has(String(r.name || '').trim()));
+        const me = myName();
+        const passedN = items.filter((x) => x.passed).length;
+        const body = items
+            .map((r, i) => {
+                const score = r.best == null ? null : Number(r.best);
+                const state = r.passed
+                    ? ['is-done', '✅ 滿分通過']
+                    : score != null
+                      ? ['is-retake', '待補考']
+                      : ['is-none', '尚未交卷'];
+                return `<tr class="gx-board-row${me && r.name === me ? ' is-me' : ''}">
+          <td class="num">${i + 1}</td>
+          <td><span class="gx-who"><span class="gx-avatar" style="--h:${hueOf(r.name)}">${esc(String(r.name).slice(0, 1))}</span><b>${esc(r.name)}</b></span></td>
+          <td class="gx-score-cell">${score == null ? '<span class="gx-dim">—</span>' : `<b class="gx-score ${scoreTone(score)}">${score}</b><i>分</i>`}</td>
+          <td class="num">${r.correct != null ? `${r.correct}／${r.total}` : '—'}</td>
+          <td class="num">${r.attempts || 0}</td>
+          <td>${fmtBoardTime(r.lastAt)}</td>
+          <td><span class="gx-board-state ${state[0]}">${state[1]}</span></td>
+        </tr>`;
+            })
+            .join('');
+        return `<div class="amt-board">
+      <h3 class="amt-board-title">公開成績板 · ${esc(title)}</h3>
+      <div class="gx-board">
+      <div class="gx-board-head">
+        <div class="gx-stat is-main"><span>已考人數</span><b>${items.length}<i>人</i></b></div>
+        <div class="gx-stat is-done"><span>滿分通過</span><b>${passedN}<i>人</i></b></div>
+        <div class="gx-stat is-retake"><span>待補考</span><b>${Math.max(0, items.length - passedN)}<i>人</i></b></div>
+      </div>
+      <div class="gx-board-wrap"><table class="gx-table gx-board-table">
+        <thead><tr><th class="num">#</th><th>姓名</th><th class="gx-score-cell">最高成績</th><th class="num">最高答對</th><th class="num">考試次數</th><th>最近交卷</th><th>狀態</th></tr></thead>
+        <tbody>${body || '<tr><td colspan="7" class="gx-muted">還沒有人考試，考完會顯示在這裡給大家看。</td></tr>'}</tbody>
+      </table></div>
+      <p class="gx-muted">全員登入後都看得到姓名與成績；不顯示作答內容與正解。全部答對（100 分）才算通過，沒全對可重考。</p>
+      </div></div>`;
+    }
 
     /** 搜尋：跨所有週會比對日期、標題與每張投影片標題（不分大小寫、空白分隔多關鍵字需全部符合） */
     const norm = (t) => String(t || '').toLowerCase();
@@ -150,17 +228,25 @@
             : `<span class="amt-date">${esc(m.date)} ${esc(m.title)}</span>`;
         const n = examCount(m);
         const tabList = [['slides', `📑 週會簡報（${m.slides.length} 張）`]];
-        if (n) tabList.push(['exam', `📝 線上小考（${n} 題）`]);
+        if (n) {
+            tabList.push(['exam', `📝 線上小考（${n} 題）`]);
+            tabList.push(['board', '🏆 公開成績']);
+        }
         const tabs = tabList
             .map(([k, t]) => `<button type="button" class="amt-tab amt-tab--${k}${view.tab === k ? ' is-on' : ''}" data-amt="tab" data-tab="${k}">${t}</button>`)
             .join('');
-        return `<div class="amt-head">${picker}<div class="amt-tabs">${tabs}</div></div>
-            ${view.tab === 'slides' || !n
-                ? `${searchBarHtml()}${deckHtml(m)}<div class="amt-cta">
-                        <p class="amt-tip">用 ← → 方向鍵或點投影片左右兩側翻頁。${n ? '看完簡報後請完成線上小考，全部答對才算通過。' : '這份簡報沒有線上小考。'}</p>
-                        ${n ? `<button type="button" class="amt-cta-btn" data-amt="tab" data-tab="exam">📝 開始線上小考（${n} 題）→</button>` : ''}
-                    </div>`
-                : `<div class="amt-exam" data-cx-root></div>`}`;
+        let body = '';
+        if (view.tab === 'board' && n) {
+            body = boardHtml(m.course);
+        } else if (view.tab === 'exam' && n) {
+            body = `<div class="amt-exam" data-cx-root></div>${boardHtml(m.course)}`;
+        } else {
+            body = `${searchBarHtml()}${deckHtml(m)}<div class="amt-cta">
+                        <p class="amt-tip">用 ← → 方向鍵或點投影片左右兩側翻頁。${n ? '看完簡報後請完成線上小考，全部答對才算通過；成績會公開排在「公開成績」。' : '這份簡報沒有線上小考。'}</p>
+                        ${n ? `<div class="amt-cta-row"><button type="button" class="amt-cta-btn" data-amt="tab" data-tab="exam">📝 開始線上小考（${n} 題）→</button><button type="button" class="amt-cta-btn amt-cta-btn--soft" data-amt="tab" data-tab="board">🏆 看公開成績</button></div>` : ''}
+                    </div>`;
+        }
+        return `<div class="amt-head">${picker}<div class="amt-tabs">${tabs}</div></div>${body}`;
     }
 
     const examCount = (m) => (m?.course ? window.COURSE_EXAM?.[m.course]?.questions?.length || 0 : 0);
@@ -208,15 +294,33 @@
         else stage.requestFullscreen?.().catch(() => {});
     }
 
+    function refreshBoardOnly() {
+        const root = document.getElementById('admin-meeting-root');
+        const m = meeting();
+        if (!root || !m?.course) return;
+        const next = boardHtml(m.course);
+        const boxes = root.querySelectorAll('.amt-board');
+        if (!boxes.length) return;
+        const tmp = document.createElement('div');
+        tmp.innerHTML = next;
+        const fresh = tmp.firstElementChild;
+        if (!fresh) return;
+        boxes.forEach((box) => box.replaceWith(fresh.cloneNode(true)));
+    }
+
     function render() {
         const root = document.getElementById('admin-meeting-root');
         if (!root) return;
+        if (view.tab === 'board' && !examCount(meeting())) view.tab = 'slides';
         root.innerHTML = html();
         if (view.tab === 'slides') applySearch();
         if (view.tab === 'exam') {
             const el = root.querySelector('[data-cx-root]');
             if (window.CourseExam?.has(meeting().course)) window.CourseExam.mount({ course: meeting().course, self: true, root: el });
-            else el.innerHTML = '<p class="amt-empty">小考題目準備中。</p>';
+            else if (el) el.innerHTML = '<p class="amt-empty">小考題目準備中。</p>';
+        }
+        if ((view.tab === 'exam' || view.tab === 'board') && meeting().course && window.CourseExam?.loadOverview) {
+            window.CourseExam.loadOverview(true);
         }
     }
 
@@ -226,7 +330,7 @@
         const act = b.dataset.amt;
         const m = meeting();
         if (act === 'tab') {
-            if (view.tab === 'exam' && b.dataset.tab !== 'exam' && window.CourseExam?.inExam() && !confirm('考試還在進行中（作答會保留、計時不會停），確定要先去看簡報嗎？')) return;
+            if (view.tab === 'exam' && b.dataset.tab !== 'exam' && window.CourseExam?.inExam() && !confirm('考試還在進行中（作答會保留、計時不會停），確定要先離開考試畫面嗎？')) return;
             view.tab = b.dataset.tab;
             render();
         } else if (act === 'go') goSlide(+b.dataset.i);
@@ -288,6 +392,11 @@
         fold?.addEventListener('toggle', () => {
             if (fold.open) render();
         });
+        if (window.CourseExam?.onChange) {
+            window.CourseExam.onChange(() => {
+                if (view.tab === 'exam' || view.tab === 'board') refreshBoardOnly();
+            });
+        }
         render();
     }
 

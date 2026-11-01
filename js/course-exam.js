@@ -183,6 +183,37 @@
     };
   }
 
+  /** 公開成績板：某課程所有已考人員（不含作答內容；隱藏特定姓名） */
+  function boardOf(course) {
+    if (!overview) return { loaded: false, error: null, items: [], total: 0 };
+    if (overview.error) return { loaded: true, error: overview.error, items: [], total: 0 };
+    const total = Number(overview.totals?.[course]) || data(course)?.questions?.length || 0;
+    const HIDE = new Set(['簡為倢']);
+    const items = [];
+    overview.map.forEach((row) => {
+      if (!row || row.course !== course) return;
+      const name = String(row.name || '').trim();
+      if (!name || HIDE.has(name)) return;
+      items.push({
+        name,
+        passed: !!row.passed,
+        attempts: Number(row.attempts) || 0,
+        best: row.best == null ? null : scoreOf(Number(row.best), Number(row.total) || total),
+        correct: row.best == null ? null : Number(row.best),
+        total: Number(row.total) || total,
+        lastAt: row.lastAt || null,
+        passedAt: row.passedAt || null
+      });
+    });
+    items.sort((a, b) => {
+      const ap = a.passed ? 1 : 0;
+      const bp = b.passed ? 1 : 0;
+      if (bp !== ap) return bp - ap;
+      return (Number(b.best) || -1) - (Number(a.best) || -1) || String(a.name).localeCompare(String(b.name), 'zh-Hant');
+    });
+    return { loaded: true, error: null, items, total };
+  }
+
   /* ---------- 首頁 ---------- */
 
   function renderHome(message) {
@@ -689,6 +720,7 @@
     mount,
     loadOverview,
     statusOf,
+    boardOf,
     has: (course) => !!data(course),
     onChange: (fn) => listeners.add(fn),
     inExam: () => Object.values(exams).some(Boolean)
