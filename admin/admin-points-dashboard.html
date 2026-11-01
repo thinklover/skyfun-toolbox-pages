@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261101-nosec"></script>
+  <script src="../js/admin-points-core.js?v=20261102-cats"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -177,8 +177,22 @@
     .op-pt.is-no { border-color: #fca5a5; background: #fee2e2; color: #b91c1c; }
     .op-pt.is-no:hover { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
     .op-pt-why { display: block; margin-top: 0.15rem; max-width: 8rem; font-size: 0.68rem; color: #b91c1c; white-space: normal; }
-    /* 公會意見表：壓密列高、加寬可用寬度，一次多看幾筆 */
+    /* 公會意見表：壓密列高；列改懶載入＋分頁，避免一次畫幾百列卡死 */
     #tab-opinion .fold-body { padding: 0 0.5rem 0.5rem; }
+    #tab-opinion .op-fold-more {
+      display: block;
+      width: 100%;
+      margin: 0.45rem 0 0.15rem;
+      padding: 0.45rem 0.75rem;
+      border: 1.5px dashed #a5b4fc;
+      border-radius: 0.65rem;
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    #tab-opinion .op-fold-more:hover { background: #e0e7ff; }
+    #tab-opinion .op-fold-hint { margin: 0.35rem 0 0; font-size: 0.75rem; font-weight: 700; color: #64748b; }
     #tab-opinion table { font-size: 0.78rem; }
     #tab-opinion th, #tab-opinion td { padding: 0.22rem 0.28rem; vertical-align: top; }
     #tab-opinion td { white-space: normal; }
@@ -4164,7 +4178,8 @@
 
       /* ---------- 公會意見：全部期間的案件／清冊意見，依期數／縣市／行政／組別分類 ---------- */
 
-      const op = { loaded: false, busy: false, all: [], kind: 'all' };
+      const op = { loaded: false, busy: false, all: [], kind: 'all', foldLists: [], foldShown: {}, guildOpts: null };
+      const OP_PAGE = 40; /* 每個分類區塊一次最多渲染筆數，展開／載入更多才往下加 */
       const OP_KIND = { case: '案件意見', roster: '清冊意見' };
       const OP_GROUP = {
         guild: { label: '公會期數', key: (o) => o.guildPeriod || '未填期數', sort: (a, b) => b.localeCompare(a) },
@@ -4184,17 +4199,19 @@
         return i < 0 ? 99 : i;
       };
       const opGuildOptions = () => {
+        if (op.guildOpts) return op.guildOpts;
         const now = new Date();
         const set = new Set(op.all.map((o) => o.guildPeriod).filter(Boolean));
         for (let i = 0; i < 18; i++) {
           const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
           set.add(`${d.getFullYear() - 1911}/${String(d.getMonth() + 1).padStart(2, '0')}`);
         }
-        return [...set].sort((a, b) => b.localeCompare(a));
+        op.guildOpts = [...set].sort((a, b) => b.localeCompare(a));
+        return op.guildOpts;
       };
       const opGuildSelect = (o) => {
         const cur = o.guildPeriod || '';
-        const opts = opGuildOptions();
+        const opts = opGuildOptions().slice();
         if (cur && !opts.includes(cur)) opts.unshift(cur);
         return `<select class="op-guild" data-op-guild="${o.id}" aria-label="公會期數">${opts.map((p) => `<option${p === cur ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>`;
       };
