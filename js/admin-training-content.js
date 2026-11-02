@@ -44,8 +44,8 @@ window.AdminTrainingContent = {
       { title: '⑨ 業者公證費申請', items: ['新北、台北、宜蘭、基隆：檢附公證費收據影本', '其他區域：檢附表單 3＋公證費收據影本', '高雄：約定直撥退稅申請書需擺放在契約書最前面'] }
     ],
     links: [
-      { label: '✅ 代管複審檢核表（1151101版，Word）', url: './docs/training/代管複審檢核表.docx' },
-      { label: '✅ 包租複審檢核表（1151101版，Word）', url: './docs/training/包租複審檢核表.docx' },
+      { label: '✅ 代管複審檢核表（1151101版，PDF）', url: './docs/forms/複審檢核表/代管複審檢核表.pdf' },
+      { label: '✅ 包租複審檢核表（1151101版，PDF）', url: './docs/forms/複審檢核表/包租複審檢核表.pdf' },
       { label: '📄 文件檢附確認清單（Word 檔，可下載列印）', url: './docs/training/文件檢附確認清單_Word版V2.docx' }
     ]
   },
