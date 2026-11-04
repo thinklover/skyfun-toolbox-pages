@@ -141,16 +141,19 @@
   function sheetTotals(start, end) {
     return SHEET_TOTALS[`${start}|${end}`] || null;
   }
-  const TENANT_TO_EFFECTIVE = /^(財調中|未財調|已退件|人工審核) → 已生效$/;
+  /** 房客首次放行（不含停用後再審的「人工審核 → 已生效」） */
+  const TENANT_TO_EFFECTIVE = /^(財調中|未財調|已退件) → 已生效$/;
   /** 系統停用後再核准到已生效（物件／房客）也認列點數 */
   const DISABLED_TO_EFFECTIVE = /^(系統停用|已停用|停用) → 已生效$/;
   const PERIOD_4 = new Set(['04', '41']);
   const PERIOD_5 = new Set(['05']);
   /** 審核時間紀錄變成系統停用／已停用／停用 → 之後重新審件可再認列 */
   const TO_DISABLED = /→\s*(系統停用|已停用|停用)\s*$/;
+  /** 駁回後重送／再放行：審核軌常只有「→ 已駁回」，停用本身不一定進審核時間紀錄 */
+  const TO_REJECTED = /→\s*已駁回\s*$/;
   const GROUPS_BY_TYPE = {
     object: ['obj', 'obj_re'],
-    tenant: ['tenant'],
+    tenant: ['tenant', 'tenant_re'],
     contract: ['pre', 'rev', 'lvr', 'prod', 'prod_re']
   };
 
@@ -174,9 +177,13 @@
       return { item: null };
     }
     if (row.type === 'tenant') {
-      return TENANT_TO_EFFECTIVE.test(status) || DISABLED_TO_EFFECTIVE.test(status)
-        ? { item: 'tenant', group: 'tenant' }
-        : { item: null };
+      // 一般房客審
+      if (TENANT_TO_EFFECTIVE.test(status)) return { item: 'tenant', group: 'tenant' };
+      // 停用後再審：人工審核 → 已生效／停用 → 已生效（與首次分開去重，同預審／複審停用後可再計點）
+      if (status === '人工審核 → 已生效' || DISABLED_TO_EFFECTIVE.test(status)) {
+        return { item: 'tenant', group: 'tenant_re' };
+      }
+      return { item: null };
     }
     if (row.type !== 'contract') return { item: null };
     if (status === '預審中 → 預審通過') return { item: 'pre', group: 'pre' };
@@ -214,10 +221,14 @@
     return keys;
   }
 
-  /** 該筆若為「變成停用」，回傳要從去重集合清掉的鍵（讓後續重新審件可再計點） */
+  /**
+   * 該筆若為「變成停用」或「已駁回」，回傳要從去重集合清掉的鍵（讓後續重新審件可再計點）。
+   * 實務上物件／房客停用常只寫在變更記錄「資料狀態變更」，審核時間紀錄看不到 → 停用，
+   * 但重送前多半會有 → 已駁回；兩者都清，避免第二次已生效被去重吃掉。
+   */
   function disableResetKeys(row) {
     const status = String(row.status || '').replace(/\s+/g, ' ').trim();
-    if (!TO_DISABLED.test(status)) return [];
+    if (!TO_DISABLED.test(status) && !TO_REJECTED.test(status)) return [];
     const groups = GROUPS_BY_TYPE[row.type] || [];
     const keys = [];
     for (const g of groups) keys.push(...caseKeys(row, g));
@@ -370,8 +381,44 @@
       expenses: o.expenses || [],
       terminations: o.terminations || [],
       disableCredits: o.disableCredits || [],
-      disableSuppressIds: Array.isArray(o.disableSuppressIds) ? o.disableSuppressIds : []
+      disableSuppressIds: Array.isArray(o.disableSuppressIds) ? o.disableSuppressIds : [],
+      lvrBackfill: o.lvrBackfill || []
     });
+  }
+
+  /**
+   * 把 GET /admin-points/lvr-backfill 的 credits 轉成 compute 用列。
+   * 每筆：合約 id、登錄人、登錄時間（月份依登錄日）。
+   */
+  function lvrBackfillRows(payload) {
+    const credits = Array.isArray(payload?.credits) ? payload.credits : Array.isArray(payload) ? payload : [];
+    return credits
+      .map((c) => {
+        const id = String(c.id ?? c.targetId ?? '').trim();
+        const auditor = String(c.editor || c.auditor || '').trim();
+        const time = String(c.editTime || c.time || '').trim();
+        const date = String(time).slice(0, 10).replace(/\//g, '-');
+        const west = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        const roc = String(time).match(/^(\d{2,3})\/(\d{1,2})\/(\d{1,2})/);
+        let iso = west ? date : '';
+        if (!iso && roc) {
+          iso = `${Number(roc[1]) + 1911}-${String(roc[2]).padStart(2, '0')}-${String(roc[3]).padStart(2, '0')}`;
+        }
+        if (!id || !auditor || !iso) return null;
+        return {
+          id,
+          targetId: id,
+          no: String(c.matchNo || c.no || ''),
+          name: String(c.address || c.name || ''),
+          auditor,
+          time,
+          date: iso,
+          type: 'contract',
+          status: '實登補點（合約頁儲存）',
+          action: '實登'
+        };
+      })
+      .filter(Boolean);
   }
 
   /**
@@ -417,8 +464,11 @@
       const c = classify(r);
       if (!c.group) continue;
       const keys = caseKeys(r, c.group);
-      const dup = keys.some((k) => seen.has(k));
-      keys.forEach((k) => seen.add(k));
+      // 停用／駁回後再放行（*_re）：審核軌不一定有 → 停用可清鍵（如明德街多次人工審核→已生效），
+      // 故 *_re 不跨筆去重，每次放行都計點；首次送審（obj／tenant／prod 等）仍去重。
+      const isReRelease = /_re$/.test(c.group);
+      const dup = !isReRelease && keys.some((k) => seen.has(k));
+      if (!isReRelease) keys.forEach((k) => seen.add(k));
       if (dup) {
         duplicates.push({ ...r, item: c.item });
         continue;
@@ -481,6 +531,34 @@
         type: 'contract',
         targetId: r.id,
         status: '同租期停用後重新審核'
+      });
+    }
+
+    /**
+     * 實登補點：合約頁登實登不會進 QueryAuditTimeLog。
+     * 每份合約只算 1 點給登錄人；若 audit 已有「已生效→已生效」認列過同合約 id 則不重複。
+     */
+    const lvrCreditedIds = new Set(
+      scored.filter((r) => r.item === 'lvr').map((r) => String(r.targetId ?? r.id ?? '').trim()).filter(Boolean)
+    );
+    const lvrBackfill = dropExcludedRows(opts.lvrBackfill, excluded)
+      .filter((r) => r.date >= start && r.date <= end && r.auditor)
+      .slice()
+      .sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : String(a.id).localeCompare(String(b.id))));
+    const seenLvrBf = new Set();
+    for (const r of lvrBackfill) {
+      const id = String(r.targetId ?? r.id ?? '').trim();
+      if (!id || lvrCreditedIds.has(id) || seenLvrBf.has(id)) continue;
+      seenLvrBf.add(id);
+      if (skipResigned(r.auditor)) continue;
+      lvrCreditedIds.add(id);
+      scored.push({
+        ...r,
+        item: 'lvr',
+        points: itemPoints('lvr', r.date),
+        type: 'contract',
+        targetId: id,
+        status: r.status || '實登補點（合約頁儲存）'
       });
     }
 
@@ -2141,6 +2219,7 @@
     stripExcluded,
     dropExcludedRows,
     disableCreditOpts,
+    lvrBackfillRows,
     computePoints,
     compute,
     isoDate

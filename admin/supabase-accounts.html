@@ -28,6 +28,13 @@
     .qa-double-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: #334155; margin-top: 0.2rem; white-space: nowrap; }
     .qa-double-toggle input { width: auto; }
     .team-cell select { font-size: 0.75rem; padding: 0.35rem 0.45rem; margin-bottom: 0.25rem; }
+    .job-cell { min-width: 6.5rem; max-width: 9rem; }
+    .job-cell input {
+      width: 100%; font-size: 0.75rem; padding: 0.3rem 0.4rem; border: 1px solid #cbd5e1;
+      border-radius: 0.4rem; background: #fff; margin-bottom: 0.25rem;
+    }
+    .job-cell input:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2); }
+    .job-empty { color: #94a3b8; font-size: 0.78rem; }
     .row-missing td { background: #fffbeb; }
     .team-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); gap: 0.3rem; }
     .team-stat {
@@ -98,15 +105,17 @@
     .fold > summary .fold-sub { font-size: 0.72rem; font-weight: 600; color: #64748b; }
     .fold-body { padding: 0.75rem 0.9rem 0.95rem; border-top: 1px solid #e2e8f0; }
     .toolbar {
-      position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: end; gap: 0.55rem 0.75rem;
+      position: sticky; top: 0; z-index: 20; display: flex; flex-direction: column; gap: 0.55rem;
       padding: 0.75rem 0.85rem; margin: 0 -0.15rem; border: 1px solid #e2e8f0; border-radius: 0.85rem;
       background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
     }
-    .toolbar .field { min-width: 9.5rem; }
-    .toolbar .field-grow { flex: 1 1 14rem; min-width: 12rem; max-width: 22rem; }
+    .toolbar-row { display: flex; flex-wrap: wrap; align-items: end; gap: 0.55rem 0.75rem; }
+    .toolbar .field { min-width: 8.5rem; }
+    .toolbar .field-grow { flex: 1 1 14rem; min-width: 12rem; max-width: 28rem; }
     .toolbar label.field-l { display: block; font-size: 0.68rem; font-weight: 800; color: #64748b; margin-bottom: 0.25rem; }
-    .toolbar .checks { display: flex; flex-wrap: wrap; gap: 0.55rem 0.85rem; align-items: center; padding-bottom: 0.2rem; }
+    .toolbar .checks { display: flex; flex-wrap: wrap; gap: 0.55rem 0.85rem; align-items: center; padding-bottom: 0.15rem; }
     .toolbar .checks label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 700; color: #475569; }
+    .toolbar .sync-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem 0.75rem; margin-left: auto; }
     .table-shell { border: 1px solid #e2e8f0; border-radius: 0.85rem; overflow: auto; background: #fff; max-height: min(70vh, 52rem); }
     .table-shell table { margin: 0; }
     .table-shell thead th {
@@ -316,32 +325,42 @@
         <span class="count-pill" id="count">—</span>
       </div>
       <div class="toolbar" id="account-toolbar">
-        <div class="field">
-          <label class="field-l" for="filter">狀態</label>
-          <select id="filter">
-            <option value="active" selected>已核准</option>
-            <option value="">全部</option>
-            <option value="pending">待核准</option>
-            <option value="rejected">已拒絕</option>
-            <option value="disabled">已停用</option>
-          </select>
+        <div class="toolbar-row">
+          <div class="field">
+            <label class="field-l" for="filter">狀態</label>
+            <select id="filter">
+              <option value="active" selected>已核准</option>
+              <option value="">全部</option>
+              <option value="pending">待核准</option>
+              <option value="rejected">已拒絕</option>
+              <option value="disabled">已停用</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-l" for="filter-login">登入</label>
+            <select id="filter-login">
+              <option value="">全部</option>
+              <option value="online">僅線上</option>
+              <option value="abnormal">僅異常</option>
+              <option value="session">仍有憑證</option>
+            </select>
+          </div>
+          <div class="field field-grow">
+            <label class="field-l" for="search">搜尋</label>
+            <input type="search" id="search" placeholder="帳號／姓名／處別／職稱" autocomplete="off" />
+          </div>
         </div>
-        <div class="field">
-          <label class="field-l" for="filter-login">登入</label>
-          <select id="filter-login">
-            <option value="">全部</option>
-            <option value="online">僅線上</option>
-            <option value="abnormal">僅異常</option>
-            <option value="session">仍有憑證</option>
-          </select>
-        </div>
-        <div class="field field-grow">
-          <label class="field-l" for="search">搜尋</label>
-          <input type="search" id="search" placeholder="帳號／姓名／處別" autocomplete="off" />
-        </div>
-        <div class="checks">
-          <label><input type="checkbox" id="filter-missing-team" class="w-auto" />缺處別</label>
-          <label><input type="checkbox" id="filter-line-unbound" class="w-auto" />未綁 LINE</label>
+        <div class="toolbar-row">
+          <div class="checks">
+            <label><input type="checkbox" id="filter-missing-team" class="w-auto" />缺處別</label>
+            <label><input type="checkbox" id="filter-line-unbound" class="w-auto" />未綁 LINE</label>
+          </div>
+          <div class="sync-actions">
+            <div class="checks">
+              <label><input type="checkbox" id="sync-overwrite" class="w-auto" />同步時覆蓋已有職稱</label>
+            </div>
+            <button type="button" class="act-btn act-save" id="btn-sync-titles" title="用姓名／帳號向公司系統人事查職稱並寫回">同步公司系統職稱</button>
+          </div>
         </div>
       </div>
       <p id="msg" class="msg-line"></p>
@@ -351,6 +370,7 @@
             <tr>
               <th>姓名／帳號</th>
               <th>處別</th>
+              <th>職稱</th>
               <th>狀態</th>
               <th>登入</th>
               <th>操作</th>
@@ -771,6 +791,14 @@
         return `<div class="line-cell">${status}${forceTag}${btn}</div>`;
       }
 
+      function jobTitleCellHtml(u) {
+        const title = String(u.jobTitle || '').trim();
+        return `<div class="job-cell">
+          <input type="text" maxlength="40" data-job-for="${u.id}" value="${esc(title)}" placeholder="未填職稱" aria-label="職稱" />
+          <button type="button" class="act-btn act-save" data-act="save-job" data-id="${u.id}">儲存</button>
+        </div>`;
+      }
+
       function detailHtml(u) {
         return `<div class="detail-grid">
           <div class="detail-block">
@@ -779,6 +807,11 @@
               ${teamSelectHtml(u.id, u.team || '')}
               <button type="button" class="act-btn act-save" data-act="save-team" data-id="${u.id}">儲存處別</button>
             </div>
+          </div>
+          <div class="detail-block">
+            <h4>職稱</h4>
+            ${jobTitleCellHtml(u)}
+            <p class="cell-sub mt-1">可手動改；也可按上方「同步公司系統職稱」批次帶入。</p>
           </div>
           <div class="detail-block">
             <h4>QA 權限</h4>
@@ -820,7 +853,7 @@
         else if (loginFilter === 'session') list = list.filter((u) => u.hasSession);
         const q = document.getElementById('search').value.trim().toLowerCase();
         if (q) {
-          list = list.filter((u) => [u.username, u.name, u.team, u.lineName].some((v) => String(v || '').toLowerCase().includes(q)));
+          list = list.filter((u) => [u.username, u.name, u.team, u.jobTitle, u.lineName].some((v) => String(v || '').toLowerCase().includes(q)));
         }
         const suffix = [
           missingOnly ? '缺處別' : '',
@@ -854,6 +887,7 @@
           }
           acts.push(`<button type="button" class="act-btn act-ghost" data-act="toggle-detail" data-id="${u.id}">${open ? '收合' : '細節'}</button>`);
           acts.push(`<button type="button" class="act-btn act-danger" data-act="delete" data-id="${u.id}" data-user="${esc(u.username)}" data-name="${esc(u.name)}">刪除</button>`);
+          const job = String(u.jobTitle || '').trim();
           return `<tr class="row-main ${missing ? 'row-missing' : ''}${teamHit ? ' row-team-highlight' : ''}${abnormal ? ' row-abnormal' : ''}" data-row-id="${esc(u.id)}">
             <td>
               <div class="cell-main">${esc(u.name) || '—'}${missing ? '<span class="badge-missing">缺處別</span>' : ''}${u.adminQaDoublePoints ? '<span class="badge-double">✓ 雙倍</span>' : ''}${!u.lineBound && u.status === 'active' ? '<span class="badge-missing">未綁 LINE</span>' : ''}</div>
@@ -861,12 +895,13 @@
               <div class="expand-hint">${open ? '細節已展開' : '點列展開細節'}</div>
             </td>
             <td>${esc(u.team) || '<span class="text-amber-700 font-bold">未填</span>'}</td>
+            <td>${job ? esc(job) : '<span class="job-empty">未填</span>'}</td>
             <td>${badge(u.status)}</td>
             <td>${loginBadge(u)}</td>
             <td>${acts.join('') || '—'}</td>
           </tr>
           <tr class="row-detail" data-detail-for="${esc(u.id)}"${open ? '' : ' hidden'}>
-            <td colspan="5">${detailHtml(u)}</td>
+            <td colspan="6">${detailHtml(u)}</td>
           </tr>`;
         }).join('');
       }
@@ -946,6 +981,79 @@
         await saveTeamValue(id, team);
         document.getElementById('msg').textContent = '已更新處別：' + team;
         await loadList();
+      }
+
+      async function saveJobTitle(id) {
+        const input = document.querySelector(`input[data-job-for="${id}"]`);
+        const jobTitle = String(input?.value || '').trim();
+        const data = await rpc('toolbox_admin_set_job_title', {
+          p_secret: secret,
+          p_user_id: id,
+          p_job_title: jobTitle
+        });
+        if (!data?.ok) throw new Error(data?.error || '職稱儲存失敗');
+        document.getElementById('msg').textContent = jobTitle ? ('已更新職稱：' + jobTitle) : '已清空職稱';
+        await loadList();
+      }
+
+      async function syncJobTitlesFromCompany() {
+        const btn = document.getElementById('btn-sync-titles');
+        const overwrite = !!document.getElementById('sync-overwrite')?.checked;
+        const pool = allUsers.length ? allUsers : statsUsers;
+        const targets = pool.filter((u) => u && u.id && (overwrite || !String(u.jobTitle || '').trim()));
+        if (!targets.length) {
+          document.getElementById('msg').textContent = overwrite
+            ? '沒有可同步的帳號'
+            : '目前職稱都已填過；若要重抓請勾「同步時覆蓋已有職稱」';
+          return;
+        }
+        if (btn) btn.disabled = true;
+        document.getElementById('msg').textContent = `正在向公司系統查職稱（${targets.length} 人）…`;
+        try {
+          const base = String(window.SKYFUN_RPA_BASE || 'https://skyfun-arrears-rpa.dahwork123.workers.dev').replace(/\/$/, '');
+          const res = await fetch(base + '/api/toolbox/account-titles', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Skyfun-Caller': 'skyfun-toolbox-accounts'
+            },
+            body: JSON.stringify({
+              people: targets.map((u) => ({ id: u.id, name: u.name, username: u.username }))
+            })
+          });
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok || !payload?.ok) throw new Error(payload?.error || `公司系統查詢失敗（HTTP ${res.status}）`);
+          const byId = new Map((payload.items || []).filter((x) => x && x.id && x.jobTitle).map((x) => [String(x.id), String(x.jobTitle).trim()]));
+          const byName = new Map();
+          for (const x of payload.items || []) {
+            if (!x?.jobTitle) continue;
+            const n = String(x.name || '').trim();
+            if (n && !byName.has(n)) byName.set(n, String(x.jobTitle).trim());
+          }
+          const items = [];
+          for (const u of targets) {
+            const title = byId.get(String(u.id)) || byName.get(String(u.name || '').trim()) || '';
+            if (title) items.push({ id: u.id, jobTitle: title });
+          }
+          if (!items.length) {
+            document.getElementById('msg').textContent =
+              `公司系統有回應，但對不到職稱（查了 ${payload.total || targets.length} 人、有職稱 ${payload.found || 0}）。請確認帳號／姓名與公司系統一致，或改手動填。`;
+            return;
+          }
+          const synced = await rpc('toolbox_admin_sync_job_titles', {
+            p_secret: secret,
+            p_items: items,
+            p_overwrite: overwrite
+          });
+          if (!synced?.ok) throw new Error(synced?.error || '寫入職稱失敗');
+          document.getElementById('msg').textContent =
+            `職稱同步完成：更新 ${synced.updated || 0}、略過 ${synced.skipped || 0}、無對應 ${synced.missing || 0}` +
+            `（對上公司系統 ${payload.found || 0}/${payload.total || 0}；職稱取自人事「職稱」下拉）` +
+            (overwrite ? '' : '。若先前同步錯了，請勾「同步時覆蓋已有職稱」再跑一次');
+          await loadList();
+        } finally {
+          if (btn) btn.disabled = false;
+        }
       }
 
       async function approvePending(id, requireTeam) {
@@ -1094,6 +1202,15 @@
         }
       });
 
+      document.getElementById('btn-sync-titles')?.addEventListener('click', () => {
+        syncJobTitlesFromCompany().catch((e) => {
+          const raw = e?.message || String(e);
+          document.getElementById('msg').textContent =
+            /failed to fetch|networkerror|load failed/i.test(raw)
+              ? '無法連上職稱同步服務（網路或 CORS）。請重新整理後再試；若仍失敗請回報工程。'
+              : raw;
+        });
+      });
       document.getElementById('btn-refresh').addEventListener('click', () => loadList().catch((e) => {
         document.getElementById('msg').textContent = e.message;
       }));
@@ -1169,6 +1286,10 @@
           }
           if (btn.dataset.act === 'save-team') {
             saveTeam(id).catch((err) => { msgEl.textContent = err.message; });
+            return;
+          }
+          if (btn.dataset.act === 'save-job') {
+            saveJobTitle(id).catch((err) => { msgEl.textContent = err.message; });
             return;
           }
           if (btn.dataset.act === 'delete') {
