@@ -51,14 +51,13 @@
       title: '星財補獎金辦法｜精簡版',
       html: `
         <ul class="pdg-sum-list">
-          <li>須完成教育訓練並通過結訓考；通過信任租並填寫報名表才可參加。</li>
-          <li>每日依規定進公司簽到討論行程；一週內合約考試須達 80 分。</li>
-          <li>財補件數只認<strong>純新媒合</strong>（不含一般宅、電服、爬蟲件）。</li>
-          <li>第 2～7 個月有件數門檻與財補金額；未達標經核准次月可補差額件數（獎金不另補發）。</li>
-          <li>違規、掛件、假件取消資格並追回；離職後競業與返還規定以完整檔為準。</li>
+          <li><strong>看錢：</strong>第 2～5 月各達 3 件 → 各 <strong>1.5 萬元</strong>；第 6～7 月各達 4 件 → 各 <strong>1.5 萬元</strong>（第 1 月 0 元）。</li>
+          <li>只認<strong>純新媒合</strong>（不含一般宅、電服、爬蟲件）。</li>
+          <li>須結訓考＋信任租＋報名表；一週內合約考 80 分；每日簽到。</li>
+          <li>未達標經核准次月補差額件數才得領次月補助（獎金不另補發）。</li>
         </ul>
-        <p class="pdg-sum-more">更完整的表格與試算，請至新人專區「財補專區」。</p>
-        <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="newbie-subsidy">前往財補專區 →</button></p>`
+        <p class="pdg-sum-more">業務專區有完整金額表與知悉打勾。</p>
+        <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="business-bonus">前往業務獎金辦法 →</button></p>`
     },
     {
       test: /行政管理部獎金|績效點數與獎金/,
@@ -85,7 +84,7 @@
         <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="rentmanager-crossarea-bonus">前往租管獎金辦法 →</button></p>`
     },
     {
-      test: /營業處主管獎金|特定地區高專業務獎金|儲備處經理|業務區協理管理津貼|審件補貼|請款流程/,
+      test: /營業處主管獎金|儲備處經理|業務區協理管理津貼|審件補貼|請款流程/,
       title: '主管相關辦法｜精簡版',
       html: `
         <ul class="pdg-sum-list">
@@ -96,13 +95,67 @@
         <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="manager-bonus">前往主管獎金專區 →</button></p>`
     },
     {
-      test: /高專.*獎金|高專點|激勵方案/,
+      test: /特定地區高專/,
+      title: '特定地區高專獎金｜精簡版',
+      html: `
+        <ul class="pdg-sum-list">
+          <li>適用：嘉義／彰化／南投／基隆／宜蘭營業處之該區案件。</li>
+          <li><strong>看錢：</strong>新媒合媒合費 <strong>75%</strong>（先扣稅 5%）；再媒合／續約 <strong>30%</strong>。</li>
+          <li>例：媒合費 13,000 → 扣 5% 後 ×75%＝<strong>9,262 元</strong>。「滿 5 件再＋5%」不適用。</li>
+        </ul>
+        <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="business-bonus">前往業務獎金辦法 →</button></p>`
+    },
+    {
+      test: /第9至第11|第 9 至第 11|激勵方案/,
+      title: '高專激勵方案｜精簡版',
+      html: `
+        <ul class="pdg-sum-list">
+          <li>第 9～11 業績月：單月「續轉包」件數分段計獎。</li>
+          <li><strong>看錢：</strong>第 1～2 件各 <strong>1,000</strong>；第 3～4 件各 <strong>1,500</strong>；第 5 件起各 <strong>2,000</strong> 元。</li>
+          <li>例：6 件＝9,000 元；10 件＝17,000 元。</li>
+        </ul>
+        <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="business-bonus">前往業務獎金辦法 →</button></p>`
+    },
+    {
+      test: /高專點獎金|點數獎金/,
+      title: '高專點獎金｜精簡版',
+      html: `
+        <ul class="pdg-sum-list">
+          <li><strong>看錢：1 點＝600 元</strong>（例：直接媒合包租 5 點＝3,000 元）。</li>
+          <li>直接媒合：代管 3 點／包租 5 點；續約 3 點；代管轉包租 5 點；修繕 1 點。</li>
+          <li>間接／再媒合另有媒合費 30% 或 40%（詳見業務專區表）。</li>
+        </ul>
+        <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="business-bonus">前往業務獎金辦法 →</button></p>`
+    },
+    {
+      test: /高專業務獎金|高專業務獎金制度/,
+      title: '高專業務獎金制度｜精簡版',
+      html: `
+        <ul class="pdg-sum-list">
+          <li><strong>媒合費：</strong>新媒合 <strong>50%</strong>（當月達 5 件每件 <strong>55%</strong>）；再媒合／續約 <strong>30%</strong>。</li>
+          <li><strong>代管費基本：</strong>副理 15%／經理 20%／協理 20%；續約率 80%、包租率 55% 可各＋5%。</li>
+          <li>季考核達 18P → 代管費 100%；未達 → 80%。登錄租管證次月即可領代管費。</li>
+        </ul>
+        <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="business-bonus">前往業務獎金辦法 →</button></p>`
+    },
+    {
+      test: /婚育家庭/,
+      title: '婚育家庭獎金｜精簡版',
+      html: `
+        <ul class="pdg-sum-list">
+          <li>營業處競賽；單月婚育案 ≥5 件才進入排名。</li>
+          <li><strong>看錢：</strong>第 1 名 <strong>8,000</strong>／第 2 名 <strong>5,000</strong>／第 3 名 <strong>3,000</strong> 元。</li>
+        </ul>
+        <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="business-bonus">前往業務獎金辦法 →</button></p>`
+    },
+    {
+      test: /高專.*獎金|高專點/,
       title: '高專／激勵相關｜精簡版',
       html: `
         <ul class="pdg-sum-list">
-          <li>高專獎金制度、點獎金、業績月激勵方案等，完整比例與適用期間以公告原檔為準。</li>
-          <li>一般同仁可先掌握：適用對象、生效業績月、主要級距／加給條件；細項請處長解鎖完整檔。</li>
-        </ul>`
+          <li>高專相關獎金請至業務專區查看<strong>含金額／比例</strong>的精簡版，並打勾知悉。</li>
+        </ul>
+        <p><button type="button" class="pdg-btn pdg-btn--soft" data-pdg-page="business-bonus">前往業務獎金辦法 →</button></p>`
     },
     {
       test: /金牌講師|全年度競賽/,

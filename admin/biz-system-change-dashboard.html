@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>系統欄位更改通報後台 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
+  <style>
+    table { font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; vertical-align: top; }
+    .badge { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 800; }
+    .b-pending { background: #fef3c7; color: #92400e; }
+    .b-done { background: #d1fae5; color: #065f46; }
+    .b-rejected { background: #fee2e2; color: #b91c1c; }
+    .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.65rem; padding: 0.6rem 0.75rem; cursor: pointer; }
+    .stat.is-active { border-color: #7c3aed; box-shadow: 0 0 0 1px #7c3aed inset; }
+    .stat b { display: block; font-size: 1.35rem; color: #4c1d95; line-height: 1.2; }
+    .stat span { font-size: 0.75rem; color: #64748b; }
+    .atts a { color: #6d28d9; text-decoration: underline; margin-right: 0.4rem; font-size: 0.78rem; }
+    .atts img { width: 56px; height: 56px; object-fit: cover; border-radius: 0.4rem; border: 1px solid #e2e8f0; margin: 0.15rem 0.25rem 0 0; }
+    .note-input { width: 100%; min-width: 10rem; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 0.45rem; padding: 0.35rem 0.45rem; }
+    .act { font-size: 0.78rem; padding: 0.3rem 0.65rem; border-radius: 0.45rem; font-weight: 800; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
+    .act-done { background: #059669; border-color: #059669; color: #fff; }
+    .act-rej { background: #dc2626; border-color: #dc2626; color: #fff; }
+    .act-del { background: #fff; border-color: #fca5a5; color: #b91c1c; }
+    .body { white-space: pre-wrap; word-break: break-word; max-width: 22rem; }
+    .node-tag { display: inline-block; margin: 0.1rem 0.2rem 0.1rem 0; padding: 0.1rem 0.45rem; border-radius: 999px; background: #ede9fe; color: #5b21b6; font-size: 0.72rem; font-weight: 800; }
+    .lv { display: inline-block; margin-top: 0.25rem; font-size: 0.7rem; font-weight: 800; padding: 0.1rem 0.45rem; border-radius: 999px; }
+    .lv-manager { background: #ede9fe; color: #5b21b6; }
+    .lv-admin { background: #ffedd5; color: #9a3412; }
+    .lv-super { background: #fee2e2; color: #b91c1c; }
+  </style>
+</head>
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+  <header>
+    <div class="topbar">
+      <h1>系統欄位更改通報後台</h1>
+      <a class="back" href="../index.html">← 回工具箱</a>
+    </div>
+    <p class="lead">層級：業務 → 營業處經理 → 行政 → 管理員。預設租金／押金月份／押金金額等請由管理員處理。</p>
+  </header>
+
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">總管密碼</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="總管密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm err hidden"></p>
+  </section>
+
+  <section class="hidden space-y-4" id="main-panel">
+    <div class="flex flex-wrap gap-2" id="stats"></div>
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <input type="search" id="search" placeholder="搜尋地址／媒合編號／填寫人／修改人／內容" class="max-w-md" autocomplete="off" />
+        <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+      </div>
+      <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
+      <div class="overflow-auto border border-slate-200 rounded-xl bg-white">
+        <table>
+          <thead>
+            <tr>
+              <th>時間</th>
+              <th>填寫人</th>
+              <th>處長／層級</th>
+              <th>地址</th>
+              <th>媒合編號</th>
+              <th>節點</th>
+              <th>修改內容</th>
+              <th>附件</th>
+              <th>狀態</th>
+              <th>處理</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-biz-system-change-admin';
+      let client = null;
+      let secret = '';
+      let allRows = [];
+      let statusFilter = '';
+      const LABEL = { pending: '處理中', done: '已完成', rejected: '已退回' };
+      const LEVEL = { manager: '待處長', admin: '待行政', super: '待管理員' };
+
+      function cfg() {
+        const c = window.SKYFUN_SUPABASE || {};
+        return { url: String(c.url || '').trim(), anonKey: String(c.anonKey || '').trim() };
+      }
+      function sb() {
+        if (client) return client;
+        const { url, anonKey } = cfg();
+        client = window.supabase.createClient(url, anonKey);
+        return client;
+      }
+      async function rpc(name, args) {
+        const { data, error } = await sb().rpc(name, args);
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        return data;
+      }
+      function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      }
+      function fmt(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('zh-TW'); } catch { return iso; }
+      }
+      function attsHtml(atts) {
+        const list = Array.isArray(atts) ? atts : [];
+        if (!list.length) return '—';
+        return '<div class="atts">' + list.map((a) => {
+          const url = esc(a.url || '');
+          const name = esc(a.name || '附件');
+          if (a.kind === 'image' || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(a.url || '')) {
+            return '<a href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '" alt="' + name + '"></a>';
+          }
+          return '<a href="' + url + '" target="_blank" rel="noopener">📎 ' + name + '</a>';
+        }).join('') + '</div>';
+      }
+
+      function filtered() {
+        let list = allRows.slice();
+        if (statusFilter) list = list.filter((r) => r.status === statusFilter);
+        const q = document.getElementById('search').value.trim().toLowerCase();
+        if (q) {
+          list = list.filter((r) =>
+            [r.address, r.matchNo, r.authorName, r.team, r.modifierName, r.modifierTeam, r.content, r.adminNote]
+              .some((v) => String(v || '').toLowerCase().includes(q))
+          );
+        }
+        return list;
+      }
+
+      function renderStats(counts) {
+        const c = counts || {};
+        const items = [
+          { k: '', label: '全部', n: c.all || 0 },
+          { k: 'pending', label: '處理中', n: c.pending || 0 },
+          { k: 'done', label: '已完成', n: c.done || 0 },
+          { k: 'rejected', label: '已退回', n: c.rejected || 0 }
+        ];
+        document.getElementById('stats').innerHTML = items.map((it) =>
+          '<button type="button" class="stat' + (statusFilter === it.k ? ' is-active' : '') + '" data-st="' + it.k + '"><b>' + it.n + '</b><span>' + it.label + '</span></button>'
+        ).join('');
+      }
+
+      function renderRows() {
+        const list = filtered();
+        document.getElementById('msg').textContent = list.length ? '共 ' + list.length + ' 筆' : '沒有符合的通報';
+        document.getElementById('rows').innerHTML = list.map((r) => {
+          return '<tr data-id="' + r.id + '">' +
+            '<td class="whitespace-nowrap">' + esc(fmt(r.createdAt)) + '</td>' +
+            '<td>' + esc(r.authorName) + '<div class="text-xs text-slate-500">' + esc(r.team || '') + '</div></td>' +
+            '<td>' + esc(r.modifierName || '—') + '<div class="text-xs text-slate-500">' + esc(r.modifierTeam || '') + '</div>' +
+              (r.status === 'pending'
+                ? '<div><span class="lv lv-' + esc(r.handlerLevel || 'manager') + '">' + esc(LEVEL[r.handlerLevel || 'manager'] || r.handlerLevel) +
+                  (r.handlerLevel === 'admin' && r.handlerAdminName ? '｜' + esc(r.handlerAdminName) : '') +
+                  '</span></div>'
+                : '') +
+            '</td>' +
+            '<td>' + esc(r.address) + '</td>' +
+            '<td>' + esc(r.matchNo) + '</td>' +
+            '<td>' + (Array.isArray(r.nodes) && r.nodes.length
+              ? r.nodes.map((n) => '<span class="node-tag">' + esc(n) + '</span>').join('')
+              : '—') + '</td>' +
+            '<td class="body">' + esc(r.content) + '</td>' +
+            '<td>' + attsHtml(r.attachments) + '</td>' +
+            '<td><span class="badge b-' + esc(r.status) + '">' + esc(LABEL[r.status] || r.status) + '</span>' +
+              (r.adminNote ? '<div class="text-xs text-slate-500 mt-1">' + esc(r.adminNote) + '</div>' : '') +
+            '</td>' +
+            '<td class="space-y-1">' +
+              '<input class="note-input" data-note placeholder="處理備註" value="' + esc(r.adminNote || '') + '" />' +
+              '<div class="flex flex-wrap gap-1">' +
+                '<button type="button" class="act act-done" data-act="done">完成</button>' +
+                '<button type="button" class="act act-rej" data-act="rejected">退回</button>' +
+                '<button type="button" class="act" data-act="pending">改回處理中</button>' +
+                '<button type="button" class="act act-del" data-del="1">刪除案件</button>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      async function loadList() {
+        const data = await rpc('biz_system_change_admin_list', { p_secret: secret, p_status: '' });
+        if (!data?.ok) throw new Error(data?.error || '讀取失敗');
+        allRows = data.rows || [];
+        renderStats(data.counts);
+        renderRows();
+      }
+
+      async function updateRow(id, status, note) {
+        const data = await rpc('biz_system_change_admin_update', {
+          p_secret: secret,
+          p_id: id,
+          p_status: status,
+          p_admin_note: note || ''
+        });
+        if (!data?.ok) throw new Error(data?.error || '更新失敗');
+        await loadList();
+      }
+
+      async function deleteRow(id) {
+        const data = await rpc('biz_system_change_admin_delete', {
+          p_secret: secret,
+          p_id: id
+        });
+        if (!data?.ok) throw new Error(data?.error || '刪除失敗');
+        await loadList();
+      }
+
+      document.getElementById('btn-login').addEventListener('click', async () => {
+        secret = document.getElementById('admin-secret').value.trim();
+        const msg = document.getElementById('login-msg');
+        msg.classList.add('hidden');
+        try {
+          await loadList();
+          sessionStorage.setItem(SECRET_KEY, secret);
+          document.getElementById('login-panel').classList.add('hidden');
+          document.getElementById('main-panel').classList.remove('hidden');
+        } catch (e) {
+          msg.textContent = e.message || '連線失敗';
+          msg.classList.remove('hidden');
+        }
+      });
+
+      document.getElementById('btn-refresh').addEventListener('click', () => {
+        loadList().catch((e) => { document.getElementById('msg').textContent = e.message; });
+      });
+      document.getElementById('search').addEventListener('input', renderRows);
+      document.getElementById('stats').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-st]');
+        if (!btn) return;
+        statusFilter = btn.getAttribute('data-st') || '';
+        renderStats({
+          all: allRows.length,
+          pending: allRows.filter((r) => r.status === 'pending').length,
+          done: allRows.filter((r) => r.status === 'done').length,
+          rejected: allRows.filter((r) => r.status === 'rejected').length
+        });
+        renderRows();
+      });
+      document.getElementById('rows').addEventListener('click', async (e) => {
+        const delBtn = e.target.closest('[data-del]');
+        const btn = e.target.closest('[data-act]');
+        if (!delBtn && !btn) return;
+        const tr = (delBtn || btn).closest('tr[data-id]');
+        if (!tr) return;
+        const id = Number(tr.getAttribute('data-id'));
+        try {
+          if (delBtn) {
+            if (!confirm('確定刪除這筆案件？刪除後無法復原。')) return;
+            await deleteRow(id);
+            document.getElementById('msg').textContent = '已刪除案件 #' + id;
+            return;
+          }
+          const note = tr.querySelector('[data-note]')?.value || '';
+          await updateRow(id, btn.getAttribute('data-act'), note);
+        } catch (err) {
+          document.getElementById('msg').textContent = err.message;
+        }
+      });
+
+      const saved = sessionStorage.getItem(SECRET_KEY);
+      if (saved) document.getElementById('admin-secret').value = saved;
+    })();
+  </script>
+</body>
+</html>

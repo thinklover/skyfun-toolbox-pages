@@ -20,6 +20,8 @@
         { file: './docs/lal-howto/', title: '如何寄存證信函', category: '催收解約專區', keywords: '存證 怎麼寄 回執 催告' },
         { page: 'calculator', title: '房東稅務試算表', category: '房東專區', keywords: '稅務 試算' },
         { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 費用' },
+        { page: 'business-system-change', title: '系統欄位更改通報', category: '業務專區', keywords: '系統 欄位 更改 媒合' },
+        { page: 'business-bonus', title: '業務獎金辦法', category: '業務專區', keywords: '獎金 高專 星財補 知悉' },
         { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi' },
         { page: 'rentmanager-perf', title: '租管師績效中心', category: '租管師專區', keywords: 'kpi 各地區 週報' },
         { page: 'care-visit-notice', title: '家訪單產生器', category: '催收解約專區', keywords: '家訪 關懷' },

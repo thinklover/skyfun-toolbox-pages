@@ -4596,15 +4596,17 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261104-lvrmis">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261104-lvrmon">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261101-board">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
 <link rel="stylesheet" href="./css/handover.css?v=20261101-cards">
-<link rel="stylesheet" href="./css/business-zone.css?v=20261101-hub3">
-<link rel="stylesheet" href="./css/policy-doc-gate.css?v=20261103-2">
+<link rel="stylesheet" href="./css/business-zone.css?v=20261104-quick2">
+<link rel="stylesheet" href="./css/policy-doc-gate.css?v=20261104-bb">
+<link rel="stylesheet" href="./css/biz-bonus.css?v=20261105-layout">
 <link rel="stylesheet" href="./css/notice-ack.css?v=20261104-1">
+<link rel="stylesheet" href="./css/biz-system-change.css?v=20261105-search">
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
     <script>
@@ -5147,7 +5149,7 @@
                 <div id="mb-content" class="hidden space-y-4"></div>
             </div>
         </div>
-        <script src="./js/policy-doc-gate.js?v=20261103-2"></script>
+        <script src="./js/policy-doc-gate.js?v=20261104-bb"></script>
         <script src="./js/notice-ack-data.js?v=20261104-1"></script>
         <script src="./js/notice-ack.js?v=20261104-1"></script>
         <script>
@@ -7667,8 +7669,27 @@
                 <header class="bz-head">
                     <div class="bz-kicker">BUSINESS</div>
                     <h2 class="bz-title">💼 業務專區</h2>
-                    <p id="sf591-biz-desc" class="bz-sub">租金水準、公證費、表單、考試與線上表單後台。解約退還金額試算請至首頁「催收解約專區」。</p>
+                    <p id="sf591-biz-desc" class="bz-sub">獎金辦法、租金水準、公證費、表單、考試與線上表單後台。解約退還金額試算請至首頁「催收解約專區」。</p>
                 </header>
+
+                <div class="bz-quick">
+                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--bonus" onclick="showPage('business-bonus')">
+                        <span class="apt-entry-icon" aria-hidden="true">💰</span>
+                        <span class="apt-entry-text">
+                            <strong>業務獎金辦法</strong>
+                            <small>點辦法看各處完成率、誰還沒勾；可預覽檔案並打勾知悉</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
+                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--sys" onclick="showPage('business-system-change')">
+                        <span class="apt-entry-icon" aria-hidden="true">🛠️</span>
+                        <span class="apt-entry-text">
+                            <strong>系統欄位更改通報</strong>
+                            <small>系統資料有誤時通報處經理或行政：地址、媒合編號、節點與內容，可附圖片</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
+                </div>
 
                 <p class="bz-sec">常用工具</p>
                 <div class="bz-tools" role="navigation" aria-label="業務常用工具">
@@ -9696,6 +9717,226 @@
                 ← 返回業務專區
             </button>
             <div id="biz-handover-root"></div>
+        </div>
+
+        <!-- 業務專區：獎金辦法＋知悉儀表板 -->
+        <div id="page-business-bonus" class="hidden max-w-5xl mx-auto space-y-4">
+            <button type="button" onclick="showPage('business')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回業務專區
+            </button>
+            <div class="bb-shell">
+                <div class="bb-kicker">BONUS</div>
+                <h2 class="bb-title">💰 業務獎金辦法</h2>
+                <p class="bb-lead">點辦法卡片可預覽浮水印檔、看各營業處完成率；再點營業處可看誰還沒勾。營業處業務請打勾「已閱畢知悉」。</p>
+                <div id="bb-body"></div>
+            </div>
+        </div>
+
+        <!-- 業務專區：系統欄位更改通報 -->
+        <div id="page-business-system-change" class="hidden max-w-4xl mx-auto space-y-4">
+            <button type="button" onclick="showPage('business')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回業務專區
+            </button>
+            <div class="bsc-card" id="bsc-root">
+                <header class="bsc-hero">
+                    <h2 class="bsc-title">🛠️ 系統欄位更改通報</h2>
+                    <p class="bsc-sub">發現系統資料有誤時，依下方流程提出申請。標示 <span class="bsc-req">*</span> 為必填。</p>
+                </header>
+
+                <section class="bsc-block bsc-block--flow" aria-label="處理流程">
+                    <h3 class="bsc-sec-title">處理流程<small>三個步驟，清楚知道案件現在到哪裡</small></h3>
+                    <ol class="bsc-steps">
+                        <li class="bsc-step">
+                            <span class="bsc-step-num" aria-hidden="true">1</span>
+                            <div class="bsc-step-body">
+                                <strong>提出通報</strong>
+                                <span>業務填寫後，送交營業處經理</span>
+                            </div>
+                        </li>
+                        <li class="bsc-step">
+                            <span class="bsc-step-num" aria-hidden="true">2</span>
+                            <div class="bsc-step-body">
+                                <strong>行政協辦</strong>
+                                <span>處長處理不了時，再指定行政協助</span>
+                            </div>
+                        </li>
+                        <li class="bsc-step">
+                            <span class="bsc-step-num" aria-hidden="true">3</span>
+                            <div class="bsc-step-body">
+                                <strong>進階權限</strong>
+                                <span>行政仍無法處理時，再轉交管理員</span>
+                            </div>
+                        </li>
+                    </ol>
+                    <p class="bsc-guide-note">提醒：預設租金、押金月份、押金金額等欄位需進階權限，請由管理員協助。</p>
+                </section>
+
+                <section class="bsc-block bsc-block--dash" aria-label="案件儀表板">
+                    <h3 class="bsc-sec-title">案件儀表板<small>點卡片查看明細</small></h3>
+                    <div class="bsc-search-bar">
+                        <label class="sr-only" for="bsc-search">搜尋案件</label>
+                        <input id="bsc-search" type="search" enterkeyhint="search" placeholder="快速搜尋：地址／媒合編號／內容／處長…" autocomplete="off" />
+                        <button type="button" class="btn btn-sm tone-slate-soft" id="bsc-search-clear" hidden>清除</button>
+                    </div>
+                    <div class="bsc-gauges" id="bsc-gauges"></div>
+                    <div class="bsc-detail hidden" id="bsc-detail" hidden>
+                        <div class="bsc-detail-head">
+                            <h4 id="bsc-detail-title">明細</h4>
+                            <button type="button" class="btn btn-sm tone-slate-soft" id="bsc-detail-close">收合</button>
+                        </div>
+                        <div id="bsc-detail-list" class="bsc-list"></div>
+                    </div>
+                </section>
+
+                <section class="bsc-block bsc-block--form" aria-label="提出通報">
+                    <h3 class="bsc-sec-title">提出通報<small>填寫後送交營業處經理</small></h3>
+                    <form id="bsc-form" class="bsc-form" autocomplete="off">
+                        <div class="bsc-row2">
+                            <div class="bsc-field">
+                                <label for="bsc-author">填寫人</label>
+                                <input id="bsc-author" name="authorDisplay" type="text" readonly tabindex="-1" placeholder="登入後自動帶入" />
+                            </div>
+                            <div class="bsc-field">
+                                <label for="bsc-modifier">修改人（營業處經理） <span class="bsc-req">*</span></label>
+                                <select id="bsc-modifier" name="modifier" required>
+                                    <option value="">請選擇營業處經理</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bsc-field">
+                            <label for="bsc-address">物件地址 <span class="bsc-req">*</span></label>
+                            <input id="bsc-address" name="address" type="text" maxlength="200" required placeholder="請輸入物件地址" />
+                        </div>
+                        <div class="bsc-field">
+                            <label for="bsc-match">媒合編號 <span class="bsc-req">*</span></label>
+                            <input id="bsc-match" name="matchNo" type="text" maxlength="80" required placeholder="請輸入媒合編號" />
+                        </div>
+                        <div class="bsc-field">
+                            <span class="bsc-label">需修改節點 <span class="bsc-req">*</span></span>
+                            <div class="bsc-nodes" role="group" aria-label="需修改節點">
+                                <label class="bsc-node"><input type="checkbox" name="nodes" value="物件"><span>物件</span></label>
+                                <label class="bsc-node"><input type="checkbox" name="nodes" value="安全檢核表"><span>安全檢核表</span></label>
+                                <label class="bsc-node"><input type="checkbox" name="nodes" value="房客"><span>房客</span></label>
+                                <label class="bsc-node"><input type="checkbox" name="nodes" value="合約"><span>合約</span></label>
+                            </div>
+                        </div>
+                        <div class="bsc-field">
+                            <label for="bsc-content">請輸入需修改內容 <span class="bsc-req">*</span></label>
+                            <textarea id="bsc-content" name="content" maxlength="4000" required placeholder="請說明目前系統顯示什麼、應改成什麼"></textarea>
+                        </div>
+                        <div class="bsc-field">
+                            <label for="bsc-files">如有需求上傳圖片再上傳</label>
+                            <div class="bsc-drop">
+                                <input id="bsc-files" type="file" accept="image/*,.pdf,application/pdf" multiple />
+                                <p class="bsc-hint">最多 5 個檔案，每個上限 10MB（圖片或 PDF）</p>
+                                <div id="bsc-file-list" class="bsc-files"></div>
+                            </div>
+                        </div>
+                        <div class="bsc-actions">
+                            <button type="button" class="btn btn-sm tone-slate-soft" onclick="showPage('business')">返回</button>
+                            <button type="submit" class="btn-main" id="bsc-submit">提交</button>
+                            <button type="button" class="btn btn-sm tone-slate-soft" id="bsc-clear">清除表單</button>
+                        </div>
+                        <p id="bsc-msg" class="bsc-msg" role="status" aria-live="polite"></p>
+                    </form>
+                </section>
+
+                <p class="bsc-admin-link"><a href="./admin/biz-system-change-dashboard.html" target="_blank" rel="noopener">管理員：系統欄位更改通報後台 ↗</a></p>
+            </div>
+            <div id="bsc-xfer-modal" class="bsc-modal hidden" hidden>
+                <div class="bsc-modal-backdrop" data-bsc-xfer-close></div>
+                <div class="bsc-modal-panel bsc-xfer-panel" role="dialog" aria-modal="true" aria-labelledby="bsc-xfer-title">
+                    <header class="bsc-modal-head">
+                        <h3 id="bsc-xfer-title">轉交行政協辦</h3>
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-xfer-close>關閉</button>
+                    </header>
+                    <div class="bsc-modal-body bsc-xfer-body">
+                        <p class="bsc-xfer-lead">請選擇要協助處理的行政同仁，確認後會通知對方。</p>
+                        <label class="bsc-xfer-label" for="bsc-xfer-admin">行政承辦人 <span class="bsc-req">*</span></label>
+                        <select id="bsc-xfer-admin" required>
+                            <option value="">請選擇行政</option>
+                        </select>
+                        <p id="bsc-xfer-hint" class="bsc-xfer-hint"></p>
+                    </div>
+                    <footer class="bsc-modal-foot">
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-xfer-close>取消</button>
+                        <button type="button" class="btn-main" id="bsc-xfer-confirm" disabled>確認轉交</button>
+                    </footer>
+                </div>
+            </div>
+            <div id="bsc-reject-modal" class="bsc-modal hidden" hidden>
+                <div class="bsc-modal-backdrop" data-bsc-reject-close></div>
+                <div class="bsc-modal-panel bsc-xfer-panel" role="dialog" aria-modal="true" aria-labelledby="bsc-reject-title">
+                    <header class="bsc-modal-head">
+                        <h3 id="bsc-reject-title">退回修改</h3>
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-reject-close>關閉</button>
+                    </header>
+                    <div class="bsc-modal-body bsc-xfer-body">
+                        <p class="bsc-xfer-lead">退回後會回到填寫人的「待我處理」，請註明原因讓對方修改後重新送出。</p>
+                        <label class="bsc-xfer-label" for="bsc-reject-reason">退回原因 <span class="bsc-req">*</span></label>
+                        <textarea id="bsc-reject-reason" rows="4" maxlength="500" placeholder="請說明退回原因"></textarea>
+                        <p id="bsc-reject-hint" class="bsc-xfer-hint"></p>
+                    </div>
+                    <footer class="bsc-modal-foot">
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-reject-close>取消</button>
+                        <button type="button" class="bsc-reject-confirm" id="bsc-reject-confirm" disabled>確認退回</button>
+                    </footer>
+                </div>
+            </div>
+            <div id="bsc-edit-modal" class="bsc-modal hidden" hidden>
+                <div class="bsc-modal-backdrop" data-bsc-edit-close></div>
+                <div class="bsc-modal-panel bsc-edit-panel" role="dialog" aria-modal="true" aria-labelledby="bsc-edit-title">
+                    <header class="bsc-modal-head">
+                        <h3 id="bsc-edit-title">修改並重新送出</h3>
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-edit-close>關閉</button>
+                    </header>
+                    <div class="bsc-modal-body bsc-xfer-body">
+                        <p id="bsc-edit-hint" class="bsc-xfer-hint"></p>
+                        <label class="bsc-xfer-label" for="bsc-edit-address">物件地址 <span class="bsc-req">*</span></label>
+                        <input id="bsc-edit-address" type="text" maxlength="200" />
+                        <label class="bsc-xfer-label" for="bsc-edit-match">媒合編號 <span class="bsc-req">*</span></label>
+                        <input id="bsc-edit-match" type="text" maxlength="80" />
+                        <span class="bsc-xfer-label">需修改節點 <span class="bsc-req">*</span></span>
+                        <div class="bsc-nodes" role="group" aria-label="需修改節點">
+                            <label class="bsc-node"><input type="checkbox" name="bsc-edit-nodes" value="物件"><span>物件</span></label>
+                            <label class="bsc-node"><input type="checkbox" name="bsc-edit-nodes" value="安全檢核表"><span>安全檢核表</span></label>
+                            <label class="bsc-node"><input type="checkbox" name="bsc-edit-nodes" value="房客"><span>房客</span></label>
+                            <label class="bsc-node"><input type="checkbox" name="bsc-edit-nodes" value="合約"><span>合約</span></label>
+                        </div>
+                        <label class="bsc-xfer-label" for="bsc-edit-content">需修改內容 <span class="bsc-req">*</span></label>
+                        <textarea id="bsc-edit-content" rows="5" maxlength="4000" placeholder="請依退回原因修改內容"></textarea>
+                        <label class="bsc-xfer-label" for="bsc-edit-files">圖片／附件</label>
+                        <div class="bsc-drop bsc-edit-drop">
+                            <input id="bsc-edit-files" type="file" accept="image/*,.pdf,application/pdf" multiple />
+                            <p class="bsc-hint">可刪除原圖或再上傳，最多 5 個，每個上限 10MB</p>
+                            <div id="bsc-edit-file-list" class="bsc-edit-files"></div>
+                        </div>
+                    </div>
+                    <footer class="bsc-modal-foot">
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-edit-close>取消</button>
+                        <button type="button" class="btn-main" id="bsc-edit-confirm">確認重新送出</button>
+                    </footer>
+                </div>
+            </div>
+            <div id="bsc-policy-modal" class="bsc-modal hidden" hidden>
+                <div class="bsc-modal-backdrop" data-bsc-policy-close></div>
+                <div class="bsc-modal-panel" role="dialog" aria-modal="true" aria-labelledby="bsc-policy-title">
+                    <header class="bsc-modal-head">
+                        <h3 id="bsc-policy-title">複審與實價登錄查錯獎懲辦法</h3>
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-policy-close>關閉</button>
+                    </header>
+                    <div class="bsc-modal-body">
+                        <img src="./assets/biz-system-change/review-reward-policy.jpg" alt="複審與實價登錄查錯獎懲辦法" />
+                    </div>
+                    <footer class="bsc-modal-foot">
+                        <label class="bsc-policy-check">
+                            <input type="checkbox" id="bsc-policy-ack" />
+                            <span>我已閱讀完畢</span>
+                        </label>
+                        <button type="button" class="btn-main" id="bsc-policy-confirm" disabled>確認送出</button>
+                    </footer>
+                </div>
+            </div>
         </div>
 
         <!-- 土地增值稅（由房東專區進入） -->
@@ -12288,13 +12529,16 @@
         <script src="./js/biz-guide-exam.js?v=20261029-hide"></script>
         <script src="./js/biz-handover.js?v=20261101-dedupe"></script>
         <script src="./js/admin-handover.js?v=20261101-cards"></script>
+        <script src="./js/biz-system-change.js?v=20261105-handler4"></script>
+        <script src="./js/biz-bonus-data.js?v=20261105-layout"></script>
+        <script src="./js/biz-bonus.js?v=20261105-layout"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261104-lvrnov"></script>
+        <script src="./js/admin-points.js?v=20261104-lvrmon"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
@@ -14102,6 +14346,9 @@
             { page: 'business-forms', title: '各式表單', category: '業務專區', keywords: '表單 場勘 押金讓渡 領款收據 切結書 300億切結 115Y 自願撤案 帳戶變更 租金補貼 複審 檢核 還款 協議 欠租' },
             { page: 'business-guide-exam', title: '執行要點考試', category: '業務專區', keywords: '執行要點 考試 題庫 業務考試 補考 成績 公開成績 20題' },
             { page: 'business-handover', title: '業務離職交接', category: '業務專區', keywords: '離職 交接 業務 接手 代管 案件 checklist 匯出' },
+            { page: 'business-system-change', title: '系統欄位更改通報', category: '業務專區', keywords: '系統 欄位 更改 修改 通報 媒合編號 物件地址 系統資料' },
+            { page: 'business-bonus', title: '業務獎金辦法', category: '業務專區', keywords: '獎金 獎金辦法 高專 星財補 點獎金 激勵 婚育 知悉 儀表板 媒合費 代管費' },
+            { file: './admin/biz-system-change-dashboard.html', title: '系統欄位更改通報後台', category: '管理工具', keywords: '後台 admin 系統欄位 更改 通報 業務' },
             { page: 'admin-handover', title: '行政離職交接', category: '行政專區', keywords: '離職 交接 行政 經手 審核 接手 checklist 匯出' },
             { page: 'termination', title: '催收解約專區', category: '首頁專區', keywords: '催收 解約 退租 終止 退還 欠租 存證信函' },
             { page: 'equip-dep', title: '設備損壞賠償試算', category: '催收解約專區', keywords: '點交 解約點交 設備 損壞 賠償 折舊 殘值 耐用年限 家電 家具 冷氣 冰箱 洗衣機' },
@@ -14183,6 +14430,8 @@
             'business-forms': 'page-business-forms',
             'business-guide-exam': 'page-business-guide-exam',
             'business-handover': 'page-business-handover',
+            'business-system-change': 'page-business-system-change',
+            'business-bonus': 'page-business-bonus',
             termination: 'page-termination',
             rentmanager: 'page-rentmanager',
             'rentmanager-links': 'page-rentmanager-links',
@@ -14243,7 +14492,7 @@
             'page-newbie-roadmap', 'page-newbie-glossary', 'page-newbie-screening', 'page-newbie-quest', 'page-newbie-subsidy', 'page-newbie-transcript',
             'page-business', 'page-business-land-value-tax',
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-591-listing', 'page-business-deposit-refund',
-            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-termination',
+            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-business-bonus', 'page-business-handover', 'page-business-system-change', 'page-termination',
             'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus', 'page-rentmanager-perf', 'page-rentmanager-line-endorse',
             'page-announcement', 'page-manager-bonus', 'page-administration', 'page-admin-qa', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
             'page-practice-timeline', 'page-collection-case', 'page-mediation-flow', 'page-equip-dep', 'page-practice-templates', 'page-practice-contacts', 'page-lal-generator', 'page-care-visit-notice'
