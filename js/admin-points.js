@@ -6762,11 +6762,12 @@
   function lvrAuditAnalysisHtml() {
     const tab = state.lvrAuditTab || { loading: false, loaded: false, rows: [], error: '' };
     const allRows = tab.rows || [];
-    const months = [...new Set(allRows.map(lvrAuditRowMonth).filter(Boolean))].sort().reverse();
     const nowYm = lvrAuditYm();
+    const dataMonths = [...new Set(allRows.map(lvrAuditRowMonth).filter(Boolean))];
+    const months = [...new Set([nowYm, ...dataMonths])].sort().reverse();
     let selMonth = state.lvrAuditMonth;
     if (!selMonth || (selMonth !== 'all' && !months.includes(selMonth))) {
-      selMonth = months.includes(nowYm) ? nowYm : months[0] || nowYm;
+      selMonth = dataMonths.includes(nowYm) || !dataMonths.length ? nowYm : dataMonths.sort().reverse()[0];
     }
     const monthLabel = (m) => {
       const [y, mm] = String(m).split('/');

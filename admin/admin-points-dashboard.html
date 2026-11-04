@@ -4905,7 +4905,7 @@
       function lvrAFaults(row) {
         const list = Array.isArray(row?.nodeFaults) ? row.nodeFaults : [];
         const cleaned = list
-          .map((x) => ({ node: String(x?.node || '').trim(), person: String(x?.person || '').trim() }))
+          .map((x) => ({ node: String(x?.node || '').trim(), person: String(x?.person || '').trim(), mismatch: x?.mismatch === true }))
           .filter((x) => x.node);
         if (cleaned.length) return cleaned;
         const node = String(row?.auditNode || '').trim();
@@ -4920,6 +4920,7 @@
         const faults = lvrAFaults(row);
         const selected = new Set(faults.map((f) => f.node));
         const personOf = Object.fromEntries(faults.map((f) => [f.node, f.person]));
+        const mismatch = faults.some((f) => f.node === '複審' && f.mismatch);
         return `<div class="lvr-a-faults" data-lvr-faults>
           <div class="lvr-a-fault-nodes">${LVR_NODES.map((n) => `
             <label><input type="checkbox" data-lvr-fn="${esc(n)}"${selected.has(n) ? ' checked' : ''}> ${esc(n)}</label>
@@ -4928,6 +4929,7 @@
             <label class="lvr-a-fault-person"${selected.has(n) ? '' : ' hidden'} data-lvr-fp-wrap="${esc(n)}">
               <span>${esc(n)}</span>
               <input data-lvr-fp="${esc(n)}" value="${esc(personOf[n] || '')}" maxlength="40" placeholder="誰錯" style="width:5.5rem">
+              ${n === '複審' ? `<span style="white-space:nowrap"><input type="checkbox" data-lvr-mismatch${mismatch ? ' checked' : ''}> 系統與紙本不符</span>` : ''}
             </label>
           `).join('')}</div>
         </div>`;
@@ -4961,7 +4963,7 @@
         const sel = $('lvr-a-month');
         if (!sel) return;
         const cur = sel.value;
-        const used = [...new Set((lvrA.rows || []).map((r) => r.auditMonth).filter(Boolean))].sort().reverse();
+        const used = [...new Set([lvrANowMonth(), ...(lvrA.rows || []).map((r) => r.auditMonth).filter(Boolean)])].sort().reverse();
         sel.innerHTML = `<option value="">全部月份</option>${used
           .map((m) => `<option value="${esc(m)}"${m === cur ? ' selected' : ''}>${esc(m)}（${lvrA.rows.filter((r) => r.auditMonth === m).length}）</option>`)
           .join('')}`;
@@ -5050,10 +5052,11 @@
         const get = (f) => String(tr.querySelector(`[data-f="${f}"]`)?.value || '').trim();
         const nodeFaults = LVR_NODES
           .filter((n) => tr.querySelector(`[data-lvr-fn="${n}"]`)?.checked)
-          .map((n) => ({
-            node: n,
-            person: String(tr.querySelector(`[data-lvr-fp="${n}"]`)?.value || '').trim()
-          }));
+          .map((n) => {
+            const item = { node: n, person: String(tr.querySelector(`[data-lvr-fp="${n}"]`)?.value || '').trim() };
+            if (n === '複審' && tr.querySelector('[data-lvr-mismatch]')?.checked) item.mismatch = true;
+            return item;
+          });
         return {
           authorName: get('authorName'),
           auditMonth: get('auditMonth'),
