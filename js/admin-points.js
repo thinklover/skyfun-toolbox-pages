@@ -6984,8 +6984,8 @@
               <select name="contractPick"></select>
             </label>
             <label class="apt-lvr-field"><span>營業處 <em>*</em></span><input name="office" maxlength="40" required readonly placeholder="按帶入自動填"></label>
-            <label class="apt-lvr-field"><span>營業處經理 <em>*</em></span>
-              <select name="officeManagerPick" required><option value="">請先帶入</option></select>
+            <label class="apt-lvr-field"><span>營業處經理</span>
+              <select name="officeManagerPick"><option value="">請先帶入（選填）</option></select>
               <input type="hidden" name="officeManager" value="">
             </label>
             <label class="apt-lvr-field apt-lvr-field--full"><span>業務姓名 <em>*</em></span><input name="salesName" maxlength="40" required readonly placeholder="按帶入自動填"></label>
@@ -7356,7 +7356,6 @@
       };
       if (!data.address) return fail('請填地址');
       if (!data.office || !data.salesName) return fail('請先按「帶入」');
-      if (!form.elements.officeManager.value) return fail('請先帶入（或下拉選）營業處經理');
       if (!nodeFaults.length) return fail('請至少勾選一個錯誤節點');
       const missing = nodeFaults.find((x) => !x.person);
       if (missing) return fail(`請選擇「${missing.node}」誰錯`);
@@ -7388,7 +7387,7 @@
         form._lvrFaultPick = {};
         form._lvrMismatch = false;
         setLvrContractPick(form, [], 0);
-        form.elements.officeManagerPick.innerHTML = '<option value="">請先帶入</option>';
+        form.elements.officeManagerPick.innerHTML = '<option value="">請先帶入（選填）</option>';
         form.elements.officeManager.value = '';
         if (fileInput) fileInput.value = '';
         if (preview) preview.innerHTML = '';

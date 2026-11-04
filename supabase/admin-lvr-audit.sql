@@ -236,7 +236,6 @@ begin
   if v_address = '' then return json_build_object('ok', false, 'error', '請填地址'); end if;
   if v_office = '' then return json_build_object('ok', false, 'error', '請先帶入營業處'); end if;
   if v_sales = '' then return json_build_object('ok', false, 'error', '請先帶入業務姓名'); end if;
-  if v_mgr = '' then return json_build_object('ok', false, 'error', '請填營業處經理姓名'); end if;
   if v_reason = '' then return json_build_object('ok', false, 'error', '請填錯誤原因'); end if;
 
   v_faults := public.admin_lvr_audit_normalize_faults(coalesce(d->'nodeFaults', '[]'::jsonb));
@@ -357,7 +356,7 @@ begin
     return json_build_object('ok', false, 'error', '後台密碼錯誤');
   end if;
   if p_id is null then return json_build_object('ok', false, 'error', '缺少 id'); end if;
-  if v_address = '' or v_office = '' or v_sales = '' or v_mgr = '' or v_reason = '' then
+  if v_address = '' or v_office = '' or v_sales = '' or v_reason = '' then
     return json_build_object('ok', false, 'error', '欄位不可空白');
   end if;
   if d ? 'authorName' and v_author = '' then
