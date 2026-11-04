@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js"></script>
   <script src="../js/skyfun-departments.js"></script>
+  <script src="../js/notice-ack-data.js?v=20261104-1"></script>
   <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
   <style>
     table { font-size: 0.875rem; }
@@ -30,6 +31,14 @@
     .table-shell thead th {
       position: sticky; top: 0; z-index: 1; background: #f1f5f9; box-shadow: inset 0 -1px 0 #e2e8f0;
     }
+    .ack-yes { color: #047857; font-weight: 800; white-space: nowrap; }
+    .ack-yes small { display: block; font-weight: 600; color: #64748b; font-size: 0.7rem; }
+    .ack-no { color: #b91c1c; font-weight: 800; }
+    .ack-pill {
+      border: 1px solid #e2e8f0; border-radius: 0.7rem; padding: 0.35rem 0.65rem;
+      background: #f8fafc; font-size: 0.75rem; color: #334155;
+    }
+    .ack-pill b { color: #0f172a; }
     .readonly-banner {
       border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3;
       border-radius: 0.65rem; padding: 0.55rem 0.75rem; font-size: 0.78rem; font-weight: 700;
@@ -89,6 +98,28 @@
             </tr>
           </thead>
           <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card p-4 space-y-3" id="ack-card">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 class="section-h" style="margin:0">公告已閱確認（業務）</h2>
+          <p class="text-xs text-slate-500 mt-1" id="ack-stats">—</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="text-xs text-slate-600 font-bold flex items-center gap-1">
+            <input type="checkbox" id="ack-only-missing" /> 只看未勾完
+          </label>
+          <button type="button" id="ack-export" class="btn btn-ghost">匯出 CSV</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2" id="ack-sum"></div>
+      <div class="table-shell">
+        <table>
+          <thead id="ack-head"></thead>
+          <tbody id="ack-rows"></tbody>
         </table>
       </div>
     </div>
@@ -250,6 +281,84 @@
         document.getElementById('msg').textContent = '已匯出 ' + list.length + ' 筆（CSV 含完整帳號）';
       }
 
+      const NOTICES = (window.SKYFUN_NOTICE_ACK && window.SKYFUN_NOTICE_ACK.items) || [];
+      let ackUsers = [];
+      let ackMap = {};
+
+      function ackRowsFiltered() {
+        let list = ackUsers.slice();
+        if (selectedTeam) list = list.filter((u) => u.team === selectedTeam);
+        const q = document.getElementById('search').value.trim().toLowerCase();
+        if (q) list = list.filter((u) => [u.name, u.team].some((v) => String(v || '').toLowerCase().includes(q)));
+        if (document.getElementById('ack-only-missing').checked) {
+          list = list.filter((u) => NOTICES.some((n) => !(ackMap[u.id] || {})[n.id]));
+        }
+        list.sort((a, b) => {
+          const ka = teamSortKey(a.team);
+          const kb = teamSortKey(b.team);
+          if (ka !== kb) return ka - kb;
+          return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+        });
+        return list;
+      }
+
+      function renderAck() {
+        document.getElementById('ack-head').innerHTML = '<tr><th>營業處</th><th>姓名</th>' +
+          NOTICES.map((n, i) => '<th title="' + esc(n.title) + '">' + (i + 1) + '. ' + esc(n.title.slice(0, 12)) + '</th>').join('') +
+          '<th>完成</th></tr>';
+        const scope = selectedTeam ? ackUsers.filter((u) => u.team === selectedTeam) : ackUsers;
+        document.getElementById('ack-sum').innerHTML = NOTICES.map((n, i) => {
+          const c = scope.filter((u) => (ackMap[u.id] || {})[n.id]).length;
+          return '<span class="ack-pill">' + (i + 1) + '. ' + esc(n.title) + '　<b>' + c + ' / ' + scope.length + '</b></span>';
+        }).join('');
+        const allDone = scope.filter((u) => NOTICES.every((n) => (ackMap[u.id] || {})[n.id])).length;
+        document.getElementById('ack-stats').textContent =
+          (selectedTeam || '全部營業處') + '：業務 ' + scope.length + ' 人，全部勾完 ' + allDone + ' 人，未勾完 ' + (scope.length - allDone) + ' 人';
+        const list = ackRowsFiltered();
+        document.getElementById('ack-rows').innerHTML = list.length ? list.map((u) => {
+          const m = ackMap[u.id] || {};
+          const n = NOTICES.filter((x) => m[x.id]).length;
+          return '<tr><td>' + esc(u.team) + '</td><td><div class="name-cell">' + esc(u.name) + '</div></td>' +
+            NOTICES.map((x) => m[x.id]
+              ? '<td class="ack-yes">✓<small>' + esc(fmt(m[x.id])) + '</small></td>'
+              : '<td class="ack-no">未勾</td>').join('') +
+            '<td class="' + (n === NOTICES.length ? 'ack-yes' : 'ack-no') + '">' + n + ' / ' + NOTICES.length + '</td></tr>';
+        }).join('') : '<tr><td colspan="' + (NOTICES.length + 3) + '" class="text-slate-500">沒有符合的業務</td></tr>';
+      }
+
+      function exportAckCsv() {
+        const list = ackRowsFiltered();
+        const lines = [['營業處', '姓名'].concat(NOTICES.map((n, i) => (i + 1) + '. ' + n.title), ['完成'])];
+        list.forEach((u) => {
+          const m = ackMap[u.id] || {};
+          lines.push([u.team || '', u.name || '']
+            .concat(NOTICES.map((n) => m[n.id] ? new Date(m[n.id]).toLocaleString('zh-TW') : '未勾'))
+            .concat([NOTICES.filter((n) => m[n.id]).length + ' / ' + NOTICES.length]));
+        });
+        const body = lines.map((row) => row.map(csvEscape).join(',')).join('\r\n');
+        const blob = new Blob(['\uFEFF' + body], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '公告已閱確認-' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      async function loadAck() {
+        const data = await rpc('toolbox_notice_ack_admin', { p_secret: secret });
+        if (!data?.ok) throw new Error(data?.error || '讀取失敗');
+        ackUsers = data.users || [];
+        ackMap = {};
+        (data.acks || []).forEach((k) => {
+          (ackMap[k.userId] = ackMap[k.userId] || {})[k.id] = k.at;
+        });
+        renderAck();
+      }
+
+      function loadAckSafe() {
+        loadAck().catch((e) => { document.getElementById('ack-stats').textContent = '已閱確認讀取失敗：' + e.message; });
+      }
+
       async function loadList() {
         const data = await rpc('toolbox_admin_accounts_overview', { p_secret: secret });
         if (!data?.ok) throw new Error(data?.error || '讀取失敗');
@@ -258,6 +367,7 @@
         if (selectedTeam && !teams.some((t) => t.team === selectedTeam)) selectedTeam = null;
         renderChips();
         renderRows();
+        loadAckSafe();
       }
 
       document.getElementById('btn-login').addEventListener('click', async () => {
@@ -274,6 +384,7 @@
           teams = data.teams || [];
           renderChips();
           renderRows();
+          loadAckSafe();
         } catch (e) {
           msg.textContent = e.message || '連線失敗';
           msg.classList.remove('hidden');
@@ -284,7 +395,9 @@
         loadList().catch((e) => { document.getElementById('msg').textContent = e.message; });
       });
       document.getElementById('btn-export').addEventListener('click', exportCsv);
-      document.getElementById('search').addEventListener('input', renderRows);
+      document.getElementById('search').addEventListener('input', () => { renderRows(); renderAck(); });
+      document.getElementById('ack-only-missing').addEventListener('change', renderAck);
+      document.getElementById('ack-export').addEventListener('click', exportAckCsv);
       document.getElementById('team-chips').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-team]');
         if (!btn) return;
@@ -292,6 +405,7 @@
         selectedTeam = t ? t : null;
         renderChips();
         renderRows();
+        renderAck();
       });
 
       const saved = sessionStorage.getItem(SECRET_KEY);
