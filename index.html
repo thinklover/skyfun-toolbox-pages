@@ -4596,13 +4596,14 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261101-bonus3">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261104-lvrmonth">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261101-board">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
 <link rel="stylesheet" href="./css/handover.css?v=20261101-cards">
 <link rel="stylesheet" href="./css/business-zone.css?v=20261101-hub3">
+<link rel="stylesheet" href="./css/policy-doc-gate.css?v=20261103-2">
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
     <script>
@@ -4995,7 +4996,7 @@
             <div class="bg-gradient-to-br from-blue-50 via-white to-slate-50 rounded-[2rem] p-6 border border-blue-200 shadow-lg space-y-5">
                 <div class="text-center">
                     <h2 class="text-3xl font-bold text-slate-900 mb-2">📣 簽呈公告專區</h2>
-                    <p class="text-slate-600">集中管理公司公告與簽呈重點，方便同仁快速查閱。</p>
+                    <p class="text-slate-600">集中管理公司公告與簽呈重點。辦法／獎金制度完整檔需密碼預覽與下載（預覽含浮水印）。</p>
                 </div>
 
                 <button type="button" onclick="showPage('manager-bonus')" class="btn btn-block btn-center tone-indigo text-lg font-bold">
@@ -5013,15 +5014,6 @@
                             <div class="font-extrabold">115/10/01｜公告：星財補獎金辦法（1151001版）</div>
                             <div class="mt-3 flex flex-wrap gap-2">
                                 <a href="./1151001%20公告%20星財補獎金辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/09/22｜公告：星財補獎金辦法（1150922版）</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150922%20公告%20星財補獎金辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
                                     📄 開啟
                                 </a>
                             </div>
@@ -5139,7 +5131,7 @@
             <div class="bg-gradient-to-br from-indigo-50 via-white to-slate-50 rounded-[2rem] p-6 border border-indigo-200 shadow-lg space-y-5">
                 <div class="text-center">
                     <h2 class="text-3xl font-bold text-slate-900 mb-2">🔒 主管獎金專區</h2>
-                    <p class="text-slate-600">主管獎金、津貼、考核與管理辦法，限主管查閱。</p>
+                    <p class="text-slate-600">主管獎金、津貼、考核與管理辦法，限主管查閱。開啟／下載完整檔需密碼（與全站辦法相同）。</p>
                 </div>
 
                 <form id="mb-lock" class="rounded-[1.5rem] border border-slate-200 bg-white p-5 space-y-3 max-w-md mx-auto" autocomplete="off">
@@ -5152,11 +5144,10 @@
                 <div id="mb-content" class="hidden space-y-4"></div>
             </div>
         </div>
+        <script src="./js/policy-doc-gate.js?v=20261103-2"></script>
         <script>
         (function () {
-            const HASH = 'a012f2d92edb3fb1d06c889c194a331ce314ac0a4b283e6eaac917c7f2ef2e12';
-            const SALT = 'skyfun-manager-bonus:';
-            const KEY = 'skyfun-manager-bonus-unlocked';
+            const Gate = window.SkyfunPolicyDocGate;
             const GROUPS = [
                 {
                     title: '營業處主管獎金制度',
@@ -5185,11 +5176,6 @@
                 }
             ];
 
-            async function sha256(text) {
-                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-                return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
-            }
-
             function render() {
                 const box = document.getElementById('mb-content');
                 box.innerHTML = GROUPS.map((g) =>
@@ -5199,7 +5185,7 @@
                         '<div class="rounded-xl border border-slate-200 bg-slate-50 p-4">' +
                         '<div class="font-extrabold">' + label + '</div>' +
                         '<div class="mt-3 flex flex-wrap gap-2">' +
-                        '<a href="' + href + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">📄 開啟</a>' +
+                        '<a href="' + href + '" class="btn btn-sm tone-slate-mid">📄 預覽／下載</a>' +
                         '</div></div>').join('') +
                     '</div></div>').join('') +
                     '<div class="text-center"><button type="button" id="mb-relock" class="btn btn-sm tone-slate-soft">🔒 重新上鎖</button></div>';
@@ -5208,7 +5194,8 @@
             }
 
             function lock() {
-                sessionStorage.removeItem(KEY);
+                if (Gate) Gate.setUnlocked(false);
+                else try { sessionStorage.removeItem('skyfun-manager-bonus-unlocked'); } catch (e) { /* ignore */ }
                 const box = document.getElementById('mb-content');
                 box.innerHTML = '';
                 box.classList.add('hidden');
@@ -5224,18 +5211,23 @@
                     const input = document.getElementById('mb-password');
                     const msg = document.getElementById('mb-msg');
                     msg.textContent = '';
-                    if ((await sha256(SALT + input.value.trim())) !== HASH) {
+                    const ok = Gate ? await Gate.checkPassword(input.value) : false;
+                    if (!ok) {
                         msg.textContent = '密碼錯誤，請再試一次';
                         input.select();
                         return;
                     }
-                    sessionStorage.setItem(KEY, HASH);
+                    if (Gate) Gate.setUnlocked(true);
                     render();
                 });
                 document.getElementById('mb-content').addEventListener('click', (e) => {
                     if (e.target.closest('#mb-relock')) lock();
                 });
-                if (sessionStorage.getItem(KEY) === HASH) render();
+                window.addEventListener('skyfun-policy-unlock', (ev) => {
+                    if (ev.detail && ev.detail.unlocked) render();
+                    else lock();
+                });
+                if (Gate && Gate.isUnlocked()) render();
             }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
@@ -5676,9 +5668,11 @@
                     <h2 class="apt-title">📊 行政績效中心</h2>
                     <select id="apt-month" aria-label="業績月"></select>
                     <button type="button" class="apt-btn" id="apt-refresh">重新抓取星鴻資料</button>
+                    <button type="button" class="apt-btn apt-btn--lvr" id="apt-lvr-backfill" hidden>實登補點（月結用）</button>
                     <a class="apt-admin-link" href="./admin/admin-points-dashboard.html" target="_blank" rel="noopener">後台：報表／登錄／考試／改善計畫 ↗</a>
                 </div>
                 <p class="apt-msg" id="apt-msg" role="status" aria-live="polite"></p>
+                <div class="apt-lvr-panel" id="apt-lvr-panel" hidden></div>
                 <div class="apt-summary" id="apt-summary"></div>
                 <div class="apt-tabs" id="apt-tabs" role="tablist">
                     <button type="button" class="apt-tab is-active" data-tab="month">點數月累計</button>
@@ -5687,6 +5681,7 @@
                     <button type="button" class="apt-tab" data-tab="area">區主管週月報</button>
                     <button type="button" class="apt-tab" data-tab="duration">耗時</button>
                     <button type="button" class="apt-tab" data-tab="spot" hidden>小組長抽查</button>
+                    <button type="button" class="apt-tab" data-tab="lvraudit">實價登錄稽核</button>
                     <span class="apt-op-btns">
                         <button type="button" class="apt-op-open" data-op-open="case">📝 填寫案件意見</button>
                         <button type="button" class="apt-op-open apt-op-open--roster" data-op-open="roster">📝 填寫清冊意見</button>
@@ -5697,12 +5692,12 @@
                         <span class="apt-doc-ico" aria-hidden="true">📄</span>
                         <span class="apt-doc-text">
                             <b>【行政管理部｜績效點數與獎金辦法1151012 修訂】</b>
-                            <small>預設收合 · 點此展開摘要 · PDF 另開</small>
+                            <small>預設收合 · 摘要公開 · 完整檔需密碼</small>
                         </span>
-                        <a class="apt-doc-go" href="./行政管理部獎金辦法20260825.pdf" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">開啟 PDF ↗</a>
+                        <a class="apt-doc-go" href="./行政管理部獎金辦法20260825.pdf" onclick="event.stopPropagation()">完整檔（需密碼）↗</a>
                     </summary>
                     <div class="apt-bonus-body">
-                        <p class="apt-bonus-lead">以下為辦法摘要；正式內容與核發仍以公司系統、正式報表及主管最終認定為準。</p>
+                        <p class="apt-bonus-lead">以下為辦法摘要（公開）；完整 PDF 僅限處長以密碼預覽／下載。正式核發仍以公司系統、正式報表及主管最終認定為準。</p>
 
                         <section class="apt-bonus-sec">
                             <h4>一、業績計算期間</h4>
@@ -5771,7 +5766,7 @@
                         </section>
 
                         <p class="apt-bonus-note">※本表為管理及獎金預估使用；正式點數、良率、懲處及獎金核發，仍以公司系統、正式報表及主管最終認定為準。</p>
-                        <p class="apt-bonus-pdf"><a href="./行政管理部獎金辦法20260825.pdf" target="_blank" rel="noopener noreferrer">📄 開啟完整 PDF（20260825）↗</a></p>
+                        <p class="apt-bonus-pdf"><a href="./行政管理部獎金辦法20260825.pdf">📄 完整 PDF（20260825，需密碼）↗</a></p>
                     </div>
                 </details>
                 <div id="apt-body"></div>
@@ -10934,14 +10929,14 @@
                     <div class="font-extrabold text-slate-900">DOCX 檔案</div>
                     <div class="text-sm text-slate-700">需要列印或轉寄時，直接開啟原始 Word 檔。</div>
                     <div class="flex flex-wrap gap-2">
-                        <a href="./docs/租賃管理部-跨區管理獎金辦法-1150120版.docx" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                            🧾 跨區管理獎金（DOCX）
+                        <a href="./docs/租賃管理部-跨區管理獎金辦法-1150120版.docx" class="btn btn-sm tone-slate-mid">
+                            🧾 跨區管理獎金（DOCX，需密碼）
                         </a>
-                        <a href="./docs/獎金辦法-租管師獎金暨考核辦法-1140211版.docx" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                            🧾 租管師考核暨獎金（DOCX）
+                        <a href="./docs/獎金辦法-租管師獎金暨考核辦法-1140211版.docx" class="btn btn-sm tone-slate-mid">
+                            🧾 租管師考核暨獎金（DOCX，需密碼）
                         </a>
-                        <a href="./docs/獎懲辦法-租管師未申請修繕-1140714版.docx" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                            🧾 未申請修繕獎懲（DOCX）
+                        <a href="./docs/獎懲辦法-租管師未申請修繕-1140714版.docx" class="btn btn-sm tone-slate-mid">
+                            🧾 未申請修繕獎懲（DOCX，需密碼）
                         </a>
                     </div>
                 </div>
@@ -11314,12 +11309,12 @@
 
                 <div class="nb-doc-card">
                     <div class="nb-doc-card-title">原始公告檔</div>
-                    <div class="nb-doc-card-meta">星財補獎金辦法 · 修訂日期 115/10/01</div>
+                    <div class="nb-doc-card-meta">星財補獎金辦法 · 修訂日期 115/10/01 · 完整檔需密碼</div>
                     <div class="mt-3 flex flex-wrap gap-2">
-                        <a href="./1151001%20公告%20星財補獎金辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">📄 開啟</a>
-                        <a href="./1151001%20公告%20星財補獎金辦法.pdf" download="1151001 公告 星財補獎金辦法.pdf" class="btn btn-sm tone-slate-soft">⬇️ 下載</a>
+                        <a href="./1151001%20公告%20星財補獎金辦法.pdf" class="btn btn-sm tone-slate-mid">📄 預覽（需密碼）</a>
+                        <a href="./1151001%20公告%20星財補獎金辦法.pdf" download="1151001 公告 星財補獎金辦法.pdf" class="btn btn-sm tone-slate-soft">⬇️ 下載（需密碼）</a>
                     </div>
-                    <p class="text-xs text-slate-500 mt-2">內容以公告原檔為準；舊版請見 <button type="button" class="nb-inline-link" onclick="showPage('announcement')">簽呈公告專區</button>。</p>
+                    <p class="text-xs text-slate-500 mt-2">上方精簡規則可公開查閱；完整公告檔僅限處長密碼預覽／下載。舊版請見 <button type="button" class="nb-inline-link" onclick="showPage('announcement')">簽呈公告專區</button>。</p>
                 </div>
             </div>
         </div>
@@ -12280,7 +12275,7 @@
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
-        <script src="./js/admin-points-core.js?v=20261102-cats"></script>
+        <script src="./js/admin-points-core.js?v=20261103-tenant-re"></script>
         <script src="./js/admin-points-charts.js?v=20261026-xlabel"></script>
         <script src="./js/admin-training-content.js?v=20261102-pdfonly"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
@@ -12294,7 +12289,7 @@
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261101-nosec"></script>
+        <script src="./js/admin-points.js?v=20261104-lvrpaper"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
@@ -12330,7 +12325,7 @@
         <script src="./js/admin-calendar-sheet.js?v=20261011-1"></script>
         <script src="./js/admin-calendar.js?v=20261011-5"></script>
         <script src="./js/admin-org.js?v=20261024-orgdoc"></script>
-        <script src="./js/admin-meeting.js?v=20261101-board"></script>
+        <script src="./js/admin-meeting.js?v=20261103-1102"></script>
     <script src="./js/petition.js?v=20261018-35"></script>
         <script src="./js/receipt-endorsement-form.js?v=20261001-1"></script>
 <script src="./js/lite-hide-api.js?v=20261001-1"></script>

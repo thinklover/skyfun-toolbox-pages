@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261102-cats"></script>
+  <script src="../js/admin-points-core.js?v=20261103-tenant-re"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -40,6 +40,11 @@
     .train-cell.is-on { background: #f0fdf4; }
     .train-cell b { font-size: 0.82rem; }
     .train-cell .pend { color: #94a3b8; }
+    .lvr-a-faults { display: flex; flex-direction: column; gap: 0.35rem; }
+    .lvr-a-fault-nodes { display: flex; flex-wrap: wrap; gap: 0.25rem 0.55rem; font-size: 0.74rem; font-weight: 700; }
+    .lvr-a-fault-people { display: flex; flex-direction: column; gap: 0.25rem; }
+    .lvr-a-fault-person { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: #475569; font-weight: 700; }
+    .lvr-a-fault-person[hidden] { display: none !important; }
 
     .hidden { display: none !important; }
 
@@ -351,6 +356,7 @@
       <button type="button" class="tab-btn" data-tab="opinion">💬 公會意見</button>
       <button type="button" class="tab-btn" data-tab="check">🔍 審件抽查</button>
       <button type="button" class="tab-btn" data-tab="incident">⚠️ 客訴／懲處</button>
+      <button type="button" class="tab-btn" data-tab="lvraudit">📝 實登稽核</button>
       <h6>訓練與考試</h6>
       <button type="button" class="tab-btn" data-tab="training">🎓 教育訓練</button>
       <button type="button" class="tab-btn" data-tab="exam">📝 執行要點考試</button>
@@ -681,6 +687,35 @@
       </table></div>
     </div>
 
+    <div id="tab-lvraudit" class="space-y-4 hidden">
+      <div class="page-head"><h2>實登稽核</h2><p>同仁填的實價登錄稽核；後台通過後才算查錯獎 300 元／處長停權統計</p></div>
+      <details class="help"><summary>說明</summary>
+        <p>前台可複選錯誤節點，並為每個節點指定誰錯。本頁可改案件欄位、節點歸責、填寫稽核意見，並設為通過／退回／待審。通過後填寫人每案獎金 300；同處當月通過超過 3 件，前台分析會標該處長需停權。附件僅檢視。</p>
+      </details>
+      <div class="toolbar">
+        <div class="field"><label>關鍵字</label><input type="search" id="lvr-a-q" placeholder="地址、業務、處經理、審核人、錯誤原因…" style="min-width:14rem" /></div>
+        <div class="field"><label>狀態</label>
+          <select id="lvr-a-status">
+            <option value="">全部</option>
+            <option value="pending">待稽核</option>
+            <option value="approved">已通過</option>
+            <option value="rejected">已退回</option>
+          </select>
+        </div>
+        <div class="field"><label>月份</label>
+          <select id="lvr-a-month"><option value="">全部月份</option></select>
+        </div>
+        <div class="push">
+          <button type="button" class="btn btn-ghost" id="btn-lvr-a-reload">重新讀取</button>
+        </div>
+      </div>
+      <h3 class="list-title">全部紀錄<span class="muted" id="lvr-a-count"></span></h3>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>填寫時間</th><th>月份</th><th>填寫人</th><th>地址</th><th>營業處｜處經理</th><th>業務</th><th>節點歸責</th><th>錯誤原因</th><th>稽核意見</th><th>狀態</th><th>附件</th><th></th></tr></thead>
+        <tbody id="lvr-a-list"></tbody>
+      </table></div>
+    </div>
+
     <div id="tab-training" class="space-y-4 hidden">
       <div class="page-head"><h2>教育訓練</h2><p>所有人的影片觀看進度與考試分數；系統自動判定，不用登錄</p></div>
       <details class="help"><summary>怎麼算通過？</summary>
@@ -888,7 +923,7 @@
       const TAB_KEY = 'skyfun-admin-points-tab';
       const AUTH_STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
       const RPA_BASE = 'https://skyfun-arrears-rpa.dahwork123.workers.dev';
-      const TABS = ['boss', 'wprog', 'takeup', 'report', 'kpiyear', 'kpi', 'eff', 'tarea', 'manual', 'opinion', 'check', 'incident', 'training', 'exam', 'sim', 'plan', 'staff', 'org'];
+      const TABS = ['boss', 'wprog', 'takeup', 'report', 'kpiyear', 'kpi', 'eff', 'tarea', 'manual', 'opinion', 'check', 'incident', 'lvraudit', 'training', 'exam', 'sim', 'plan', 'staff', 'org'];
       const PLAN_CYCLE_DAYS = 14;
       const DAY_MS = 86400000;
       let secret = '';
@@ -4341,7 +4376,43 @@
           (!q || [opRef(o), o.content, o.measure, o.name, o.category].some((v) => String(v || '').toLowerCase().includes(q))));
       }
 
+      function opRowHtml(o, showKind) {
+        return `<tr${o.noPoints ? ' class="op-nopts"' : ''}>
+            ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
+            <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${opGuildSelect(o)}</td><td>${opRegionEdit(o)}</td>
+            <td style="min-width:10rem;max-width:14rem">${opRefEdit(o)}</td><td>${opDateInput(o)}</td>
+            <td style="max-width:7rem">${opAuditSelect(o)}</td>
+            <td style="max-width:8rem">${opSystemPaperSelect(o)}</td>
+            <td style="max-width:10rem">${opCatSelect(o)}</td>
+            <td style="min-width:10rem;max-width:18rem">${opContentArea(o)}</td>
+            <td style="min-width:8rem;max-width:14rem;background:#fefce8">${opMeasureArea(o)}</td>
+            <td>${opPtsCell(o)}</td>
+            <td><button type="button" class="btn btn-del" data-op-del="${o.id}">刪除</button></td>
+          </tr>`;
+      }
+
+      function opRenderFoldBody(gi, more) {
+        const list = op.foldLists[gi];
+        const body = document.querySelector(`[data-op-fold-body="${gi}"]`);
+        if (!list || !body) return;
+        const showKind = op.kind === 'all';
+        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>審件狀態</th><th>系統/紙本問題</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th>點數</th><th></th></tr>`;
+        const prev = more ? (op.foldShown[gi] || 0) : 0;
+        const next = Math.min(list.length, prev + OP_PAGE);
+        op.foldShown[gi] = next;
+        const slice = list.slice(0, next);
+        const left = list.length - next;
+        const moreBtn = left > 0
+          ? `<button type="button" class="op-fold-more" data-op-fold-more="${gi}">載入更多（還有 ${left} 筆）</button>`
+          : `<p class="op-fold-hint">已顯示全部 ${list.length} 筆</p>`;
+        body.innerHTML = `<div class="overflow-x-auto"><table><thead>${head}</thead><tbody>${slice.map((o) => opRowHtml(o, showKind)).join('')}</tbody></table></div>${moreBtn}`;
+        requestAnimationFrame(() => opAutosizeAll(body));
+      }
+
       function renderOpinionTab() {
+        op.guildOpts = null;
+        op.foldLists = [];
+        op.foldShown = {};
         const base = opFiltered(true);
         const rows = opFiltered(false);
         const cnt = (k) => base.filter((o) => o.kind === k).length;
@@ -4368,34 +4439,22 @@
           if (!map.has(k)) map.set(k, []);
           map.get(k).push(o);
         });
-        const showKind = op.kind === 'all';
-        const head = `<tr>${showKind ? '<th>類別</th>' : ''}<th>填寫時間</th><th>行政</th><th>公會期數</th><th>縣市</th><th>媒合編號／清冊期數</th><th>意見時間</th><th>審件狀態</th><th>系統/紙本問題</th><th>缺失類別</th><th>公會意見內容</th><th>行政檢討對策</th><th>點數</th><th></th></tr>`;
-        $('op-groups').innerHTML = [...map.keys()].sort(grp.sort).map((k, gi) => {
+        const keys = [...map.keys()].sort(grp.sort);
+        op.foldLists = keys.map((k) => map.get(k));
+        /* 只畫分類標題；表格等展開再載入，避免一次畫幾百列卡死 */
+        $('op-groups').innerHTML = keys.map((k, gi) => {
           const list = map.get(k);
           const c = list.filter((o) => o.kind === 'case').length;
           const r = list.length - c;
           const people = new Set(list.map((o) => o.name)).size;
           const noPts = list.filter((o) => o.noPoints).length;
-          const body = list.map((o) => `<tr${o.noPoints ? ' class="op-nopts"' : ''}>
-              ${showKind ? `<td><span class="badge op-k-${o.kind}">${o.kind === 'case' ? '案件' : '清冊'}</span></td>` : ''}
-              <td style="white-space:nowrap">${esc(opTime(o))}</td><td>${esc(o.name)}</td><td>${opGuildSelect(o)}</td><td>${opRegionEdit(o)}</td>
-              <td style="min-width:10rem;max-width:14rem">${opRefEdit(o)}</td><td>${opDateInput(o)}</td>
-              <td style="max-width:7rem">${opAuditSelect(o)}</td>
-              <td style="max-width:8rem">${opSystemPaperSelect(o)}</td>
-              <td style="max-width:10rem">${opCatSelect(o)}</td>
-              <td style="min-width:10rem;max-width:18rem">${opContentArea(o)}</td>
-              <td style="min-width:8rem;max-width:14rem;background:#fefce8">${opMeasureArea(o)}</td>
-              <td>${opPtsCell(o)}</td>
-              <td><button type="button" class="btn btn-del" data-op-del="${o.id}">刪除</button></td>
-            </tr>`).join('');
-          return `<details class="fold"${gi < 3 ? ' open' : ''}>
+          return `<details class="fold" data-op-fold="${gi}">
             <summary><span class="op-sum"><b>${esc(k)}</b>
               <span class="badge op-k-case">案件 ${c}</span><span class="badge op-k-roster">清冊 ${r}</span>${noPts ? `<span class="badge op-k-nopts">不給點 ${noPts}</span>` : ''}
-              <span class="op-sub">共 ${list.length} 筆 · ${grp === OP_GROUP.name ? opLeader(k) : `${people} 位行政`}</span></span></summary>
-            <div class="fold-body"><div class="overflow-x-auto"><table><thead>${head}</thead><tbody>${body}</tbody></table></div></div>
+              <span class="op-sub">共 ${list.length} 筆 · ${grp === OP_GROUP.name ? opLeader(k) : `${people} 位行政`} · 點開載入</span></span></summary>
+            <div class="fold-body" data-op-fold-body="${gi}"><p class="muted">載入中…</p></div>
           </details>`;
         }).join('');
-        requestAnimationFrame(() => opAutosizeAll($('op-groups')));
       }
 
       $('op-kinds').addEventListener('click', (e) => {
@@ -4408,12 +4467,25 @@
         if (e.target && e.target.matches('textarea.op-edit')) opAutosize(e.target);
       });
       $('op-groups').addEventListener('toggle', (e) => {
-        if (e.target && e.target.tagName === 'DETAILS' && e.target.open) {
-          requestAnimationFrame(() => opAutosizeAll(e.target));
-        }
+        const fold = e.target;
+        if (!fold || fold.tagName !== 'DETAILS' || !fold.open) return;
+        const gi = Number(fold.dataset.opFold);
+        if (!Number.isFinite(gi)) return;
+        if (!op.foldShown[gi]) opRenderFoldBody(gi, false);
+        else requestAnimationFrame(() => opAutosizeAll(fold));
       }, true);
+      $('op-groups').addEventListener('click', (e) => {
+        const more = e.target.closest('[data-op-fold-more]');
+        if (!more) return;
+        e.preventDefault();
+        opRenderFoldBody(Number(more.dataset.opFoldMore), true);
+      });
       ['op-group', 'op-f-guild', 'op-f-category', 'op-f-region', 'op-f-name', 'op-f-pts'].forEach((id) => $(id).addEventListener('change', renderOpinionTab));
-      $('op-f-q').addEventListener('input', renderOpinionTab);
+      let opQTimer = 0;
+      $('op-f-q').addEventListener('input', () => {
+        clearTimeout(opQTimer);
+        opQTimer = setTimeout(renderOpinionTab, 280);
+      });
       $('op-reload').addEventListener('click', loadOpinions);
       async function opSaveFields(id, patch, el, before) {
         if (el) el.disabled = true;
@@ -4813,6 +4885,255 @@
         }
       });
 
+      /* ---------- 實登稽核後台 ---------- */
+      const lvrA = { loaded: false, rows: [], busy: false };
+      const LVR_NODES = ['物審', '房客審', '預審', '複審'];
+
+      function lvrAAttHtml(atts) {
+        const list = Array.isArray(atts) ? atts : [];
+        if (!list.length) return '<span class="muted">—</span>';
+        return list
+          .map((a) => {
+            const url = esc(a.url || '');
+            const name = esc(a.name || '附件');
+            if (!url) return esc(name);
+            return `<a href="${url}" target="_blank" rel="noopener">${name}</a>`;
+          })
+          .join(' · ');
+      }
+
+      function lvrAFaults(row) {
+        const list = Array.isArray(row?.nodeFaults) ? row.nodeFaults : [];
+        const cleaned = list
+          .map((x) => ({ node: String(x?.node || '').trim(), person: String(x?.person || '').trim() }))
+          .filter((x) => x.node);
+        if (cleaned.length) return cleaned;
+        const node = String(row?.auditNode || '').trim();
+        if (!node) return [];
+        return node.split(/[、,，]/).map((n) => n.trim()).filter(Boolean).map((n, i) => ({
+          node: n,
+          person: i === 0 ? String(row?.reviewerName || '').trim() : ''
+        }));
+      }
+
+      function lvrAFaultEditor(row) {
+        const faults = lvrAFaults(row);
+        const selected = new Set(faults.map((f) => f.node));
+        const personOf = Object.fromEntries(faults.map((f) => [f.node, f.person]));
+        return `<div class="lvr-a-faults" data-lvr-faults>
+          <div class="lvr-a-fault-nodes">${LVR_NODES.map((n) => `
+            <label><input type="checkbox" data-lvr-fn="${esc(n)}"${selected.has(n) ? ' checked' : ''}> ${esc(n)}</label>
+          `).join('')}</div>
+          <div class="lvr-a-fault-people">${LVR_NODES.map((n) => `
+            <label class="lvr-a-fault-person"${selected.has(n) ? '' : ' hidden'} data-lvr-fp-wrap="${esc(n)}">
+              <span>${esc(n)}</span>
+              <input data-lvr-fp="${esc(n)}" value="${esc(personOf[n] || '')}" maxlength="40" placeholder="誰錯" style="width:5.5rem">
+            </label>
+          `).join('')}</div>
+        </div>`;
+      }
+
+      function lvrANowMonth() {
+        const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit' }).formatToParts(new Date());
+        const y = Number(parts.find((p) => p.type === 'year')?.value || 0);
+        const m = parts.find((p) => p.type === 'month')?.value || '01';
+        return `${y - 1911}/${m}`;
+      }
+
+      function lvrAMonthList() {
+        const [y0, m0] = lvrANowMonth().split('/').map(Number);
+        const set = new Set();
+        for (let i = -1; i < 12; i += 1) {
+          const t = y0 * 12 + (m0 - 1) - i;
+          set.add(`${Math.floor(t / 12)}/${String((t % 12) + 1).padStart(2, '0')}`);
+        }
+        (lvrA.rows || []).forEach((r) => r.auditMonth && set.add(r.auditMonth));
+        return [...set].sort().reverse();
+      }
+
+      function lvrAMonthOptions(cur) {
+        return lvrAMonthList()
+          .map((m) => `<option value="${esc(m)}"${m === cur ? ' selected' : ''}>${esc(m)}</option>`)
+          .join('');
+      }
+
+      function syncLvrAMonthFilter() {
+        const sel = $('lvr-a-month');
+        if (!sel) return;
+        const cur = sel.value;
+        const used = [...new Set((lvrA.rows || []).map((r) => r.auditMonth).filter(Boolean))].sort().reverse();
+        sel.innerHTML = `<option value="">全部月份</option>${used
+          .map((m) => `<option value="${esc(m)}"${m === cur ? ' selected' : ''}>${esc(m)}（${lvrA.rows.filter((r) => r.auditMonth === m).length}）</option>`)
+          .join('')}`;
+      }
+
+      function renderLvrAuditAdmin() {
+        const q = String($('lvr-a-q')?.value || '').trim().toLowerCase();
+        const st = String($('lvr-a-status')?.value || '').trim();
+        const mo = String($('lvr-a-month')?.value || '').trim();
+        const rows = (lvrA.rows || []).filter((r) => {
+          if (st && String(r.reviewStatus || 'pending') !== st) return false;
+          if (mo && String(r.auditMonth || '') !== mo) return false;
+          if (!q) return true;
+          const faults = lvrAFaults(r).map((f) => `${f.node}${f.person}`).join(' ');
+          const blob = [r.address, r.office, r.salesName, r.officeManager, r.errorReason, r.authorName, r.adminNote, faults]
+            .map((x) => String(x || '').toLowerCase())
+            .join(' ');
+          return blob.includes(q);
+        });
+        $('lvr-a-count').textContent = `共 ${rows.length} 筆` + ((q || st || mo) && rows.length !== lvrA.rows.length ? `（篩自 ${lvrA.rows.length}）` : '');
+        const tb = $('lvr-a-list');
+        if (!rows.length) {
+          tb.innerHTML = `<tr><td colspan="12" class="muted">${lvrA.rows.length ? '沒有符合條件的紀錄' : '尚無實登稽核紀錄'}</td></tr>`;
+          return;
+        }
+        tb.innerHTML = rows
+          .map((r) => {
+            const id = Number(r.id);
+            const status = String(r.reviewStatus || 'pending');
+            return `<tr data-lvr-a-id="${id}">
+              <td>${esc(fmtTime(r.createdAt))}</td>
+              <td><select class="lvr-a-f" data-f="auditMonth">${lvrAMonthOptions(r.auditMonth || lvrANowMonth())}</select></td>
+              <td>
+                <input class="lvr-a-f" data-f="authorName" value="${esc(r.authorName || '')}" style="width:5.5rem" maxlength="40">
+                ${status === 'approved' ? `<div class="muted">獎 ${Number(r.rewardAmount) || 300}</div>` : ''}
+              </td>
+              <td><input class="lvr-a-f" data-f="address" value="${esc(r.address || '')}" style="min-width:11rem" maxlength="200"></td>
+              <td>
+                <input class="lvr-a-f" data-f="office" value="${esc(r.office || '')}" style="width:5.5rem" maxlength="40" placeholder="營業處">
+                <input class="lvr-a-f" data-f="officeManager" value="${esc(r.officeManager || '')}" style="width:5.5rem;margin-top:0.25rem" maxlength="40" placeholder="處經理">
+              </td>
+              <td><input class="lvr-a-f" data-f="salesName" value="${esc(r.salesName || '')}" style="width:5.5rem" maxlength="40"></td>
+              <td style="white-space:normal;min-width:12rem">${lvrAFaultEditor(r)}</td>
+              <td><textarea class="lvr-a-f" data-f="errorReason" rows="2" style="min-width:12rem" maxlength="4000">${esc(r.errorReason || '')}</textarea></td>
+              <td><textarea class="lvr-a-f" data-f="adminNote" rows="2" style="min-width:10rem" maxlength="2000" placeholder="後台意見">${esc(r.adminNote || '')}</textarea></td>
+              <td>
+                <select class="lvr-a-f" data-f="reviewStatus">
+                  <option value="pending"${status === 'pending' ? ' selected' : ''}>待稽核</option>
+                  <option value="approved"${status === 'approved' ? ' selected' : ''}>通過</option>
+                  <option value="rejected"${status === 'rejected' ? ' selected' : ''}>退回</option>
+                </select>
+              </td>
+              <td style="white-space:normal;max-width:9rem">${lvrAAttHtml(r.attachments)}</td>
+              <td>
+                <button type="button" class="btn btn-main btn-sm" data-lvr-a-save="${id}">儲存</button>
+                <button type="button" class="btn btn-del" data-lvr-a-del="${id}">刪除</button>
+              </td>
+            </tr>`;
+          })
+          .join('');
+      }
+
+      async function loadLvrAuditAdmin(force) {
+        if (lvrA.busy) return;
+        if (lvrA.loaded && !force) {
+          renderLvrAuditAdmin();
+          return;
+        }
+        lvrA.busy = true;
+        $('lvr-a-list').innerHTML = '<tr><td colspan="12" class="muted">讀取中…</td></tr>';
+        try {
+          const res = await rpc('admin_lvr_audit_admin_list');
+          lvrA.rows = Array.isArray(res?.rows) ? res.rows : [];
+          lvrA.loaded = true;
+          syncLvrAMonthFilter();
+          renderLvrAuditAdmin();
+        } catch (err) {
+          $('lvr-a-list').innerHTML = `<tr><td colspan="12" class="err">${esc(err.message || err)}</td></tr>`;
+          say(err.message || String(err));
+        } finally {
+          lvrA.busy = false;
+        }
+      }
+
+      function lvrARowPayload(tr) {
+        const get = (f) => String(tr.querySelector(`[data-f="${f}"]`)?.value || '').trim();
+        const nodeFaults = LVR_NODES
+          .filter((n) => tr.querySelector(`[data-lvr-fn="${n}"]`)?.checked)
+          .map((n) => ({
+            node: n,
+            person: String(tr.querySelector(`[data-lvr-fp="${n}"]`)?.value || '').trim()
+          }));
+        return {
+          authorName: get('authorName'),
+          auditMonth: get('auditMonth'),
+          address: get('address'),
+          office: get('office'),
+          salesName: get('salesName'),
+          officeManager: get('officeManager'),
+          nodeFaults,
+          errorReason: get('errorReason'),
+          adminNote: get('adminNote'),
+          reviewStatus: get('reviewStatus'),
+          reviewedBy: '後台'
+        };
+      }
+
+      $('btn-lvr-a-reload')?.addEventListener('click', () => loadLvrAuditAdmin(true));
+      $('lvr-a-q')?.addEventListener('input', () => renderLvrAuditAdmin());
+      $('lvr-a-status')?.addEventListener('change', () => renderLvrAuditAdmin());
+      $('lvr-a-month')?.addEventListener('change', () => renderLvrAuditAdmin());
+      $('lvr-a-list')?.addEventListener('change', (e) => {
+        const cb = e.target.closest('[data-lvr-fn]');
+        if (!cb) return;
+        const node = cb.dataset.lvrFn;
+        const wrap = e.target.closest('tr')?.querySelector(`[data-lvr-fp-wrap="${node}"]`);
+        if (wrap) wrap.hidden = !cb.checked;
+      });
+      $('lvr-a-list')?.addEventListener('click', async (e) => {
+        const save = e.target.closest('[data-lvr-a-save]');
+        const del = e.target.closest('[data-lvr-a-del]');
+        if (!save && !del) return;
+        const id = Number(save?.dataset.lvrASave || del?.dataset.lvrADel);
+        const tr = e.target.closest('tr[data-lvr-a-id]');
+        if (!id || !tr) return;
+        if (del) {
+          if (!confirm('確定刪除這筆實登稽核？刪除後無法復原。')) return;
+          del.disabled = true;
+          try {
+            await rpc('admin_lvr_audit_admin_delete', { p_id: id });
+            lvrA.rows = lvrA.rows.filter((r) => Number(r.id) !== id);
+            renderLvrAuditAdmin();
+            say('已刪除', true);
+          } catch (err) {
+            del.disabled = false;
+            say(err.message || String(err));
+          }
+          return;
+        }
+        const payload = lvrARowPayload(tr);
+        if (!payload.authorName || !payload.address || !payload.office || !payload.salesName || !payload.officeManager || !payload.errorReason) {
+          say('欄位不可空白');
+          return;
+        }
+        if (!payload.nodeFaults.length) {
+          say('請至少勾一個錯誤節點');
+          return;
+        }
+        if (payload.nodeFaults.some((x) => !x.person)) {
+          say('每個勾選節點都要填誰錯');
+          return;
+        }
+        save.disabled = true;
+        try {
+          const res = await rpc('admin_lvr_audit_admin_update', { p_id: id, p_data: payload });
+          const row = lvrA.rows.find((r) => Number(r.id) === id);
+          if (row) {
+            Object.assign(row, payload, {
+              rewardAmount: res?.rewardAmount ?? (payload.reviewStatus === 'approved' ? 300 : 0),
+              reviewStatus: res?.reviewStatus || payload.reviewStatus
+            });
+          }
+          syncLvrAMonthFilter();
+          renderLvrAuditAdmin();
+          say(payload.reviewStatus === 'approved' ? '已通過，獎金 300 元入帳統計' : '已儲存', true);
+        } catch (err) {
+          say(err.message || String(err));
+        } finally {
+          save.disabled = false;
+        }
+      });
+
       /* ---------- 頁籤與登入 ---------- */
 
       function showTab(name) {
@@ -4821,8 +5142,8 @@
         if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
         document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab));
         for (const t of TABS) $(`tab-${t}`).classList.toggle('hidden', t !== tab);
-        $('month-wrap').classList.toggle('hidden', ['training', 'exam', 'sim', 'kpi', 'kpiyear', 'org', 'opinion'].includes(tab));
-        document.body.classList.toggle('is-op-wide', tab === 'opinion');
+        $('month-wrap').classList.toggle('hidden', ['training', 'exam', 'sim', 'kpi', 'kpiyear', 'org', 'opinion', 'lvraudit'].includes(tab));
+        document.body.classList.toggle('is-op-wide', tab === 'opinion' || tab === 'lvraudit');
         say('');
         if (tab === 'boss' && !boss.slides) fillBossWeeks();
         if (tab === 'wprog') makeWprog(false);
@@ -4842,6 +5163,7 @@
           op.loaded ? renderOpinionTab() : loadOpinions();
           if (!gm.loaded) loadGm();
         }
+        if (tab === 'lvraudit') loadLvrAuditAdmin(false);
       }
 
       $('nav').addEventListener('click', (e) => {

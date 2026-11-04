@@ -33,6 +33,7 @@
     area: '',
     areaOffice: '',
     spot: null,
+    lvrAuditTab: { loading: false, loaded: false, rows: [], error: '' },
     durBy: 'all',
     durView: 'rank',
     durPerson: '',
@@ -178,6 +179,38 @@
     return Core.dropExcludedRows(Core.rowsFromPayload(payload), excludedStaff);
   }
 
+  function ymKey(range) {
+    return `${range.year}-${String(range.month).padStart(2, '0')}`;
+  }
+
+  async function fetchLvrBackfill(range) {
+    const res = await fetch(`${RPA_BASE}/admin-points/lvr-backfill?month=${encodeURIComponent(ymKey(range))}`, {
+      headers: { 'X-Skyfun-Session': token() }
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok) throw new Error(data?.error || `實登補點讀取失敗（HTTP ${res.status}）`);
+    return data;
+  }
+
+  function syncLvrAdminBtn() {
+    const btn = $('apt-lvr-backfill');
+    if (!btn) return;
+    const show = Core.isSupervisor(myName());
+    btn.hidden = !show;
+  }
+
+  function renderLvrPanel(html, show) {
+    const panel = $('apt-lvr-panel');
+    if (!panel) return;
+    if (!show) {
+      panel.hidden = true;
+      panel.innerHTML = '';
+      return;
+    }
+    panel.hidden = false;
+    panel.innerHTML = html;
+  }
+
   async function load(refresh) {
     if (state.loading) return;
     if (!token()) {
@@ -187,20 +220,24 @@
     const range = monthOptions().find((m) => `${m.year}-${m.month}` === state.monthKey) || monthOptions()[0];
     state.loading = true;
     $('apt-refresh')?.setAttribute('disabled', '');
+    $('apt-lvr-backfill')?.setAttribute('disabled', '');
     setMsg(`讀取 ${range.month} 月業績（${range.start}～${range.end}）…第一次約需 5～10 秒`);
     try {
-      const [audit, expenses, term, dis, sb] = await Promise.all([
+      const [audit, expenses, term, dis, sb, lvrBf] = await Promise.all([
         fetchWorker('/admin-points/audit-log', '審核時間紀錄', range, refresh),
         fetchWorker('/admin-points/expenses', '補助審核', range, refresh),
         fetchTerminations(range, refresh),
         fetchDisableCredits(range, refresh),
-        fetchSupabase(range)
+        fetchSupabase(range),
+        fetchLvrBackfill(range).catch(() => ({ ok: true, credits: [], empty: true }))
       ]);
       state.auditRows = auditRowsOf(audit);
       state.expenseRows = auditRowsOf(expenses);
       state.termRows = auditRowsOf(term);
       state.disableRows = auditRowsOf(dis);
       state.disableSuppressIds = Array.isArray(dis.suppressIds) ? dis.suppressIds : [];
+      state.lvrBackfillRows = Core.dropExcludedRows(Core.lvrBackfillRows(lvrBf), excludedStaff);
+      state.lvrBackfillMeta = lvrBf;
       state.lkpi = null;
       state.lease = null;
       state.result = Core.computePoints(state.auditRows, {
@@ -212,6 +249,7 @@
         opinions: sb.opinions || [],
         expenses: state.expenseRows,
         terminations: state.termRows,
+        lvrBackfill: state.lvrBackfillRows,
         ...Core.disableCreditOpts(dis, sb.excluded)
       });
       state.termNote = mergeNotes(termNote(term), disableNote(dis));
@@ -226,12 +264,142 @@
       if (state.person && (!state.result.people.some((p) => p.name === state.person) || !canSee(state.person))) state.person = '';
       if (!state.person && state.result.people.some((p) => p.name === myName())) state.person = myName();
       setMsg(state.termNote, state.termNote ? 'warn' : '');
+      syncLvrAdminBtn();
       render();
       loadOpenOpinions();
     } catch (err) {
       setMsg(String(err.message || err), 'err');
     } finally {
       state.loading = false;
+      $('apt-refresh')?.removeAttribute('disabled');
+      if (!state.lvrRunning) $('apt-lvr-backfill')?.removeAttribute('disabled');
+    }
+  }
+
+  /** 實登補點：處長密碼（與辦法完整檔／主管獎金同一組） */
+  function askLvrPassword() {
+    const Gate = window.SkyfunPolicyDocGate;
+    if (Gate?.isUnlocked?.()) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const old = document.getElementById('apt-lvr-lock');
+      old?.remove();
+      const root = document.createElement('div');
+      root.id = 'apt-lvr-lock';
+      root.className = 'apt-lvr-lock';
+      root.innerHTML = `
+        <div class="apt-lvr-lock-backdrop" data-lvr-lock-close></div>
+        <div class="apt-lvr-lock-panel" role="dialog" aria-modal="true" aria-labelledby="apt-lvr-lock-title">
+          <h3 id="apt-lvr-lock-title">實登補點｜處長密碼</h3>
+          <p>月結補點會改寫當月點數認列，請輸入處長密碼後繼續（與辦法完整檔同一組）。</p>
+          <form id="apt-lvr-lock-form" autocomplete="off">
+            <label for="apt-lvr-lock-pwd">密碼</label>
+            <input id="apt-lvr-lock-pwd" type="password" inputmode="numeric" required placeholder="請輸入密碼" />
+            <p class="apt-lvr-lock-msg" id="apt-lvr-lock-msg" role="status" aria-live="polite"></p>
+            <div class="apt-lvr-lock-actions">
+              <button type="button" class="apt-btn" data-lvr-lock-close>取消</button>
+              <button type="submit" class="apt-btn apt-btn--lvr">解鎖並繼續</button>
+            </div>
+          </form>
+        </div>`;
+      document.body.appendChild(root);
+      const finish = (ok) => {
+        root.remove();
+        resolve(ok);
+      };
+      root.querySelectorAll('[data-lvr-lock-close]').forEach((el) => el.addEventListener('click', () => finish(false)));
+      const input = root.querySelector('#apt-lvr-lock-pwd');
+      const msg = root.querySelector('#apt-lvr-lock-msg');
+      root.querySelector('#apt-lvr-lock-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msg.textContent = '核對中…';
+        try {
+          if (!Gate?.checkPassword) throw new Error('密碼模組未載入');
+          const ok = await Gate.checkPassword(input.value);
+          if (!ok) {
+            msg.textContent = '密碼錯誤';
+            input.select();
+            return;
+          }
+          Gate.setUnlocked?.(true);
+          finish(true);
+        } catch (err) {
+          msg.textContent = String(err.message || err);
+        }
+      });
+      setTimeout(() => input?.focus(), 0);
+    });
+  }
+
+  async function runLvrBackfill() {
+    if (state.lvrRunning || state.loading) return;
+    if (!Core.isSupervisor(myName())) {
+      window.alert('僅管理員可執行實登補點');
+      return;
+    }
+    if (!(await askLvrPassword())) return;
+    const range = monthOptions().find((m) => `${m.year}-${m.month}` === state.monthKey) || monthOptions()[0];
+    const ym = ymKey(range);
+    const label = `${range.year - 1911} 年 ${range.month} 月業績（${range.start}～${range.end}）`;
+    if (!window.confirm(`確定對「${label}」執行實登補點？\n\n會查近 6 個月送預審合約，並逐筆讀變更紀錄（約每秒 1 筆），不影響「重新抓取星鴻資料」。已查過的合約不會重查。`)) {
+      return;
+    }
+    state.lvrRunning = true;
+    $('apt-lvr-backfill')?.setAttribute('disabled', '');
+    $('apt-refresh')?.setAttribute('disabled', '');
+    let last = null;
+    try {
+      let reset = true;
+      for (let i = 0; i < 500; i++) {
+        const res = await fetch(`${RPA_BASE}/admin-points/lvr-backfill?month=${encodeURIComponent(ym)}${reset ? '&reset=1' : ''}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Skyfun-Session': token()
+          },
+          body: '{}'
+        });
+        reset = false;
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.ok) throw new Error(data?.error || `實登補點失敗（HTTP ${res.status}）`);
+        last = data;
+        const p = data.progress || {};
+        const pct = p.candidates
+          ? `查變更 ${p.probeDone || 0}/${p.candidates}`
+          : p.phase === 'search'
+            ? `搜尋第 ${p.searchPage || 0} 頁（已 ${p.contractsFound || 0} 筆）`
+            : p.message || p.phase || '';
+        renderLvrPanel(
+          `<b>實登補點進行中</b><div class="apt-lvr-progress">${esc(p.message || pct)} · 星鴻呼叫 ${Number(data.skyfunCalls) || 0} 次</div>`,
+          true
+        );
+        if (data.done) break;
+      }
+      if (!last?.done) throw new Error('實登補點逾時，請再按一次接續（已查過的不會重查）');
+      const credits = Array.isArray(last.credits) ? last.credits : [];
+      const by = Array.isArray(last.byEditor) ? last.byEditor : [];
+      const peopleLine = by.length
+        ? by.map((x) => `${esc(x.editor)} +${x.count}`).join('、')
+        : '（本月無須補點）';
+      const list = credits.length
+        ? `<ul>${credits
+            .slice(0, 40)
+            .map((c) => `<li>${esc(c.address || c.matchNo || c.id)} → ${esc(c.editor)}（${esc(String(c.editTime || '').slice(0, 16))}）</li>`)
+            .join('')}${credits.length > 40 ? `<li>…另 ${credits.length - 40} 筆</li>` : ''}</ul>`
+        : '';
+      const detail = credits.length
+        ? `<details class="apt-lvr-fold"><summary>補給：${peopleLine}（點開看 ${credits.length} 筆明細）</summary>${list}</details>`
+        : `<div>補給：${peopleLine}</div>`;
+      renderLvrPanel(
+        `<b>實登補點完成</b>：補 <b>${credits.length}</b> 筆 · 星鴻呼叫 <b>${Number(last.skyfunCalls) || 0}</b> 次${detail}`,
+        true
+      );
+      await load(false);
+    } catch (err) {
+      renderLvrPanel(`<b>實登補點失敗</b>：${esc(String(err.message || err))}`, true);
+      setMsg(String(err.message || err), 'err');
+    } finally {
+      state.lvrRunning = false;
+      $('apt-lvr-backfill')?.removeAttribute('disabled');
       $('apt-refresh')?.removeAttribute('disabled');
     }
   }
@@ -5821,7 +5989,7 @@
       );
     }
     if (r.duplicates.length) {
-      out.push(`<li>同案件同工作項目重複紀錄已排除 ${r.duplicates.length} 筆（只認列第一次；物件「人工審核 → 已生效」為停用後再審，另計一點；合約同租期已停用另給「重新審核通過」者一點）。</li>`);
+      out.push(`<li>同案件同工作項目重複紀錄已排除 ${r.duplicates.length} 筆（只認列第一次；物件／房客「人工審核 → 已生效」為停用後再審，另計一點；預審／複審若中間有→停用會清去重後再通過可再計；合約同租期已停用另給「重新審核通過」者一點）。</li>`);
     }
     return `<ul class="apt-warn">${out.join('')}</ul>`;
   }
@@ -5858,8 +6026,13 @@
     else if (state.tab === 'area') box.innerHTML = renderArea();
     else if (state.tab === 'duration') box.innerHTML = renderDuration();
     else if (state.tab === 'spot') box.innerHTML = renderSpot();
+    else if (state.tab === 'lvraudit') box.innerHTML = renderLvrAuditTab();
     else box.innerHTML = renderMonth();
     $('apt-warnings').innerHTML = renderWarnings();
+    if (state.tab === 'lvraudit') {
+      mountLvrAuditInlineForm();
+      ensureLvrAuditTabLoaded();
+    }
     if (state.tab === 'person' && window.GuideExam) {
       window.GuideExam.loadOverview();
       const gx = $('guide-exam-root');
@@ -5898,6 +6071,99 @@
     case: { title: '案件意見', item: '案件意見修正' },
     roster: { title: '清冊意見', item: '清冊意見修正' }
   };
+  const OPINION_DRAFT_FIELDS = [
+    'guildPeriod',
+    'region',
+    'company',
+    'rosterPeriod',
+    'caseNo',
+    'opinionDate',
+    'auditStatus',
+    'systemPaper',
+    'category',
+    'categoryOther',
+    'content',
+    'measure'
+  ];
+  function opinionDraftKey(kind) {
+    return `apt-op-draft:v1:${myName() || ''}:${kind}`;
+  }
+  function clearOpinionDraft(kind) {
+    try {
+      localStorage.removeItem(opinionDraftKey(kind));
+    } catch {
+      /* ignore */
+    }
+  }
+  function readOpinionDraft(kind) {
+    try {
+      const raw = localStorage.getItem(opinionDraftKey(kind));
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      return d && typeof d === 'object' ? d : null;
+    } catch {
+      return null;
+    }
+  }
+  function writeOpinionDraft(kind, form) {
+    if (!form || !OPINION_FORMS[kind] || !myName()) return;
+    const data = {};
+    let any = false;
+    for (const k of OPINION_DRAFT_FIELDS) {
+      const el = form.elements[k];
+      if (!el) continue;
+      const v = String(el.value || '');
+      data[k] = v;
+      if (v.trim()) any = true;
+    }
+    const pick = String(form._roster?.pick || '').trim();
+    if (pick) {
+      data.rosterPick = pick;
+      any = true;
+    }
+    if (!any) {
+      clearOpinionDraft(kind);
+      return;
+    }
+    data.savedAt = Date.now();
+    try {
+      localStorage.setItem(opinionDraftKey(kind), JSON.stringify(data));
+    } catch {
+      /* ignore quota */
+    }
+  }
+  function applyOpinionDraft(kind, form) {
+    const d = readOpinionDraft(kind);
+    if (!d || !form) return null;
+    for (const k of OPINION_DRAFT_FIELDS) {
+      const el = form.elements[k];
+      if (!el || d[k] == null) continue;
+      const val = String(d[k]);
+      if (el.tagName === 'SELECT') {
+        const ok = [...el.options].some((o) => o.value === val || o.textContent === val);
+        if (ok || val === '') el.value = val;
+      } else {
+        el.value = val;
+      }
+    }
+    return d;
+  }
+  function bindOpinionDraft(kind, form) {
+    let timer = 0;
+    const save = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => writeOpinionDraft(kind, form), 250);
+    };
+    form.addEventListener('input', save);
+    form.addEventListener('change', save);
+    form.querySelector('.apt-op-items')?.addEventListener('click', (e) => {
+      if (e.target.closest('[data-op-item]')) save();
+    });
+    form._flushOpinionDraft = () => {
+      clearTimeout(timer);
+      writeOpinionDraft(kind, form);
+    };
+  }
   /** 清冊期數 → 星鴻「社會住宅期數」代碼（增辦四期＝4-1期） */
   const ROSTER_PERIODS = [['三期', 30], ['3-1期', 31], ['四期', 40], ['增辦四期', 41], ['五期', 50]];
   const ROSTER_FORMS = { '04': '表單04 出租人補助', '09': '表單09 業者服務補助' };
@@ -6309,12 +6575,837 @@
   }
 
   function closeOpinion() {
+    const form = $('apt-op-mask')?.querySelector('form[data-op-kind]');
+    if (form) {
+      const kind = form.dataset.opKind;
+      if (typeof form._flushOpinionDraft === 'function') form._flushOpinionDraft();
+      else if (kind) writeOpinionDraft(kind, form);
+    }
     $('apt-op-mask')?.remove();
     document.removeEventListener('keydown', opinionKey);
   }
 
   function opinionKey(e) {
     if (e.key === 'Escape') closeOpinion();
+  }
+
+  /* ---------- 實價登錄稽核（不算點；全員可見；填寫人＝工具箱帳號） ---------- */
+  function lvrAuditCountMap(rows, keyFn) {
+    const map = new Map();
+    for (const r of rows || []) {
+      const k = String(keyFn(r) || '').trim() || '（未填）';
+      map.set(k, (map.get(k) || 0) + 1);
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'));
+  }
+
+  function lvrAuditRankTable(title, note, pairs, total) {
+    if (!pairs.length) return `<section class="apt-lvr-ana-card"><h4 class="apt-sec-title">${esc(title)}</h4><p class="apt-empty">尚無資料</p></section>`;
+    const top = pairs[0][1] || 1;
+    const pct = (n) => (total ? `${((n / total) * 100).toFixed(1)}%` : '—');
+    return `<section class="apt-lvr-ana-card">
+      <h4 class="apt-sec-title">${esc(title)}${note ? `<small>${esc(note)}</small>` : ''}</h4>
+      <div class="apt-table-wrap"><table class="apt-table apt-lvr-ana-table">
+        <thead><tr><th class="num">#</th><th>名稱</th><th class="num">件數</th><th class="num">占比</th><th>分布</th></tr></thead>
+        <tbody>${pairs
+          .map(
+            ([name, n], i) => `<tr class="${i < 3 ? 'is-top' : ''}">
+              <td class="num">${i + 1}</td>
+              <td>${esc(name)}</td>
+              <td class="num"><b>${n}</b></td>
+              <td class="num">${pct(n)}</td>
+              <td class="apt-lvr-ana-bar"><span style="width:${(n / top) * 100}%"></span></td>
+            </tr>`
+          )
+          .join('')}</tbody>
+      </table></div>
+    </section>`;
+  }
+
+  function lvrAuditOfficePie(officePairs, total) {
+    const CH = window.AdminPointsCharts;
+    const pairs = Array.isArray(officePairs) ? officePairs : [];
+    if (!CH?.pie || !total || !pairs.length) return '<p class="apt-gpie-none">尚無已通過的實登稽核資料</p>';
+    const parts = pairs.map(([label, value], i) => ({
+      label,
+      value,
+      color: GCAT_COLORS[i % GCAT_COLORS.length]
+    }));
+    const top = parts[0];
+    if (!top) return '<p class="apt-gpie-none">尚無已通過的實登稽核資料</p>';
+    const pct = (n) => `${((n / total) * 100).toFixed(1)}%`;
+    return `<div class="apt-gpie apt-gpie--lvr">
+      <div class="apt-gpie-chart">${CH.pie({ parts, center: total, sub: '件稽核' })}</div>
+      <div class="apt-gpie-side">
+        <div class="apt-gpie-hl">
+          <p><span>錯誤最多的營業處</span><b style="color:${top.color}">${esc(top.label)}</b><em>${top.value} 件・占 ${pct(top.value)}</em></p>
+          <p><span>營業處數</span><b>${parts.length}</b><em>有出現在稽核紀錄</em></p>
+        </div>
+      </div>
+      <div class="apt-gpie-body">
+        <ul class="apt-gpie-list" style="--rows:${Math.ceil(parts.length / 2)}">${parts
+          .map(
+            (p, i) => `<li${i < 3 ? ' class="is-top"' : ''}>
+              <i style="background:${p.color}"></i><span title="${esc(p.label)}">${esc(p.label)}</span>
+              <b>${p.value}</b><em>${pct(p.value)}</em>
+              <s><u style="width:${(p.value / Math.max(top.value, 1)) * 100}%;background:${p.color}"></u></s>
+            </li>`
+          )
+          .join('')}</ul>
+      </div>
+    </div>`;
+  }
+
+  function invalidateLvrAuditTab() {
+    state.lvrAuditTab = { loading: false, loaded: false, rows: [], error: '' };
+  }
+
+  async function ensureLvrAuditTabLoaded(force) {
+    const tab = state.lvrAuditTab || (state.lvrAuditTab = { loading: false, loaded: false, rows: [], error: '' });
+    if (tab.loading && !force) return;
+    if (tab.loaded && !force) return;
+    if (!token()) {
+      tab.loading = false;
+      tab.error = '請先登入工具箱';
+      tab.loaded = true;
+      if (state.tab === 'lvraudit') refreshLvrAuditAnalysis();
+      return;
+    }
+    const seq = (tab._seq = (tab._seq || 0) + 1);
+    tab.loading = true;
+    tab.error = '';
+    if (state.tab === 'lvraudit') refreshLvrAuditAnalysis();
+    try {
+      const res = await window.skyfunAuth.rpc('admin_lvr_audit_list', { p_token: token() });
+      if (seq !== tab._seq) return;
+      if (!res?.ok) throw new Error(res?.error || '讀取失敗');
+      tab.rows = Array.isArray(res.rows) ? res.rows : [];
+      tab.loaded = true;
+    } catch (err) {
+      if (seq !== tab._seq) return;
+      tab.error = String(err.message || err);
+      tab.loaded = true;
+      tab.rows = [];
+    } finally {
+      if (seq === tab._seq) tab.loading = false;
+      if (state.tab === 'lvraudit') refreshLvrAuditAnalysis();
+    }
+  }
+
+  function lvrAuditNodeFaults(row) {
+    const list = Array.isArray(row?.nodeFaults) ? row.nodeFaults : [];
+    const cleaned = list
+      .map((x) => ({ node: String(x?.node || '').trim(), person: String(x?.person || '').trim(), mismatch: x?.mismatch === true }))
+      .filter((x) => x.node);
+    if (cleaned.length) return cleaned;
+    const node = String(row?.auditNode || '').trim();
+    if (!node) return [];
+    return node.split(/[、,，]/).map((n) => n.trim()).filter(Boolean).map((n, i) => ({
+      node: n,
+      person: i === 0 ? String(row?.reviewerName || '').trim() : ''
+    }));
+  }
+
+  function lvrAuditStatusLabel(st) {
+    if (st === 'approved') return ['is-ok', '已通過'];
+    if (st === 'rejected') return ['is-err', '已退回'];
+    return ['is-wait', '待稽核'];
+  }
+
+  function lvrAuditYm(iso) {
+    const d = iso ? new Date(iso) : new Date();
+    if (Number.isNaN(d.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Taipei',
+      year: 'numeric',
+      month: '2-digit'
+    }).formatToParts(d);
+    const y = Number(parts.find((p) => p.type === 'year')?.value || 0);
+    const m = parts.find((p) => p.type === 'month')?.value || '01';
+    if (!y) return '';
+    return `${y - 1911}/${m}`;
+  }
+
+  function lvrAuditPersonCountMap(rows) {
+    const map = new Map();
+    for (const r of rows) {
+      for (const f of lvrAuditNodeFaults(r)) {
+        const name = f.person || '（未填）';
+        map.set(name, (map.get(name) || 0) + 1);
+      }
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'));
+  }
+
+  function lvrAuditNodeCountMap(rows) {
+    const map = new Map();
+    for (const r of rows) {
+      for (const f of lvrAuditNodeFaults(r)) {
+        map.set(f.node, (map.get(f.node) || 0) + 1);
+      }
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'));
+  }
+
+  function lvrAuditRowMonth(r) {
+    return r.auditMonth || lvrAuditYm(r.createdAt);
+  }
+
+  function lvrAuditWhen(iso) {
+    const d = iso ? new Date(iso) : null;
+    if (!d || Number.isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat('zh-TW', {
+      timeZone: 'Asia/Taipei', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
+    }).format(d);
+  }
+
+  function lvrAuditAnalysisHtml() {
+    const tab = state.lvrAuditTab || { loading: false, loaded: false, rows: [], error: '' };
+    const allRows = tab.rows || [];
+    const months = [...new Set(allRows.map(lvrAuditRowMonth).filter(Boolean))].sort().reverse();
+    const nowYm = lvrAuditYm();
+    let selMonth = state.lvrAuditMonth;
+    if (!selMonth || (selMonth !== 'all' && !months.includes(selMonth))) {
+      selMonth = months.includes(nowYm) ? nowYm : months[0] || nowYm;
+    }
+    const monthLabel = (m) => {
+      const [y, mm] = String(m).split('/');
+      return `${y} 年 ${Number(mm)} 月`;
+    };
+    const monthPick = months.length
+      ? `<label class="apt-lvr-month-pick">月份
+          <select data-lvr-month>
+            ${months.map((m) => `<option value="${esc(m)}"${m === selMonth ? ' selected' : ''}>${esc(monthLabel(m))}（${allRows.filter((r) => lvrAuditRowMonth(r) === m).length}）</option>`).join('')}
+            <option value="all"${selMonth === 'all' ? ' selected' : ''}>全部月份（${allRows.length}）</option>
+          </select>
+        </label>`
+      : '';
+    const head = `<div class="apt-lvr-ana-head">
+      <div>
+        <h3 class="apt-sec-title">實價登錄稽核分析<small>排行看全部送出；獎金／停權只算後台通過</small></h3>
+        <p class="apt-sub-note">依「歸屬月份」統計；查錯獎每案 300 元（通過後算給填寫人）；同處當月通過超過 3 件 → 處長系統修改權停權。</p>
+      </div>
+      <div class="apt-lvr-ana-actions">
+        ${monthPick}
+        <button type="button" class="apt-btn" data-lvr-audit-refresh ${tab.loading ? 'disabled' : ''}>${tab.loading ? '讀取中…' : '重新整理'}</button>
+      </div>
+    </div>`;
+    if (tab.loading && !tab.loaded) return `${head}<p class="apt-empty">讀取實登稽核中…</p>`;
+    if (tab.error) return `${head}<p class="apt-empty">${esc(tab.error)}</p>`;
+    if (!allRows.length) return `${head}<p class="apt-empty">尚無實登稽核紀錄。</p>`;
+    const rows = selMonth === 'all' ? allRows : allRows.filter((r) => lvrAuditRowMonth(r) === selMonth);
+    const total = rows.length;
+    if (!total) return `${head}<p class="apt-empty">${esc(monthLabel(selMonth))}尚無實登稽核紀錄。</p>`;
+    const ranked = rows.filter((r) => (r.reviewStatus || 'pending') !== 'rejected');
+    const approved = rows.filter((r) => r.reviewStatus === 'approved');
+    const pending = rows.filter((r) => (r.reviewStatus || 'pending') === 'pending');
+    const byOfficeMgr = lvrAuditCountMap(ranked, (r) => {
+      const o = r.office || '（未填）';
+      const m = r.officeManager || '（未填）';
+      return `${o}｜處經理 ${m}`;
+    });
+    const bySales = lvrAuditCountMap(ranked, (r) => r.salesName);
+    const byAuditor = lvrAuditPersonCountMap(ranked);
+    const byNode = lvrAuditNodeCountMap(ranked);
+    const auditorTotal = byAuditor.reduce((s, [, n]) => s + n, 0);
+    const nodeTotal = byNode.reduce((s, [, n]) => s + n, 0);
+    const rewardByAuthor = lvrAuditCountMap(approved, (r) => r.authorName);
+    const rewardTotal = approved.reduce((s, r) => s + (Number(r.rewardAmount) || 300), 0);
+    const officeMonth = new Map();
+    for (const r of approved) {
+      const ym = lvrAuditRowMonth(r);
+      const office = r.office || '（未填）';
+      const key = `${ym}\u0000${office}`;
+      const cur = officeMonth.get(key) || { ym, office, n: 0, manager: r.officeManager || '' };
+      cur.n += 1;
+      if (r.officeManager) cur.manager = r.officeManager;
+      officeMonth.set(key, cur);
+    }
+    const suspendList = [...officeMonth.values()]
+      .filter((v) => v.n > 3)
+      .sort((a, b) => b.ym.localeCompare(a.ym) || b.n - a.n);
+    const topOffice = byOfficeMgr[0];
+    const topAuditor = byAuditor[0];
+    const medals = ['🥇', '🥈', '🥉'];
+    const rewardHtml = rewardByAuthor.length
+      ? `<div class="apt-lvr-rk-list">${rewardByAuthor
+          .map(([name, n], i) => `<div class="apt-lvr-rk-item apt-lvr-rk-item--${i + 1}">
+            <span class="apt-lvr-rk-medal">${medals[i] || i + 1}</span>
+            <div class="apt-lvr-rk-main"><div class="apt-lvr-rk-who">${esc(name)}</div><div class="apt-lvr-rk-sub">稽核通過 ${n} 件</div></div>
+            <div class="apt-lvr-rk-total"><strong>${(n * LVR_REWARD_PER_CASE).toLocaleString('zh-TW')}</strong><span>元</span></div>
+          </div>`)
+          .join('')}</div>`
+      : '<p class="apt-lvr-rk-empty">尚無通過案件，後台稽核通過後就會上榜</p>';
+    const suspendHtml = suspendList.length
+      ? `<div class="apt-lvr-rk-list">${suspendList
+          .map((x) => `<div class="apt-lvr-rk-item apt-lvr-rk-item--bad">
+            <span class="apt-lvr-rk-medal">⛔</span>
+            <div class="apt-lvr-rk-main"><div class="apt-lvr-rk-who">${esc(x.office)}<span class="apt-lvr-rk-team">處經理 ${esc(x.manager || '—')}</span></div><div class="apt-lvr-rk-sub">${esc(monthLabel(x.ym))} · 停權系統修改權限</div></div>
+            <div class="apt-lvr-rk-total"><strong>${x.n}</strong><span>件</span></div>
+          </div>`)
+          .join('')}</div>`
+      : `<p class="apt-lvr-rk-empty">${esc(selMonth === 'all' ? '目前' : monthLabel(selMonth))}尚無須停權處長</p>`;
+    return `${head}
+      <div class="apt-summary apt-lvr-ana-summary">
+        <span class="apt-chip"><strong>${total}</strong>總筆數</span>
+        <span class="apt-chip"><strong>${pending.length}</strong>待稽核</span>
+        <span class="apt-chip"><strong>${approved.length}</strong>已通過</span>
+        <span class="apt-chip apt-chip--ok"><strong>${rewardTotal.toLocaleString('zh-TW')}</strong>通過獎金</span>
+        <span class="apt-chip apt-chip--warn"><strong>${esc((topOffice?.[0] || '—').split('｜')[0])}</strong>錯誤最多營業處（${topOffice?.[1] || 0}）</span>
+        <span class="apt-chip apt-chip--warn"><strong>${esc(topAuditor?.[0] || '—')}</strong>審核人員錯最多（${topAuditor?.[1] || 0}）</span>
+      </div>
+      <section class="apt-block apt-block--charts">
+        <h4 class="apt-sec-title">錯誤排行<small>含待稽核；退回不計</small></h4>
+        ${ranked.length ? lvrAuditOfficePie(byOfficeMgr, ranked.length) : '<p class="apt-empty">尚無資料</p>'}
+        <div class="apt-lvr-policy-pair">
+          <div class="apt-lvr-policy apt-lvr-policy--reward">
+            <div class="apt-lvr-rk-head">
+              <h5 class="apt-lvr-rk-title">🏆 查錯獎金排行</h5>
+              <div class="apt-lvr-rk-pills">
+                <span class="apt-lvr-rk-pill apt-lvr-rk-pill--gold">每案 ${LVR_REWARD_PER_CASE} 元</span>
+                <span class="apt-lvr-rk-pill">後台通過後入帳</span>
+              </div>
+            </div>
+            ${rewardHtml}
+          </div>
+          <div class="apt-lvr-policy apt-lvr-policy--suspend ${suspendList.length ? 'is-alert' : ''}">
+            <div class="apt-lvr-rk-head">
+              <h5 class="apt-lvr-rk-title">⚠️ 需停權處長</h5>
+              <div class="apt-lvr-rk-pills">
+                <span class="apt-lvr-rk-pill apt-lvr-rk-pill--red">同處當月通過 &gt; 3 件</span>
+                <span class="apt-lvr-rk-pill">${esc(selMonth === 'all' ? '全部月份' : monthLabel(selMonth))}</span>
+              </div>
+            </div>
+            ${suspendHtml}
+          </div>
+        </div>
+        <details class="apt-lvr-rank-fold" data-lvr-rank-fold ${state.lvrRankOpen ? 'open' : ''}>
+          <summary>排行明細<small>營業處／業務／審核人員／錯誤節點</small></summary>
+          <div class="apt-lvr-ana-grid">
+            ${lvrAuditRankTable('營業處／處經理', '什麼處｜處經理是誰', byOfficeMgr, ranked.length)}
+            ${lvrAuditRankTable('業務人員排行', '星鴻帶入的業務', bySales, ranked.length)}
+            ${lvrAuditRankTable('審核人員排行', '各節點「誰錯」累計', byAuditor, auditorTotal)}
+            ${lvrAuditRankTable('錯誤節點排行', '物審／房客審／預審／複審', byNode, nodeTotal)}
+          </div>
+        </details>
+      </section>
+`;
+  }
+
+  function lvrAuditRecordsHtml() {
+    const tab = state.lvrAuditTab || { loading: false, loaded: false, rows: [], error: '' };
+    const rows = tab.rows || [];
+    const total = rows.length;
+    const head = `<div class="apt-lvr-rec-head">
+      <h3 class="apt-title">最近紀錄</h3>
+      <span class="apt-sub-note">${total ? `${Math.min(total, 30)}／${total} 筆 · 可刪自己填的` : ''}</span>
+    </div>`;
+    if (tab.loading && !tab.loaded) return `${head}<p class="apt-empty">讀取中…</p>`;
+    if (tab.error) return `${head}<p class="apt-empty">${esc(tab.error)}</p>`;
+    if (!total) return `${head}<p class="apt-empty">尚無紀錄，填寫送出後會出現在這裡</p>`;
+    const me = myName();
+    const canDelAll = Core.isSupervisor(me);
+    return `${head}<div class="apt-lvr-audit-list" id="apt-lvr-audit-list">${rows
+      .slice(0, 30)
+      .map((r) => {
+        const canDel = canDelAll || r.authorName === me;
+        const when = lvrAuditWhen(r.createdAt);
+        const faults = lvrAuditNodeFaults(r);
+        const st = lvrAuditStatusLabel(r.reviewStatus || 'pending');
+        const faultTags = faults
+          .map((f) => `<span class="apt-lvr-node-tag">${esc(f.node)}｜${esc(f.person || '未填')}</span>${f.mismatch ? `<span class="apt-lvr-node-tag apt-lvr-node-tag--warn">${LVR_PAPER_MISMATCH}</span>` : ''}`)
+          .join('');
+        return `<article class="apt-lvr-audit-card">
+          <h4>${esc(r.address || '')}<span class="apt-lvr-status ${st[0]}">${st[1]}</span><span class="apt-lvr-month-tag">${esc(lvrAuditRowMonth(r))}</span>${faultTags}</h4>
+          <p class="apt-lvr-audit-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(when)} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}${r.reviewStatus === 'approved' ? ` · 獎金 ${Number(r.rewardAmount) || 300} 元` : ''}</p>
+          <p class="apt-lvr-audit-reason">${esc(r.errorReason || '')}</p>
+          ${r.adminNote ? `<p class="apt-lvr-admin-note">後台意見：${esc(r.adminNote)}</p>` : ''}
+          ${lvrAuditAttachmentHtml(r.attachments)}
+          ${canDel ? `<div class="apt-lvr-audit-del"><button type="button" class="apt-btn-lite" data-lvr-audit-del="${r.id}">刪除</button></div>` : ''}
+        </article>`;
+      })
+      .join('')}</div>`;
+  }
+
+  function refreshLvrAuditAnalysis() {
+    const root = $('apt-lvr-ana-root');
+    const rec = $('apt-lvr-rec-root');
+    try {
+      if (root) root.innerHTML = lvrAuditAnalysisHtml();
+      if (rec) rec.innerHTML = lvrAuditRecordsHtml();
+    } catch (err) {
+      if (root) root.innerHTML = `<p class="apt-empty">分析畫面渲染失敗：${esc(String(err.message || err))}</p>`;
+    }
+  }
+
+  const LVR_AUDIT_NODES = ['物審', '房客審', '預審', '複審'];
+  const LVR_REWARD_PER_CASE = 300;
+  const LVR_PAPER_MISMATCH = '系統與紙本不符';
+
+  function lvrStaffOptionsHtml(selected) {
+    const cur = String(selected || '');
+    return `<option value="">請選擇誰錯</option>${adminStaffNames()
+      .map((n) => `<option value="${esc(n)}"${n === cur ? ' selected' : ''}>${esc(n)}</option>`)
+      .join('')}<option value="__other__"${cur === '__other__' ? ' selected' : ''}>其他（自行輸入）</option>`;
+  }
+
+  function lvrAuditFormHtml() {
+    if (!token() || !myName()) {
+      return `<section class="apt-lvr-form-shell"><p class="apt-empty">請先登入工具箱才能填寫實登稽核</p></section>`;
+    }
+    const author = myName();
+    const nodeOpts = LVR_AUDIT_NODES.map(
+      (n) => `<label class="apt-lvr-node">
+        <input type="checkbox" name="auditNodes" value="${esc(n)}" data-lvr-node="${esc(n)}">
+        <span>${esc(n)}</span>
+      </label>`
+    ).join('');
+    return `<section class="apt-zone apt-lvr-form-shell">
+      <header class="apt-lvr-form-head">
+        <div class="apt-lvr-form-head-text">
+          <h3 class="apt-title">填寫實價登錄稽核</h3>
+          <p class="apt-sub-note">不算點數 · 全員可見 · 後台通過後查錯獎 ${LVR_REWARD_PER_CASE} 元／同處當月通過超過 3 件處長停權</p>
+        </div>
+        <span class="apt-lvr-author-pill">填寫人 <b>${esc(author)}</b> · 歸屬 <b>${esc(lvrAuditYm())}</b></span>
+      </header>
+      <form class="apt-lvr-inline-form" id="apt-lvr-audit-form" novalidate>
+        <input type="hidden" name="authorName" value="${esc(author)}">
+        <div class="apt-lvr-step">
+          <h4 class="apt-lvr-step-t"><span class="apt-lvr-step-n">1</span>物件與人員</h4>
+          <div class="apt-lvr-form-panel">
+            <label class="apt-lvr-field apt-lvr-field--full"><span>物件地址 <em>*</em></span>
+              <div class="apt-lvr-addr-row">
+                <input name="address" maxlength="200" required placeholder="例：高雄市鳳山區建國路三段…">
+                <button type="button" class="apt-btn" data-lvr-lookup>帶入</button>
+              </div>
+            </label>
+            <label class="apt-lvr-field apt-lvr-pick-wrap apt-lvr-field--full" hidden><span>選擇合約 <em>*</em><small>找到多筆時請下拉選擇</small></span>
+              <select name="contractPick"></select>
+            </label>
+            <label class="apt-lvr-field"><span>營業處 <em>*</em></span><input name="office" maxlength="40" required readonly placeholder="按帶入自動填"></label>
+            <label class="apt-lvr-field"><span>營業處經理 <em>*</em></span>
+              <select name="officeManagerPick" required><option value="">請先帶入</option></select>
+              <input type="hidden" name="officeManager" value="">
+            </label>
+            <label class="apt-lvr-field apt-lvr-field--full"><span>業務姓名 <em>*</em></span><input name="salesName" maxlength="40" required readonly placeholder="按帶入自動填"></label>
+            <p class="apt-lvr-merge-hint apt-lvr-field--full" data-lvr-office-hint>帶入後顯示：什麼處｜處經理是誰</p>
+          </div>
+        </div>
+        <div class="apt-lvr-step">
+          <h4 class="apt-lvr-step-t"><span class="apt-lvr-step-n">2</span>錯誤節點與歸責 <em>*</em><small>可複選；每個節點都要指定誰錯</small></h4>
+          <div class="apt-lvr-nodes" role="group" aria-label="錯誤節點">${nodeOpts}</div>
+          <div class="apt-lvr-fault-rows" id="apt-lvr-fault-rows"></div>
+        </div>
+        <div class="apt-lvr-step">
+          <h4 class="apt-lvr-step-t"><span class="apt-lvr-step-n">3</span>錯誤原因與佐證</h4>
+          <div class="apt-lvr-form-panel">
+            <label class="apt-lvr-field apt-lvr-field--full"><span>錯誤原因 <em>*</em></span>
+              <textarea name="errorReason" rows="3" maxlength="4000" required placeholder="例：紙本家電熱水器有修改數量，公司系統數據沒有同步"></textarea>
+            </label>
+            <div class="apt-lvr-field apt-lvr-field--full apt-lvr-audit-atts">
+              <span>照片／附件 <em>*</em><small>至少 1 張，單檔 12MB 內</small></span>
+              <label class="apt-lvr-drop" for="apt-lvr-audit-files">
+                <input type="file" id="apt-lvr-audit-files" required multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.txt,.csv">
+                <strong>＋ 點此選擇檔案或拖曳到這裡</strong>
+              </label>
+              <div class="apt-lvr-audit-preview" id="apt-lvr-audit-preview"></div>
+            </div>
+          </div>
+        </div>
+        <div class="apt-lvr-form-foot">
+          <span class="apt-lvr-foot-note">送出後狀態為「待稽核」</span>
+          <span class="apt-op-msg" role="status" aria-live="polite"></span>
+          <button type="submit" class="apt-op-save">送出稽核</button>
+        </div>
+      </form>
+    </section>`;
+  }
+
+  function renderLvrAuditTab() {
+    return `<div class="apt-lvr-page">
+      <div id="apt-lvr-ana-root">${lvrAuditAnalysisHtml()}</div>
+      <div class="apt-lvr-split">
+        ${lvrAuditFormHtml()}
+        <section class="apt-zone apt-lvr-rec" id="apt-lvr-rec-root">${lvrAuditRecordsHtml()}</section>
+      </div>
+    </div>`;
+  }
+
+  let lvrAuditSb = null;
+  function lvrAuditSbClient() {
+    if (lvrAuditSb) return lvrAuditSb;
+    const url = window.SKYFUN_SUPABASE?.url;
+    const anonKey = window.SKYFUN_SUPABASE?.anonKey;
+    if (!url || !anonKey || !window.supabase?.createClient) throw new Error('Supabase 未載入');
+    lvrAuditSb = window.supabase.createClient(url, anonKey);
+    return lvrAuditSb;
+  }
+
+  function lvrAuditFileExt(name, type) {
+    const fromName = String(name || '').split('.').pop()?.toLowerCase() || '';
+    if (/^[a-z0-9]{2,5}$/.test(fromName)) return fromName === 'jpeg' ? 'jpg' : fromName;
+    if (/png/i.test(type || '')) return 'png';
+    if (/gif/i.test(type || '')) return 'gif';
+    if (/webp/i.test(type || '')) return 'webp';
+    if (/pdf/i.test(type || '')) return 'pdf';
+    if (/jpeg|jpg/i.test(type || '')) return 'jpg';
+    return '';
+  }
+
+  function isLvrImageExt(ext) {
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(String(ext || '').toLowerCase());
+  }
+
+  async function uploadLvrAuditFiles(input) {
+    const files = Array.from(input?.files || []).slice(0, 12);
+    if (!files.length) return [];
+    const sb = lvrAuditSbClient();
+    const out = [];
+    for (const file of files) {
+      if (file.size > 12 * 1024 * 1024) throw new Error(`「${file.name}」超過 12MB`);
+      const ext = lvrAuditFileExt(file.name, file.type);
+      if (!ext) throw new Error(`不支援的檔案：${file.name || ''}`);
+      const prep = await window.skyfunAuth.rpc('admin_lvr_audit_prepare_upload', { p_token: token(), p_ext: ext });
+      if (!prep?.ok) throw new Error(prep?.error || '無法準備上傳');
+      const { error } = await sb.storage.from('admin-lvr-audit').upload(prep.path, file, {
+        contentType: file.type || 'application/octet-stream',
+        upsert: false
+      });
+      if (error) throw new Error(error.message || '上傳失敗');
+      out.push({
+        url: prep.publicUrl,
+        name: String(file.name || prep.path).slice(0, 120),
+        kind: isLvrImageExt(ext) ? 'image' : 'file'
+      });
+    }
+    return out;
+  }
+
+  function lvrAuditAttachmentHtml(atts) {
+    const list = Array.isArray(atts) ? atts : [];
+    if (!list.length) return '';
+    return `<div class="apt-lvr-audit-files">${list
+      .map((a) => {
+        const url = esc(a.url || '');
+        const name = esc(a.name || '附件');
+        if (a.kind === 'image' || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(a.url || '')) {
+          return `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${name}"></a>`;
+        }
+        return `<a href="${url}" target="_blank" rel="noopener">📎 ${name}</a>`;
+      })
+      .join('')}</div>`;
+  }
+
+  function lvrAuditRowsHtml(rows) {
+    if (!rows?.length) return '<p class="apt-empty">尚無實登稽核紀錄</p>';
+    const me = myName();
+    const canDelAll = Core.isSupervisor(me);
+    return rows
+      .map((r) => {
+        const canDel = canDelAll || r.authorName === me;
+        const when = lvrAuditWhen(r.createdAt);
+        const faults = lvrAuditNodeFaults(r);
+        const st = lvrAuditStatusLabel(r.reviewStatus || 'pending');
+        const faultTags = faults
+          .map((f) => `<span class="apt-lvr-node-tag">${esc(f.node)}｜${esc(f.person || '未填')}</span>${f.mismatch ? `<span class="apt-lvr-node-tag apt-lvr-node-tag--warn">${LVR_PAPER_MISMATCH}</span>` : ''}`)
+          .join('');
+        return `<article class="apt-lvr-audit-card">
+          <h4>${esc(r.address || '')}<span class="apt-lvr-status ${st[0]}">${st[1]}</span>${faultTags}</h4>
+          <p class="apt-lvr-audit-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(when)} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}</p>
+          <p class="apt-lvr-audit-reason">${esc(r.errorReason || '')}</p>
+          ${lvrAuditAttachmentHtml(r.attachments)}
+          ${canDel ? `<div class="apt-lvr-audit-del"><button type="button" class="apt-btn-lite" data-lvr-audit-del="${r.id}">刪除</button></div>` : ''}
+        </article>`;
+      })
+      .join('');
+  }
+
+  function closeLvrAudit() {
+    $('apt-lvr-audit-mask')?.remove();
+  }
+
+  function adminStaffNames() {
+    const list = (state.sb?.staff || [])
+      .filter((s) => s.status === '在職' && s.kind !== '工讀生' && String(s.name || '').trim())
+      .map((s) => String(s.name).trim());
+    return [...new Set(list)].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+  }
+
+  function fillLvrManagerSelect(form, row) {
+    const sel = form.elements.officeManagerPick;
+    if (!sel) return;
+    const managers = [...new Set([...(Array.isArray(row?.officeManagers) ? row.officeManagers : []), row?.officeManager || ''].filter(Boolean))];
+    sel.innerHTML = managers.length
+      ? managers.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join('')
+      : '<option value="">尚無處經理資料</option>';
+    const prefer = String(row?.officeManager || managers[0] || '');
+    if (prefer && managers.includes(prefer)) sel.value = prefer;
+    else if (managers.length) sel.selectedIndex = 0;
+    form.elements.officeManager.value = String(sel.value || '').trim();
+  }
+
+  function syncLvrOfficeHint(form) {
+    const hint = form?.querySelector('[data-lvr-office-hint]');
+    if (!hint) return;
+    const office = String(form.elements.office?.value || '').trim();
+    const mgr = String(form.elements.officeManager?.value || form.elements.officeManagerPick?.value || '').trim();
+    hint.textContent = office
+      ? `${office}｜處經理 ${mgr || '（尚未帶入）'}`
+      : '帶入後顯示：什麼處｜處經理是誰';
+  }
+
+  function applyLvrLookupRow(form, row) {
+    if (!form || !row) return;
+    if (row.address) form.elements.address.value = row.address;
+    form.elements.office.value = row.office || '';
+    form.elements.salesName.value = row.salesName || '';
+    fillLvrManagerSelect(form, row);
+    syncLvrOfficeHint(form);
+  }
+
+  function setLvrContractPick(form, rows, selectedIdx) {
+    const wrap = form.querySelector('.apt-lvr-pick-wrap');
+    const sel = form.elements.contractPick;
+    if (!wrap || !sel) return;
+    const list = Array.isArray(rows) ? rows : [];
+    if (list.length <= 1) {
+      wrap.hidden = true;
+      sel.innerHTML = '';
+      sel.required = false;
+      return;
+    }
+    wrap.hidden = false;
+    sel.required = true;
+    sel.innerHTML = list
+      .map((r, i) => {
+        const label = `${r.matchNo || '無編號'}｜${r.office || '無營業處'}｜${r.salesName || '無業務'}｜${r.address || ''}`;
+        return `<option value="${i}">${esc(label)}</option>`;
+      })
+      .join('');
+    const idx = Math.max(0, Math.min(Number(selectedIdx) || 0, list.length - 1));
+    sel.value = String(idx);
+  }
+
+  async function lookupLvrAuditByAddress(form, msgEl) {
+    const address = String(form.elements.address?.value || '').trim();
+    if (address.length < 4) throw new Error('請先填至少 4 字的地址');
+    if (msgEl) {
+      msgEl.textContent = '正在向星鴻帶入營業處／業務／處經理…';
+      msgEl.className = 'apt-op-msg';
+    }
+    const res = await fetch(`${RPA_BASE}/admin-points/lvr-audit-lookup?address=${encodeURIComponent(address)}`, {
+      headers: { 'X-Skyfun-Session': token() }
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok) throw new Error(data?.error || `帶入失敗（HTTP ${res.status}）`);
+    const rows = Array.isArray(data.rows) ? data.rows : [];
+    if (!rows.length) throw new Error('星鴻找不到這個地址的合約，請確認地址後再試');
+    form._lvrLookupRows = rows;
+    setLvrContractPick(form, rows, 0);
+    applyLvrLookupRow(form, rows[0]);
+    return rows[0];
+  }
+
+  function mountLvrAuditInlineForm() {
+    closeLvrAudit();
+    const form = $('apt-lvr-audit-form');
+    if (!form || form.dataset.bound === '1') return;
+    form.dataset.bound = '1';
+    const author = myName();
+    const fileInput = $('apt-lvr-audit-files');
+    const preview = $('apt-lvr-audit-preview');
+    const faultRows = $('apt-lvr-fault-rows');
+    form._lvrLookupRows = [];
+    form._lvrFaultPick = {};
+
+    const selectedNodes = () =>
+      [...form.querySelectorAll('input[name="auditNodes"]:checked')].map((el) => el.value);
+
+    const readFaultPerson = (node) => {
+      const row = faultRows?.querySelector(`[data-fault-node="${CSS.escape(node)}"]`);
+      if (!row) return '';
+      const pick = String(row.querySelector('[data-fault-pick]')?.value || '').trim();
+      if (pick === '__other__') return String(row.querySelector('[data-fault-other]')?.value || '').trim();
+      return pick;
+    };
+
+    const readMismatch = () => {
+      const cb = faultRows?.querySelector('[data-fault-mismatch]');
+      return cb ? cb.checked : !!form._lvrMismatch;
+    };
+
+    const collectNodeFaults = () =>
+      selectedNodes()
+        .map((node) => {
+          const item = { node, person: readFaultPerson(node) };
+          if (node === '複審' && readMismatch()) item.mismatch = true;
+          return item;
+        })
+        .filter((x) => x.node);
+
+    const renderFaultRows = () => {
+      if (!faultRows) return;
+      const nodes = selectedNodes();
+      const prev = {};
+      for (const n of LVR_AUDIT_NODES) prev[n] = readFaultPerson(n) || form._lvrFaultPick[n] || '';
+      form._lvrMismatch = readMismatch();
+      if (!nodes.length) {
+        faultRows.innerHTML = '<p class="apt-lvr-fault-empty">請先勾選上方錯誤節點</p>';
+        return;
+      }
+      faultRows.innerHTML = nodes
+        .map((node) => {
+          const saved = prev[node] || '';
+          const known = adminStaffNames().includes(saved);
+          const pickVal = saved ? (known ? saved : '__other__') : '';
+          const otherVal = pickVal === '__other__' ? saved : '';
+          return `<div class="apt-lvr-fault-row" data-fault-node="${esc(node)}">
+            <span class="apt-lvr-fault-node">${esc(node)}</span>
+            <div class="apt-lvr-fault-who">
+              <select data-fault-pick>${lvrStaffOptionsHtml(pickVal)}</select>
+              <input data-fault-other maxlength="40" placeholder="請輸入姓名" ${pickVal === '__other__' ? '' : 'hidden'} value="${esc(otherVal)}">
+              ${node === '複審' ? `<label class="apt-lvr-fault-flag"><input type="checkbox" data-fault-mismatch${form._lvrMismatch ? ' checked' : ''}><span>${LVR_PAPER_MISMATCH}</span></label>` : ''}
+            </div>
+          </div>`;
+        })
+        .join('');
+    };
+
+    const syncManager = () => {
+      form.elements.officeManager.value = String(form.elements.officeManagerPick.value || '').trim();
+      syncLvrOfficeHint(form);
+    };
+
+    form.addEventListener('change', (e) => {
+      if (e.target.matches('input[name="auditNodes"]')) {
+        for (const n of LVR_AUDIT_NODES) form._lvrFaultPick[n] = readFaultPerson(n) || form._lvrFaultPick[n] || '';
+        renderFaultRows();
+      }
+      if (e.target.matches('[data-fault-pick]')) {
+        const row = e.target.closest('[data-fault-node]');
+        const other = row?.querySelector('[data-fault-other]');
+        const isOther = e.target.value === '__other__';
+        if (other) {
+          other.hidden = !isOther;
+          if (!isOther) other.value = '';
+        }
+      }
+    });
+    form.addEventListener('input', (e) => {
+      if (e.target.matches('[data-fault-other]')) {
+        const node = e.target.closest('[data-fault-node]')?.dataset.faultNode;
+        if (node) form._lvrFaultPick[node] = e.target.value;
+      }
+    });
+    form.elements.officeManagerPick.addEventListener('change', syncManager);
+    form.elements.contractPick.addEventListener('change', () => {
+      const rows = form._lvrLookupRows || [];
+      const idx = Math.max(0, Number(form.elements.contractPick.value) || 0);
+      if (rows[idx]) applyLvrLookupRow(form, rows[idx]);
+    });
+    fileInput?.addEventListener('change', () => {
+      const files = Array.from(fileInput.files || []);
+      if (!preview) return;
+      preview.innerHTML = files
+        .map((f) => {
+          if (/^image\//.test(f.type)) {
+            const url = URL.createObjectURL(f);
+            return `<img src="${url}" alt="${esc(f.name)}">`;
+          }
+          return `<span class="apt-lvr-chip">📎 ${esc(f.name)}</span>`;
+        })
+        .join('');
+    });
+    form.addEventListener('click', async (e) => {
+      const lookupBtn = e.target.closest('[data-lvr-lookup]');
+      if (!lookupBtn) return;
+      const msg = form.querySelector('.apt-op-msg');
+      lookupBtn.disabled = true;
+      try {
+        const row = await lookupLvrAuditByAddress(form, msg);
+        const multi = (form._lvrLookupRows || []).length > 1;
+        const mgr = row?.officeManager || form.elements.officeManager.value;
+        msg.textContent = mgr
+          ? multi
+            ? `找到多筆，已帶入第 1 筆（可下拉改選）；處經理 ${mgr}`
+            : `已帶入營業處／業務／處經理（${mgr}）`
+          : multi
+            ? '找到多筆，已帶入第 1 筆（可下拉改選）；此營業處尚無處經理資料，請改選或聯絡管理員'
+            : '已帶入營業處／業務；此營業處尚無處經理資料，請改選或聯絡管理員';
+        msg.className = mgr ? 'apt-op-msg is-ok' : 'apt-op-msg is-err';
+        syncLvrOfficeHint(form);
+      } catch (err) {
+        msg.textContent = String(err.message || err);
+        msg.className = 'apt-op-msg is-err';
+      } finally {
+        lookupBtn.disabled = false;
+      }
+    });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = form.querySelector('.apt-op-msg');
+      const btn = form.querySelector('.apt-op-save');
+      syncManager();
+      const fd = new FormData(form);
+      const data = Object.fromEntries([...fd.entries()].map(([k, v]) => [k, String(v).trim()]));
+      const nodeFaults = collectNodeFaults();
+      const fail = (t) => {
+        msg.textContent = t;
+        msg.className = 'apt-op-msg is-err';
+      };
+      if (!data.address) return fail('請填地址');
+      if (!data.office || !data.salesName) return fail('請先按「帶入」');
+      if (!form.elements.officeManager.value) return fail('請先帶入（或下拉選）營業處經理');
+      if (!nodeFaults.length) return fail('請至少勾選一個錯誤節點');
+      const missing = nodeFaults.find((x) => !x.person);
+      if (missing) return fail(`請選擇「${missing.node}」誰錯`);
+      if (!data.errorReason) return fail('請填錯誤原因');
+      if (!fileInput?.files?.length) return fail('請至少上傳 1 張照片或附件');
+      btn.disabled = true;
+      msg.textContent = '上傳附件／送出中…';
+      msg.className = 'apt-op-msg';
+      try {
+        const attachments = await uploadLvrAuditFiles(fileInput);
+        if (!attachments.length) return fail('請至少上傳 1 張照片或附件');
+        const res = await window.skyfunAuth.rpc('admin_lvr_audit_save', {
+          p_token: token(),
+          p_data: {
+            address: data.address,
+            office: data.office,
+            salesName: data.salesName,
+            officeManager: form.elements.officeManager.value,
+            nodeFaults,
+            errorReason: data.errorReason,
+            attachments
+          }
+        });
+        if (!res?.ok) throw new Error(res?.error || '送出失敗');
+        if (res.auditMonth) state.lvrAuditMonth = res.auditMonth;
+        form.reset();
+        form.elements.authorName.value = author;
+        form._lvrLookupRows = [];
+        form._lvrFaultPick = {};
+        form._lvrMismatch = false;
+        setLvrContractPick(form, [], 0);
+        form.elements.officeManagerPick.innerHTML = '<option value="">請先帶入</option>';
+        form.elements.officeManager.value = '';
+        if (fileInput) fileInput.value = '';
+        if (preview) preview.innerHTML = '';
+        renderFaultRows();
+        syncLvrOfficeHint(form);
+        msg.textContent = '已送出，待後台稽核通過後才算獎金';
+        msg.className = 'apt-op-msg is-ok';
+        invalidateLvrAuditTab();
+        ensureLvrAuditTabLoaded(true);
+      } catch (err) {
+        fail(String(err.message || err));
+      } finally {
+        btn.disabled = false;
+      }
+    });
+    renderFaultRows();
+    syncLvrOfficeHint(form);
+    form.elements.address?.focus();
   }
 
   function openOpinion(kind) {
@@ -6383,7 +7474,9 @@
       }
     };
     form.elements.category?.addEventListener('change', syncOther);
+    const draft = applyOpinionDraft(kind, form);
     syncOther();
+    if (draft?.region && form.elements.region) form.elements.region.dataset.manual = '1';
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       saveOpinion(kind, e.currentTarget);
@@ -6412,6 +7505,7 @@
       });
     } else {
       bindRosterPicker(form);
+      if (draft?.rosterPick && form._roster) form._roster.pick = String(draft.rosterPick);
       /* 清冊意見同樣防呆：貼上帶縣市的原始編號，離開欄位就拿掉縣市 */
       form.elements.caseNo.addEventListener('change', (e) => {
         const canon = Core.canonicalOpinionCaseNo(e.target.value, form.elements.region.value, form.elements.company.value);
@@ -6420,6 +7514,14 @@
           form.elements.company.value = canon.company;
         }
       });
+    }
+    bindOpinionDraft(kind, form);
+    if (draft) {
+      const msg = form.querySelector('.apt-op-msg');
+      if (msg) {
+        msg.textContent = '已還原上次暫存，可繼續填寫（送出後會清空暫存）';
+        msg.className = 'apt-op-msg is-ok';
+      }
     }
     mask.querySelector(kind === 'case' ? '[name="caseNo"]' : '[name="region"]').focus();
   }
@@ -6606,6 +7708,7 @@
       const otherWrap = form.querySelector('.apt-op-other-cat');
       if (otherWrap) otherWrap.hidden = true;
       if (form.elements.categoryOther) form.elements.categoryOther.required = false;
+      clearOpinionDraft(kind);
       msg.textContent = res.duplicate
         ? '✓ 已送出；這個媒合編號已有意見，只認列第一筆 1 點，本筆 0 點'
         : '✓ 已送出，+1 點';
@@ -6648,6 +7751,8 @@
       load(false);
     });
     $('apt-refresh').addEventListener('click', () => load(true));
+    $('apt-lvr-backfill')?.addEventListener('click', () => runLvrBackfill());
+    syncLvrAdminBtn();
     $('apt-tabs').addEventListener('click', (e) => {
       const op = e.target.closest('[data-op-open]');
       if (op) {
@@ -6661,6 +7766,7 @@
     });
     $('apt-body').addEventListener('toggle', (e) => {
       if (e.target.matches?.('[data-apt-board-fold]')) state.examBoardOpen = e.target.open;
+      if (e.target.matches?.('[data-lvr-rank-fold]')) state.lvrRankOpen = e.target.open;
       const proj = e.target.closest?.('details.apt-proj-multi');
       if (proj && e.target === proj) {
         proj.classList.remove('apt-proj-multi--up');
@@ -6677,6 +7783,30 @@
       }
     }, true);
     $('apt-body').addEventListener('click', (e) => {
+      if (e.target.closest('[data-lvr-audit-refresh]')) {
+        ensureLvrAuditTabLoaded(true);
+        return;
+      }
+      const del = e.target.closest('[data-lvr-audit-del]');
+      if (del) {
+        (async () => {
+          if (!window.confirm('確定刪除這筆實登稽核？')) return;
+          del.disabled = true;
+          try {
+            const res = await window.skyfunAuth.rpc('admin_lvr_audit_delete', {
+              p_token: token(),
+              p_id: Number(del.dataset.lvrAuditDel)
+            });
+            if (!res?.ok) throw new Error(res?.error || '刪除失敗');
+            invalidateLvrAuditTab();
+            ensureLvrAuditTabLoaded(true);
+          } catch (err) {
+            del.disabled = false;
+            window.alert(String(err.message || err));
+          }
+        })();
+        return;
+      }
       if (state.leaseDueCell && !state.lease?.dueSaving && !e.target.closest('.apt-lease-due-editing, [data-lease-due-cell]')) {
         state.leaseDueCell = null;
         render();
@@ -7049,6 +8179,11 @@
       }
     });
     $('apt-body').addEventListener('change', (e) => {
+      if (e.target.matches?.('[data-lvr-month]')) {
+        state.lvrAuditMonth = e.target.value || 'all';
+        refreshLvrAuditAnalysis();
+        return;
+      }
       if (e.target.dataset?.leaseCheck) {
         saveLeaseCheck(e.target.dataset.leaseCheck, e.target.checked);
         return;
