@@ -11,13 +11,13 @@
     (window.SkyfunPolicyDocGate && window.SkyfunPolicyDocGate.WM) ||
     '星鴻內部文件｜僅供內部參考｜禁止外流｜違者須自負法律責任';
   const TEAM_ORDER = [
-    '北一處', '北二處', '北三處', '基一處', '桃一處', '竹一處', '宜一處',
-    '中一處', '中二處', '中三處', '中四處', '中五處', '中六處',
+    '北一處', '北二處', '北三處', '基一處', '宜一處',
+    '桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處',
     '彰一處', '嘉一處', '南一處', '南二處', '高一處', '高二處'
   ];
   const REGIONS = [
-    { id: 'north', label: '北區', teams: ['北一處', '北二處', '北三處', '基一處', '桃一處', '竹一處', '宜一處'] },
-    { id: 'central', label: '中區', teams: ['中一處', '中二處', '中三處', '中四處', '中五處', '中六處', '彰一處', '嘉一處'] },
+    { id: 'north', label: '北區', teams: ['北一處', '北二處', '北三處', '基一處', '宜一處'] },
+    { id: 'central', label: '中區', teams: ['桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處', '彰一處', '嘉一處'] },
     { id: 'south', label: '南區', teams: ['南一處', '南二處'] },
     { id: 'kh', label: '高雄', teams: ['高一處', '高二處'] }
   ];
@@ -38,6 +38,7 @@
     dashDoc: '',
     dashRegion: '',
     dashTeam: '',
+    teamOpen: '',
     dashOnlyMissing: true,
     dashError: '',
     dashLoading: false,
@@ -167,10 +168,10 @@
           <circle class="bb-gauge-track" cx="50" cy="50" r="42"></circle>
           <circle class="bb-gauge-bar" cx="50" cy="50" r="42" stroke-dasharray="${dash} ${RING_LEN.toFixed(1)}"></circle>
         </svg>
-        <b>${pct}<small>%</small></b>
+        <b><span class="bb-gauge-fig"><span class="bb-gauge-pct">${pct}<small>%</small></span><span class="bb-gauge-frac">${done}<small>／${total}</small></span></span></b>
       </span>
       <span class="bb-gauge-text">
-        <span class="bb-gauge-label">${esc(label)}</span>
+        <span class="bb-gauge-label">${opts.labelHtml || esc(label)}</span>
         <span class="bb-gauge-meta">${meta}</span>
         <small>${esc(status)}</small>
       </span>
@@ -198,22 +199,40 @@
     if (!teams.length) {
       return `<p class="bb-hint">此區尚無業務資料。</p>`;
     }
+    const openTeam = teams.some((t) => t.team === state.teamOpen) ? state.teamOpen : '';
     return `<div class="bb-region-offices" aria-label="${esc(region.label)}各營業處">
-      <p class="bb-region-offices-tip">${esc(region.label)}各營業處｜點營業處看明細｜再點區域卡可收合</p>
+      <p class="bb-region-offices-tip">${esc(region.label)}各營業處｜點營業處展開業務名單，再點一次收合</p>
       <div class="bb-gauges bb-gauges--offices">
         ${teams
           .map((t) => {
             const list = usersOfTeam(t.team);
             const done = list.filter(userDoneAll).length;
-            return gaugeHtml({
+            const open = openTeam === t.team;
+            const card = gaugeHtml({
               label: t.team,
               done,
               total: list.length,
-              nav: 'people',
+              nav: 'toggle-team',
               team: t.team,
               region: regionId,
-              meta: `已全勾 <b>${done}</b>／業務 <b>${list.length}</b> 人`
+              active: open,
+              expanded: open,
+              status: open ? '點一下收合' : '點一下展開',
+              meta: '已全勾／業務人數'
             });
+            if (!open) return card;
+            return `${card}<div class="bb-office-people">
+              <div class="bb-sec-head">
+                <h3 class="bb-sec-title">${esc(t.team)}｜業務名單</h3>
+                <div class="bb-dash-toolbar" style="margin:0">
+                  <label class="bb-hint" style="margin:0;display:flex;align-items:center;gap:0.3rem">
+                    <input type="checkbox" id="bb-dash-missing" ${state.dashOnlyMissing ? 'checked' : ''}> 只看還沒勾完
+                  </label>
+                  <button type="button" class="bb-btn bb-btn--main" id="bb-dash-export">匯出 CSV</button>
+                </div>
+              </div>
+              ${peopleRows(list)}
+            </div>`;
           })
           .join('')}
       </div>
@@ -387,8 +406,8 @@
               active: state.personalOpen,
               expanded: state.personalOpen,
               meta: state.isSales
-                ? `已勾 <b>${mineDone}</b>／共 <b>${allDocs.length}</b> 個辦法${state.personalOpen ? ' · 再點一次收合' : ' · 點擊展開'}`
-                : `辦法共 <b>${allDocs.length}</b> 份（非業務免勾）${state.personalOpen ? ' · 再點一次收合' : ' · 點擊展開'}`
+                ? `已勾／辦法${state.personalOpen ? ' · 再點一次收合' : ' · 點擊展開'}`
+                : `辦法份數（非業務免勾）${state.personalOpen ? ' · 再點一次收合' : ' · 點擊展開'}`
             })}
             ${state.personalOpen ? renderPersonalDocs() : ''}
           </div>
@@ -403,6 +422,7 @@
               const open = state.regionOpen === r.id;
               return gaugeHtml({
                 label: r.label,
+                labelHtml: `<span class="bb-gauge-kicker">${esc(r.label)}</span><span class="bb-gauge-sub">完成進度</span>`,
                 done,
                 total: list.length,
                 nav: 'toggle-region',
@@ -410,7 +430,7 @@
                 stack: true,
                 active: open,
                 expanded: open,
-                meta: `已全勾 <b>${done}</b>／業務 <b>${list.length}</b> 人`,
+                meta: '已全勾／業務人數',
                 status: open ? '點擊收合' : '點擊展開'
               });
             }).join('')}
@@ -466,12 +486,33 @@
       ${renderPreviewModal()}`;
   }
 
+  function scrollBoxes(el) {
+    const boxes = [];
+    let n = el && el.parentElement;
+    while (n) {
+      const s = getComputedStyle(n);
+      if (/(auto|scroll)/.test(s.overflowY)) boxes.push(n);
+      n = n.parentElement;
+    }
+    boxes.push(document.scrollingElement || document.documentElement);
+    return boxes;
+  }
+
   function render() {
     const el = root();
     if (!el) return;
     const body = el.querySelector('#bb-body');
     if (!body) return;
+    const saved = scrollBoxes(body).map((box) => ({ box, top: box.scrollTop, left: box.scrollLeft }));
     body.innerHTML = renderDash();
+    const keep = () => {
+      saved.forEach(({ box, top, left }) => {
+        box.scrollTop = top;
+        box.scrollLeft = left;
+      });
+    };
+    keep();
+    requestAnimationFrame(keep);
     if (state.previewModal) bindPreviewScroll();
   }
 
@@ -588,6 +629,7 @@
     state.view = 'home';
     state.dashDoc = '';
     state.dashTeam = '';
+    state.teamOpen = '';
     closePreview();
   }
 
@@ -629,8 +671,17 @@
       if (kind === 'home') goHome();
       else if (kind === 'toggle-personal') state.personalOpen = !state.personalOpen;
       else if (kind === 'toggle-region') {
-        state.regionOpen = state.regionOpen === region ? '' : region;
+        const next = state.regionOpen === region ? '' : region;
+        if (next !== state.regionOpen) state.teamOpen = '';
+        state.regionOpen = next;
         state.dashRegion = state.regionOpen;
+      }
+      else if (kind === 'toggle-team') {
+        state.view = 'home';
+        state.dashRegion = region || state.dashRegion;
+        state.regionOpen = state.dashRegion;
+        state.teamOpen = state.teamOpen === team ? '' : team;
+        state.dashTeam = state.teamOpen;
       }
       else if (kind === 'offices') goOffices(region);
       else if (kind === 'people') goPeople(team, region);

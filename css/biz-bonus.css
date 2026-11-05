@@ -311,10 +311,36 @@
   gap: 0.4rem;
 }
 #page-business-bonus .bb-gauge--stack .bb-gauge-label {
-  white-space: nowrap;
+  white-space: normal;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.08rem;
   font-size: 1.08rem;
-  line-height: 1.25;
+  line-height: 1.2;
 }
+#page-business-bonus .bb-gauge-kicker {
+  font-size: 1.12rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+#page-business-bonus .bb-gauge-sub {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #334155;
+}
+#page-business-bonus .bb-gauges--offices .bb-office-people {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+#page-business-bonus .bb-office-people {
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.8rem 0.85rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.9rem;
+  background: #fff;
+}
+#page-business-bonus .bb-dash-block { overflow-anchor: none; }
 #page-business-bonus .bb-gauge--stack .bb-gauge-meta {
   font-size: 0.8rem;
   line-height: 1.45;
@@ -406,20 +432,49 @@
 #page-business-bonus .bb-gauge-ring b {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
   font-weight: 900;
   color: #78350f;
   line-height: 1;
+  text-align: center;
+  pointer-events: none;
 }
-#page-business-bonus .bb-gauge-ring b small {
-  font-size: 0.62rem;
+#page-business-bonus .bb-gauge-fig {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+}
+#page-business-bonus .bb-gauge-pct {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+#page-business-bonus .bb-gauge-frac {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: 0.68rem;
   font-weight: 800;
+  line-height: 1;
   color: #92400e;
 }
+#page-business-bonus .bb-gauge-ring b small {
+  font-size: 0.62em;
+  font-weight: 800;
+  margin-left: 0.04em;
+}
 #page-business-bonus .bb-gauge.is-done .bb-gauge-ring b,
-#page-business-bonus .bb-gauge.is-done .bb-gauge-ring b small { color: #15803d; }
+#page-business-bonus .bb-gauge.is-done .bb-gauge-ring b small,
+#page-business-bonus .bb-gauge.is-done .bb-gauge-frac { color: #15803d; }
 #page-business-bonus .bb-gauge-text {
   display: flex;
   flex-direction: column;
