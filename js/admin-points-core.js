@@ -982,9 +982,8 @@
   }
 
   /**
-   * 媒合編號固定格式：星鴻／星華＋後段代碼（例：星鴻F2M10500502），不帶縣市。
-   * 縣市另外存在 region 欄；貼上星鴻原始編號（星鴻高雄F2M…）會把縣市拿掉。
-   * 只打後段代碼、或貼上原始編號都組成同一種寫法。
+   * 四期／增辦四期：星鴻／星華＋後段代碼（例：星鴻F2M10400502），不帶縣市。
+   * 五期（期別 05）：一定帶縣市（例：星鴻台北A2M10500206）。貼上沒有縣市的編號會依區碼或所選縣市補上。
    * @returns {{value, code, region, letterRegion, company} | null}
    */
   function canonicalOpinionCaseNo(raw, region, company) {
@@ -993,12 +992,13 @@
     const rawN = String(raw || '').replace(/\s+/g, '').replace(/臺/g, '台').replace(/鸿/g, '鴻').replace(/华/g, '華');
     const letterRegion = KPI_CASE_LETTER[code[0]] || '';
     const want = String(region || '').replace(/臺/g, '台').trim();
-    /* 縣市不防呆：期數不同編號格式不一（有的帶縣市、有的沒有），推不出縣市也照常組成編號，region 存空字串 */
     const reg = letterRegion || (KPI_REGIONS.includes(want) ? want : '');
     const picked = String(company || '').trim();
     /* 貼上的完整編號本身有星鴻／星華時以它為準；只打後段代碼時才用公司欄的選擇 */
     const comp = rawN.includes('星華') ? '星華' : rawN.includes('星鴻') ? '星鴻' : picked === '星華' || picked === '星鴻' ? picked : '星鴻';
-    return { value: comp + code, code, region: reg, letterRegion, company: comp };
+    const period5 = isPeriod5CaseNo(code);
+    if (period5 && !reg) return null;
+    return { value: period5 ? comp + reg + code : comp + code, code, region: reg, letterRegion, company: comp };
   }
 
   /** 縣市（台北市、新竹縣…）→ KPI 地區；不在 12 區回傳空字串 */

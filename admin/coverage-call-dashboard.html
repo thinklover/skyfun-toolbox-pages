@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>誠信險電訪紀錄後台 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
+  <style>
+    table { font-size: 0.82rem; }
+    th, td { padding: 0.5rem 0.45rem; vertical-align: top; }
+    .badge { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 0.35rem; font-weight: 800; white-space: nowrap; }
+    .b-done { background: #d1fae5; color: #065f46; }
+    .b-open { background: #fef3c7; color: #92400e; }
+    .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.65rem; padding: 0.6rem 0.75rem; cursor: pointer; }
+    .stat.is-active { border-color: #9a3412; box-shadow: 0 0 0 1px #9a3412 inset; }
+    .stat b { display: block; font-size: 1.35rem; color: #9a3412; line-height: 1.2; }
+    .stat span { font-size: 0.75rem; color: #64748b; }
+    .ok { color: #065f46; font-weight: 800; }
+    .no { color: #a8a29e; }
+  </style>
+</head>
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+  <header>
+    <div class="topbar">
+      <h1>誠信險電訪紀錄後台</h1>
+      <a class="back" href="../index.html">← 回工具箱</a>
+    </div>
+    <p class="lead">115/11/1 起、未投保人員的新媒合。撥打時間是處長把房東電訪、房客電訪、服務狀況、款項收付、有無異常都勾完的時間，用來對公司電話紀錄。</p>
+  </header>
+
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">總管密碼</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="總管密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm err hidden"></p>
+  </section>
+
+  <section class="hidden space-y-4" id="main-panel">
+    <div class="flex flex-wrap gap-2" id="stats"></div>
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <input type="search" id="search" placeholder="搜尋姓名／處別／媒合編號／地址／分機" class="max-w-md" autocomplete="off" />
+        <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+      </div>
+      <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
+      <div class="overflow-auto border border-slate-200 rounded-xl bg-white">
+        <table>
+          <thead>
+            <tr>
+              <th>房東時間</th>
+              <th>房客時間</th>
+              <th>處別／業務</th>
+              <th>案件</th>
+              <th>房東／房客</th>
+              <th>分機</th>
+              <th>勾選</th>
+              <th>備註</th>
+              <th>勾選人</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-coverage-call-admin';
+      let client = null;
+      let secret = '';
+      let allRows = [];
+      let statusFilter = '';
+
+      function cfg() {
+        const c = window.SKYFUN_SUPABASE || {};
+        return { url: String(c.url || '').trim(), anonKey: String(c.anonKey || '').trim() };
+      }
+      function sb() {
+        if (client) return client;
+        const { url, anonKey } = cfg();
+        client = window.supabase.createClient(url, anonKey);
+        return client;
+      }
+      async function rpc(name, args) {
+        const { data, error } = await sb().rpc(name, args);
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        return data;
+      }
+      function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      }
+      function clock(iso) {
+        if (!iso) return '';
+        const date = new Date(iso);
+        if (Number.isNaN(date.getTime())) return '';
+        const pad = (n) => String(n).padStart(2, '0');
+        return (date.getFullYear() - 1911) + '/' + pad(date.getMonth() + 1) + '/' + pad(date.getDate()) + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+      }
+      function roc(iso) {
+        const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!match) return '—';
+        return (Number(match[1]) - 1911) + '/' + match[2] + '/' + match[3];
+      }
+      function mark(on, label) {
+        return '<div class="' + (on ? 'ok' : 'no') + '">' + (on ? '✓ ' : '○ ') + label + '</div>';
+      }
+
+      function filtered() {
+        let list = allRows.slice();
+        if (statusFilter === 'done') list = list.filter((row) => row.landlordAt && row.tenantAt);
+        if (statusFilter === 'open') list = list.filter((row) => !row.landlordAt || !row.tenantAt);
+        const q = document.getElementById('search').value.trim().toLowerCase();
+        if (q) {
+          list = list.filter((row) =>
+            [row.salesName, row.office, row.matchNo, row.address, row.extension, row.note, row.landlordName, row.tenantName, row.completedBy]
+              .some((value) => String(value || '').toLowerCase().includes(q))
+          );
+        }
+        return list;
+      }
+
+      function renderStats(counts) {
+        const c = counts || {};
+        const items = [
+          { k: '', label: '全部', n: c.all || 0 },
+          { k: 'done', label: '已電訪', n: c.done || 0 },
+          { k: 'open', label: '未完成', n: c.open || 0 }
+        ];
+        document.getElementById('stats').innerHTML = items.map((item) =>
+          '<button type="button" class="stat' + (statusFilter === item.k ? ' is-active' : '') + '" data-st="' + item.k + '"><b>' + item.n + '</b><span>' + item.label + '</span></button>'
+        ).join('');
+      }
+
+      function renderRows() {
+        const list = filtered();
+        document.getElementById('msg').textContent = list.length ? '共 ' + list.length + ' 筆' : '還沒有電訪紀錄';
+        document.getElementById('rows').innerHTML = list.map((row) => {
+          const landlordWhen = clock(row.landlordAt);
+          const tenantWhen = clock(row.tenantAt);
+          const timeCell = (when) => when
+            ? '<span class="badge b-done">' + esc(when) + '</span>'
+            : '<span class="badge b-open">未勾</span>';
+          return '<tr>' +
+            '<td class="whitespace-nowrap">' + timeCell(landlordWhen) + '</td>' +
+            '<td class="whitespace-nowrap">' + timeCell(tenantWhen) + '</td>' +
+            '<td>' + esc(row.salesName) + '<div class="text-xs text-slate-500">' + esc(row.office || '') + '</div></td>' +
+            '<td>' + esc(row.matchNo) + '<div class="text-xs text-slate-500">' + esc(row.address || '') + '<br>起租 ' + esc(roc(row.leaseStart)) + '</div></td>' +
+            '<td>房東 ' + esc(row.landlordName || '—') + '<br>房客 ' + esc(row.tenantName || '—') + '</td>' +
+            '<td>' + esc(row.extension || '—') + '</td>' +
+            '<td>' +
+              mark(row.landlordDone, '房東電訪') +
+              mark(row.tenantDone, '房客電訪') +
+              mark(row.serviceDone, '服務狀況') +
+              mark(row.paymentDone, '款項收付') +
+              mark(row.anomalyDone, '有無異常') +
+            '</td>' +
+            '<td>' + esc(row.note || '—') + '</td>' +
+            '<td>' + esc(row.completedBy || row.updatedBy || '—') + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      async function loadList() {
+        const data = await rpc('biz_coverage_call_admin_list', { p_secret: secret });
+        if (!data?.ok) throw new Error(data?.error || '讀取失敗');
+        allRows = data.rows || [];
+        renderStats(data.counts);
+        renderRows();
+      }
+
+      function showMain() {
+        document.getElementById('login-panel').classList.add('hidden');
+        document.getElementById('main-panel').classList.remove('hidden');
+      }
+      function fail(text) {
+        const el = document.getElementById('login-msg');
+        el.textContent = text;
+        el.classList.remove('hidden');
+      }
+
+      document.getElementById('btn-login').addEventListener('click', async () => {
+        secret = document.getElementById('admin-secret').value.trim();
+        try {
+          await loadList();
+          sessionStorage.setItem(SECRET_KEY, secret);
+          showMain();
+        } catch (err) {
+          fail(err.message || String(err));
+        }
+      });
+      document.getElementById('admin-secret').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') document.getElementById('btn-login').click();
+      });
+      document.getElementById('btn-refresh').addEventListener('click', () => {
+        loadList().catch((err) => { document.getElementById('msg').textContent = err.message || String(err); });
+      });
+      document.getElementById('search').addEventListener('input', renderRows);
+      document.getElementById('stats').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-st]');
+        if (!button) return;
+        statusFilter = button.getAttribute('data-st') || '';
+        renderStats({
+          all: allRows.length,
+          done: allRows.filter((row) => row.landlordAt && row.tenantAt).length,
+          open: allRows.filter((row) => !row.landlordAt || !row.tenantAt).length
+        });
+        renderRows();
+      });
+
+      const stored = sessionStorage.getItem(SECRET_KEY) || '';
+      if (stored) {
+        secret = stored;
+        document.getElementById('admin-secret').value = stored;
+        loadList().then(showMain).catch(() => {});
+      }
+    })();
+  </script>
+</body>
+</html>

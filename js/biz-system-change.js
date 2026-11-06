@@ -180,6 +180,37 @@
     return state.rows.filter((r) => r.status === 'done');
   }
 
+  function myDisplayName() {
+    const u = meUser();
+    return String(state.role?.name || u?.name || u?.username || '').trim();
+  }
+
+  function iHandled(r) {
+    const n = myDisplayName();
+    return !!(n && String(r.handledBy || '').trim() === n);
+  }
+
+  /** 處長／行政／管理員自己送出、尚未完成的案件（處長按完成的要離開這裡） */
+  function handlerOpenRows() {
+    return state.rows.filter((r) => r.status !== 'done');
+  }
+
+  /** 我處理過的，加上我送出且已完成的（含處長直接按完成） */
+  function handlerDoneRows() {
+    const map = new Map();
+    (state.completed || []).forEach((r) => {
+      if (r && r.id != null) map.set(String(r.id), r);
+    });
+    myCompletedRows().forEach((r) => {
+      if (r && r.id != null) map.set(String(r.id), r);
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      const ta = new Date(a.handledAt || a.createdAt || 0).getTime();
+      const tb = new Date(b.handledAt || b.createdAt || 0).getTime();
+      return tb - ta;
+    });
+  }
+
   function renderManagers(keepValue) {
     const sel = $('bsc-modifier');
     if (!sel) return;
@@ -390,10 +421,13 @@
     const showCompleted = !!(opts && opts.showCompleted);
     const tagText = showPending ? '待處理' : (showTransferred && r.status === 'pending' ? '已轉出' : st);
     const tagClass = showPending ? 'pending' : (showTransferred && r.status === 'pending' ? 'pending' : r.status);
-    const levelText = showCompleted
+    const doneAt = r.handledAt ? `｜${when(r.handledAt)}` : '';
+    const levelText = (r.status === 'done' || (showCompleted && level === 'author'))
       ? (level === 'author'
-        ? `已退回填寫人${r.handledAt ? `｜${when(r.handledAt)}` : ''}`
-        : `已由我修改完畢${r.handledAt ? `｜${when(r.handledAt)}` : ''}`)
+        ? `已退回填寫人${doneAt}`
+        : (iHandled(r)
+          ? `已由我修改完畢${doneAt}`
+          : `已由${String(r.handledBy || r.modifierName || '處長').trim()}完成${doneAt}`))
       : `${LEVEL_LABEL[level] || level}${level === 'admin' && r.handlerAdminName ? `｜${r.handlerAdminName}` : ''}`;
     const pendingTag = showPending
       ? (level === 'author' ? '待你修改' : '待處理')
@@ -430,10 +464,10 @@
     if (key === 'pending') return state.inbox.slice();
     if (key === 'transferred') return state.transferred.slice();
     if (key === 'done') {
-      if (canSeeHandlerDone()) return state.completed.slice();
+      if (canSeeHandlerDone()) return handlerDoneRows();
       return myCompletedRows();
     }
-    return state.rows.slice();
+    return handlerOpenRows();
   }
 
   function searchableRows() {
@@ -555,10 +589,10 @@
       return;
     }
 
-    const sent = state.rows.length;
+    const sent = handlerOpenRows().length;
     const pending = state.inbox.length;
     const transferred = state.transferred.length;
-    const done = state.completed.length;
+    const done = handlerDoneRows().length;
     box.classList.add('bsc-gauges--xfer');
     box.innerHTML = [
       gaugeHtml('sent', '已送出案件', sent, sent || 1, sent ? 'is-done' : '',

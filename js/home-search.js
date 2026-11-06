@@ -22,6 +22,8 @@
         { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 費用' },
         { page: 'business-system-change', title: '系統欄位更改通報', category: '業務專區', keywords: '系統 欄位 更改 媒合' },
         { page: 'business-bonus', title: '業務獎金辦法', category: '業務專區', keywords: '獎金 高專 星財補 知悉' },
+        { page: 'business-coverage', title: '誠信險', category: '業務專區', keywords: '誠信險 投保 電訪 未投保' },
+        { page: 'business-toolbox', title: '工具箱綁定', category: '業務專區', keywords: '工具箱 綁定 未綁定' },
         { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi' },
         { page: 'rentmanager-perf', title: '租管師績效中心', category: '租管師專區', keywords: 'kpi 各地區 週報' },
         { page: 'care-visit-notice', title: '家訪單產生器', category: '催收解約專區', keywords: '家訪 關懷' },
@@ -224,12 +226,27 @@
         return total + bonus;
     }
 
+    const ADMIN_ZONE_SEARCH_PAGES = {
+        administration: true,
+        'admin-qa': true,
+        'admin-points': true,
+        'admin-handover': true,
+        petition: true
+    };
+
+    function adminZoneSearchOk(item) {
+        const page = item && item.page;
+        const cat = String((item && item.category) || '');
+        if (!ADMIN_ZONE_SEARCH_PAGES[page] && cat.indexOf('行政專區') < 0) return true;
+        return window.skyfunAuth?.canEnterAdminZone?.() === true;
+    }
+
     function searchSiteFeatures(query) {
         const q = (query || '').trim();
         if (!q) return [];
         return getSiteSearchCatalog()
             .map((item) => ({ item, score: scoreSearchItem(item, q) }))
-            .filter((row) => row.score > 0)
+            .filter((row) => row.score > 0 && adminZoneSearchOk(row.item))
             .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title, 'zh-Hant'))
             .slice(0, 15)
             .map((row) => row.item);

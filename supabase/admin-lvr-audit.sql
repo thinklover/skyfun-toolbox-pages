@@ -42,6 +42,8 @@ alter table public.admin_lvr_audit
 -- 歸屬月份（民國 年/月，例 115/10）；新填自動帶台北時間當月，後台可改
 alter table public.admin_lvr_audit
   add column if not exists audit_month text not null default '';
+alter table public.admin_lvr_audit
+  add column if not exists signing_date date;
 
 -- 115/11/04 前填的一律算 115/10
 update public.admin_lvr_audit
@@ -133,7 +135,8 @@ as $$
     'adminNote', a.admin_note,
     'reviewedAt', a.reviewed_at,
     'reviewedBy', a.reviewed_by,
-    'rewardAmount', a.reward_amount
+    'rewardAmount', a.reward_amount,
+    'signingDate', to_char(a.signing_date, 'YYYY-MM-DD')
   );
 $$;
 
@@ -226,6 +229,8 @@ declare
   v_first_person text;
   v_id bigint;
   v_month text := public.admin_lvr_audit_current_month();
+  v_sign text := trim(coalesce(d->>'signingDate', ''));
+  v_sign_date date;
 begin
   if v_uid is null then return json_build_object('ok', false, 'error', '請先登入工具箱'); end if;
   select trim(coalesce(nullif(a.name, ''), a.username)) into v_name
@@ -236,6 +241,10 @@ begin
   if v_address = '' then return json_build_object('ok', false, 'error', '請填地址'); end if;
   if v_office = '' then return json_build_object('ok', false, 'error', '請先帶入營業處'); end if;
   if v_sales = '' then return json_build_object('ok', false, 'error', '請先帶入業務姓名'); end if;
+  if v_sign !~ '^\d{4}-\d{2}-\d{2}$' then
+    return json_build_object('ok', false, 'error', '請先帶入簽約日');
+  end if;
+  v_sign_date := v_sign::date;
   if v_reason = '' then return json_build_object('ok', false, 'error', '請填錯誤原因'); end if;
 
   v_faults := public.admin_lvr_audit_normalize_faults(coalesce(d->'nodeFaults', '[]'::jsonb));
@@ -266,11 +275,11 @@ begin
   insert into public.admin_lvr_audit (
     user_id, author_name, address, office, sales_name, office_manager,
     reviewer_name, audit_node, node_faults, error_reason, attachments,
-    review_status, reward_amount, audit_month
+    review_status, reward_amount, audit_month, signing_date
   ) values (
     v_uid, v_name, v_address, v_office, v_sales, v_mgr,
     coalesce(v_first_person, ''), coalesce(v_nodes, ''), v_faults, v_reason, v_atts,
-    'pending', 0, v_month
+    'pending', 0, v_month, v_sign_date
   ) returning id into v_id;
 
   return json_build_object('ok', true, 'id', v_id, 'authorName', v_name, 'auditMonth', v_month);

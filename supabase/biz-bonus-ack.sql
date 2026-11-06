@@ -42,14 +42,18 @@ set search_path = public
 as $$
 declare
   v_uid uuid := public.admin_qa_user_id(p_token);
+  v_name text;
   v_team text;
 begin
   if v_uid is null then
     return json_build_object('ok', false, 'error', '請先登入工具箱');
   end if;
-  select trim(coalesce(a.team, '')) into v_team from public.toolbox_accounts a where a.id = v_uid;
+  select trim(coalesce(nullif(a.name, ''), a.username)), trim(coalesce(a.team, ''))
+    into v_name, v_team
+  from public.toolbox_accounts a where a.id = v_uid;
   return json_build_object(
     'ok', true,
+    'name', coalesce(v_name, ''),
     'team', coalesce(v_team, ''),
     'isSales', coalesce(v_team, '') like '%處',
     'acks', coalesce((
@@ -83,9 +87,6 @@ begin
   select trim(coalesce(nullif(a.name, ''), a.username)), trim(coalesce(a.team, ''))
     into v_name, v_team
   from public.toolbox_accounts a where a.id = v_uid;
-  if coalesce(v_team, '') not like '%處' then
-    return json_build_object('ok', false, 'error', '僅營業處業務需打勾知悉');
-  end if;
   insert into public.toolbox_biz_bonus_ack (doc_id, user_id, user_name, team)
   values (v_id, v_uid, coalesce(v_name, ''), coalesce(v_team, ''))
   on conflict (doc_id, user_id) do nothing;

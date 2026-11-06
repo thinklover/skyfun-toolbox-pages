@@ -29,6 +29,7 @@
     loaded: false,
     loading: false,
     isSales: false,
+    myName: '',
     acks: {},
     busy: {},
     error: '',
@@ -248,11 +249,10 @@
     const at = state.acks[doc.id];
     const busy = !!state.busy[doc.id];
     const reached = !!state.previewReachedEnd || !!at;
-    const canTick = state.loaded && state.isSales && !at && !busy && reached;
+    const canTick = state.loaded && !at && !busy && reached;
     let tip = '';
     if (at) tip = `<small>${esc(when(at))}</small>`;
-    else if (!state.isSales && state.loaded) tip = '<small>非營業處業務免勾</small>';
-    else if (state.isSales && !reached) tip = '<small>請先滑到檔案最下方再勾選</small>';
+    else if (!reached) tip = '<small>請先滑到檔案最下方再勾選</small>';
     return `<div class="bb-preview-ack">
       <label class="bb-check${canTick || at ? '' : ' is-off'}">
         <span><input type="checkbox" data-bb-ack="${esc(doc.id)}" ${at ? 'checked' : ''} ${!canTick || at || busy ? 'disabled' : ''}> 已閱畢知悉</span>
@@ -395,19 +395,17 @@
       <div class="bb-home-stack" aria-label="知悉儀表板入口">
         <section class="bb-home-sec bb-home-sec--personal" aria-label="個人進度">
           <h4 class="bb-home-sec-title">個人進度</h4>
-          <p class="bb-stats">點卡片展開／收合六個辦法；預覽滑到底才可勾選知悉。</p>
+          <p class="bb-stats">這是你自己的進度。點卡片展開／收合各項辦法；預覽滑到底才可勾選知悉。</p>
           <div class="bb-home-personal">
             ${gaugeHtml({
-              label: '個人完成進度',
+              label: state.myName ? `${state.myName}的完成進度` : '個人完成進度',
               done: mineDone,
               total: allDocs.length,
               nav: 'toggle-personal',
               wide: true,
               active: state.personalOpen,
               expanded: state.personalOpen,
-              meta: state.isSales
-                ? `已勾／辦法${state.personalOpen ? ' · 再點一次收合' : ' · 點擊展開'}`
-                : `辦法份數（非業務免勾）${state.personalOpen ? ' · 再點一次收合' : ' · 點擊展開'}`
+              meta: `已勾／辦法${state.personalOpen ? ' · 再點一次收合' : ' · 點擊展開'}`
             })}
             ${state.personalOpen ? renderPersonalDocs() : ''}
           </div>
@@ -480,7 +478,6 @@
           </div>
         </div>
         ${state.error ? `<p class="bb-hint is-error">${esc(state.error)}</p>` : ''}
-        ${!state.isSales && state.loaded ? '<p class="bb-hint">本區知悉由營業處業務打勾；你可預覽浮水印檔與查看完成率。</p>' : ''}
         ${body}
       </section>
       ${renderPreviewModal()}`;
@@ -532,6 +529,7 @@
       if (!res?.ok) throw new Error(res?.error || '讀取失敗');
       state.loaded = true;
       state.isSales = !!res.isSales;
+      state.myName = String(res.name || '').trim();
       state.acks = {};
       (res.acks || []).forEach((a) => {
         state.acks[a.id] = a.at;

@@ -4605,6 +4605,7 @@
 <link rel="stylesheet" href="./css/business-zone.css?v=20261104-quick2">
 <link rel="stylesheet" href="./css/policy-doc-gate.css?v=20261104-bb">
 <link rel="stylesheet" href="./css/biz-bonus.css?v=20261105-gauge">
+<link rel="stylesheet" href="./css/biz-coverage.css?v=20261106-gate">
 <link rel="stylesheet" href="./css/notice-ack.css?v=20261104-1">
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261105-search">
 </head>
@@ -4939,7 +4940,7 @@
                     <span class="hc-desc">公司內部公告、簽呈與重要通知彙整。</span>
                 </div>
 
-                <div class="home-feature-card home-card-administration" role="button" tabindex="0" onclick="showPage('administration')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('administration');}">
+                <div class="home-feature-card home-card-administration hidden" role="button" tabindex="0" onclick="showPage('administration')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('administration');}">
                     <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏛️</span><span class="hc-name">行政專區</span><span class="hc-go" aria-hidden="true">→</span></span>
                     <span class="hc-desc">解約退還與租金試算等行政工具。</span>
                 </div>
@@ -7689,6 +7690,22 @@
                         </span>
                         <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                     </button>
+                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--cover" onclick="showPage('business-coverage')">
+                        <span class="apt-entry-icon" aria-hidden="true">◎</span>
+                        <span class="apt-entry-text">
+                            <strong>誠信險</strong>
+                            <small>各營業處投保率。點未投保的人，看 11/1 起的新媒合和處長電訪</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
+                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--cover" onclick="showPage('business-toolbox')">
+                        <span class="apt-entry-icon" aria-hidden="true">▣</span>
+                        <span class="apt-entry-text">
+                            <strong>工具箱綁定</strong>
+                            <small>各營業處綁定率，點開看還沒使用工具箱的人</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
                 </div>
 
                 <p class="bz-sec">常用工具</p>
@@ -9717,6 +9734,33 @@
                 ← 返回業務專區
             </button>
             <div id="biz-handover-root"></div>
+        </div>
+
+        <!-- 業務專區：誠信險 -->
+        <div id="page-business-coverage" class="hidden max-w-7xl mx-auto space-y-4">
+            <button type="button" onclick="showPage('business')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回業務專區
+            </button>
+            <div class="cv-shell">
+                <p class="cv-kicker">誠信險</p>
+                <h2 class="cv-title">誠信險投保</h2>
+                <p class="cv-lead">先看全區，再點北區、中區、南區、高雄看各處。點未投保的人，看 115/11/1 起租的新媒合。處長用公司電話電訪後，勾完五項才留下撥打時間。</p>
+                <p class="cv-admin-link"><a href="./admin/coverage-call-dashboard.html" target="_blank" rel="noopener">電訪紀錄後台 ↗</a></p>
+                <div class="cv-body"></div>
+            </div>
+        </div>
+
+        <!-- 業務專區：工具箱綁定 -->
+        <div id="page-business-toolbox" class="hidden max-w-7xl mx-auto space-y-4">
+            <button type="button" onclick="showPage('business')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回業務專區
+            </button>
+            <div class="cv-shell">
+                <p class="cv-kicker">工具箱</p>
+                <h2 class="cv-title">工具箱綁定</h2>
+                <p class="cv-lead">先看全區，再點北區、中區、南區、高雄看各處還沒使用工具箱的人。</p>
+                <div class="cv-body"></div>
+            </div>
         </div>
 
         <!-- 業務專區：獎金辦法＋知悉儀表板 -->
@@ -12521,7 +12565,7 @@
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
-        <script src="./js/admin-points-core.js?v=20261103-tenant-re"></script>
+        <script src="./js/admin-points-core.js?v=20261105-p5city"></script>
         <script src="./js/admin-points-charts.js?v=20261026-xlabel"></script>
         <script src="./js/admin-training-content.js?v=20261102-pdfonly"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
@@ -12529,16 +12573,17 @@
         <script src="./js/biz-guide-exam.js?v=20261029-hide"></script>
         <script src="./js/biz-handover.js?v=20261101-dedupe"></script>
         <script src="./js/admin-handover.js?v=20261101-cards"></script>
-        <script src="./js/biz-system-change.js?v=20261105-handler4"></script>
+        <script src="./js/biz-system-change.js?v=20261105-donebucket"></script>
         <script src="./js/biz-bonus-data.js?v=20261105-layout"></script>
-        <script src="./js/biz-bonus.js?v=20261105-gauge"></script>
+        <script src="./js/biz-bonus.js?v=20261105-ownack"></script>
+        <script src="./js/biz-coverage.js?v=20261106-gate"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261105-lvrfold"></script>
+        <script src="./js/admin-points.js?v=20261106-suspend"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
@@ -12565,7 +12610,7 @@
         <script src="./js/equip-depreciation.js?v=20261005-1"></script>
         <script src="./js/skyfun-job-titles.js"></script>
         <script src="./js/skyfun-departments.js"></script>
-        <script src="./js/toolbox-auth.js?v=20261028-token-ls"></script>
+        <script src="./js/toolbox-auth.js?v=20261106-edit"></script>
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20261030-1"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
@@ -14348,6 +14393,9 @@
             { page: 'business-handover', title: '業務離職交接', category: '業務專區', keywords: '離職 交接 業務 接手 代管 案件 checklist 匯出' },
             { page: 'business-system-change', title: '系統欄位更改通報', category: '業務專區', keywords: '系統 欄位 更改 修改 通報 媒合編號 物件地址 系統資料' },
             { page: 'business-bonus', title: '業務獎金辦法', category: '業務專區', keywords: '獎金 獎金辦法 高專 星財補 點獎金 激勵 婚育 知悉 儀表板 媒合費 代管費' },
+            { page: 'business-coverage', title: '誠信險', category: '業務專區', keywords: '誠信險 投保率 未投保 電訪 處長 分機 新媒合' },
+            { page: 'business-toolbox', title: '工具箱綁定', category: '業務專區', keywords: '工具箱 綁定率 未綁定 正職 兼職 營業處' },
+            { file: './admin/coverage-call-dashboard.html', title: '誠信險電訪紀錄後台', category: '管理工具', keywords: '後台 誠信險 電訪 處長 分機 撥打時間' },
             { file: './admin/biz-system-change-dashboard.html', title: '系統欄位更改通報後台', category: '管理工具', keywords: '後台 admin 系統欄位 更改 通報 業務' },
             { page: 'admin-handover', title: '行政離職交接', category: '行政專區', keywords: '離職 交接 行政 經手 審核 接手 checklist 匯出' },
             { page: 'termination', title: '催收解約專區', category: '首頁專區', keywords: '催收 解約 退租 終止 退還 欠租 存證信函' },
@@ -14410,7 +14458,7 @@
             { external: 'https://www.etax.nat.gov.tw/etwmain/etw113w1/address/query', title: '營登查詢系統', category: '外部連結', keywords: '營登 營業登記' },
         ];
         </script>
-        <script src="./js/home-search.js?v=20261026-forms"></script>
+        <script src="./js/home-search.js?v=20261106-call"></script>
         <script>
         const PAGE_ROUTE_MAP = {
             landlord: 'page-landlord',
@@ -14432,6 +14480,8 @@
             'business-handover': 'page-business-handover',
             'business-system-change': 'page-business-system-change',
             'business-bonus': 'page-business-bonus',
+            'business-coverage': 'page-business-coverage',
+            'business-toolbox': 'page-business-toolbox',
             termination: 'page-termination',
             rentmanager: 'page-rentmanager',
             'rentmanager-links': 'page-rentmanager-links',
@@ -14492,7 +14542,7 @@
             'page-newbie-roadmap', 'page-newbie-glossary', 'page-newbie-screening', 'page-newbie-quest', 'page-newbie-subsidy', 'page-newbie-transcript',
             'page-business', 'page-business-land-value-tax',
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-591-listing', 'page-business-deposit-refund',
-            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-business-bonus', 'page-business-handover', 'page-business-system-change', 'page-termination',
+            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-business-bonus', 'page-business-coverage', 'page-business-toolbox', 'page-business-handover', 'page-business-system-change', 'page-termination',
             'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus', 'page-rentmanager-perf', 'page-rentmanager-line-endorse',
             'page-announcement', 'page-manager-bonus', 'page-administration', 'page-admin-qa', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
             'page-practice-timeline', 'page-collection-case', 'page-mediation-flow', 'page-equip-dep', 'page-practice-templates', 'page-practice-contacts', 'page-lal-generator', 'page-care-visit-notice'
@@ -14591,9 +14641,21 @@
             }
         }
 
+        const ADMIN_ZONE_PAGES = {
+            administration: true,
+            'admin-qa': true,
+            'admin-points': true,
+            'admin-handover': true,
+            petition: true
+        };
+
         function showPage(pageName, opts = {}) {
             if (pageName === 'business-591-listing' && !isSf591PreviewHost()) {
                 pageName = 'business';
+            }
+            if (ADMIN_ZONE_PAGES[pageName] && !window.skyfunAuth?.canEnterAdminZone?.()) {
+                window.alert('行政專區僅限行政、營業處經理、儲備營業處經理、總經理室、區協理使用。');
+                pageName = 'home';
             }
             /* LINE 照會表單在一般流程下方留白，舊連結改轉導並捲到地址欄 */
             if (pageName === 'rentmanager-line-endorse') {

@@ -343,7 +343,7 @@
     const range = monthOptions().find((m) => `${m.year}-${m.month}` === state.monthKey) || monthOptions()[0];
     const ym = ymKey(range);
     const label = `${range.year - 1911} 年 ${range.month} 月業績（${range.start}～${range.end}）`;
-    if (!window.confirm(`確定對「${label}」執行實登補點？\n\n會查近 6 個月送預審合約，並逐筆讀變更紀錄（約每秒 1 筆），不影響「重新抓取星鴻資料」。已查過的合約不會重查。`)) {
+    if (!window.confirm(`確定對「${label}」執行實登補點？\n\n點數改以合約上的實價登錄人員計算，已補過但認錯人的會重對一次。不影響「重新抓取星鴻資料」。`)) {
       return;
     }
     state.lvrRunning = true;
@@ -6297,7 +6297,7 @@
         list.innerHTML = [...byNo].map(([no, arr]) => {
           const forms = ['04', '09'].map((f) => [f, arr.filter((x) => x.form === f).length]).filter(([, n]) => n).map(([f, n]) => `表單${f}${n > 1 ? `×${n}` : ''}`);
           const who = arr.find((x) => x.who)?.who || '';
-          /* 下拉帶入的值先拿掉縣市（星鴻高雄F2M… → 星鴻F2M…），存檔也不帶縣市 */
+          /* 四期拿掉縣市；五期保留或補上縣市（星鴻台北A2M…） */
           const clean = Core.canonicalOpinionCaseNo(no, region, '')?.value || no;
           return `<option value="${esc(clean)}" label="${esc([forms.join('、'), who].filter(Boolean).join('｜'))}">`;
         }).join('');
@@ -6548,10 +6548,10 @@
     const periods = guildPeriods().map((p) => `<option>${p}</option>`).join('');
     return `<div class="apt-op-modal" role="dialog" aria-modal="true" aria-label="填寫${f.title}">
         <header class="apt-op-head"><b>📝 填寫${f.title}</b><button type="button" class="apt-op-x" data-op-close aria-label="關閉">✕</button></header>
-        <p class="apt-op-tip">每填一筆算 <b>1 點</b>，計入填寫當天所在業績月的「${f.item}」，點數算給填寫的人（${esc(myName() || '—')}）。媒合編號固定存成「星鴻／星華＋編號」（例：星鴻F2M10500502），<b>不帶縣市</b>（貼上「星鴻高雄F2M…」會自動拿掉高雄）。<b>五期編號（期別 05）一定要選縣市</b>；四期／增辦四期可不選。同一媒合編號有多筆意見時，<b>只認列第一筆 1 點</b>，後面的筆數照常列入公會意見、但 0 點。若把有給點的那筆刪掉，點數會改算到剩下最早的一筆。</p>
+        <p class="apt-op-tip">每填一筆算 <b>1 點</b>，計入填寫當天所在業績月的「${f.item}」，點數算給填寫的人（${esc(myName() || '—')}）。四期編號存成「星鴻／星華＋編號」、不帶縣市。<b>五期編號（期別 05）一定要有縣市</b>（例：星鴻台北A2M10500206）；沒寫會依區碼或所選縣市補上，補不出來就不能送出。同一媒合編號有多筆意見時，<b>只認列第一筆 1 點</b>，後面的筆數照常列入公會意見、但 0 點。若把有給點的那筆刪掉，點數會改算到剩下最早的一筆。</p>
         <form class="apt-op-form" data-op-kind="${kind}" novalidate>
           <label><span>公會期數 <em>*</em></span><select name="guildPeriod">${periods}</select></label>
-          <label><span>縣市<small class="apt-op-auto apt-op-region-hint">五期必選；其他可不選</small></span><select name="region"><option value="">（不選）</option>${Core.KPI_REGIONS.map((r) => `<option>${r}</option>`).join('')}</select></label>
+          <label><span>縣市<small class="apt-op-auto apt-op-region-hint">五期會寫進媒合編號</small></span><select name="region"><option value="">（不選）</option>${Core.KPI_REGIONS.map((r) => `<option>${r}</option>`).join('')}</select></label>
           <label><span>公司 <em>*</em><small class="apt-op-auto">只打編號時用</small></span><select name="company"><option>星鴻</option><option>星華</option></select></label>
           ${isCase
             ? '<label><span>媒合編號 <em>*</em></span><input name="caseNo" maxlength="60" autocomplete="off"></label>'
@@ -6793,7 +6793,7 @@
     return `<article class="apt-lvr-audit-card apt-lvr-audit-card--simple">
       ${lvrPickLabel(r)}
       <h4>${esc(r.address || '')}<span class="apt-lvr-status ${bits.st[0]}">${bits.st[1]}</span><span class="apt-lvr-month-tag">${esc(lvrAuditRowMonth(r))}</span>${bits.faultTags}</h4>
-      <p class="apt-lvr-audit-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(bits.when)} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}</p>
+      <p class="apt-lvr-audit-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(bits.when)} · ${esc(lvrSignMeta(r))} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}</p>
       <p class="apt-lvr-audit-reason">${esc(r.errorReason || '')}</p>
     </article>`;
   }
@@ -6840,6 +6840,25 @@
     return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'));
   }
 
+  function lvrRocDate(iso) {
+    const m = String(iso || '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return '';
+    return `${Number(m[1]) - 1911}/${m[2]}/${m[3]}`;
+  }
+
+  /** 115/10/28 以前簽約不計入處長停權；錯誤明細、獎金、排行仍要列。沒有簽約日的先算進停權，避免把查不到的案子直接拿掉 */
+  function lvrCountsForSuspend(r) {
+    const d = String(r.signingDate || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return true;
+    return d >= LVR_RULE_START;
+  }
+
+  function lvrSignMeta(r) {
+    const roc = lvrRocDate(r.signingDate);
+    if (!roc) return '簽約日 無資料';
+    return lvrCountsForSuspend(r) ? `簽約日 ${roc}` : `簽約日 ${roc}（115/10/28 前，不計入處長停權）`;
+  }
+
   function lvrAuditRowMonth(r) {
     return r.auditMonth || lvrAuditYm(r.createdAt);
   }
@@ -6878,7 +6897,7 @@
     const head = `<div class="apt-lvr-ana-head">
       <div>
         <h3 class="apt-sec-title">實價登錄稽核分析<small>排行看全部送出；獎金／停權只算後台通過</small></h3>
-        <p class="apt-sub-note">依「歸屬月份」統計；查錯獎每案 300 元（通過後算給填寫人）；同處當月通過超過 3 件 → 處長系統修改權停權。</p>
+        <p class="apt-sub-note">依「歸屬月份」統計；查錯獎每案 300 元（通過後算給填寫人）；同處當月通過超過 3 件 → 處長系統修改權停權。115/10/28（辦法公布日）以前簽約的仍列入錯誤明細，只不計入處長停權。</p>
       </div>
       <div class="apt-lvr-ana-actions">
         ${monthPick}
@@ -6891,7 +6910,9 @@
     if (!allRows.length) return `${head}<p class="apt-empty">尚無實登稽核紀錄。</p>`;
     const rows = selMonth === 'all' ? allRows : allRows.filter((r) => lvrAuditRowMonth(r) === selMonth);
     const total = rows.length;
-    if (!total) return `${head}<p class="apt-empty">${esc(monthLabel(selMonth))}尚無實登稽核紀錄。</p>`;
+    if (!total) {
+      return `${head}<p class="apt-empty">${esc(monthLabel(selMonth))}尚無實登稽核紀錄。</p>`;
+    }
     const ranked = rows.filter((r) => (r.reviewStatus || 'pending') !== 'rejected');
     const approved = rows.filter((r) => r.reviewStatus === 'approved');
     const pending = rows.filter((r) => (r.reviewStatus || 'pending') === 'pending');
@@ -6904,7 +6925,7 @@
     const rewardByAuthor = lvrAuditCountMap(approved, (r) => r.authorName);
     const rewardTotal = approved.reduce((s, r) => s + (Number(r.rewardAmount) || 300), 0);
     const officeMonth = new Map();
-    for (const r of approved) {
+    for (const r of approved.filter(lvrCountsForSuspend)) {
       const ym = lvrAuditRowMonth(r);
       const office = r.office || '（未填）';
       const key = `${ym}\u0000${office}`;
@@ -6939,7 +6960,7 @@
       : `<p class="apt-lvr-rk-empty">${esc(selMonth === 'all' ? '目前' : monthLabel(selMonth))}尚無須停權處長</p>`;
     return `${head}
       <div class="apt-summary apt-lvr-ana-summary">
-        <span class="apt-chip"><strong>${total}</strong>總筆數</span>
+        <span class="apt-chip"><strong>${total}</strong>錯誤明細</span>
         <span class="apt-chip"><strong>${pending.length}</strong>待稽核</span>
         <span class="apt-chip"><strong>${approved.length}</strong>已通過</span>
         <span class="apt-chip apt-chip--ok"><strong>${rewardTotal.toLocaleString('zh-TW')}</strong>通過獎金</span>
@@ -6967,6 +6988,7 @@
               <h5 class="apt-lvr-rk-title">⚠️ 需停權處長</h5>
               <div class="apt-lvr-rk-pills">
                 <span class="apt-lvr-rk-pill apt-lvr-rk-pill--red">同處當月通過 &gt; 3 件</span>
+                <span class="apt-lvr-rk-pill">115/10/28 前簽約不計</span>
                 <span class="apt-lvr-rk-pill">${esc(selMonth === 'all' ? '全部月份' : monthLabel(selMonth))}</span>
               </div>
             </div>
@@ -7036,7 +7058,7 @@
         return `<article class="apt-lvr-audit-card">
           ${lvrPickLabel(r)}
           <h4>${esc(r.address || '')}<span class="apt-lvr-status ${st[0]}">${st[1]}</span><span class="apt-lvr-month-tag">${esc(lvrAuditRowMonth(r))}</span>${faultTags}</h4>
-          <p class="apt-lvr-audit-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(when)} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}${r.reviewStatus === 'approved' ? ` · 獎金 ${Number(r.rewardAmount) || 300} 元` : ''}</p>
+          <p class="apt-lvr-audit-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(when)} · ${esc(lvrSignMeta(r))} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}${r.reviewStatus === 'approved' ? ` · 獎金 ${Number(r.rewardAmount) || 300} 元` : ''}</p>
           <p class="apt-lvr-audit-reason">${esc(r.errorReason || '')}</p>
           ${r.adminNote ? `<p class="apt-lvr-admin-note">後台意見：${esc(r.adminNote)}</p>` : ''}
           ${lvrAuditAttachmentHtml(r.attachments)}
@@ -7063,7 +7085,7 @@
       <p class="apt-lvr-deck-kicker">勾選案件 ${index}／${total}</p>
       <h2>${esc(r.address || '未填地址')}</h2>
       <p class="apt-lvr-deck-tags"><span class="apt-lvr-status ${bits.st[0]}">${bits.st[1]}</span><span class="apt-lvr-month-tag">${esc(lvrAuditRowMonth(r))}</span>${bits.faultTags}</p>
-      <p class="apt-lvr-deck-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(bits.when)} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}</p>
+      <p class="apt-lvr-deck-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(bits.when)} · ${esc(lvrSignMeta(r))} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}</p>
       <p class="apt-lvr-deck-reason">${esc(r.errorReason || '')}</p>
       ${lvrAuditAttachmentHtml(r.attachments)}
     </article>`;
@@ -7088,7 +7110,7 @@
     const auditorTotal = byAuditor.reduce((s, [, n]) => s + n, 0);
     const nodeTotal = byNode.reduce((s, [, n]) => s + n, 0);
     const officeMonth = new Map();
-    for (const r of approved) {
+    for (const r of approved.filter(lvrCountsForSuspend)) {
       const ym = lvrAuditRowMonth(r);
       const office = r.office || '（未填）';
       const key = `${ym}\u0000${office}`;
@@ -7120,11 +7142,11 @@
           ${ranked.length ? lvrAuditOfficePie(byOfficeMgr, ranked.length, false) : '<p class="apt-empty">尚無資料</p>'}
         </section>
         <section class="apt-lvr-deck-block">
-          <h2>停權處長<small>同處當月通過超過 3 件</small></h2>
+          <h2>停權處長<small>同處當月通過超過 3 件，115/10/28 前簽約不計</small></h2>
           ${suspendHtml}
         </section>
-        <details class="apt-lvr-deck-block apt-lvr-deck-ranks"${picked.length ? '' : ' open'}>
-          <summary>排行明細<small>含營業處 · 點一下展開</small></summary>
+        <details class="apt-lvr-deck-block apt-lvr-deck-ranks" open>
+          <summary>排行明細<small>營業處／業務／審核人員／錯誤節點</small></summary>
           <div class="apt-lvr-ana-grid">
             ${lvrAuditRankTable('營業處／處經理', '什麼處｜處經理是誰', byOfficeMgr, ranked.length)}
             ${lvrAuditRankTable('業務人員排行', '姓名｜營業處', bySales, ranked.length)}
@@ -7140,23 +7162,20 @@
     const deck = document.getElementById('apt-lvr-deck');
     if (!deck || !state.lvrDeck) return;
     const cases = state.lvrDeck.cases || [];
-    const total = Math.max(cases.length, 1);
+    const total = 1 + cases.length;
     const i = Math.max(0, Math.min(total - 1, state.lvrDeck.i || 0));
     state.lvrDeck.i = i;
-    const row = cases[i];
-    const caseHtml = row
-      ? lvrDeckCaseHtml(row, i + 1, cases.length)
-      : '<article class="apt-lvr-deck-case"><p class="apt-lvr-deck-kicker">案件明細</p><p class="apt-empty">尚未勾選案件。勾選後，每一頁只更換這裡。</p></article>';
+    const stage = deck.querySelector('[data-lvr-deck-stage]');
+    if (i === 0) {
+      stage.innerHTML = `<div class="apt-lvr-deck-page">${state.lvrDeck.fixed || ''}</div>`;
+      deck.querySelector('[data-lvr-deck-title]').textContent = '儀表板';
+    } else {
+      const row = cases[i - 1];
+      stage.innerHTML = `<div class="apt-lvr-deck-page">${lvrDeckCaseHtml(row, i, cases.length)}</div>`;
+      deck.querySelector('[data-lvr-deck-title]').textContent = row.address || '案件明細';
+    }
     deck.querySelector('[data-lvr-deck-no]').textContent = String(i + 1);
     deck.querySelector('[data-lvr-deck-of]').textContent = String(total);
-    deck.querySelector('[data-lvr-deck-title]').textContent = row ? (row.address || '案件明細') : '案件明細';
-    const swap = deck.querySelector('[data-lvr-deck-swap]');
-    if (swap && deck.querySelector('[data-lvr-deck-fixed]')) swap.innerHTML = caseHtml;
-    else {
-      deck.querySelector('[data-lvr-deck-stage]').innerHTML = `<div class="apt-lvr-deck-page"><div data-lvr-deck-fixed>${state.lvrDeck.fixed || ''}</div><div data-lvr-deck-swap>${caseHtml}</div></div>`;
-    }
-    const ranks = deck.querySelector('.apt-lvr-deck-ranks');
-    if (ranks && row) ranks.open = false;
     deck.querySelector('[data-lvr-deck-prev]').disabled = i <= 0;
     deck.querySelector('[data-lvr-deck-next]').disabled = i >= total - 1;
   }
@@ -7201,6 +7220,8 @@
 
   const LVR_AUDIT_NODES = ['物審', '房客審', '預審', '複審'];
   const LVR_REWARD_PER_CASE = 300;
+  /** 獎懲辦法公布日；這天以前簽約的只不計入處長停權 */
+  const LVR_RULE_START = '2026-10-28';
   const LVR_PAPER_MISMATCH = '系統與紙本不符';
 
   function lvrStaffOptionsHtml(selected) {
@@ -7249,7 +7270,8 @@
               <input type="hidden" name="officeManager" value="">
             </label>
             <label class="apt-lvr-field apt-lvr-field--full"><span>業務姓名 <em>*</em></span><input name="salesName" maxlength="40" required readonly placeholder="按帶入自動填"></label>
-            <p class="apt-lvr-merge-hint apt-lvr-field--full" data-lvr-office-hint>帶入後顯示：什麼處｜處經理是誰</p>
+            <label class="apt-lvr-field"><span>簽約日 <em>*</em></span><input name="signingDate" maxlength="10" required readonly placeholder="按帶入從系統帶入"></label>
+            <p class="apt-lvr-merge-hint apt-lvr-field--full" data-lvr-office-hint>帶入後顯示：什麼處｜處經理是誰｜簽約日</p>
           </div>
         </div>
         <div class="apt-lvr-step">
@@ -7372,7 +7394,7 @@
           .join('');
         return `<article class="apt-lvr-audit-card">
           <h4>${esc(r.address || '')}<span class="apt-lvr-status ${st[0]}">${st[1]}</span>${faultTags}</h4>
-          <p class="apt-lvr-audit-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(when)} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}</p>
+          <p class="apt-lvr-audit-meta">填寫人 <b>${esc(r.authorName || '')}</b> · ${esc(when)} · ${esc(lvrSignMeta(r))} · ${esc(r.office || '')}｜處經理 ${esc(r.officeManager || '')} · 業務 ${esc(r.salesName || '')}</p>
           <p class="apt-lvr-audit-reason">${esc(r.errorReason || '')}</p>
           ${lvrAuditAttachmentHtml(r.attachments)}
           ${canDel ? `<div class="apt-lvr-audit-del"><button type="button" class="apt-btn-lite" data-lvr-audit-del="${r.id}">刪除</button></div>` : ''}
@@ -7410,9 +7432,11 @@
     if (!hint) return;
     const office = String(form.elements.office?.value || '').trim();
     const mgr = String(form.elements.officeManager?.value || form.elements.officeManagerPick?.value || '').trim();
+    const sign = lvrRocDate(form.elements.signingDate?.value);
+    const early = sign && String(form.elements.signingDate?.value || '') < LVR_RULE_START;
     hint.textContent = office
-      ? `${office}｜處經理 ${mgr || '（尚未帶入）'}`
-      : '帶入後顯示：什麼處｜處經理是誰';
+      ? `${office}｜處經理 ${mgr || '（尚未帶入）'}｜簽約日 ${sign || '（系統沒有）'}${early ? '｜115/10/28 前簽約，不計入處長停權' : ''}`
+      : '帶入後顯示：什麼處｜處經理是誰｜簽約日';
   }
 
   function applyLvrLookupRow(form, row) {
@@ -7420,6 +7444,7 @@
     if (row.address) form.elements.address.value = row.address;
     form.elements.office.value = row.office || '';
     form.elements.salesName.value = row.salesName || '';
+    if (form.elements.signingDate) form.elements.signingDate.value = String(row.signingDate || '').slice(0, 10);
     fillLvrManagerSelect(form, row);
     syncLvrOfficeHint(form);
   }
@@ -7439,7 +7464,7 @@
     sel.required = true;
     sel.innerHTML = list
       .map((r, i) => {
-        const label = `${r.matchNo || '無編號'}｜${r.office || '無營業處'}｜${r.salesName || '無業務'}｜${r.address || ''}`;
+        const label = `${r.matchNo || '無編號'}｜${r.office || '無營業處'}｜${r.salesName || '無業務'}｜簽約 ${lvrRocDate(r.signingDate) || '無'}｜${r.address || ''}`;
         return `<option value="${i}">${esc(label)}</option>`;
       })
       .join('');
@@ -7451,7 +7476,7 @@
     const address = String(form.elements.address?.value || '').trim();
     if (address.length < 4) throw new Error('請先填至少 4 字的地址');
     if (msgEl) {
-      msgEl.textContent = '正在向星鴻帶入營業處／業務／處經理…';
+      msgEl.textContent = '正在向星鴻帶入營業處／業務／處經理／簽約日…';
       msgEl.className = 'apt-op-msg';
     }
     const res = await fetch(`${RPA_BASE}/admin-points/lvr-audit-lookup?address=${encodeURIComponent(address)}`, {
@@ -7616,6 +7641,7 @@
       };
       if (!data.address) return fail('請填地址');
       if (!data.office || !data.salesName) return fail('請先按「帶入」');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.signingDate || '')) return fail('請先按「帶入」，簽約日要從系統帶入');
       if (!nodeFaults.length) return fail('請至少勾選一個錯誤節點');
       const missing = nodeFaults.find((x) => !x.person);
       if (missing) return fail(`請選擇「${missing.node}」誰錯`);
@@ -7634,6 +7660,7 @@
             office: data.office,
             salesName: data.salesName,
             officeManager: form.elements.officeManager.value,
+            signingDate: data.signingDate,
             nodeFaults,
             errorReason: data.errorReason,
             attachments
@@ -7766,7 +7793,7 @@
     } else {
       bindRosterPicker(form);
       if (draft?.rosterPick && form._roster) form._roster.pick = String(draft.rosterPick);
-      /* 清冊意見同樣防呆：貼上帶縣市的原始編號，離開欄位就拿掉縣市 */
+      /* 清冊意見同樣防呆：四期拿掉縣市，五期補上縣市 */
       form.elements.caseNo.addEventListener('change', (e) => {
         const canon = Core.canonicalOpinionCaseNo(e.target.value, form.elements.region.value, form.elements.company.value);
         if (canon) {
@@ -7798,10 +7825,13 @@
     const prev = field === 'categoryOther' ? prevCat : String(o[field] || '');
     if (field === 'caseNo') {
       const canon = Core.canonicalOpinionCaseNo(next, o.region || '', next.includes('星華') ? '星華' : '星鴻');
-      if (canon) {
-        next = canon.value;
-        el.value = next;
+      if (!canon) {
+        window.alert('媒合編號格式不正確。五期一定要有縣市，例如星鴻台北A2M10500206');
+        el.value = prev;
+        return;
       }
+      next = canon.value;
+      el.value = next;
     }
     if (field === 'category' || field === 'categoryOther') {
       const wrap = el.closest('.apt-op-cat-wrap') || el.parentElement;
@@ -7898,15 +7928,19 @@
     const canon = Core.canonicalOpinionCaseNo(data.caseNo, data.region, data.company);
     if (!canon) {
       form.elements.caseNo.focus();
-      return fail('媒合編號格式不正確：請填後段編號（例如 F2M10500502），系統會組成「星鴻F2M10500502」（不帶縣市）');
+      return fail('媒合編號格式不正確。五期請帶縣市（例如星鴻台北A2M10500206），或選縣市後再送出');
+    }
+    if (Core.isPeriod5CaseNo(canon.code) && !canon.region) {
+      form.elements.region.focus();
+      return fail('五期媒合編號一定要有縣市');
+    }
+    if (canon.letterRegion && data.region && data.region.replace(/臺/g, '台') !== canon.letterRegion) {
+      form.elements.region.focus();
+      return fail(`這個編號是${canon.letterRegion}的案件，與所選縣市「${data.region}」不符`);
     }
     data.caseNo = canon.value;
-    /* 五期（期別碼 05）一定要選縣市（表單有選或編號可推出才算）；四期／增辦四期不防呆 */
-    if (Core.isPeriod5CaseNo(data.caseNo) && !(data.region || canon.region)) {
-      form.elements.region.focus();
-      return fail('五期媒合編號請選縣市');
-    }
-    data.region = data.region || canon.region || '';
+    form.elements.caseNo.value = canon.value;
+    data.region = canon.region || data.region || '';
     if (!data.opinionDate) {
       form.elements.opinionDate.focus();
       return fail('請填意見時間');

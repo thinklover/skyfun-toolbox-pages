@@ -76,6 +76,7 @@ begin
     'id', a.id, 'username', a.username,
     'name', coalesce(nullif(a.name, ''), a.username),
     'role', a.role, 'status', a.status, 'team', coalesce(a.team, ''),
+    'jobTitle', coalesce(a.job_title, ''),
     'needsIdentity', cardinality(v_issues) > 0,
     'identityIssues', to_json(v_issues));
 end;

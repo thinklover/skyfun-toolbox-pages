@@ -893,6 +893,7 @@
     ready = true;
     updateUserBar();
     document.dispatchEvent(new CustomEvent('skyfun-auth-ready', { detail: { user: session.user } }));
+    syncAdminZoneEntry();
     patchShowPage();
     logPage('home');
     void maybeLineGate();
@@ -904,6 +905,28 @@
     $('toolbox-auth-gate')?.classList.remove('hidden');
     ready = false;
     updateUserBar();
+    syncAdminZoneEntry();
+  }
+
+  /** 行政專區：行政、營業處經理、儲備處經理、總經理室、區協理 */
+  function canEnterAdminZone() {
+    const u = session?.supabaseUser || session?.user || {};
+    const team = String(u.team || '').trim();
+    const title = String(u.jobTitle || u.job_title || '').trim();
+    if (title === '工讀生') return false;
+    if (team === '行政管理部' || team === '總經理室') return true;
+    if (title === '營業處經理' || title === '儲備處經理' || title === '儲備營業處經理') return true;
+    if (title === '營業區協理' || title === '區協理') return true;
+    if (title.indexOf('行政') >= 0) return true;
+    return false;
+  }
+
+  function syncAdminZoneEntry() {
+    const ok = !!(session?.user && canEnterAdminZone());
+    document.querySelectorAll('.home-card-administration').forEach((el) => {
+      el.classList.toggle('hidden', !ok);
+      el.toggleAttribute('aria-hidden', !ok);
+    });
   }
 
   function applySupabaseSession(token, user) {
@@ -915,7 +938,8 @@
         name: user.name || user.username,
         role: user.role || 'business',
         status: user.status,
-        team: user.team || ''
+        team: user.team || '',
+        jobTitle: user.jobTitle || user.job_title || ''
       },
       supabaseUser: user
     };
@@ -1120,6 +1144,7 @@
     if (data?.ok && data.user) {
       applySupabaseSession(token, data.user);
       updateUserBar();
+      document.dispatchEvent(new CustomEvent('skyfun-auth-ready', { detail: { user: session.user } }));
       if (needsIdentity()) showIdentityGate();
       else if (needsTeam()) showTeamGate();
       else if (!ready) {
@@ -1208,6 +1233,7 @@
       }
     },
     getUser: () => session?.user || null,
+    canEnterAdminZone,
     getProfile: () => null,
     rpc,
     authHeaders: () => ({ 'Content-Type': 'application/json' }),
