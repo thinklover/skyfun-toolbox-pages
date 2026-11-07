@@ -9,15 +9,13 @@
   const OFFICES = [
     '北一處', '北二處', '北三處', '北四處', '北五處', '基一處', '宜一處',
     '桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處',
-    '彰一處', '投一處', '嘉一處', '南一處', '南二處', '高一處', '高二處',
-    '業務支援管理部'
+    '彰一處', '投一處', '嘉一處', '南一處', '南二處', '高一處', '高二處'
   ];
   const REGIONS = [
     { id: 'north', label: '北區', teams: ['北一處', '北二處', '北三處', '北四處', '北五處', '基一處', '宜一處'] },
     { id: 'central', label: '中區', teams: ['桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處', '彰一處', '投一處', '嘉一處'] },
     { id: 'south', label: '南區', teams: ['南一處', '南二處', '南區（葉建志）'] },
-    { id: 'kh', label: '高雄', teams: ['高一處', '高二處'] },
-    { id: 'support', label: '業務支援', teams: ['業務支援管理部'] }
+    { id: 'kh', label: '高雄', teams: ['高一處', '高二處'] }
   ];
   const KINDS = [
     { id: 'all', label: '全部' },
@@ -172,23 +170,11 @@
     </div>`;
   }
 
-  function isRentTitle(person) {
-    return /租管師|租賃管理師/.test(String(person.title || ''));
-  }
-
-  function isSupportOffice(office) {
-    return office === '業務支援管理部';
-  }
-
-  function isTenPlusTitle(person) {
-    return /業務副理|業務經理/.test(String(person.title || ''));
-  }
-
-  function scopedPeople(mode) {
+  function scopedPeople() {
     const kind = state.kind === '正職' || state.kind === '兼職' ? state.kind : 'all';
     return state.people.filter((person) => {
       if (kind !== 'all' && person.kind !== kind) return false;
-      if (mode === 'ins' && isSupportOffice(person.office)) return isRentTitle(person);
+      if (person.office === '業務支援管理部') return false;
       return person.lane !== 'rent';
     });
   }
@@ -254,8 +240,8 @@
     const kind = state.kind === '正職' || state.kind === '兼職' ? state.kind : 'all';
     return state.people.filter((person) => {
       if (person.office !== office) return false;
+      if (person.office === '業務支援管理部') return false;
       if (kind !== 'all' && person.kind !== kind) return false;
-      if (isSupportOffice(office)) return isRentTitle(person);
       return true;
     });
   }
@@ -354,7 +340,7 @@
     if (!prod) return '';
     const months = prod.months || [];
     const label = months.map((month) => month.label).join('、') || '近兩個月';
-    if (prod.error) return `<p class="cv-note">產件：${esc(prod.error)}。未產件與 10 件名單暫不列出。</p>`;
+    if (prod.error) return `<p class="cv-note">產件：${esc(prod.error)}。未產件與代管 10 件名單暫不列出。</p>`;
     const countOf = new Map((prod.counts || []).map((row) => [norm(row.name), row]));
     const kind = state.kind === '正職' || state.kind === '兼職' ? state.kind : 'all';
     const pool = state.people.filter((person) => kind === 'all' || person.kind === kind);
@@ -364,10 +350,14 @@
       return { person, m1: Number(bag[0]) || 0, m2: Number(bag[1]) || 0, total: Number(hit?.total) || 0 };
     });
     const idle = rows.filter((row) => isBizOrRent(row.person) && row.m1 === 0 && row.m2 === 0);
-    const busy = rows.filter((row) => isTenPlusTitle(row.person))
-      .sort((a, b) => String(a.person.office).localeCompare(String(b.person.office), 'zh-Hant')
+    const busy = rows.filter((row) => row.total >= 10)
+      .sort((a, b) => (b.total - a.total)
+        || String(a.person.office).localeCompare(String(b.person.office), 'zh-Hant')
         || String(a.person.name).localeCompare(String(b.person.name), 'zh-Hant'));
     const line = (row, extra) => personBlock(row.person, [row.person.office, extra].filter(Boolean).join(' · '));
+    const escrowNote = prod.cumulativeError
+      ? `<p class="cv-note">代管：${esc(prod.cumulativeError)}。下列是目前已撈到的。</p>`
+      : '';
     return `<div class="cv-flags">
       <section class="cv-flag">
         <h3>連續兩個月未產件又未保<small>${idle.length}</small></h3>
@@ -375,10 +365,11 @@
         ${idle.length ? `<div class="cv-flag-list">${idle.map((row) => line(row, '0 件')).join('')}</div>` : '<p class="cv-empty">沒有符合的人。</p>'}
       </section>
       <section class="cv-flag">
-        <h3>產件 10 件以上未保<small>${busy.length}</small></h3>
-        <p>未投保的業務副理、業務經理。業務副理視同累積 10 件以上。</p>
+        <h3>代管 10 件以上未保<small>${busy.length}</small></h3>
+        <p>未投保、累積代管案件 10 件以上。</p>
+        ${escrowNote}
         ${busy.length
-          ? `<div class="cv-flag-list">${busy.map((row) => line(row, '')).join('')}</div>`
+          ? `<div class="cv-flag-list">${busy.map((row) => line(row, `代管 ${row.total} 件`)).join('')}</div>`
           : '<p class="cv-empty">沒有符合的人。</p>'}
       </section>
     </div>`;

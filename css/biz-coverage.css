@@ -170,7 +170,7 @@
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-flow {
   display: grid;
-  grid-template-columns: 1.7fr repeat(5, minmax(0, 1fr));
+  grid-template-columns: 1.7fr repeat(4, minmax(0, 1fr));
   gap: 0.55rem;
   align-items: stretch;
 }
