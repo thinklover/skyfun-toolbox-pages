@@ -1,5 +1,5 @@
 -- 小組長抽查名單：每天每組（每個業績月）存一份，關掉頁面再打開還是同一份，隔天才重抽。
--- 只有簡為倢、邱奕棋、黃怡婷（全部組）與侯思廷、李芷琳（自己那組）可以讀寫。
+-- 只有簡為倢、邱奕棋、黃怡婷（全部組）與侯思廷、童翊桓、李芷琳（自己那組）可以讀寫。
 
 create table if not exists public.admin_points_spot_draw (
   draw_date date not null,
@@ -53,7 +53,7 @@ begin
     return json_build_object('ok', false, 'error', '請先登入工具箱');
   end if;
   v_all := v_me in ('簡為倢', '邱奕棋', '黃怡婷');
-  if not (v_all or v_me in ('侯思廷', '李芷琳')) then
+  if not (v_all or v_me in ('侯思廷', '童翊桓', '李芷琳')) then
     return json_build_object('ok', false, 'error', '沒有小組長抽查權限');
   end if;
   return json_build_object(
@@ -97,7 +97,7 @@ begin
   if v_me is null then
     return json_build_object('ok', false, 'error', '請先登入工具箱');
   end if;
-  if not (v_me in ('簡為倢', '邱奕棋', '黃怡婷') or (v_me in ('侯思廷', '李芷琳') and v_me = v_leader)) then
+  if not (v_me in ('簡為倢', '邱奕棋', '黃怡婷') or (v_me in ('侯思廷', '童翊桓', '李芷琳') and v_me = v_leader)) then
     return json_build_object('ok', false, 'error', '沒有這組的抽查權限');
   end if;
   if v_leader = '' or v_month = '' then

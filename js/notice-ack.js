@@ -1,5 +1,5 @@
 /**
- * 簽呈公告專區：業務同仁逐則打勾「已閱畢知悉」，紀錄寫入 Supabase（toolbox_notice_ack）
+ * 業務獎金辦法頁（原簽呈公告）：業務同仁逐則打勾「已閱畢知悉」，紀錄寫入 Supabase（toolbox_notice_ack）
  */
 (function () {
   'use strict';
@@ -125,7 +125,7 @@
       ack(box.getAttribute('data-nack-id'), box);
     });
     document.addEventListener('skyfun-auth-ready', load);
-    const page = document.getElementById('page-announcement');
+    const page = document.getElementById('page-business-bonus');
     if (page) {
       new MutationObserver(() => {
         if (!page.classList.contains('hidden')) load();

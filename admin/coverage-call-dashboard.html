@@ -20,6 +20,13 @@
     .stat span { font-size: 0.75rem; color: #64748b; }
     .ok { color: #065f46; font-weight: 800; }
     .no { color: #a8a29e; }
+    .btn-del {
+      border: 1px solid #fecaca; background: #fff1f2; color: #9f1239;
+      border-radius: 0.45rem; padding: 0.2rem 0.55rem; font-size: 0.75rem;
+      font-weight: 800; cursor: pointer;
+    }
+    .btn-del:hover { background: #ffe4e6; }
+    .btn-del:disabled { opacity: 0.5; cursor: wait; }
   </style>
 </head>
 <body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
@@ -61,6 +68,7 @@
               <th>勾選</th>
               <th>備註</th>
               <th>勾選人</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -162,8 +170,20 @@
             '</td>' +
             '<td>' + esc(row.note || '—') + '</td>' +
             '<td>' + esc(row.completedBy || row.updatedBy || '—') + '</td>' +
+            '<td><button type="button" class="btn-del" data-del="' + esc(row.matchNo) + '">刪除</button></td>' +
           '</tr>';
         }).join('');
+      }
+
+      async function deleteRow(matchNo) {
+        const label = String(matchNo || '').trim();
+        if (!label) return;
+        if (!window.confirm('確定刪除這筆電訪紀錄？\n' + label + '\n刪除後無法復原。')) return;
+        document.getElementById('msg').textContent = '刪除中…';
+        const data = await rpc('biz_coverage_call_admin_delete', { p_secret: secret, p_match_no: label });
+        if (!data?.ok) throw new Error(data?.error || '刪除失敗');
+        await loadList();
+        document.getElementById('msg').textContent = '已刪除 ' + label;
       }
 
       async function loadList() {
@@ -211,6 +231,13 @@
           open: allRows.filter((row) => !row.landlordAt || !row.tenantAt).length
         });
         renderRows();
+      });
+      document.getElementById('rows').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-del]');
+        if (!button) return;
+        deleteRow(button.getAttribute('data-del') || '').catch((err) => {
+          document.getElementById('msg').textContent = err.message || String(err);
+        });
       });
 
       const stored = sessionStorage.getItem(SECRET_KEY) || '';

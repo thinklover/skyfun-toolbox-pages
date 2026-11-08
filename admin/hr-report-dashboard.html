@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>人資問題回報後台 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
+  <style>
+    table { font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; vertical-align: top; }
+    .body { white-space: pre-wrap; word-break: break-word; max-width: 18rem; }
+    .atts a {
+      display: inline-block; margin: 0.15rem 0.35rem 0.15rem 0;
+      padding: 0.2rem 0.55rem; border-radius: 999px;
+      background: #0f766e; color: #fff; font-size: 0.75rem; font-weight: 800;
+      text-decoration: none;
+    }
+    .atts a:hover { background: #0d9488; }
+    .type { font-weight: 900; color: #0f766e; }
+    .muted { color: #64748b; font-size: 0.78rem; }
+  </style>
+</head>
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+  <header>
+    <div class="topbar">
+      <h1>人資問題回報後台</h1>
+      <a class="back" href="../index.html">← 回工具箱</a>
+    </div>
+    <p class="lead">查看出勤相關回報單並下載附件。會計請先綁定工具箱 LINE，才會收到新單推播。</p>
+  </header>
+
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">總管密碼</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="總管密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm err hidden"></p>
+  </section>
+
+  <section class="hidden space-y-4" id="main-panel">
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <input type="search" id="search" placeholder="搜尋類型／姓名／處所／填表人／內容" class="max-w-md" autocomplete="off" />
+        <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+      </div>
+      <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
+      <div class="overflow-auto border border-slate-200 rounded-xl bg-white">
+        <table>
+          <thead>
+            <tr>
+              <th>時間</th>
+              <th>類型</th>
+              <th>填表人</th>
+              <th>姓名／處所</th>
+              <th>內容</th>
+              <th>附件</th>
+              <th>LINE</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-hr-report-admin';
+      let client = null;
+      let secret = '';
+      let allRows = [];
+
+      function cfg() {
+        const c = window.SKYFUN_SUPABASE || {};
+        return { url: String(c.url || '').trim(), anonKey: String(c.anonKey || c.anon_key || '').trim() };
+      }
+      function sb() {
+        if (client) return client;
+        const { url, anonKey } = cfg();
+        client = window.supabase.createClient(url, anonKey);
+        return client;
+      }
+      async function rpc(name, args) {
+        const { data, error } = await sb().rpc(name, args);
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        return data;
+      }
+      function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      }
+      function fmt(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('zh-TW', { hour12: false }); } catch { return iso; }
+      }
+      function payloadText(type, p) {
+        p = p || {};
+        const lines = [];
+        if (type === '延展休假申請') {
+          lines.push('類別：' + (p.leaveKind || '—'));
+          lines.push('期間：' + (p.leavePeriod || '—'));
+        } else if (type === '加班超時申請') {
+          lines.push('申請日期：' + (p.applyDate || '—'));
+        } else if (type === '內勤報到通知(有底薪人員)') {
+          lines.push('報到日期：' + (p.eventDate || '—'));
+          lines.push('薪資：' + (p.salary || '—'));
+          lines.push('身分證正反面：' + (p.onboardId || p.onboardForm ? '已上傳' : '未上傳'));
+          lines.push('存摺封面：' + (p.onboardBank || p.onboardForm ? '已上傳' : '未上傳'));
+          lines.push('人事資料表：' + (p.onboardPersonnel || p.onboardForm ? '已上傳' : '未上傳'));
+          lines.push('簽署信任租：' + (p.onboardTrust ? '已上傳' : '未上傳'));
+          lines.push('試用期協議書：' + (p.onboardProbation ? '已上傳' : '未上傳'));
+          lines.push('繳交財務部：' + (p.financeDone ? '已勾' : '未勾'));
+          lines.push('工作 Gmail：' + (p.workGmail || '—'));
+          lines.push('星鴻系統帳號：' + (p.sysDone ? '已勾' : '未勾'));
+          lines.push('行政工作群組：' + (p.groupDone ? '已勾' : '未勾'));
+          lines.push('中心系統帳號：' + (p.centerDone ? '已勾' : '未勾'));
+        } else if (type === '內勤離職通知(有底薪人員)') {
+          lines.push('離職日期：' + (p.eventDate || '—'));
+          lines.push('薪資：' + (p.salary || '—'));
+        } else if (type === '資遣通報') {
+          lines.push('資遣人員：' + (p.layoffName || '—'));
+          lines.push('預計日期：' + (p.layoffDate || '—'));
+          lines.push('處所：' + (p.layoffOffice || '—'));
+        } else if (type === '整租部門_調班申請') {
+          lines.push('申請人：' + (p.shiftPerson || '—'));
+          lines.push('原上班：' + (p.origDate || '—') + ' ' + (p.origTime || ''));
+          lines.push('配合：' + (p.partner || '—'));
+          lines.push('調後：' + (p.newDate || '—') + ' ' + (p.newTime || ''));
+        }
+        return lines.join('\n') || '—';
+      }
+      function filesHtml(files) {
+        const list = Array.isArray(files) ? files : [];
+        if (!list.length) return '—';
+        return '<div class="atts">' + list.map((f) =>
+          '<a href="' + esc(f.url || '') + '" target="_blank" rel="noopener" download="' + esc(f.name || '附件') + '">' + esc(f.name || '下載') + '</a>'
+        ).join('') + '</div>';
+      }
+      function filtered() {
+        const q = document.getElementById('search').value.trim().toLowerCase();
+        if (!q) return allRows.slice();
+        return allRows.filter((r) => {
+          const blob = [
+            r.issueType, r.userName, r.fullName, r.office, r.lineError,
+            payloadText(r.issueType, r.payload)
+          ].join(' ').toLowerCase();
+          return blob.includes(q);
+        });
+      }
+      function render() {
+        const list = filtered();
+        document.getElementById('msg').textContent = list.length ? '共 ' + list.length + ' 筆' : '沒有符合的回報';
+        document.getElementById('rows').innerHTML = list.map((r) => {
+          const line = (r.lineRecipients > 0)
+            ? ('已推 ' + r.lineRecipients + ' 人')
+            : (r.lineError ? esc(r.lineError) : '未推播');
+          return '<tr>' +
+            '<td class="whitespace-nowrap">' + esc(fmt(r.createdAt)) + '</td>' +
+            '<td class="type">' + esc(r.issueType) + '</td>' +
+            '<td>' + esc(r.userName || '—') + '</td>' +
+            '<td>' + esc(r.fullName || '—') + '<div class="muted">' + esc(r.office || '') + '</div></td>' +
+            '<td class="body">' + esc(payloadText(r.issueType, r.payload)) + '</td>' +
+            '<td>' + filesHtml(r.files) + '</td>' +
+            '<td class="muted">' + line + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+      async function load() {
+        document.getElementById('msg').textContent = '載入中…';
+        const data = await rpc('hr_report_admin_list', { p_secret: secret, p_limit: 300 });
+        if (!data || data.ok === false) throw new Error((data && data.error) || '載入失敗');
+        allRows = Array.isArray(data.rows) ? data.rows : [];
+        render();
+      }
+      async function login() {
+        const msg = document.getElementById('login-msg');
+        msg.classList.add('hidden');
+        secret = document.getElementById('admin-secret').value.trim();
+        if (!secret) {
+          msg.textContent = '請輸入總管密碼';
+          msg.classList.remove('hidden');
+          return;
+        }
+        try {
+          await load();
+          try { sessionStorage.setItem(SECRET_KEY, secret); } catch (_) {}
+          document.getElementById('login-panel').classList.add('hidden');
+          document.getElementById('main-panel').classList.remove('hidden');
+        } catch (e) {
+          msg.textContent = e.message || String(e);
+          msg.classList.remove('hidden');
+        }
+      }
+      document.getElementById('btn-login').addEventListener('click', login);
+      document.getElementById('admin-secret').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') login();
+      });
+      document.getElementById('btn-refresh').addEventListener('click', () => {
+        load().catch((e) => { document.getElementById('msg').textContent = e.message || String(e); });
+      });
+      document.getElementById('search').addEventListener('input', render);
+
+      try {
+        const saved = sessionStorage.getItem(SECRET_KEY) || '';
+        if (saved) {
+          document.getElementById('admin-secret').value = saved;
+          login();
+        }
+      } catch (_) {}
+    })();
+  </script>
+</body>
+</html>

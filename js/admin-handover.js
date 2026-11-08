@@ -1,792 +1,676 @@
 /**
- * 行政專區 › 離職交接
- * 唯讀 Worker：audit-log / contract-reviewers / terminations / expenses；進度 localStorage + Supabase 雲端同步；匯出 CSV。
+ * 行政專區 › 離職交接（v2 可點擊流程圖）
+ * 對齊催收 term-sop：節點板 → 同頁工作區。不改催收邏輯。不部署遠端。
  */
 (function (global) {
   'use strict';
 
-  const RPA_BASE = String(
-    global.SKYFUN_RPA_BASE || 'https://skyfun-arrears-rpa.dahwork123.workers.dev'
-  ).replace(/\/$/, '');
-  const LS_KEY = 'skyfun-admin-handover-v1';
   const ROOT_ID = 'admin-handover-root';
   const PAGE_ID = 'page-admin-handover';
   const KIND = 'admin';
-
-  const CHECKS = [
-    { key: 'pendingAudit', short: '未結審件', label: '未結審件／退件已交代接手人' },
-    { key: 'guildRoster', short: '公會清冊', label: '公會意見／清冊未了已說明' },
-    { key: 'repairTerm', short: '修繕解約', label: '修繕補助／解約經手已移交' },
-    { key: 'complaintPetition', short: '客訴簽呈', label: '客訴／簽呈窗口已告知' },
-    { key: 'filesAccounts', short: '資料帳密', label: '相關資料夾／帳密（非本工具）已交辦' }
-  ];
-
-  const EXPENSE_TYPE = { 0: '修繕', 1: '公證費', 2: '保險費', 3: '媒合費', 4: '其他補助' };
+  const C = () => global.HandoverCore;
 
   let state = {
-    leaveName: '',
-    batchAssignee: '',
-    months: 12,
-    rows: [],
-    progress: loadProgress(),
+    mounted: false,
     loading: false,
     msg: '',
     msgErr: false,
-    syncNotice: '',
-    syncErr: false,
-    filter: 'all',
-    expanded: Object.create(null),
-    mounted: false
+    list: [],
+    bag: null,
+    role: '',
+    backendOk: true,
+    backendHint: '',
+    openStage: 'basics',
+    matterFilter: 'all'
   };
 
-  const cloudTimers = Object.create(null);
-
-  function token() {
-    try {
-      return (global.skyfunAuth && global.skyfunAuth.getToken && global.skyfunAuth.getToken()) || '';
-    } catch (_) {
-      return '';
-    }
-  }
-
   function esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function normName(s) {
-    return String(s || '')
-      .trim()
-      .replace(/\s+/g, '');
-  }
-
-  function loadProgress() {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return { cases: {} };
-      const o = JSON.parse(raw);
-      return { cases: o && o.cases && typeof o.cases === 'object' ? o.cases : {} };
-    } catch (_) {
-      return { cases: {} };
-    }
-  }
-
-  function saveProgress() {
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, savedAt: new Date().toISOString(), cases: state.progress.cases }));
-    } catch (_) {
-      /* ignore */
-    }
-  }
-
-  function rowKey(row) {
-    return [row.caseNo || '', row.kind || '', row.handledAt || '', row.address || ''].join('|');
-  }
-
-  function progressOf(key) {
-    const p = state.progress.cases[key] || {};
-    return {
-      assignee: p.assignee || '',
-      checks: p.checks && typeof p.checks === 'object' ? p.checks : {},
-      note: p.note || ''
-    };
-  }
-
-  function setAssignee(key, name) {
-    const cur = progressOf(key);
-    state.progress.cases[key] = {
-      assignee: String(name || '').trim(),
-      checks: cur.checks,
-      note: cur.note || ''
-    };
-    saveProgress();
-    scheduleCloudSet(key);
-  }
-
-  function setCheck(key, checkKey, on) {
-    const cur = progressOf(key);
-    const checks = Object.assign({}, cur.checks);
-    if (on) checks[checkKey] = true;
-    else delete checks[checkKey];
-    state.progress.cases[key] = { assignee: cur.assignee, checks: checks, note: cur.note || '' };
-    saveProgress();
-    scheduleCloudSet(key);
-  }
-
-  function paintSyncNotice() {
-    const el = document.getElementById('ah-sync');
-    if (!el) return;
-    el.textContent = state.syncNotice || '';
-    el.className =
-      'text-xs ' + (state.syncErr ? 'text-amber-800 font-semibold' : 'text-emerald-700 font-semibold');
-    el.hidden = !state.syncNotice;
-  }
-
-  function scheduleCloudSet(matchNo) {
-    if (!matchNo || !String(state.leaveName || '').trim()) return;
-    if (cloudTimers[matchNo]) clearTimeout(cloudTimers[matchNo]);
-    cloudTimers[matchNo] = setTimeout(function () {
-      void pushCloudProgress(matchNo);
-    }, 600);
-  }
-
-  async function pushCloudProgress(matchNo) {
-    const tok = token();
-    const person = String(state.leaveName || '').trim();
-    if (!tok || !person || !matchNo) return;
-    if (!(global.skyfunAuth && typeof global.skyfunAuth.rpc === 'function')) return;
-    const prog = progressOf(matchNo);
-    try {
-      const res = await global.skyfunAuth.rpc('toolbox_handover_progress_set', {
-        p_token: tok,
-        p_kind: KIND,
-        p_person: person,
-        p_match_no: matchNo,
-        p_receiver: prog.assignee || '',
-        p_checks: prog.checks || {},
-        p_note: prog.note || ''
-      });
-      if (!res || res.ok === false) throw new Error((res && res.error) || '雲端儲存失敗');
-      state.syncNotice = '進度已同步雲端';
-      state.syncErr = false;
-      paintSyncNotice();
-    } catch (_) {
-      state.syncNotice = '雲端儲存失敗，已暫存在本機';
-      state.syncErr = true;
-      paintSyncNotice();
-    }
-  }
-
-  async function loadCloudProgress(person) {
-    const tok = token();
-    const name = String(person || '').trim();
-    if (!tok || !name) return;
-    if (!(global.skyfunAuth && typeof global.skyfunAuth.rpc === 'function')) return;
-    try {
-      const res = await global.skyfunAuth.rpc('toolbox_handover_progress_list', {
-        p_token: tok,
-        p_kind: KIND,
-        p_person: name
-      });
-      if (!res || res.ok === false) return;
-      const items = res.items || [];
-      items.forEach(function (it) {
-        const k = String(it.matchNo || '').trim();
-        if (!k) return;
-        const checks = it.checks && typeof it.checks === 'object' && !Array.isArray(it.checks) ? it.checks : {};
-        state.progress.cases[k] = {
-          assignee: String(it.receiver || '').trim(),
-          checks: checks,
-          note: String(it.note || '').trim()
-        };
-      });
-      saveProgress();
-      if (items.length) {
-        state.syncNotice = '進度已同步雲端';
-        state.syncErr = false;
-      }
-    } catch (_) {
-      /* 雲端讀取失敗時沿用本機 */
-    }
-  }
-
-  function checkPct(key) {
-    const c = progressOf(key).checks;
-    const n = CHECKS.filter((x) => c[x.key]).length;
-    return { done: n, total: CHECKS.length, pct: Math.round((n / CHECKS.length) * 100) };
-  }
-
-  function toneOf(pct) {
-    if (pct.pct >= 100) return { tone: 'is-done', status: '已完成' };
-    if (pct.pct > 0) return { tone: 'is-mid', status: '進行中' };
-    return { tone: 'is-empty', status: '未開始' };
-  }
-
-  function dotsHtml(checks) {
-    return (
-      '<span class="bh-dots" aria-hidden="true">' +
-      CHECKS.map((c) => '<i class="' + (checks[c.key] ? 'on' : '') + '"></i>').join('') +
-      '</span>'
-    );
-  }
-
-  function checklistHtml(key, prog, pct, tone, status) {
-    const checks = CHECKS.map((c, i) => {
-      const on = !!prog.checks[c.key];
-      return (
-        '<label class="bh-check-item' +
-        (on ? ' is-on' : '') +
-        '">' +
-        '<span class="bh-check-num">' +
-        (i + 1) +
-        '</span>' +
-        '<input type="checkbox" data-ah-check="' +
-        esc(key) +
-        '" data-ck="' +
-        c.key +
-        '"' +
-        (on ? ' checked' : '') +
-        ' />' +
-        '<span class="bh-check-text"><span class="bh-check-short">' +
-        esc(c.short || c.label) +
-        '</span><span class="bh-check-full">' +
-        esc(c.label) +
-        '</span></span></label>'
-      );
-    }).join('');
-    return (
-      '<div class="bh-check-card ' +
-      tone +
-      '">' +
-      '<div class="bh-check-head">' +
-      '<span class="bh-check-title">交接清單</span>' +
-      '<span class="bh-check-status">' +
-      esc(status) +
-      '</span>' +
-      '<span class="bh-check-pct">' +
-      pct.done +
-      '/' +
-      pct.total +
-      '</span>' +
-      '<span class="bh-check-pct-sub">' +
-      pct.pct +
-      '%</span>' +
-      '<span class="bh-check-bar" aria-hidden="true"><i style="width:' +
-      pct.pct +
-      '%"></i></span></div>' +
-      '<div class="bh-check-list">' +
-      checks +
-      '</div></div>'
-    );
-  }
-
-  function pad(n) {
-    return String(n).padStart(2, '0');
-  }
-
-  function iso(d) {
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  }
-
-  /** 近 n 個業績月（上月29～本月28） */
-  function recentPerfMonths(n) {
-    const out = [];
-    const now = new Date();
-    let y = now.getFullYear();
-    let m = now.getMonth() + 1;
-    for (let i = 0; i < n; i++) {
-      const start = new Date(y, m - 2, 29);
-      const end = new Date(y, m - 1, 28);
-      out.push({ year: y, month: m, start: iso(start), end: iso(end) });
-      m -= 1;
-      if (m < 1) {
-        m = 12;
-        y -= 1;
-      }
-    }
-    return out;
-  }
-
-  function rowsFromPayload(payload) {
-    const fields = payload && payload.fields ? payload.fields : [];
-    return (payload && payload.rows ? payload.rows : []).map((arr) => {
-      const r = {};
-      fields.forEach((f, i) => {
-        r[f] = arr[i];
-      });
-      if (!r.date) r.date = String(r.time || '').slice(0, 10).replace(/\//g, '-');
-      return r;
-    });
-  }
-
-  async function getJson(path, query) {
-    const tok = token();
-    if (!tok) throw new Error('請先登入工具箱');
-    const q = new URLSearchParams(query || {});
-    const res = await fetch(RPA_BASE + path + (q.toString() ? '?' + q : ''), {
-      headers: { 'X-Skyfun-Session': tok },
-      cache: 'no-store'
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.ok === false) {
-      throw new Error(data.error || data.message || path + ' HTTP ' + res.status);
-    }
-    return data;
-  }
-
-  function auditKind(row) {
-    const st = String(row.status || '');
-    if (/物審|物件/.test(st) || row.type === 'object' || row.type === 1) return '物審';
-    if (/房客/.test(st) || row.type === 'tenant' || row.type === 2) return '房客';
-    if (/預審/.test(st)) return '預審';
-    if (/複審/.test(st)) return '複審';
-    if (/產編|四期|五期/.test(st)) return '產編';
-    if (/實價/.test(st)) return '實價登錄';
-    if (/解約/.test(st)) return '解約審核';
-    return st || String(row.type || '審核');
-  }
-
-  function stripSensitive(obj) {
-    const out = {};
-    Object.keys(obj || {}).forEach((k) => {
-      if (/idno|身分證|證照|license|secret|token|password/i.test(k)) return;
-      out[k] = obj[k];
-    });
-    return out;
-  }
-
-  async function fetchAll() {
-    const want = normName(state.leaveName);
-    if (!want) throw new Error('請先填離職行政姓名');
-    const months = recentPerfMonths(Math.max(1, Math.min(24, Number(state.months) || 12)));
-    const collected = [];
-    const errors = [];
-
-    let mi = 0;
-    for (const m of months) {
-      try {
-        const audit = await getJson('/admin-points/audit-log', { start: m.start, end: m.end });
-        rowsFromPayload(audit).forEach((r) => {
-          if (normName(r.auditor) !== want) return;
-          collected.push(
-            stripSensitive({
-              caseNo: String(r.no || r.id || '').trim(),
-              address: String(r.name || r.address || '').trim(),
-              kind: auditKind(r),
-              handledAt: String(r.date || r.time || '').slice(0, 16),
-              source: 'audit-log'
-            })
-          );
-        });
-      } catch (e) {
-        errors.push('audit ' + m.month + '月: ' + (e.message || e));
-      }
-
-      try {
-        const exp = await getJson('/admin-points/expenses', { start: m.start, end: m.end });
-        rowsFromPayload(exp).forEach((r) => {
-          if (normName(r.auditor) !== want) return;
-          const t = EXPENSE_TYPE[r.type] || '補助';
-          collected.push(
-            stripSensitive({
-              caseNo: String(r.id || r.no || '').trim(),
-              address: String(r.address || r.name || '').trim(),
-              kind: t,
-              handledAt: String(r.date || r.time || '').slice(0, 16),
-              source: 'expenses'
-            })
-          );
-        });
-      } catch (e) {
-        errors.push('expenses ' + m.month + '月: ' + (e.message || e));
-      }
-
-      try {
-        const term = await getJson('/admin-points/terminations', { start: m.start, end: m.end });
-        rowsFromPayload(term).forEach((r) => {
-          if (normName(r.auditor) !== want) return;
-          collected.push(
-            stripSensitive({
-              caseNo: String(r.id || r.no || '').trim(),
-              address: String(r.address || r.name || '').trim(),
-              kind: r.contractType ? '解約・' + r.contractType : '解約',
-              handledAt: String(r.date || r.time || '').slice(0, 16),
-              source: 'terminations'
-            })
-          );
-        });
-      } catch (e) {
-        errors.push('terminations ' + m.month + '月: ' + (e.message || e));
-      }
-
-      /* 複審補抓僅近 3 個業績月，避免請求過多 */
-      if (mi < 3) {
-        try {
-          const lease = await getJson('/admin-points/lease-starts', { start: m.start, end: m.end });
-          const leaseRows = rowsFromPayload(lease);
-          const ids = leaseRows.map((r) => r.id).filter(Boolean).map(String);
-          const addrById = new Map(leaseRows.map((r) => [String(r.id), r.address || '']));
-          const noById = new Map(leaseRows.map((r) => [String(r.id), r.no || '']));
-          for (let i = 0; i < ids.length; i += 40) {
-            const chunk = ids.slice(i, i + 40);
-            if (!chunk.length) break;
-            try {
-              const rev = await getJson('/admin-points/contract-reviewers', { ids: chunk.join(',') });
-              (rev.rows || []).forEach((tuple) => {
-                const id = String(tuple[0] || '');
-                const auditor = String(tuple[1] || '');
-                const time = String(tuple[2] || '');
-                if (normName(auditor) !== want) return;
-                collected.push(
-                  stripSensitive({
-                    caseNo: String(noById.get(id) || id).trim(),
-                    address: String(addrById.get(id) || '').trim(),
-                    kind: '複審（合約明細）',
-                    handledAt: time.slice(0, 16).replace(/-/g, '/'),
-                    source: 'contract-reviewers'
-                  })
-                );
-              });
-            } catch (_) {
-              /* chunk fail */
-            }
-          }
-        } catch (e) {
-          errors.push('reviewers ' + m.month + '月: ' + (e.message || e));
-        }
-      }
-      mi += 1;
-    }
-
-    const dedup = new Map();
-    collected.forEach((r) => {
-      const k = rowKey(r);
-      if (!dedup.has(k)) dedup.set(k, r);
-    });
-    const list = [...dedup.values()].sort((a, b) => String(b.handledAt).localeCompare(String(a.handledAt)));
-    return { list, errors };
-  }
-
-  function filtered() {
-    const f = state.filter;
-    return state.rows.filter((row) => {
-      const k = rowKey(row);
-      const p = checkPct(k);
-      if (f === 'open') return p.done < p.total;
-      if (f === 'done') return p.done >= p.total;
-      if (f === 'repair') return /修繕/.test(row.kind || '');
-      if (f === 'term') return /解約/.test(row.kind || '');
-      return true;
-    });
+    return C() ? C().esc(s) : String(s || '');
   }
 
   function setMsg(t, err) {
     state.msg = t || '';
     state.msgErr = !!err;
+    const el = document.getElementById('ah-msg');
+    if (!el) return;
+    el.textContent = state.msg;
+    el.className = 'bh-msg ' + (state.msgErr ? 'is-err' : 'is-ok');
+    el.hidden = !state.msg;
   }
 
-  async function load() {
-    state.loading = true;
-    setMsg('讀取近 ' + state.months + ' 個業績月經手紀錄…（可能需數十秒）');
-    render();
-    try {
-      await loadCloudProgress(state.leaveName);
-      const { list, errors } = await fetchAll();
-      state.rows = list;
-      setMsg(
-        '共 ' + list.length + ' 筆經手紀錄' + (errors.length ? '；部分來源失敗：' + errors.slice(0, 3).join('；') : ''),
-        errors.length > 0 && list.length === 0
+  async function refreshList() {
+    const res = await C().rpc('toolbox_handover_case_list', { p_kind: KIND });
+    state.list = res.rows || [];
+  }
+
+  async function openCase(id) {
+    const res = await C().rpc('toolbox_handover_case_get', { p_id: Number(id) });
+    state.bag = res;
+    state.role = res.role || '';
+    state.backendOk = true;
+    if (!state.openStage) state.openStage = 'basics';
+  }
+
+  function renderList() {
+    if (!state.list.length) {
+      return '<p class="bh-empty">尚無行政離職交接案件。請新建（可標記離職或留職停薪）。</p>';
+    }
+    return (
+      '<ul class="bh-case-index">' +
+      state.list
+        .map((c) => {
+          return (
+            '<li><button type="button" data-ah-open="' +
+            c.id +
+            '"><b>' +
+            esc(c.transferorName) +
+            '</b> · ' +
+            esc(C().statusLabel(c.status)) +
+            ' · ' +
+            esc(c.region || '未填地區') +
+            '</button></li>'
+          );
+        })
+        .join('') +
+      '</ul>'
+    );
+  }
+
+  function itemEditor(i) {
+    const locked = state.bag.case.locked || state.bag.case.status === 'closed';
+    const canEdit =
+      !locked &&
+      (state.role === 'transferor' || state.role === 'admin') &&
+      ['draft', 'returned', 'transferor_done'].indexOf(state.bag.case.status) >= 0;
+    const canRecv = !locked && state.role === 'receiver';
+    const canMgr = !locked && state.role === 'manager';
+    return (
+      '<article class="bh-item" data-item-id="' +
+      i.id +
+      '">' +
+      '<header><b>' +
+      esc(i.label) +
+      '</b><small>' +
+      esc(C().SECTION_LABEL[i.section] || i.section) +
+      '</small></header>' +
+      (canEdit
+        ? '<div class="bh-item-fields">' +
+          '<label>結果<select data-f="result">' +
+          ['unset', 'yes', 'no', 'na', 'done', 'pending']
+            .map((v) => '<option value="' + v + '"' + (i.result === v ? ' selected' : '') + '>' + v + '</option>')
+            .join('') +
+          '</select></label>' +
+          '<label>數量<input data-f="qty" value="' +
+          esc(i.qty) +
+          '"/></label>' +
+          '<label>路徑／說明<input data-f="pathNote" value="' +
+          esc(i.pathNote) +
+          '"/></label>' +
+          '<label>現況／進度<textarea data-f="progressNote">' +
+          esc(i.progressNote) +
+          '</textarea></label>' +
+          '<label>交接人<input data-f="handoverPerson" value="' +
+          esc(i.handoverPerson) +
+          '"/></label>' +
+          '<label>備註／不適用理由<input data-f="remark" value="' +
+          esc(i.remark) +
+          '"/></label>' +
+          (i.needDisable
+            ? '<fieldset class="bh-disable"><legend>停用核實（勾選≠撤權）</legend>' +
+              '<label><input type="checkbox" data-f="disabledVerified"' +
+              (i.disabledVerified ? ' checked' : '') +
+              '/> 已實際停用</label>' +
+              '<label>執行人<input data-f="disabledBy" value="' +
+              esc(i.disabledBy) +
+              '"/></label>' +
+              '<label>時間<input data-f="disabledAt" type="datetime-local" value="' +
+              esc((i.disabledAt || '').slice(0, 16)) +
+              '"/></label>' +
+              '<label>證據／單號<input data-f="disabledEvidence" value="' +
+              esc(i.disabledEvidence) +
+              '"/></label></fieldset>'
+            : '') +
+          '<button type="button" class="btn btn-sm" data-ah-save-item="' +
+          i.id +
+          '">儲存細項（草稿）</button></div>'
+        : '<p class="bh-ro">結果：' +
+          esc(i.result) +
+          ' · 現況：' +
+          esc(i.progressNote || '—') +
+          '</p>') +
+      (canRecv
+        ? '<label class="bh-confirm"><input type="checkbox" data-ah-recv-item="' +
+          i.id +
+          '"' +
+          (i.receiverOk ? ' checked' : '') +
+          '/> 接手人確認本項</label>'
+        : '') +
+      (canMgr
+        ? '<label class="bh-confirm"><input type="checkbox" data-ah-mgr-item="' +
+          i.id +
+          '"' +
+          (i.managerOk ? ' checked' : '') +
+          '/> 主管確認本項</label>'
+        : '') +
+      '</article>'
+    );
+  }
+
+  function matterCard(m) {
+    const overdue = C().matterOverdue(m);
+    return (
+      '<article class="bh-matter' +
+      (overdue ? ' is-overdue' : '') +
+      (m.handoverDone ? ' is-done' : '') +
+      '" data-matter-id="' +
+      m.id +
+      '">' +
+      '<div><b>' +
+      esc(m.matchNo || '（無媒合號）') +
+      '</b> · ' +
+      esc(m.expenseType || m.caseType || '') +
+      '<br/><small>' +
+      esc(m.address) +
+      ' · 來源 ' +
+      esc(m.source) +
+      (m.pendingVerify ? ' · <span class="bh-tag">待核</span>' : '') +
+      (overdue ? ' · <span class="bh-tag is-late">逾期</span>' : '') +
+      (m.migratedFrom ? ' · 舊進度遷移' : '') +
+      '</small></div>' +
+      '<div class="bh-matter-meta">履約中：' +
+      (m.contractActive ? '是' : '否') +
+      '　交接完成：' +
+      (m.handoverDone ? '是' : '否') +
+      '　接手：' +
+      esc(m.receiverName || '—') +
+      '　期限：' +
+      esc(m.dueDate || '—') +
+      '</div>' +
+      '<p>' +
+      esc(m.currentStatus || m.todos || '') +
+      '</p></article>'
+    );
+  }
+
+  function stageMeta(stage) {
+    const st = C().stageStatusOf(KIND, stage, state.bag);
+    const prog = C().stageProgressOf(KIND, stage, state.bag);
+    const gate = C().stageOpenGate(stage, state.bag);
+    return (
+      '<div class="bh-sop-detail-head">' +
+      '<span class="bh-sop-num">' +
+      stage.n +
+      '</span>' +
+      '<div><p class="bh-sop-owner">' +
+      esc(stage.owner) +
+      ' · <span class="bh-sop-status" data-st="' +
+      esc(st) +
+      '">' +
+      esc(C().stageStatusLabel(st)) +
+      '</span></p><h3>' +
+      esc(stage.title) +
+      '</h3>' +
+      '<p class="bh-sop-blurb">' +
+      esc(stage.blurb) +
+      (prog.total ? ' · 進度 ' + prog.done + '／' + prog.total : '') +
+      '</p>' +
+      (!gate.open ? '<p class="bh-warn">' + esc(gate.reason) + '</p>' : '') +
+      '</div>' +
+      '<button type="button" class="bh-sop-close" data-ah-stage-close aria-label="關閉">✕</button></div>'
+    );
+  }
+
+  function panelBasics() {
+    const c = state.bag.case;
+    return (
+      '<div class="bh-basic cardish">' +
+      '<div class="bh-grid">' +
+      '<label>地區<select id="ah-region">' +
+      C().REGIONS.map((r) => '<option' + (c.region === r ? ' selected' : '') + '>' + r + '</option>').join('') +
+      '</select></label>' +
+      '<label>類型<select id="ah-leave-type"><option value="resign"' +
+      (c.leaveType === 'resign' ? ' selected' : '') +
+      '>離職</option><option value="leave_without_pay"' +
+      (c.leaveType === 'leave_without_pay' ? ' selected' : '') +
+      '>留職停薪</option></select></label>' +
+      '<label>通訊電話<input id="ah-phone" value="' +
+      esc(c.transferorPhone) +
+      '"/></label>' +
+      '<label>接手人<input id="ah-receiver" value="' +
+      esc(c.receiverName) +
+      '"/></label>' +
+      '<label>單位主管<input id="ah-manager" value="' +
+      esc(c.managerName) +
+      '"/></label>' +
+      '<label>離職日<input id="ah-leave-date" type="date" value="' +
+      esc(c.leaveDate || '') +
+      '"/></label>' +
+      '<label>最後工作日<input id="ah-last-work" type="date" value="' +
+      esc(c.lastWorkDate || '') +
+      '"/></label>' +
+      '<label class="bh-span2">通訊地址<input id="ah-address" value="' +
+      esc(c.transferorAddress) +
+      '"/></label></div>' +
+      '<button type="button" class="btn btn-sm" data-ah-save-basic>儲存草稿</button></div>'
+    );
+  }
+
+  function panelItems(sections) {
+    const items = (state.bag.items || []).filter((i) => sections.indexOf(i.section) >= 0);
+    if (!items.length) return '<p class="bh-empty">此階段尚無細項（請確認已套用 handover-v2 種子）。</p>';
+    return items.map(itemEditor).join('');
+  }
+
+  function panelAccounts() {
+    const c = state.bag.case;
+    return (
+      '<p class="bh-hint">可提前準備停用清單與證據；「移交人確認」完成前，本階段不會算已完成。移交人本人確認必須在登入權限停用前完成。</p>' +
+      panelItems(['03']) +
+      '<fieldset class="bh-disable"><legend>帳號停用核實（全案）</legend>' +
+      '<label><input type="checkbox" id="ah-need-disable"' +
+      (c.accountNeedDisable ? ' checked' : '') +
+      '/> 需停用</label>' +
+      '<label>執行人<input id="ah-dis-by" value="' +
+      esc(c.accountDisabledBy) +
+      '"/></label>' +
+      '<label>時間<input id="ah-dis-at" type="datetime-local" value="' +
+      esc((c.accountDisabledAt || '').slice(0, 16)) +
+      '"/></label>' +
+      '<label>證據<input id="ah-dis-ev" value="' +
+      esc(c.accountDisableEvidence) +
+      '"/></label></fieldset>' +
+      '<button type="button" class="btn btn-sm" data-ah-save-basic>儲存停用核實（草稿）</button>'
+    );
+  }
+
+  function panelMatters() {
+    const filter = state.matterFilter || 'all';
+    const list = C().filterMatters(state.bag.matters || [], filter);
+    const chips = [
+      ['all', '全部'],
+      ['undone', '未完成'],
+      ['pending', '待核／待補'],
+      ['overdue', '逾期'],
+      ['review', '待覆核']
+    ];
+    return (
+      '<div class="bh-matter-toolbar">' +
+      chips
+        .map(
+          (c) =>
+            '<button type="button" class="bh-chip' +
+            (filter === c[0] ? ' is-on' : '') +
+            '" data-ah-matter-filter="' +
+            c[0] +
+            '">' +
+            c[1] +
+            '</button>'
+        )
+        .join('') +
+      '</div>' +
+      panelItems(['05']) +
+      '<div class="bh-add-matter">' +
+      '<input id="ah-m-match" placeholder="媒合編號"/><input id="ah-m-addr" placeholder="地址"/>' +
+      '<input id="ah-m-exp" placeholder="費用類別（修繕／保險費…）"/>' +
+      '<input id="ah-m-recv" placeholder="接手人"/><input id="ah-m-due" type="date"/>' +
+      '<textarea id="ah-m-status" placeholder="現況／待辦"></textarea>' +
+      '<label><input type="checkbox" id="ah-m-done"/> 交接檢核完成</label>' +
+      '<button type="button" class="btn btn-sm" data-ah-add-matter>新增逐案</button></div>' +
+      (list.length ? list.map(matterCard).join('') : '<p class="bh-empty">沒有符合篩選的逐案。</p>')
+    );
+  }
+
+  function panelSign(kind) {
+    const bag = state.bag;
+    if (kind === 'transferor') {
+      return (
+        '<p class="bh-hint">確認細項與逐案後送出。儲存草稿不算完成此階段。</p>' +
+        C().blockersHtml(bag.blockers) +
+        '<div class="bh-actions"><button type="button" class="btn" data-ah-submit>移交人送出填報</button></div>'
       );
-    } catch (e) {
-      setMsg(String(e.message || e), true);
     }
-    state.loading = false;
-    render();
-  }
-
-  function applyBatch() {
-    const name = String(state.batchAssignee || '').trim();
-    if (!name) {
-      setMsg('請先填批次接手人', true);
-      render();
-      return;
+    if (kind === 'receiver') {
+      return (
+        '<p class="bh-hint">請到各細項勾「接手人確認」，完成後按下方按鈕。</p>' +
+        panelItems(['01', '02', '03', '04', '05', '06']) +
+        '<div class="bh-actions"><button type="button" class="btn" data-ah-recv-all>接手人完成確認</button></div>'
+      );
     }
-    filtered().forEach((row) => setAssignee(rowKey(row), name));
-    setMsg('已套用接手人「' + name + '」至目前篩選清單', false);
-    render();
+    return (
+      C().blockersHtml(bag.blockers) +
+      '<section class="bh-section"><h4>疏失責任同意書（可選）</h4>' +
+      '<p class="bh-hint">非結案必要。僅關聯註記。</p>' +
+      '<button type="button" class="btn btn-sm" data-ah-liability>記錄已關聯同意書範本</button>' +
+      ((bag.liabilityDocs || []).length
+        ? '<ul>' + bag.liabilityDocs.map((d) => '<li>' + esc(d.title) + ' · ' + esc(d.note) + '</li>').join('') + '</ul>'
+        : '') +
+      '</section>' +
+      '<div class="bh-actions">' +
+      '<button type="button" class="btn" data-ah-mgr>主管複核完成</button>' +
+      '<button type="button" class="btn tone-rose" data-ah-return>退回（必填理由）</button>' +
+      '<button type="button" class="btn tone-emerald" data-ah-close>結案（後端驗證）</button>' +
+      '<button type="button" class="btn tone-slate-soft" data-ah-print>列印版</button></div>'
+    );
   }
 
-  function csvCell(v) {
-    const s = String(v == null ? '' : v);
-    if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-    return s;
+  function stagePanelHtml() {
+    const stage = C().stagesOf(KIND).find((s) => s.id === state.openStage);
+    if (!stage) return '';
+    let body = '';
+    if (stage.kind === 'basics') body = panelBasics();
+    else if (stage.kind === 'items') body = panelItems(stage.sections || []);
+    else if (stage.kind === 'accounts') body = panelAccounts();
+    else if (stage.kind === 'matters') body = panelMatters();
+    else if (stage.kind === 'sign_transferor') body = panelSign('transferor');
+    else if (stage.kind === 'sign_receiver') body = panelSign('receiver');
+    else if (stage.kind === 'sign_manager') body = panelSign('manager');
+    else body = '<p class="bh-empty">此階段尚無工作區內容。</p>';
+
+    return (
+      '<div class="bh-sop-detail" id="ah-sop-detail">' +
+      '<div class="bh-sop-detail-inner">' +
+      stageMeta(stage) +
+      body +
+      '<details class="bh-audit"><summary>操作歷程</summary><ul>' +
+      (state.bag.events || [])
+        .map((e) => '<li>' + esc(e.createdAt) + ' · ' + esc(e.actorName) + ' · ' + esc(e.action) + '</li>')
+        .join('') +
+      '</ul></details></div></div>'
+    );
   }
 
-  function exportCsv() {
-    const headers = ['案號', '地址', '經手類型', '經手日', '接手人', 'checklist進度', '資料來源'];
-    CHECKS.forEach((c) => headers.push(c.label));
-    const lines = [headers.map(csvCell).join(',')];
-    state.rows.forEach((row) => {
-      const k = rowKey(row);
-      const prog = progressOf(k);
-      const pct = checkPct(k);
-      const cells = [row.caseNo, row.address || '—', row.kind, row.handledAt, prog.assignee, pct.done + '/' + pct.total, row.source];
-      CHECKS.forEach((c) => cells.push(prog.checks[c.key] ? 'V' : ''));
-      lines.push(cells.map(csvCell).join(','));
-    });
-    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = '行政離職交接_' + (normName(state.leaveName) || 'export') + '.csv';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  }
-
-  function dash(v) {
-    const s = String(v == null ? '' : v).trim();
-    return s || '—';
+  function renderDetail() {
+    const bag = state.bag;
+    if (!bag) return '';
+    return (
+      '<section class="bh-detail">' +
+      '<button type="button" class="btn btn-sm tone-slate-soft" data-ah-back>← 案件列表</button>' +
+      C().caseHeaderHtml(KIND, bag, state.role) +
+      '<h4 class="bh-sop-title">交接流程<small>點節點開啟工作區 · 完成比例依實際資料計算</small></h4>' +
+      C().sopBoardHtml(KIND, bag, state.openStage) +
+      stagePanelHtml() +
+      '</section>'
+    );
   }
 
   function render() {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
-    const list = filtered();
-
     root.innerHTML =
-      '<div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 p-4 md:p-6 space-y-4 shadow-sm">' +
-      '<header class="space-y-1">' +
-      '<h2 class="text-2xl md:text-3xl font-bold text-slate-900 text-center">🤝 行政離職交接</h2>' +
+      '<div class="bh-shell">' +
+      '<header class="bh-hero">' +
+      '<p class="bh-kicker">行政專區</p>' +
+      '<h2>行政離職交接</h2>' +
+      '<p class="bh-lead">可點擊流程圖：點節點即可檢核、存草稿、送出或覆核。未完成檢核不得結案（後端強制）。</p>' +
+      (state.backendHint ? '<p class="bh-warn">' + esc(state.backendHint) + '</p>' : '') +
       '</header>' +
-      '<div class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-700 leading-relaxed">' +
-      '<p class="font-semibold text-slate-800 mb-1">使用方法</p>' +
-      '<ol class="list-decimal ml-5 space-y-0.5">' +
-      '<li>輸入離職行政姓名，按「載入」</li>' +
-      '<li>指定接手人（可批次套用）</li>' +
-      '<li>每件交接完成就勾選清單（進度自動儲存，換電腦也看得到）</li>' +
-      '<li>全部完成後可匯出 CSV</li>' +
-      '</ol>' +
-      '</div>' +
-      '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">' +
-      '<label class="block text-sm font-semibold text-slate-700">離職行政姓名' +
-      '<input id="ah-leave" type="text" class="mt-1 w-full px-3 py-2 border-2 border-slate-200 rounded-xl" value="' +
-      esc(state.leaveName) +
-      '" placeholder="與審核人姓名相同" /></label>' +
-      '<label class="block text-sm font-semibold text-slate-700">回溯業績月數' +
-      '<input id="ah-months" type="number" min="1" max="24" class="mt-1 w-full px-3 py-2 border-2 border-slate-200 rounded-xl" value="' +
-      esc(state.months) +
-      '" /></label>' +
-      '<label class="block text-sm font-semibold text-slate-700">批次接手人' +
-      '<div class="mt-1 flex gap-2">' +
-      '<input id="ah-batch" type="text" class="flex-1 px-3 py-2 border-2 border-slate-200 rounded-xl" value="' +
-      esc(state.batchAssignee) +
-      '" />' +
-      '<button type="button" id="ah-batch-btn" class="btn tone-slate-mid px-3 py-2 font-bold shrink-0">套用</button>' +
-      '</div></label>' +
-      '</div>' +
-      '<div class="flex flex-wrap gap-2 items-center">' +
-      '<button type="button" id="ah-load" class="btn tone-indigo px-4 py-2 font-bold"' +
-      (state.loading ? ' disabled' : '') +
-      '>' +
-      (state.loading ? '載入中…' : '載入') +
-      '</button>' +
-      '<button type="button" id="ah-export" class="btn tone-slate-soft px-4 py-2 font-bold">匯出 CSV</button>' +
-      '<span class="text-xs text-slate-500">目前 ' +
-      state.rows.length +
-      ' 筆</span>' +
-      '<span id="ah-sync" class="text-xs ' +
-      (state.syncErr ? 'text-amber-800 font-semibold' : 'text-emerald-700 font-semibold') +
-      '"' +
-      (state.syncNotice ? '' : ' hidden') +
-      '>' +
-      esc(state.syncNotice) +
-      '</span>' +
-      '</div>' +
-      (state.msg
-        ? '<p class="text-sm ' + (state.msgErr ? 'text-rose-700 font-semibold' : 'text-slate-600') + '">' + esc(state.msg) + '</p>'
-        : '') +
-      '<div class="flex flex-wrap gap-2">' +
-      [
-        ['all', '全部'],
-        ['open', '未完成'],
-        ['done', '已完成'],
-        ['repair', '修繕'],
-        ['term', '解約']
-      ]
-        .map(
-          ([k, lab]) =>
-            '<button type="button" class="btn btn-sm ' +
-            (state.filter === k ? 'tone-indigo' : 'tone-slate-soft') +
-            '" data-ah-filter="' +
-            k +
-            '">' +
-            lab +
-            '</button>'
-        )
-        .join('') +
-      '</div>' +
-      '<div class="bh-list-toolbar">' +
-      '<p class="text-sm font-bold text-slate-800">經手清單 <span class="text-indigo-700">共 ' +
-      list.length +
-      ' 筆</span></p>' +
-      '<div class="bh-list-actions">' +
-      '<button type="button" class="btn btn-sm tone-slate-soft" id="ah-expand-all">全部展開</button>' +
-      '<button type="button" class="btn btn-sm tone-slate-soft" id="ah-collapse-all">全部收合</button>' +
-      '</div>' +
-      '<p class="bh-list-toolbar__hint">先掃案件列 → 點開展開卡片 → 勾選交接清單</p>' +
-      '</div>' +
-      '<div class="bh-list">' +
-      (list.length
-        ? list
-            .map((row) => {
-              const k = rowKey(row);
-              const prog = progressOf(k);
-              const pct = checkPct(k);
-              const meta = toneOf(pct);
-              const open = !!state.expanded[k];
-              const tags = [];
-              if (row.kind) tags.push('<span class="bh-chip is-info">' + esc(row.kind) + '</span>');
-              if (row.handledAt) tags.push('<span class="bh-chip">' + esc(row.handledAt) + '</span>');
-              return (
-                '<article class="bh-case ' +
-                meta.tone +
-                (open ? ' is-open' : '') +
-                '" data-ah-case="' +
-                esc(k) +
-                '">' +
-                '<div class="bh-case-scan">' +
-                '<button type="button" class="bh-case-toggle" data-ah-toggle="' +
-                esc(k) +
-                '" aria-expanded="' +
-                (open ? 'true' : 'false') +
-                '">' +
-                '<span class="bh-case-chevron" aria-hidden="true">▾</span>' +
-                '<span class="bh-case-main">' +
-                '<span class="bh-case-id">' +
-                esc(dash(row.caseNo)) +
-                '</span>' +
-                '<span class="bh-case-addr">' +
-                esc(dash(row.address)) +
-                '</span>' +
-                '<span class="bh-case-sub">' +
-                esc(dash(row.kind)) +
-                ' · ' +
-                esc(dash(row.handledAt)) +
-                '</span>' +
-                (tags.length ? '<span class="bh-case-tags">' + tags.join('') + '</span>' : '') +
-                '</span>' +
-                '<span class="bh-case-side">' +
-                '<span class="bh-case-badge"><span class="bh-case-badge__status">' +
-                esc(meta.status) +
-                '</span><span class="bh-case-badge__frac">' +
-                pct.done +
-                '/' +
-                pct.total +
-                '</span></span>' +
-                dotsHtml(prog.checks) +
-                '</span></button>' +
-                '<div class="bh-case-assignee"><label>接手人</label>' +
-                '<input type="text" data-ah-assignee="' +
-                esc(k) +
-                '" value="' +
-                esc(prog.assignee) +
-                '" placeholder="填寫接手人" /></div></div>' +
-                '<div class="bh-case-panel">' +
-                '<div class="bh-case-facts">' +
-                '<div class="bh-fact"><span class="bh-fact__k">案號</span><span class="bh-fact__v">' +
-                esc(dash(row.caseNo)) +
-                '</span></div>' +
-                '<div class="bh-fact"><span class="bh-fact__k">地址</span><span class="bh-fact__v">' +
-                esc(dash(row.address)) +
-                '</span></div>' +
-                '<div class="bh-fact"><span class="bh-fact__k">經手類型</span><span class="bh-fact__v">' +
-                esc(dash(row.kind)) +
-                '</span></div>' +
-                '<div class="bh-fact"><span class="bh-fact__k">經手日</span><span class="bh-fact__v">' +
-                esc(dash(row.handledAt)) +
-                '</span></div></div>' +
-                checklistHtml(k, prog, pct, meta.tone, meta.status) +
-                '</div></article>'
-              );
-            })
-            .join('')
-        : '<div class="bh-empty">尚無資料。請輸入姓名後按「載入」。</div>') +
-      '</div></div>';
-
-    wire(root);
+      '<p id="ah-msg" class="bh-msg" hidden></p>' +
+      (state.bag
+        ? renderDetail()
+        : '<div class="bh-home">' +
+          '<div class="bh-create">' +
+          '<h3>新建交接</h3>' +
+          '<label>移交人姓名<input id="ah-new-name" placeholder="離職／留職停薪人員"/></label>' +
+          '<label>接手人<input id="ah-new-recv"/></label>' +
+          '<label>單位主管<input id="ah-new-mgr"/></label>' +
+          '<button type="button" class="btn" data-ah-create>建立行政案</button>' +
+          '<button type="button" class="btn tone-slate-soft" data-ah-migrate>匯入此人舊勾選進度</button></div>' +
+          '<h3>我的／相關案件</h3>' +
+          renderList() +
+          '</div>') +
+      '</div>';
+    if (state.msg) setMsg(state.msg, state.msgErr);
   }
 
-  function wire(root) {
-    const leave = root.querySelector('#ah-leave');
-    const months = root.querySelector('#ah-months');
-    const batch = root.querySelector('#ah-batch');
-    if (leave) {
-      leave.addEventListener('change', () => {
-        state.leaveName = leave.value;
-      });
-    }
-    if (months) {
-      months.addEventListener('change', () => {
-        state.months = Number(months.value) || 12;
-      });
-    }
-    if (batch) {
-      batch.addEventListener('change', () => {
-        state.batchAssignee = batch.value;
-      });
-    }
-    root.querySelector('#ah-batch-btn')?.addEventListener('click', () => {
-      state.batchAssignee = batch ? batch.value : state.batchAssignee;
-      applyBatch();
-    });
-    root.querySelector('#ah-load')?.addEventListener('click', () => {
-      state.leaveName = leave ? leave.value : state.leaveName;
-      state.months = months ? Number(months.value) || 12 : state.months;
-      void load();
-    });
-    root.querySelector('#ah-export')?.addEventListener('click', exportCsv);
-    root.querySelectorAll('[data-ah-filter]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        state.filter = btn.getAttribute('data-ah-filter') || 'all';
-        render();
-      });
-    });
-    root.querySelector('#ah-expand-all')?.addEventListener('click', () => {
-      filtered().forEach((row) => {
-        state.expanded[rowKey(row)] = true;
-      });
+  async function safe(fn) {
+    try {
+      state.loading = true;
+      await fn();
+      setMsg(state.msg && !state.msgErr ? state.msg : '');
+    } catch (e) {
+      const msg = e && e.message ? e.message : String(e);
+      if (/function|schema|does not exist|404|PGRST/i.test(msg)) {
+        state.backendOk = false;
+        state.backendHint =
+          '後端 handover-v2 尚未套用至 Supabase。結案控管無法生效；請於確認後再 apply migration。本頁可先看 UI。';
+      }
+      setMsg(msg + (e.blockers && e.blockers.length ? '｜' + e.blockers.join('；') : ''), true);
+    } finally {
+      state.loading = false;
       render();
-    });
-    root.querySelector('#ah-collapse-all')?.addEventListener('click', () => {
-      state.expanded = Object.create(null);
-      render();
-    });
-    root.querySelectorAll('[data-ah-toggle]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const k = btn.getAttribute('data-ah-toggle') || '';
-        if (!k) return;
-        state.expanded[k] = !state.expanded[k];
+    }
+  }
+
+  function wire() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root || root.dataset.wired === '1') return;
+    root.dataset.wired = '1';
+    root.addEventListener('click', (ev) => {
+      const stageBtn = ev.target.closest('[data-bh-stage]');
+      if (stageBtn && root.contains(stageBtn)) {
+        const id = stageBtn.getAttribute('data-bh-stage');
+        state.openStage = state.openStage === id ? '' : id;
         render();
-      });
-    });
-    root.querySelectorAll('[data-ah-assignee]').forEach((inp) => {
-      inp.addEventListener('change', () => {
-        setAssignee(inp.getAttribute('data-ah-assignee'), inp.value);
-        paintSyncNotice();
-      });
-    });
-    root.querySelectorAll('[data-ah-check]').forEach((inp) => {
-      inp.addEventListener('change', () => {
-        setCheck(inp.getAttribute('data-ah-check'), inp.getAttribute('data-ck'), inp.checked);
+        return;
+      }
+      const blocker = ev.target.closest('[data-bh-blocker]');
+      if (blocker) {
+        const sid = blocker.getAttribute('data-bh-blocker');
+        if (sid) {
+          state.openStage = sid;
+          render();
+        }
+        return;
+      }
+      const filterBtn = ev.target.closest('[data-ah-matter-filter]');
+      if (filterBtn) {
+        state.matterFilter = filterBtn.getAttribute('data-ah-matter-filter') || 'all';
         render();
-      });
+        return;
+      }
+      if (ev.target.closest('[data-ah-stage-close]')) {
+        state.openStage = '';
+        render();
+        return;
+      }
+
+      const t = ev.target.closest(
+        '[data-ah-create],[data-ah-open],[data-ah-back],[data-ah-save-basic],[data-ah-save-item],[data-ah-add-matter],[data-ah-submit],[data-ah-recv-all],[data-ah-mgr],[data-ah-return],[data-ah-close],[data-ah-print],[data-ah-migrate],[data-ah-liability],[data-ah-recv-item],[data-ah-mgr-item]'
+      );
+      if (!t) return;
+      if (t.hasAttribute('data-ah-back')) {
+        state.bag = null;
+        state.openStage = 'basics';
+        render();
+        return;
+      }
+      if (t.hasAttribute('data-ah-print') && state.bag) {
+        C().printWindow('行政離職移交', C().buildPrintHtml('admin', state.bag));
+        return;
+      }
+      if (t.hasAttribute('data-ah-open')) {
+        void safe(async () => {
+          await openCase(t.getAttribute('data-ah-open'));
+          state.openStage = 'basics';
+        });
+        return;
+      }
+      if (t.hasAttribute('data-ah-create')) {
+        void safe(async () => {
+          const name = document.getElementById('ah-new-name').value.trim();
+          const res = await C().rpc('toolbox_handover_case_create', {
+            p_kind: KIND,
+            p_transferor: name,
+            p_data: {
+              receiverName: document.getElementById('ah-new-recv').value.trim(),
+              managerName: document.getElementById('ah-new-mgr').value.trim(),
+              unit: '行政管理部'
+            }
+          });
+          await openCase(res.case.id);
+          state.openStage = 'basics';
+          await refreshList();
+        });
+        return;
+      }
+      if (t.hasAttribute('data-ah-migrate')) {
+        void safe(async () => {
+          const name = document.getElementById('ah-new-name').value.trim() || C().meName();
+          const res = await C().rpc('toolbox_handover_migrate_v1', { p_kind: KIND, p_person: name });
+          await openCase(res.caseId);
+          state.openStage = 'basics';
+          setMsg('已匯入舊進度 ' + (res.migratedRows || 0) + ' 筆（待補細項）', false);
+        });
+        return;
+      }
+      if (!state.bag) return;
+      const id = state.bag.case.id;
+      if (t.hasAttribute('data-ah-save-basic')) {
+        void safe(async () => {
+          const needEl = document.getElementById('ah-need-disable');
+          const data = {
+            region: (document.getElementById('ah-region') || {}).value,
+            leaveType: (document.getElementById('ah-leave-type') || {}).value,
+            transferorPhone: (document.getElementById('ah-phone') || {}).value,
+            transferorAddress: (document.getElementById('ah-address') || {}).value,
+            receiverName: (document.getElementById('ah-receiver') || {}).value,
+            managerName: (document.getElementById('ah-manager') || {}).value,
+            leaveDate: (document.getElementById('ah-leave-date') || {}).value,
+            lastWorkDate: (document.getElementById('ah-last-work') || {}).value
+          };
+          if (needEl) {
+            data.accountNeedDisable = needEl.checked;
+            data.accountDisabledBy = (document.getElementById('ah-dis-by') || {}).value;
+            data.accountDisabledAt = document.getElementById('ah-dis-at') && document.getElementById('ah-dis-at').value
+              ? new Date(document.getElementById('ah-dis-at').value).toISOString()
+              : '';
+            data.accountDisableEvidence = (document.getElementById('ah-dis-ev') || {}).value;
+          }
+          await C().rpc('toolbox_handover_case_update', { p_id: id, p_data: data });
+          await openCase(id);
+          setMsg('基本資料已存（草稿）', false);
+        });
+      } else if (t.hasAttribute('data-ah-save-item')) {
+        const itemId = t.getAttribute('data-ah-save-item');
+        const art = t.closest('.bh-item');
+        const data = {};
+        art.querySelectorAll('[data-f]').forEach((el) => {
+          const k = el.getAttribute('data-f');
+          data[k] = el.type === 'checkbox' ? el.checked : el.value;
+        });
+        if (data.disabledAt) data.disabledAt = new Date(data.disabledAt).toISOString();
+        void safe(async () => {
+          await C().rpc('toolbox_handover_item_save', { p_item_id: Number(itemId), p_data: data });
+          await openCase(id);
+          setMsg('細項已存（草稿）', false);
+        });
+      } else if (t.hasAttribute('data-ah-recv-item')) {
+        void safe(async () => {
+          await C().rpc('toolbox_handover_item_save', {
+            p_item_id: Number(t.getAttribute('data-ah-recv-item')),
+            p_data: { receiverOk: t.checked }
+          });
+          await openCase(id);
+        });
+      } else if (t.hasAttribute('data-ah-mgr-item')) {
+        void safe(async () => {
+          await C().rpc('toolbox_handover_item_save', {
+            p_item_id: Number(t.getAttribute('data-ah-mgr-item')),
+            p_data: { managerOk: t.checked }
+          });
+          await openCase(id);
+        });
+      } else if (t.hasAttribute('data-ah-add-matter')) {
+        const complete = document.getElementById('ah-m-done').checked;
+        void safe(async () => {
+          await C().rpc('toolbox_handover_matter_upsert', {
+            p_case_id: id,
+            p_data: {
+              matchNo: document.getElementById('ah-m-match').value.trim(),
+              address: document.getElementById('ah-m-addr').value.trim(),
+              expenseType: document.getElementById('ah-m-exp').value.trim(),
+              receiverName: document.getElementById('ah-m-recv').value.trim(),
+              dueDate: document.getElementById('ah-m-due').value,
+              currentStatus: document.getElementById('ah-m-status').value.trim(),
+              source: 'manual',
+              pendingVerify: true,
+              contractActive: true,
+              handoverDone: complete,
+              checks: { complete: complete ? 'true' : 'false', incomplete: complete ? 'false' : 'true' }
+            }
+          });
+          await openCase(id);
+        });
+      } else if (t.hasAttribute('data-ah-submit')) {
+        void safe(async () => {
+          await C().rpc('toolbox_handover_submit_transferor', { p_id: id });
+          await openCase(id);
+          state.openStage = 'receiver_review';
+          setMsg('已送出，進入接手人覆核', false);
+        });
+      } else if (t.hasAttribute('data-ah-recv-all')) {
+        void safe(async () => {
+          await C().rpc('toolbox_handover_confirm_receiver', { p_id: id });
+          await openCase(id);
+          state.openStage = 'manager_close';
+        });
+      } else if (t.hasAttribute('data-ah-mgr')) {
+        void safe(async () => {
+          await C().rpc('toolbox_handover_confirm_manager', { p_id: id });
+          await openCase(id);
+        });
+      } else if (t.hasAttribute('data-ah-return')) {
+        const reason = prompt('退回理由（必填）');
+        if (reason == null) return;
+        void safe(async () => {
+          await C().rpc('toolbox_handover_return', { p_id: id, p_reason: reason });
+          await openCase(id);
+          state.openStage = 'transferor_sign';
+        });
+      } else if (t.hasAttribute('data-ah-close')) {
+        void safe(async () => {
+          try {
+            await C().rpc('toolbox_handover_close', { p_id: id });
+            await openCase(id);
+            setMsg('已結案', false);
+          } catch (e) {
+            if (e.blockers) state.bag.blockers = e.blockers;
+            throw e;
+          }
+        });
+      } else if (t.hasAttribute('data-ah-liability')) {
+        void safe(async () => {
+          await C().rpc('toolbox_handover_liability_link', {
+            p_case_id: id,
+            p_note: '已關聯範本（非結案必要條件）'
+          });
+          await openCase(id);
+        });
+      }
     });
   }
 
-  function mount() {
+  async function mount() {
+    if (!document.getElementById(ROOT_ID)) return;
     state.mounted = true;
-    render();
-  }
-
-  function watchPage() {
-    const page = document.getElementById(PAGE_ID);
-    if (!page || typeof MutationObserver === 'undefined') return;
-    const obs = new MutationObserver(() => {
-      if (!page.classList.contains('hidden')) mount();
+    wire();
+    await safe(async () => {
+      try {
+        await refreshList();
+      } catch (e) {
+        state.list = [];
+        throw e;
+      }
     });
-    obs.observe(page, { attributes: true, attributeFilter: ['class'] });
   }
 
-  function boot() {
-    watchPage();
+  const obs = new MutationObserver(() => {
     const page = document.getElementById(PAGE_ID);
-    if (page && !page.classList.contains('hidden')) mount();
+    if (page && !page.classList.contains('hidden') && !state.mounted) void mount();
+    if (page && page.classList.contains('hidden')) state.mounted = false;
+  });
+  if (document.getElementById(PAGE_ID)) {
+    obs.observe(document.getElementById(PAGE_ID), { attributes: true, attributeFilter: ['class'] });
   }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
-
-  global.AdminHandover = { mount: mount };
+  global.AdminHandover = { mount };
 })(typeof window !== 'undefined' ? window : globalThis);

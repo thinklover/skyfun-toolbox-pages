@@ -195,15 +195,18 @@
     return state.rows.filter((r) => r.status !== 'done');
   }
 
-  /** 我處理過的，加上我送出且已完成的（含處長直接按完成） */
+  /** 前台已完成：只顯示自己經手（handledBy＝本人）或自己送出且已完成；全員一覽僅後台 */
   function handlerDoneRows() {
+    const me = myDisplayName();
     const map = new Map();
-    (state.completed || []).forEach((r) => {
-      if (r && r.id != null) map.set(String(r.id), r);
-    });
-    myCompletedRows().forEach((r) => {
-      if (r && r.id != null) map.set(String(r.id), r);
-    });
+    const take = (r) => {
+      if (!r || r.id == null) return;
+      const mineDone = String(r.status) === 'done' && String(r.authorName || '').trim() === me;
+      const iDid = iHandled(r);
+      if (mineDone || iDid) map.set(String(r.id), r);
+    };
+    (state.completed || []).forEach(take);
+    myCompletedRows().forEach(take);
     return Array.from(map.values()).sort((a, b) => {
       const ta = new Date(a.handledAt || a.createdAt || 0).getTime();
       const tb = new Date(b.handledAt || b.createdAt || 0).getTime();

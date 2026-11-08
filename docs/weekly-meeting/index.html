@@ -194,8 +194,18 @@
     .pvm-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .pvm-btn:disabled { opacity: 0.4; cursor: default; }
     .pvm-x { font-size: 18px; line-height: 1; padding: 6px 10px; }
-    .pvm-body { flex: 1; min-height: 0; background: #f1f5f9; }
+    .pvm-body { flex: 1; min-height: 0; background: #f1f5f9; position: relative; }
     .pvm-body iframe, .pvm-body img { display: block; width: 100%; height: 100%; border: 0; object-fit: contain; }
+    .pvm-fallback {
+      display: none; position: absolute; inset: 0; align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px; padding: 24px; text-align: center;
+      background: #f8fafc; color: #475569; font-size: 14px; line-height: 1.6;
+    }
+    .pvm-fallback.is-on { display: flex; }
+    .pvm-fallback a {
+      display: inline-flex; align-items: center; gap: 6px; padding: 12px 20px; border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; text-decoration: none; font-weight: 800;
+    }
     .pvm-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
     @media (max-width: 560px) {
       .pvm { padding: 0; }
@@ -211,7 +221,7 @@
       <a class="back" href="../../index.html">← 回首頁</a>
     </div>
     <h1>📂 業務周會檔案</h1>
-    <p class="sub">管理部週會簡報與相關表單，依日期整理；可直接「👁 預覽」線上瀏覽，或下載。</p>
+    <p class="sub">管理部週會簡報與相關表單，依日期整理。週會簡報僅供「👁 預覽」、不可下載；相關表單仍可下載。</p>
     <p class="meta" id="meta">載入中…</p>
     <div class="search-wrap" id="search-wrap" hidden>
       <input type="search" id="search" class="search" placeholder="搜尋周會檔案，例：代管、獎金、預審、收據…" autocomplete="off" />
@@ -227,7 +237,7 @@
       <div class="pvm-head">
         <div class="pvm-title" id="pvm-title"></div>
         <a class="pvm-btn pvm-hide-sm" id="pvm-open" target="_blank" rel="noopener">↗ 新分頁</a>
-        <a class="pvm-btn" id="pvm-dl" target="_blank" rel="noopener">⬇ 下載</a>
+        <a class="pvm-btn" id="pvm-dl" target="_blank" rel="noopener" hidden>⬇ 下載</a>
         <button type="button" class="pvm-btn pvm-x" id="pvm-close" aria-label="關閉預覽">✕</button>
       </div>
       <div class="pvm-body" id="pvm-body"></div>
@@ -315,7 +325,20 @@
         return Number(pages[index]) > 0;
       }
 
-      function renderItem(it, secTitle, tokens) {
+      /** 週會簡報不可下載；相關表單仍可下載 */
+      function isMeetingNoDownload(sec, it) {
+        const sid = String((sec && sec.id) || '');
+        const title = String((sec && sec.title) || '') + ' ' + String((it && it.title) || '');
+        const file = String((it && it.file) || '');
+        if (sid === 'weekly-slides') return true;
+        if (/週會簡報|周會簡報/.test(String((sec && sec.title) || ''))) return true;
+        if (/業務週會|業務周會|管理部週會|管理部周會/.test(title) || /業務週會|業務周會|管理部週會|管理部周會/.test(file)) return true;
+        return false;
+      }
+
+      function renderItem(it, sec, tokens) {
+        const secTitle = (sec && sec.title) || '';
+        const noDl = isMeetingNoDownload(sec, it);
         const href = it.file || '#';
         const name = (href.split('/').pop() || 'download.pdf');
         const title = highlightText(it.title || name, tokens);
@@ -324,6 +347,7 @@
         const anyLineHit = tokens.length > 0 && lines.some(function (line) { return lineHits(line, tokens); });
         const autoOpen = tokens.length > 0 && count > 0;
         const openClass = autoOpen ? ' is-open' : '';
+        const noDlAttr = noDl ? ' data-no-dl="1"' : '';
         let topicsHtml = '';
         if (count) {
           topicsHtml = lines.map(function (line, i) {
@@ -336,7 +360,7 @@
               const goLabel = hit
                 ? (exact ? '開啟這張' : '開啟簡報')
                 : (exact ? '第 ' + page + ' 頁' : '預覽');
-              return '<button type="button" class="topic-jump' + (hit ? ' is-hit' : '') + '" data-pv="' + escAttr(href) + '" data-title="' + escAttr(it.title || name) + '" data-date="' + escAttr(it.dateLabel || '') + '" data-page="' + page + '"' + (hit ? ' data-first-hit="1"' : '') + '>' +
+              return '<button type="button" class="topic-jump' + (hit ? ' is-hit' : '') + '" data-pv="' + escAttr(href) + '" data-title="' + escAttr(it.title || name) + '" data-date="' + escAttr(it.dateLabel || '') + '" data-page="' + page + '"' + noDlAttr + (hit ? ' data-first-hit="1"' : '') + '>' +
                 '<span class="topic-text">' + body + '</span>' +
                 '<span class="go">' + goLabel + ' ›</span></button>';
             }
@@ -352,12 +376,18 @@
             '<div class="item-topics">' + topicsHtml + '</div>';
         }
         mainHtml += '</div>';
+        const dlHtml = noDl
+          ? ''
+          : '<a class="dl" href="' + escAttr(href) + '" download="' + escAttr(name) + '" target="_blank" rel="noopener">⬇ 下載</a>';
+        const previewHtml = canPreview(href)
+          ? '<button type="button" class="pv" data-pv="' + escAttr(href) + '" data-title="' + escAttr(it.title || name) + '" data-date="' + escAttr(it.dateLabel || '') + '"' + noDlAttr + '>👁 預覽</button>'
+          : (noDl ? '<span class="note-inline">僅線上預覽</span>' : '');
         return '<article class="item' + openClass + '" data-searchable="1">' +
           '<span class="date">' + esc(it.dateLabel || it.sortDate || '—') + '</span>' +
           mainHtml +
           '<div class="acts">' +
-          (canPreview(href) ? '<button type="button" class="pv" data-pv="' + escAttr(href) + '" data-title="' + escAttr(it.title || name) + '" data-date="' + escAttr(it.dateLabel || '') + '">👁 預覽</button>' : '') +
-          '<a class="dl" href="' + escAttr(href) + '" download="' + escAttr(name) + '" target="_blank" rel="noopener">⬇ 下載</a>' +
+          previewHtml +
+          dlHtml +
           '</div></article>';
       }
 
@@ -380,7 +410,7 @@
             if (ok) matched += 1;
             return ok;
           }).map(function (it) {
-            return renderItem(it, sec.title, tokens);
+            return renderItem(it, sec, tokens);
           }).join('');
           if (!rows) return '';
           return '<section><h2>' + esc(sec.title || '') + '</h2><div class="list">' + rows + '</div></section>';
@@ -433,12 +463,20 @@
       let pvList = [];
       let pvIdx = 0;
       let pvLastFocus = null;
+      function encodePdfPath(href) {
+        return String(href || '').split('#')[0].split('?')[0].split('/').map(function (seg) {
+          if (!seg || seg === '.' || seg === '..') return seg;
+          try { return encodeURIComponent(decodeURIComponent(seg)); } catch (e) { return encodeURIComponent(seg); }
+        }).join('/');
+      }
       function pdfSrc(href, page) {
         const start = Math.max(1, Number(page) || 1);
-        const base = String(href).split('#')[0];
-        const joiner = base.indexOf('?') >= 0 ? '&' : '?';
-        // 加 t= 強制重載，避免同一 PDF 換頁時 iframe 不跳頁
-        return base + joiner + 't=' + Date.now() + '#page=' + start + '&view=FitH';
+        // 路徑分段編碼，避免中文檔名在 iframe／手機瀏覽器打不開
+        return encodePdfPath(href) + '?t=' + Date.now() + '#page=' + start + '&view=FitH';
+      }
+      function isMobilePreview() {
+        return window.matchMedia('(max-width: 768px), (pointer: coarse)').matches
+          || /Line\/|FBAN|FBAV|Instagram|MicroMessenger|iPhone|iPad|Android/i.test(navigator.userAgent || '');
       }
       function pvShow(i, page) {
         pvIdx = Math.max(0, Math.min(pvList.length - 1, i));
@@ -450,20 +488,55 @@
         const start = Math.max(1, Number(page) || Number(b.getAttribute('data-page')) || 1);
         document.getElementById('pvm-title').innerHTML = (date ? '<small>' + esc(date) + '</small>' : '') + esc(title) + (start > 1 ? '<small>第 ' + start + ' 頁</small>' : '');
         const src = pdfSrc(href, start);
-        document.getElementById('pvm-open').href = src;
+        const openBtn = document.getElementById('pvm-open');
+        openBtn.href = src;
+        openBtn.classList.remove('pvm-hide-sm');
+        const noDl = b.getAttribute('data-no-dl') === '1';
         const dl = document.getElementById('pvm-dl');
-        dl.href = href;
-        dl.setAttribute('download', href.split('/').pop().split('?')[0]);
+        if (noDl) {
+          dl.hidden = true;
+          dl.removeAttribute('href');
+          dl.removeAttribute('download');
+        } else {
+          dl.hidden = false;
+          dl.href = encodePdfPath(href);
+          dl.setAttribute('download', (href.split('/').pop() || 'download.pdf').split('?')[0]);
+        }
         // 先清空再載入，確保換頁有重讀
         pvBody.innerHTML = '';
         if (/\.pdf$/i.test(href.split('?')[0])) {
-          const frame = document.createElement('iframe');
-          frame.title = title || 'PDF';
-          frame.src = src;
-          pvBody.appendChild(frame);
+          // 手機／LINE 內建瀏覽器常無法在 iframe 顯示 PDF → 直接新分頁
+          if (isMobilePreview()) {
+            const fallback = document.createElement('div');
+            fallback.className = 'pvm-fallback is-on';
+            fallback.innerHTML = '<p>手機瀏覽器通常無法在頁面內預覽 PDF。<br>請用下方按鈕開啟。</p>'
+              + '<a href="' + escAttr(src) + '" target="_blank" rel="noopener">↗ 開啟簡報</a>'
+              + (noDl ? '<p style="margin:0.5rem 0 0;font-size:0.85rem;color:#64748b">週會簡報僅供預覽，不可下載。</p>'
+                : '<a href="' + escAttr(encodePdfPath(href)) + '" download style="background:#fff;color:#4338ca;border:1px solid #c7d2fe">⬇ 下載 PDF</a>');
+            pvBody.appendChild(fallback);
+            try { window.open(src, '_blank', 'noopener'); } catch (e) { /* 被擋時留畫面按鈕 */ }
+          } else {
+            const frame = document.createElement('iframe');
+            frame.title = title || 'PDF';
+            frame.src = src;
+            const fallback = document.createElement('div');
+            fallback.className = 'pvm-fallback';
+            fallback.innerHTML = '<p>若預覽畫面空白，請改用新分頁開啟。</p>'
+              + '<a href="' + escAttr(src) + '" target="_blank" rel="noopener">↗ 新分頁開啟</a>';
+            pvBody.appendChild(frame);
+            pvBody.appendChild(fallback);
+            // 約 2.5 秒仍無法判斷內容時，顯示備援（部分瀏覽器 iframe 空白）
+            setTimeout(function () {
+              try {
+                if (!frame.isConnected) return;
+                // 同源 PDF 通常無法讀 contentDocument；若框高為 0 或仍空白就顯示備援
+                if (frame.offsetHeight < 40) fallback.classList.add('is-on');
+              } catch (e) { fallback.classList.add('is-on'); }
+            }, 2500);
+          }
         } else {
           const img = document.createElement('img');
-          img.src = href;
+          img.src = encodePdfPath(href);
           img.alt = title || '';
           pvBody.appendChild(img);
         }

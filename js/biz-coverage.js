@@ -4,18 +4,19 @@
  */
 (function () {
   'use strict';
+  var FORCE_DEPLOY_ESCROW_STAFF = '20261107f';
 
-  const RING = 2 * Math.PI * 42;
+  const COVER_GOAL = 100;
   const OFFICES = [
     '北一處', '北二處', '北三處', '北四處', '北五處', '基一處', '宜一處',
     '桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處',
     '彰一處', '投一處', '嘉一處', '南一處', '南二處', '高一處', '高二處'
   ];
   const REGIONS = [
-    { id: 'north', label: '北區', teams: ['北一處', '北二處', '北三處', '北四處', '北五處', '基一處', '宜一處'] },
-    { id: 'central', label: '中區', teams: ['桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處', '彰一處', '投一處', '嘉一處'] },
-    { id: 'south', label: '南區', teams: ['南一處', '南二處', '南區（葉建志）'] },
-    { id: 'kh', label: '高雄', teams: ['高一處', '高二處'] }
+    { id: 'north', label: '北區', tone: 'north', places: '台北・新北・基隆・宜蘭', teams: ['北一處', '北二處', '北三處', '北四處', '北五處', '基一處', '宜一處'] },
+    { id: 'central', label: '中區', tone: 'mid', places: '桃園・新竹・台中・彰化・南投・嘉義', teams: ['桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處', '彰一處', '投一處', '嘉一處'] },
+    { id: 'south', label: '南區', tone: 'south', places: '台南', teams: ['南一處', '南二處', '南區（葉建志）'] },
+    { id: 'kh', label: '高雄', tone: 'kh', places: '高雄', teams: ['高一處', '高二處'] }
   ];
   const KINDS = [
     { id: 'all', label: '全部' },
@@ -43,8 +44,26 @@
     openPerson: '',
     kind: 'all',
     openRegion: { ins: '', box: '' },
-    openOffice: { ins: '', box: '' }
+    openOffice: { ins: '', box: '' },
+    rateHistory: [],
+    rateHistoryError: '',
+    rateHistoryLoaded: false,
+    /** day｜week｜month：由每日快照彙整 */
+    rateTrendRange: 'day',
+    /** 點全區投保率／綁定率才展開五線圖 */
+    rateTrendOpen: false,
+    /** 未產件名單：暫以代管件數代理「未產件時間」；desc=多→少、asc=少→多 */
+    idleSortDir: 'desc',
+    busySortDir: 'desc'
   };
+
+  const TREND_SERIES = [
+    { id: '', name: '全區', color: '#0f766e' },
+    { id: 'north', name: '北區', color: '#2563eb' },
+    { id: 'central', name: '中區', color: '#d97706' },
+    { id: 'south', name: '南區', color: '#059669' },
+    { id: 'kh', name: '高雄', color: '#c026d3' }
+  ];
 
   const CALL_FIELDS = [
     ['landlordDone', '房東電訪完畢'],
@@ -149,33 +168,80 @@
     return `${date.getFullYear() - 1911}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
-  function ringHtml(done, total, tone, label) {
+  function ringPct(done, total) {
+    if (state.hrError || !total) return null;
+    return Math.max(0, Math.min(100, Math.round((done / total) * 100)));
+  }
+
+  /** 與行政點數良率同一套：≥90% 綠、≥80% 黃、其餘紅 */
+  function coverColor(pct) {
+    if (pct == null) return '#94a3b8';
+    if (pct >= 90) return '#16a34a';
+    if (pct >= 80) return '#f59e0b';
+    return '#dc2626';
+  }
+
+  function coverDonut(done, total) {
     const known = !state.hrError;
-    const pct = known && total ? Math.max(0, Math.min(100, Math.round((done / total) * 100))) : 0;
-    const dash = ((pct / 100) * RING).toFixed(1);
-    const mid = !known
-      ? '<b>無資料</b><span>人事未對上</span>'
-      : total
-        ? `<b>${pct}<small>%</small></b><span>${done}／${total}</span>`
-        : '<b>—</b><span>0 人</span>';
-    return `<div class="cv-ring ${tone}${known && pct >= 100 ? ' is-done' : ''}">
-      <div class="cv-ring-fig" aria-hidden="true">
-        <svg viewBox="0 0 100 100">
-          <circle class="cv-track" cx="50" cy="50" r="42"></circle>
-          <circle class="cv-bar ${tone === 'ins' ? 'cv-bar--ins' : 'cv-bar--box'}" cx="50" cy="50" r="42" stroke-dasharray="${dash} ${RING.toFixed(1)}"></circle>
-        </svg>
-        <div class="cv-ring-mid">${mid}</div>
-      </div>
-      <span class="cv-ring-k">${esc(label)}</span>
+    const pct = known ? ringPct(done, total) : null;
+    const text = !known ? '無資料' : pct == null ? '—' : pct >= 100 ? '100%' : `${pct}%`;
+    const CH = window.AdminPointsCharts;
+    if (CH && typeof CH.donut === 'function') {
+      return CH.donut({
+        value: pct,
+        text,
+        sub: `目標 ${COVER_GOAL}%`,
+        color: coverColor(pct),
+        marks: [COVER_GOAL]
+      });
+    }
+    const r = 42;
+    const c = 2 * Math.PI * r;
+    const dash = pct == null ? 0 : (pct / 100) * c;
+    const a = (COVER_GOAL / 100) * 2 * Math.PI - Math.PI / 2;
+    return `<svg class="apc-donut" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="#e2e8f0" stroke-width="13"/>
+      ${pct == null ? '' : `<circle cx="60" cy="60" r="${r}" fill="none" stroke="${coverColor(pct)}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${dash} ${c}" transform="rotate(-90 60 60)"/>`}
+      <line x1="${60 + Math.cos(a) * 34}" y1="${60 + Math.sin(a) * 34}" x2="${60 + Math.cos(a) * 54}" y2="${60 + Math.sin(a) * 54}" stroke="#0f172a" stroke-width="2"/>
+      <text x="60" y="60" text-anchor="middle" class="apc-donut-main">${esc(text)}</text>
+      <text x="60" y="78" text-anchor="middle" class="apc-donut-sub">目標 ${COVER_GOAL}%</text>
+    </svg>`;
+  }
+
+  function ringHtml(done, total, modeTone, label) {
+    return `<div class="cv-ring ${modeTone || ''}">
+      <div class="cv-ring-fig" aria-hidden="true">${coverDonut(done, total)}</div>
+      ${label ? `<span class="cv-ring-k">${esc(label)}</span>` : ''}
     </div>`;
+  }
+
+  function gaugeHtml(done, total, modeTone, label, meta, extraClass) {
+    const known = !state.hrError;
+    const pct = ringPct(done, total);
+    return `<div class="cv-gauge${extraClass ? ` ${extraClass}` : ''}">
+      <span class="cv-gauge-ring">${coverDonut(done, total)}</span>
+      <div class="cv-gauge-text">
+        <span class="cv-gauge-label">${esc(label)}</span>
+        <span class="cv-gauge-meta">${known && total != null ? `<b>${done}</b>／${total} 人` : '無資料'}${meta ? ` · ${esc(meta)}` : ''}</span>
+        <small>${known && pct != null ? `完成率 ${pct}% · 目標 ${COVER_GOAL}%` : '人事未對上'}</small>
+      </div>
+    </div>`;
+  }
+
+  function isBizOffice(office) {
+    const o = String(office || '').trim();
+    if (!o || /業務支援|行政管理|管理部|財務|會計|客服|資訊|總務|租賃管理/.test(o)) return false;
+    return OFFICES.includes(o) || REGIONS.some((r) => r.teams.includes(o));
   }
 
   function scopedPeople() {
     const kind = state.kind === '正職' || state.kind === '兼職' ? state.kind : 'all';
     return state.people.filter((person) => {
       if (kind !== 'all' && person.kind !== kind) return false;
-      if (person.office === '業務支援管理部') return false;
-      return person.lane !== 'rent';
+      if (person.lane === 'rent') return false;
+      const name = String(person.name || '').trim();
+      if (name === '公司' || name === '本公司' || name === '星鴻') return false;
+      return isBizOffice(person.office);
     });
   }
 
@@ -196,26 +262,56 @@
     };
   }
 
-  function personLine(p, extra) {
-    const sub = [p.title, p.kind !== '未分類' ? p.kind : '', extra].filter(Boolean).join(' · ');
+  /** 代管＝累積代管已生效件數（與新媒合分開） */
+  function escrowTotal(name) {
+    const prod = state.production;
+    if (!prod || !Array.isArray(prod.counts)) return null;
+    const hit = prod.counts.find((row) => norm(row.name) === norm(name));
+    if (hit) return Number(hit.total) || 0;
+    return prod.cumulativeError ? null : 0;
+  }
+
+  /** 新案＝115/11/1 起新媒合（coverage-new-cases），不是代管累計 */
+  function newMatchCount(name) {
+    if (!state.casesLoaded) return null;
+    if (state.caseError && !(state.cases || []).length) return null;
+    return casesFor(name).length;
+  }
+
+  function personSub(person, extraBits) {
+    const bits = [
+      person.title,
+      person.kind !== '未分類' ? person.kind : '',
+      person.office
+    ];
+    const escrow = escrowTotal(person.name);
+    bits.push(escrow == null ? '代管無資料' : `代管 ${escrow} 件`);
+    const neu = newMatchCount(person.name);
+    if (neu == null) bits.push(state.casesLoaded ? '新媒合無資料' : '新媒合讀取中');
+    else bits.push(`新案 ${neu}`);
+    [].concat(extraBits || []).filter(Boolean).forEach((bit) => bits.push(bit));
+    return bits.filter(Boolean).join(' · ');
+  }
+
+  function personLine(person, extraBits) {
+    const sub = personSub(person, extraBits);
     return `<div class="cv-person">
-      <div class="cv-person-name">${esc(p.name)}${sub ? `<small>${esc(sub)}</small>` : ''}</div>
+      <div class="cv-person-name">${esc(person.name)}${sub ? `<small>${esc(sub)}</small>` : ''}</div>
     </div>`;
   }
 
-  function personHit(person, extra) {
+  function personHit(person, extraBits) {
     const on = norm(state.openPerson) === norm(person.name);
-    const count = state.casesLoaded ? `新案 ${casesFor(person.name).length}` : '新案讀取中';
-    const sub = [person.title, person.kind !== '未分類' ? person.kind : '', extra, count].filter(Boolean).join(' · ');
+    const sub = personSub(person, extraBits);
     return `<button type="button" class="cv-person-hit${on ? ' is-on' : ''}" data-cv-person="${esc(person.name)}" aria-expanded="${on ? 'true' : 'false'}">
       <b>${esc(person.name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}
     </button>`;
   }
 
-  function personBlock(person, extra) {
+  function personBlock(person, extraBits) {
     const open = norm(state.openPerson) === norm(person.name) && !person.insured;
     return `<div class="cv-person-block${open ? ' is-open' : ''}">
-      ${personHit(person, extra)}
+      ${personHit(person, extraBits)}
       ${open ? casePanel(person) : ''}
     </div>`;
   }
@@ -240,9 +336,11 @@
     const kind = state.kind === '正職' || state.kind === '兼職' ? state.kind : 'all';
     return state.people.filter((person) => {
       if (person.office !== office) return false;
-      if (person.office === '業務支援管理部') return false;
+      if (!isBizOffice(person.office)) return false;
+      const name = String(person.name || '').trim();
+      if (name === '公司' || name === '本公司' || name === '星鴻') return false;
       if (kind !== 'all' && person.kind !== kind) return false;
-      return true;
+      return person.lane !== 'rent';
     });
   }
 
@@ -268,13 +366,271 @@
       }));
       detail = `<div class="cv-split cv-split--one">${nameColumn('box', '未使用工具箱', unbound, '這處都有綁定', '')}</div>`;
     }
+    const pct = ringPct(done, stat.total);
     return `<article class="cv-office${open ? ' is-open' : ''}">
       <button type="button" class="cv-office-hit" data-cv-office="${esc(office)}" data-cv-mode="${mode}" aria-expanded="${open ? 'true' : 'false'}">
-        <h3 class="cv-office-name">${esc(office)}<small>${open ? '收合' : '看名單'}</small></h3>
+        <span class="cv-office-top">
+          <span class="cv-office-id"><b>${esc(office)}</b><i>${open ? '收合' : '看名單'}</i></span>
+          <span class="cv-office-stat"><strong>${pct == null ? '—' : `${pct}%`}</strong><small>${done}／${stat.total}</small></span>
+        </span>
         <div class="cv-rings">${ringHtml(done, stat.total, tone, ringLabel)}</div>
       </button>
       ${detail}
     </article>`;
+  }
+
+  function peopleForSnapshot() {
+    return state.people.filter((person) => {
+      if (person.lane === 'rent') return false;
+      const name = String(person.name || '').trim();
+      if (name === '公司' || name === '本公司' || name === '星鴻') return false;
+      return isBizOffice(person.office);
+    });
+  }
+
+  function taipeiDayIso() {
+    const date = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    return date.toISOString().slice(0, 10);
+  }
+
+  function rocShortDay(iso) {
+    const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return String(iso || '');
+    return `${Number(match[2])}/${Number(match[3])}`;
+  }
+
+  function parseIsoDay(iso) {
+    const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return null;
+    return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  }
+
+  function mondayKey(iso) {
+    const d = parseIsoDay(iso);
+    if (!d) return String(iso || '');
+    const dow = d.getUTCDay(); // 0=Sun
+    const offset = dow === 0 ? -6 : 1 - dow;
+    d.setUTCDate(d.getUTCDate() + offset);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function monthKey(iso) {
+    const match = String(iso || '').match(/^(\d{4})-(\d{2})/);
+    return match ? `${match[1]}-${match[2]}` : String(iso || '');
+  }
+
+  function weekLabel(mondayIso) {
+    const start = parseIsoDay(mondayIso);
+    if (!start) return rocShortDay(mondayIso) + '週';
+    const end = new Date(start.getTime());
+    end.setUTCDate(end.getUTCDate() + 6);
+    const a = `${start.getUTCMonth() + 1}/${start.getUTCDate()}`;
+    const b = `${end.getUTCMonth() + 1}/${end.getUTCDate()}`;
+    return `${a}–${b}`;
+  }
+
+  function monthLabel(ym) {
+    const match = String(ym || '').match(/^(\d{4})-(\d{2})/);
+    if (!match) return String(ym || '');
+    const roc = Number(match[1]) - 1911;
+    return `${roc}/${Number(match[2])}`;
+  }
+
+  function regionSnapshotOf(row, regionId) {
+    if (!regionId) {
+      return {
+        insPct: row.insPct == null ? null : Number(row.insPct),
+        boxPct: row.boxPct == null ? null : Number(row.boxPct)
+      };
+    }
+    const bag = row && row.regions && row.regions[regionId];
+    if (!bag) return { insPct: null, boxPct: null };
+    return {
+      insPct: bag.insPct == null ? null : Number(bag.insPct),
+      boxPct: bag.boxPct == null ? null : Number(bag.boxPct)
+    };
+  }
+
+  /** 區間彙整：取該週／月最後一筆快照（比率為時點值）；regionId 空＝全區 */
+  function rateHistoryBuckets(days, range, regionId) {
+    const list = Array.isArray(days) ? days.slice() : [];
+    list.sort((a, b) => String(a.day).localeCompare(String(b.day)));
+    if (range === 'day' || !range) {
+      return list.map((row) => {
+        const pct = regionSnapshotOf(row, regionId);
+        return {
+          key: row.day,
+          label: rocShortDay(row.day),
+          insPct: pct.insPct,
+          boxPct: pct.boxPct,
+          day: row.day
+        };
+      });
+    }
+    const map = new Map();
+    list.forEach((row) => {
+      const key = range === 'week' ? mondayKey(row.day) : monthKey(row.day);
+      map.set(key, row);
+    });
+    return [...map.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, row]) => {
+        const pct = regionSnapshotOf(row, regionId);
+        return {
+          key,
+          label: range === 'week' ? weekLabel(key) : monthLabel(key),
+          insPct: pct.insPct,
+          boxPct: pct.boxPct,
+          day: row.day
+        };
+      });
+  }
+
+  function liveRegionSnapshots() {
+    const pool = peopleForSnapshot();
+    const out = {};
+    REGIONS.forEach((region) => {
+      const list = pool.filter((person) => region.teams.includes(person.office));
+      const stat = tally(list);
+      out[region.id] = {
+        total: stat.total,
+        insDone: stat.insured,
+        boxDone: stat.bound,
+        insPct: ringPct(stat.insured, stat.total),
+        boxPct: ringPct(stat.bound, stat.total)
+      };
+    });
+    return out;
+  }
+
+  function mergeLiveRegionsIntoHistory(days) {
+    const list = Array.isArray(days) ? days.slice() : [];
+    const today = taipeiDayIso();
+    const live = liveRegionSnapshots();
+    const idx = list.findIndex((row) => String(row.day) === today);
+    if (idx < 0) return list;
+    const row = Object.assign({}, list[idx]);
+    row.regions = Object.assign({}, row.regions || {}, live);
+    list[idx] = row;
+    return list;
+  }
+
+  function rateTrendRangeBar() {
+    const cur = state.rateTrendRange === 'week' || state.rateTrendRange === 'month'
+      ? state.rateTrendRange
+      : 'day';
+    const opts = [
+      ['day', '日'],
+      ['week', '周'],
+      ['month', '月']
+    ];
+    return `<div class="cv-trend-range" role="group" aria-label="圖表區間">
+      ${opts.map(([id, label]) =>
+        `<button type="button" class="cv-trend-range-btn${cur === id ? ' is-on' : ''}" data-cv-trend-range="${id}">${label}</button>`
+      ).join('')}
+    </div>`;
+  }
+
+  function rateTrendHtml(mode) {
+    if (!state.rateTrendOpen) return '';
+    const metric = mode === 'box' ? 'box' : 'ins';
+    const metricLabel = metric === 'box' ? '綁定率' : '投保率';
+    const rawDays = state.rateHistory || [];
+    if (!state.rateHistoryLoaded) {
+      return `<section class="cv-zone cv-trend-zone is-open">
+        <h4 class="cv-sec-title">${esc(metricLabel)}變化<small>讀取中</small></h4>
+        <p class="cv-note">正在讀每日快照…</p>
+      </section>`;
+    }
+    if (state.rateHistoryError && !rawDays.length) {
+      return `<section class="cv-zone cv-trend-zone is-open">
+        <div class="cv-trend-head">
+          <h4 class="cv-sec-title">${esc(metricLabel)}變化</h4>
+          <button type="button" class="cv-trend-close" data-cv-trend-toggle>收合</button>
+        </div>
+        <p class="cv-note">${esc(state.rateHistoryError)}</p>
+      </section>`;
+    }
+    if (!rawDays.length) {
+      return `<section class="cv-zone cv-trend-zone is-open">
+        <div class="cv-trend-head">
+          <h4 class="cv-sec-title">${esc(metricLabel)}變化<small>每日自動留點</small></h4>
+          ${rateTrendRangeBar()}
+          <button type="button" class="cv-trend-close" data-cv-trend-toggle>收合</button>
+        </div>
+        <p class="cv-note">今天起會開始累積；打開本頁就會寫入當日全區與各區比率。</p>
+      </section>`;
+    }
+    const range = state.rateTrendRange === 'week' || state.rateTrendRange === 'month'
+      ? state.rateTrendRange
+      : 'day';
+    const days = mergeLiveRegionsIntoHistory(rawDays);
+    const baseBuckets = rateHistoryBuckets(days, range, '');
+    const labels = baseBuckets.map((row) => row.label);
+    const lines = TREND_SERIES.map((series, idx) => {
+      const buckets = rateHistoryBuckets(days, range, series.id);
+      const byKey = new Map(buckets.map((row) => [row.key, row]));
+      const values = baseBuckets.map((row) => {
+        const hit = byKey.get(row.key);
+        if (!hit) return null;
+        const v = metric === 'box' ? hit.boxPct : hit.insPct;
+        return v == null ? null : Number(v);
+      });
+      return {
+        name: series.name,
+        values,
+        color: series.color,
+        area: idx === 0,
+        dash: idx > 0
+      };
+    });
+    const hasPoint = lines.some((line) => line.values.some((v) => v != null));
+    const latestChips = TREND_SERIES.map((series, idx) => {
+      const vals = lines[idx].values;
+      let last = null;
+      for (let i = vals.length - 1; i >= 0; i -= 1) {
+        if (vals[i] != null) { last = vals[i]; break; }
+      }
+      return `<span class="cv-trend-chip" style="--leg:${esc(series.color)}"><i>${esc(series.name)}</i><b>${last == null ? '—' : Math.round(last) + '%'}</b></span>`;
+    }).join('');
+    const CH = window.AdminPointsCharts;
+    const chart = !hasPoint
+      ? '<p class="cv-note">尚無可用快照點。</p>'
+      : CH && typeof CH.trend === 'function'
+        ? CH.trend({
+          id: 'cv-rate-trend-5-' + metric + '-' + range,
+          labels,
+          lines,
+          target: { value: COVER_GOAL, name: '目標' },
+          fmt: (v) => `${Math.round(v)}%`,
+          min: 0,
+          max: 100,
+          step: 20,
+          width: 960,
+          height: 280,
+          padL: 48,
+          padR: 24
+        })
+        : '<p class="cv-note">圖表元件讀不到。</p>';
+    const rangeHint = range === 'week'
+      ? `五區${metricLabel} · 每周最後快照（${labels.length} 週）`
+      : range === 'month'
+        ? `五區${metricLabel} · 每月最後快照（${labels.length} 月）`
+        : `五區${metricLabel} · 每日快照（${labels.length} 點）`;
+    return `<section class="cv-zone cv-trend-zone is-open">
+      <div class="cv-trend-head">
+        <h4 class="cv-sec-title">${esc(metricLabel)}變化<small>${esc(rangeHint)}</small></h4>
+        ${rateTrendRangeBar()}
+        <button type="button" class="cv-trend-close" data-cv-trend-toggle>收合</button>
+      </div>
+      <div class="cv-trend-legend" aria-hidden="true">
+        ${TREND_SERIES.map((s) =>
+          `<span class="cv-trend-leg" style="--leg:${esc(s.color)}">${esc(s.name)}</span>`
+        ).join('')}
+      </div>
+      <div class="cv-trend-latest">${latestChips}</div>
+      <div class="cv-trend-chart cv-trend-chart--wide">${chart}</div>
+    </section>`;
   }
 
   function boardHtml(mode) {
@@ -284,25 +640,59 @@
     const all = tally(scopedPeople(mode));
     const companyDone = mode === 'ins' ? all.insured : all.bound;
     const openId = state.openRegion[mode];
+    const openRegion = REGIONS.find((item) => item.id === openId) || null;
     const regionCards = REGIONS.map((item) => {
       const teams = regionOffices(item, mode);
       if (!teams.length) return '';
       const stat = tally(peopleIn(teams, mode));
       const done = mode === 'ins' ? stat.insured : stat.bound;
       const on = openId === item.id;
-      const offices = on
-        ? `<div class="cv-flow-break"><div class="cv-offices">${regionOffices(item, mode).map((office) => officeCard(office, mode)).join('')}</div></div>`
-        : '';
-      return `<button type="button" class="cv-region-hit${on ? ' is-on' : ''}" data-cv-region="${esc(item.id)}" data-cv-mode="${mode}" aria-expanded="${on ? 'true' : 'false'}">
-        ${ringHtml(done, stat.total, tone, item.label)}
-      </button>${offices}`;
+      const dim = openId && !on;
+      const pct = ringPct(done, stat.total);
+      const officePills = teams.length
+        ? `<span class="cv-region-offices">${teams.map((office) => `<i>${esc(office)}</i>`).join('')}</span>`
+        : '<span class="cv-region-offices"><em class="cv-region-none">這區沒有營業處</em></span>';
+      return `<button type="button" class="cv-region-card cv-region-card--${item.tone}${on ? ' is-on' : ''}${dim ? ' is-dim' : ''}" data-cv-region="${esc(item.id)}" data-cv-mode="${mode}" aria-expanded="${on ? 'true' : 'false'}">
+        <span class="cv-region-top">
+          <span class="cv-region-avatar" aria-hidden="true">${esc(item.label.slice(0, 1))}</span>
+          <span class="cv-region-id"><b>${esc(item.label)}</b><i class="cv-area-pill">${esc(item.label)}</i></span>
+          <span class="cv-region-stat"><strong>${pct == null ? '—' : `${pct}%`}</strong><small>${done}／${stat.total} 人</small></span>
+        </span>
+        ${dim ? '' : officePills}
+        ${dim ? '' : `<span class="cv-region-foot">
+          <span class="cv-region-places" title="${esc(item.places || '')}">📍 ${esc(item.places || '—')}</span>
+          ${on ? '<span class="cv-region-back">✕ 看全部</span>' : ''}
+        </span>`}
+      </button>`;
     }).join('');
+    const offices = openRegion
+      ? `<section class="cv-zone">
+          <h4 class="cv-sec-title">${esc(openRegion.label)}營業處<small>點處別看未${mode === 'ins' ? '投保' : '綁定'}名單</small></h4>
+          <div class="cv-offices">${regionOffices(openRegion, mode).map((office) => officeCard(office, mode)).join('')}</div>
+        </section>`
+      : '';
+    const cols = REGIONS.filter((item) => regionOffices(item, mode).length)
+      .map((item) => (!openId ? 'minmax(0, 1fr)' : item.id === openId ? 'minmax(0, 2.2fr)' : 'minmax(0, 0.85fr)'))
+      .join(' ');
     return `<section class="cv-board cv-board--${mode}">
-      <h3 class="cv-board-title">${title}</h3>
-      <div class="cv-flow">
-        <article class="cv-company">${ringHtml(companyDone, all.total, tone, companyLabel)}</article>
-        ${regionCards}
+      <div class="cv-sub-bar">
+        <span class="cv-sub-note"><b>${esc(title)}</b> · ${companyLabel} <b>${ringPct(companyDone, all.total) == null ? '無資料' : `${ringPct(companyDone, all.total)}%`}</b>（${companyDone}／${all.total}） · 點上方區域卡片可展開營業處</span>
       </div>
+      <section class="cv-zone">
+        <h4 class="cv-sec-title">${esc(companyLabel)}<small>全區總覽 · 點下方卡片可看五區${mode === 'ins' ? '投保' : '綁定'}變化圖</small></h4>
+        <div class="cv-gauges">
+          <button type="button" class="cv-gauge-hit${state.rateTrendOpen ? ' is-on' : ''}" data-cv-trend-toggle aria-expanded="${state.rateTrendOpen ? 'true' : 'false'}">
+            ${gaugeHtml(companyDone, all.total, tone, companyLabel, '全區', 'cv-gauge--wide')}
+            <span class="cv-gauge-hit-hint">${state.rateTrendOpen ? '點一下收合變化圖' : '點開看全區＋北中南高雄五條線'}</span>
+          </button>
+        </div>
+      </section>
+      ${rateTrendHtml(mode)}
+      <section class="cv-zone">
+        <h4 class="cv-sec-title">各區進度<small>${openRegion ? '再點一次選中的卡片回到全部' : '點卡片只看該區'}</small></h4>
+        <div class="cv-region-cards${openId ? ' has-pick' : ''}" style="grid-template-columns:${cols || 'repeat(4, minmax(0, 1fr))'}">${regionCards}</div>
+      </section>
+      ${offices}
       ${mode === 'ins' ? flagHtml() : ''}
     </section>`;
   }
@@ -321,10 +711,10 @@
     if (state.loading && !state.loaded) return `<p class="cv-note">${waiting}</p>`;
     if (!token()) return '<p class="cv-error">請先登入工具箱，才能對照公司系統人事。</p>';
     const filters = KINDS.map((k) =>
-      `<button type="button" class="cv-filter${state.kind === k.id ? ' is-on' : ''}" data-cv-kind="${esc(k.id)}">${esc(k.label)}</button>`
+      `<button type="button" class="cv-pill${state.kind === k.id ? ' is-on' : ''}" data-cv-kind="${esc(k.id)}">${esc(k.label)}</button>`
     ).join('');
     return `<div class="cv-toolbar">
-        <div class="cv-filters" role="tablist">${filters}</div>
+        <div class="cv-pills" role="tablist">${filters}</div>
         <button type="button" class="cv-refresh" data-cv-refresh>重新整理</button>
       </div>
       ${state.error ? `<p class="cv-error">${esc(state.error)}</p>` : ''}
@@ -335,6 +725,41 @@
       </div>`;
   }
 
+  function sortIdleRows(list, dir) {
+    const sign = dir === 'asc' ? 1 : -1;
+    return list.slice().sort((a, b) => {
+      const ea = escrowTotal(a.person.name);
+      const eb = escrowTotal(b.person.name);
+      const na = ea == null ? -1 : ea;
+      const nb = eb == null ? -1 : eb;
+      if (na !== nb) return (na - nb) * sign;
+      const oa = String(a.person.office || '');
+      const ob = String(b.person.office || '');
+      const off = oa.localeCompare(ob, 'zh-Hant');
+      if (off) return off * sign;
+      return String(a.person.name || '').localeCompare(String(b.person.name || ''), 'zh-Hant') * sign;
+    });
+  }
+
+  function sortBusyRows(list, dir) {
+    const sign = dir === 'asc' ? 1 : -1;
+    return list.slice().sort((a, b) => {
+      if (a.total !== b.total) return (a.total - b.total) * sign;
+      const off = String(a.person.office || '').localeCompare(String(b.person.office || ''), 'zh-Hant');
+      if (off) return off * sign;
+      return String(a.person.name || '').localeCompare(String(b.person.name || ''), 'zh-Hant') * sign;
+    });
+  }
+
+  function sortToggleHtml(which, dir, primaryLabel) {
+    const arrow = dir === 'asc' ? '少→多' : '多→少';
+    return `<div class="cv-sort-bar">
+      <button type="button" class="cv-sort-btn" data-cv-sort="${which}" aria-pressed="${dir === 'asc' ? 'true' : 'false'}">
+        排序：${esc(primaryLabel)} → 營業處 · <b>${arrow}</b><small>點一下切換</small>
+      </button>
+    </div>`;
+  }
+
   function flagHtml() {
     const prod = state.production;
     if (!prod) return '';
@@ -342,34 +767,39 @@
     const label = months.map((month) => month.label).join('、') || '近兩個月';
     if (prod.error) return `<p class="cv-note">產件：${esc(prod.error)}。未產件與代管 10 件名單暫不列出。</p>`;
     const countOf = new Map((prod.counts || []).map((row) => [norm(row.name), row]));
-    const kind = state.kind === '正職' || state.kind === '兼職' ? state.kind : 'all';
-    const pool = state.people.filter((person) => kind === 'all' || person.kind === kind);
+    const pool = scopedPeople();
     const rows = pool.filter((person) => !person.insured).map((person) => {
       const hit = countOf.get(norm(person.name));
       const bag = hit?.months || [0, 0];
       return { person, m1: Number(bag[0]) || 0, m2: Number(bag[1]) || 0, total: Number(hit?.total) || 0 };
     });
-    const idle = rows.filter((row) => isBizOrRent(row.person) && row.m1 === 0 && row.m2 === 0);
-    const busy = rows.filter((row) => row.total >= 10)
-      .sort((a, b) => (b.total - a.total)
-        || String(a.person.office).localeCompare(String(b.person.office), 'zh-Hant')
-        || String(a.person.name).localeCompare(String(b.person.name), 'zh-Hant'));
-    const line = (row, extra) => personBlock(row.person, [row.person.office, extra].filter(Boolean).join(' · '));
+    const idle = sortIdleRows(
+      rows.filter((row) => isBizOrRent(row.person) && row.m1 === 0 && row.m2 === 0),
+      state.idleSortDir
+    );
+    const busy = sortBusyRows(
+      rows.filter((row) => row.total >= 10),
+      state.busySortDir
+    );
+    const line = (row, extraBits) => personBlock(row.person, extraBits);
     const escrowNote = prod.cumulativeError
       ? `<p class="cv-note">代管：${esc(prod.cumulativeError)}。下列是目前已撈到的。</p>`
       : '';
     return `<div class="cv-flags">
       <section class="cv-flag">
         <h3>連續兩個月未產件又未保<small>${idle.length}</small></h3>
-        <p>${esc(label)}都是 0 件，而且沒有投保。只列業務、租管師。</p>
-        ${idle.length ? `<div class="cv-flag-list">${idle.map((row) => line(row, '0 件')).join('')}</div>` : '<p class="cv-empty">沒有符合的人。</p>'}
+        <p>${esc(label)}產件都是 0（認列產件，不是新媒合），而且沒有投保。只列業務、租管師。人名下的「新案」另算 115/11/1 起新媒合。</p>
+        <p class="cv-note">暫無「末次產件日」：第一排序暫用代管件數代理未產件時間，第二排序營業處。</p>
+        ${idle.length ? sortToggleHtml('idle', state.idleSortDir, '代管件數（暫代未產件時間）') : ''}
+        ${idle.length ? `<div class="cv-flag-list">${idle.map((row) => line(row, [`近兩月產件 0`])).join('')}</div>` : '<p class="cv-empty">沒有符合的人。</p>'}
       </section>
       <section class="cv-flag">
         <h3>代管 10 件以上未保<small>${busy.length}</small></h3>
-        <p>未投保、累積代管案件 10 件以上。</p>
+        <p>未投保、累積代管案件 10 件以上。人名下的「新案」另算 115/11/1 起新媒合，與代管件數分開。</p>
         ${escrowNote}
+        ${busy.length ? sortToggleHtml('busy', state.busySortDir, '代管件數') : ''}
         ${busy.length
-          ? `<div class="cv-flag-list">${busy.map((row) => line(row, `代管 ${row.total} 件`)).join('')}</div>`
+          ? `<div class="cv-flag-list">${busy.map((row) => line(row)).join('')}</div>`
           : '<p class="cv-empty">沒有符合的人。</p>'}
       </section>
     </div>`;
@@ -407,8 +837,9 @@
       ? state.extDraft[row.matchNo]
       : (saved.extension || '');
     const checks = CALL_FIELDS.map(([key, label]) => checkFieldHtml(key, label, saved, editable)).join('');
+    const label = row.matchLabel || row.matchNo;
     return `<tr data-cv-case="${esc(row.matchNo)}">
-      <td><b>${esc(row.matchNo)}</b><small>${esc(row.address || '地址無資料')}</small></td>
+      <td><b>${esc(label)}</b><small>${esc(row.address || '地址無資料')}</small></td>
       <td>${esc(rocDate(row.leaseStart))}</td>
       ${partyCell(row.landlordName, row.landlordPhone)}
       ${partyCell(row.tenantName, row.tenantPhone)}
@@ -438,7 +869,7 @@
               <thead><tr><th>案件</th><th>起租</th><th>房東</th><th>房客</th><th>分機</th><th>電訪勾選</th><th>備註</th></tr></thead>
               <tbody>${rows.map(caseRowHtml).join('')}</tbody>
             </table></div>`
-          : '<p class="cv-empty">115/11/1 起沒有新媒合。</p>';
+          : '<p class="cv-empty">115/11/1 起沒有新媒合（只認預審通過／複審通過／複審退件／待產編／已生效；不含再媒合／續約／一般宅／電服／爬蟲）。</p>';
     return `<section class="cv-cases">
       <p class="cv-cases-note">${note}</p>
       ${scriptHtml()}
@@ -541,7 +972,49 @@
       state.loading = false;
       render();
     }
-    if (state.loaded) void loadCases(t);
+    if (state.loaded) {
+      void loadCases(t);
+      void syncRateHistory(t);
+    }
+  }
+
+  async function syncRateHistory(t) {
+    const tokenNow = t || token();
+    if (!tokenNow || !state.loaded || state.hrError) return;
+    const all = tally(peopleForSnapshot());
+    const payload = {
+      day: taipeiDayIso(),
+      total: all.total,
+      insDone: all.insured,
+      boxDone: all.bound,
+      insPct: ringPct(all.insured, all.total),
+      boxPct: ringPct(all.bound, all.total),
+      regions: liveRegionSnapshots()
+    };
+    try {
+      if (payload.insPct != null || payload.boxPct != null) {
+        await fetch(`${rpaBase()}/api/hr/coverage-rate-snapshot`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Skyfun-Session': tokenNow
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+      const histRes = await fetch(`${rpaBase()}/api/hr/coverage-rate-history`, {
+        headers: { 'X-Skyfun-Session': tokenNow }
+      });
+      const hist = await histRes.json().catch(() => ({}));
+      if (!histRes.ok || !hist.ok) throw new Error(hist.error || '比率歷史讀不到');
+      state.rateHistory = hist.days || [];
+      state.rateHistoryError = '';
+      state.rateHistoryLoaded = true;
+    } catch (err) {
+      state.rateHistoryError = err.message || String(err);
+      state.rateHistoryLoaded = true;
+    }
+    render();
   }
 
   async function loadCases(t) {
@@ -584,6 +1057,32 @@
     if (event.target.closest('[data-cv-refresh]')) {
       state.loaded = false;
       load(true);
+      return;
+    }
+    const sortBtn = event.target.closest('[data-cv-sort]');
+    if (sortBtn) {
+      const which = sortBtn.getAttribute('data-cv-sort');
+      if (which === 'idle') {
+        state.idleSortDir = state.idleSortDir === 'desc' ? 'asc' : 'desc';
+      } else if (which === 'busy') {
+        state.busySortDir = state.busySortDir === 'desc' ? 'asc' : 'desc';
+      }
+      render();
+      return;
+    }
+    const trendToggle = event.target.closest('[data-cv-trend-toggle]');
+    if (trendToggle) {
+      state.rateTrendOpen = !state.rateTrendOpen;
+      render();
+      return;
+    }
+    const rangeBtn = event.target.closest('[data-cv-trend-range]');
+    if (rangeBtn) {
+      const next = rangeBtn.getAttribute('data-cv-trend-range');
+      if (next === 'day' || next === 'week' || next === 'month') {
+        state.rateTrendRange = next;
+        render();
+      }
       return;
     }
     const regionBtn = event.target.closest('[data-cv-region]');

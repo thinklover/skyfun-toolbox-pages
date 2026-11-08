@@ -3233,7 +3233,7 @@
   const OFF_NOT_STAFF = '非行政或已離職行政';
   const OFF_LEADER = '小組長';
   /** 小組長複審的件數另外拉一列，不歸各營業處、也不算進非行政 */
-  const ROSTER_LEADERS = new Set(['侯思廷', '黃怡婷', '李芷琳']);
+  const ROSTER_LEADERS = new Set(['侯思廷', '童翊桓', '李芷琳']);
   const OFF_NO_CASE = '退件對不到起租案件';
   /** 不在人力明細的複審人（主管等）所屬營業處，只用在審件良率分處，不影響點數與獎金 */
   const REVIEWER_OFFICE = {

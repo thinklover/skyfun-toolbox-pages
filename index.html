@@ -4036,6 +4036,10 @@
         .home-card-rentmgr::before { background-image: url("assets/illus-q-rentmgr.svg"); }
         .home-card-announce::before { background-image: url("assets/illus-q-announce.svg"); }
         .home-card-administration::before { background-image: url("assets/illus-q-feedback.svg"); }
+        .home-card-hr::before { background-image: url("assets/illus-q-rentmgr.svg"); }
+        .home-card-finance::before { background-image: url("assets/illus-q-landlord.svg"); }
+        .home-card-gm::before { background-image: url("assets/illus-q-announce.svg"); }
+        .home-card-biz-sup::before { background-image: url("assets/illus-q-business.svg"); }
         .home-card-sponsor::before { background-image: none; background: radial-gradient(circle at 30% 30%, rgba(201, 162, 39, 0.25), transparent 60%); }
         .home-feature-card p {
             color: var(--ink-muted);
@@ -4539,6 +4543,10 @@
         #home-menu .home-card-rentmgr { --m: #e11d48; --m-ink: #5f0a22; --m-sub: #8a5866; --m-line: #fcd5de; --m-bg1: #fff0f3; --m-bg2: #fdeef2; }
         #home-menu .home-card-announce { --m: #2563eb; --m-ink: #172554; --m-sub: #55658c; --m-line: #d6e2fd; --m-bg1: #eef3ff; --m-bg2: #e8eeff; }
         #home-menu .home-card-administration { --m: #0d9488; --m-ink: #134e4a; --m-sub: #4f7a74; --m-line: #c9efe9; --m-bg1: #e9faf7; --m-bg2: #e4f4fb; }
+        #home-menu .home-card-hr { --m: #db2777; --m-ink: #831843; --m-sub: #8a5a70; --m-line: #fbcfe8; --m-bg1: #fdf2f8; --m-bg2: #fce7f3; }
+        #home-menu .home-card-finance { --m: #059669; --m-ink: #064e3b; --m-sub: #4f7a6c; --m-line: #a7f3d0; --m-bg1: #ecfdf5; --m-bg2: #d1fae5; }
+        #home-menu .home-card-gm { --m: #475569; --m-ink: #0f172a; --m-sub: #64748b; --m-line: #cbd5e1; --m-bg1: #f8fafc; --m-bg2: #e2e8f0; }
+        #home-menu .home-card-biz-sup { --m: #c2410c; --m-ink: #7c2d12; --m-sub: #9a6b4f; --m-line: #fdba74; --m-bg1: #fff7ed; --m-bg2: #ffedd5; }
         #home-menu .home-card-sponsor { --m: #c9a227; --m-ink: #192437; --m-sub: #6b5c3a; --m-line: #e8d7a8; --m-bg1: #fff9eb; --m-bg2: #f7f1e3; }
         #home-menu .home-card-sponsor .hc-desc {
             flex: 1;
@@ -4601,13 +4609,17 @@
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
-<link rel="stylesheet" href="./css/handover.css?v=20261101-cards">
-<link rel="stylesheet" href="./css/business-zone.css?v=20261104-quick2">
+<link rel="stylesheet" href="./css/handover.css?v=20261107-sop">
+<link rel="stylesheet" href="./css/business-zone.css?v=20261107-supcover">
 <link rel="stylesheet" href="./css/policy-doc-gate.css?v=20261104-bb">
 <link rel="stylesheet" href="./css/biz-bonus.css?v=20261105-gauge">
-<link rel="stylesheet" href="./css/biz-coverage.css?v=20261107-nosupport">
-<link rel="stylesheet" href="./css/notice-ack.css?v=20261104-1">
+<link rel="stylesheet" href="./css/biz-coverage.css?v=20261107-supcover">
+<link rel="stylesheet" href="./css/notice-ack.css?v=20261107-bb">
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261105-search">
+<link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
+<link rel="stylesheet" href="./css/fin-report.css?v=20261108-fin62">
+<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261107-msb8">
+<!-- cover-deploy 20261107-escrow-staff -->
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
     <script>
@@ -4720,7 +4732,7 @@
         </div>
         <div class="relative z-10">
 
-        <a id="home-weekly-meeting-link" href="./docs/weekly-meeting/?v=20261102-1102" class="app-weekly-meeting-link no-underline" title="管理部週會簡報與表單下載">📂 業務周會</a>
+        <a id="home-weekly-meeting-link" href="./docs/weekly-meeting/?v=20261107-nodl" class="app-weekly-meeting-link no-underline" title="業務周會簡報預覽與表單">📂 業務周會</a>
 
         <!-- 首頁標題區 -->
         <header class="app-hero">
@@ -4905,19 +4917,9 @@
             </div>
 
             <div class="layout-home-cards">
-                <div class="home-feature-card home-card-landlord" role="button" tabindex="0" onclick="showPage('landlord')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('landlord');}">
-                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏠</span><span class="hc-name">房東專區</span><span class="hc-go" aria-hidden="true">→</span></span>
-                    <span class="hc-desc">稅務試算、房屋稅級距，一次搞懂。</span>
-                </div>
-
-                <div class="home-feature-card home-card-tenant" role="button" tabindex="0" onclick="showPage('tenant')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('tenant');}">
-                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏃</span><span class="hc-name">房客專區</span><span class="hc-go" aria-hidden="true">→</span></span>
-                    <span class="hc-desc">承租資格試算、承租條件、辦理單位通訊錄與親屬等親。</span>
-                </div>
-
                 <div class="home-feature-card home-card-business" role="button" tabindex="0" onclick="showPage('business')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('business');}">
                     <span class="hc-btn"><span class="hc-ico" aria-hidden="true">💼</span><span class="hc-name">業務專區</span><span class="hc-go" aria-hidden="true">→</span></span>
-                    <span id="sf591-home-desc" class="hc-desc">租金水準、公證費、表單與考試；解約退還試算請至「催收解約專區」。</span>
+                    <span id="sf591-home-desc" class="hc-desc">含房東／房客／新人；租金水準、公證費、表單與考試。解約退還請至「催收解約專區」。</span>
                 </div>
 
                 <div class="home-feature-card home-card-termination" role="button" tabindex="0" onclick="showPage('termination')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('termination');}">
@@ -4925,24 +4927,34 @@
                     <span class="hc-desc">包租／轉租（代租代管）解約退還金額試算。</span>
                 </div>
 
-                <div class="home-feature-card home-card-newbie" role="button" tabindex="0" onclick="showPage('newbie')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('newbie');}">
-                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🚀</span><span class="hc-name">新人專區</span><span class="hc-go" aria-hidden="true">→</span></span>
-                    <span class="hc-desc">業務／租管師專線、任務板打卡與教材快篩。</span>
-                </div>
-
                 <div class="home-feature-card home-card-rentmgr" role="button" tabindex="0" onclick="showPage('rentmanager')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('rentmanager');}">
                     <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🧑</span><span class="hc-name">租管師專區</span><span class="hc-go" aria-hidden="true">→</span></span>
                     <span class="hc-desc">路線圖、教材、快篩與任務板；依業務或租管師專線學習。</span>
                 </div>
 
-                <div class="home-feature-card home-card-announce" role="button" tabindex="0" onclick="showPage('announcement')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('announcement');}">
-                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">📣</span><span class="hc-name">簽呈公告專區</span><span class="hc-go" aria-hidden="true">→</span></span>
-                    <span class="hc-desc">公司內部公告、簽呈與重要通知彙整。</span>
-                </div>
-
                 <div class="home-feature-card home-card-administration hidden" role="button" tabindex="0" onclick="showPage('administration')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('administration');}">
                     <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏛️</span><span class="hc-name">行政專區</span><span class="hc-go" aria-hidden="true">→</span></span>
                     <span class="hc-desc">解約退還與租金試算等行政工具。</span>
+                </div>
+
+                <div class="home-feature-card home-card-hr" role="button" tabindex="0" onclick="showPage('hr')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('hr');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">👥</span><span class="hc-name">人資專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">人事相關工具陸續建置中。</span>
+                </div>
+
+                <div class="home-feature-card home-card-finance" role="button" tabindex="0" onclick="showPage('finance')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('finance');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">📒</span><span class="hc-name">財會專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">財務部問題回報：金流、款項、催收與商辦。</span>
+                </div>
+
+                <div class="home-feature-card home-card-gm" role="button" tabindex="0" onclick="showPage('gm-office')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('gm-office');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏢</span><span class="hc-name">總經理室專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">會議計分中心（系統會議／月會主管）。</span>
+                </div>
+
+                <div class="home-feature-card home-card-biz-sup" role="button" tabindex="0" onclick="showPage('biz-supervisor')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('biz-supervisor');}">
+                    <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🧭</span><span class="hc-name">業務主管專區</span><span class="hc-go" aria-hidden="true">→</span></span>
+                    <span class="hc-desc">主管獎金、津貼與考核辦法（需密碼）。</span>
                 </div>
             </div>
         </div>
@@ -4950,10 +4962,10 @@
         <!-- 保留舊容器避免 JS 取不到（已併入 home-menu） -->
         <div id="home-guide" class="hidden"></div>
 
-        <!-- 專區頁面：房東 -->
+        <!-- 專區頁面：房東（掛在業務專區下） -->
         <div id="page-landlord" class="hidden max-w-4xl mx-auto space-y-6">
-            <button onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">
-                ← 返回首頁
+            <button type="button" onclick="showPage('business')" class="mb-4 btn btn-sm tone-slate-soft">
+                ← 返回業務專區
             </button>
             <div class="bz-shell">
                 <header class="bz-head">
@@ -4991,147 +5003,12 @@
             </div>
         </div>
 
-        <!-- 專區頁面：公司簽呈公告 -->
-        <div id="page-announcement" class="hidden max-w-4xl mx-auto space-y-6">
-            <button onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">
-                ← 返回首頁
-            </button>
-
-            <div class="bg-gradient-to-br from-blue-50 via-white to-slate-50 rounded-[2rem] p-6 border border-blue-200 shadow-lg space-y-5">
-                <div class="text-center">
-                    <h2 class="text-3xl font-bold text-slate-900 mb-2">📣 簽呈公告專區</h2>
-                    <p class="text-slate-600">集中管理公司公告與簽呈重點。辦法／獎金制度完整檔需密碼預覽與下載（預覽含浮水印）。</p>
-                </div>
-
-                <button type="button" onclick="showPage('manager-bonus')" class="btn btn-block btn-center tone-indigo text-lg font-bold">
-                    🔒 主管獎金專區（需密碼）
-                </button>
-
-                <div id="notice-ack-root"></div>
-
-                <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 space-y-3">
-                    <div class="font-bold text-slate-900">公告列表</div>
-                    <div class="text-slate-600 text-sm">
-                        
-                    </div>
-
-                    <div class="space-y-3 text-sm text-slate-800">
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/10/01｜公告：星財補獎金辦法（1151001版）</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1151001%20公告%20星財補獎金辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/08/24｜公告：第 9 至第 11 業績月高專業務激勵方案</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150824%20公告%20第9至第11業績月高專業務激勵方案.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/05/25｜公告：全公司包租篩選規範</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./%E3%80%90%E5%85%AC%E5%91%8A%E3%80%91%E5%85%A8%E5%85%AC%E5%8F%B8%E5%8C%85%E7%A7%9F%E7%AF%A9%E9%81%B8%E8%A6%8F%E7%AF%8420260525.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/05/07｜公告：配合住都中心政策，推動三年期合約簽立原則</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150507%20公告%20配合住都中心政策，推動三年期合約簽立原則.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/05/07｜公告：業務協理區_北區組織異動</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150507%20公告%20業務協理區_北區組織異動.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/04/20｜公告：115 年第 5 業績月高專業務激勵方案</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150420%20公告%20115年第5業績月高專業務激勵方案.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/03/23｜公告：碰撞件處理原則</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150323%20公告%20碰撞件處理原則.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/03/10｜公告：115 年度業務全年度競賽辦法</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150310%20公告%20115年度業務全年度競賽辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/01/13｜公告：修訂星財補獎金辦法</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150113%20公告%20修訂星財補獎金辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">115/01/13｜公告：金牌講師辦法</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1150113%20公告%20金牌講師辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">114/12/22｜公告：高專點獎金辦法</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./1141222%20公告%20高專點獎金辦法.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="font-extrabold">113/06/03｜公告：高專業務獎金制度（1130603版）</div>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="./高專業務獎金制度1130603版%20(4).pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid">
-                                    📄 開啟
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        <!-- 舊簽呈公告：內容已併入業務獎金辦法；保留 id 以免舊連結失效 -->
+        <div id="page-announcement" class="hidden" aria-hidden="true"></div>
         <!-- 專區頁面：主管獎金（密碼鎖） -->
         <div id="page-manager-bonus" class="hidden max-w-4xl mx-auto space-y-6">
-            <button onclick="showPage('announcement')" class="mb-4 btn btn-sm tone-slate-soft">
-                ← 返回簽呈公告專區
+            <button type="button" onclick="showPage('biz-supervisor')" class="mb-4 btn btn-sm tone-slate-soft">
+                ← 返回業務主管專區
             </button>
 
             <div class="bg-gradient-to-br from-indigo-50 via-white to-slate-50 rounded-[2rem] p-6 border border-indigo-200 shadow-lg space-y-5">
@@ -5151,8 +5028,8 @@
             </div>
         </div>
         <script src="./js/policy-doc-gate.js?v=20261104-bb"></script>
-        <script src="./js/notice-ack-data.js?v=20261104-1"></script>
-        <script src="./js/notice-ack.js?v=20261104-1"></script>
+        <script src="./js/notice-ack-data.js?v=20261107-ack2"></script>
+        <script src="./js/notice-ack.js?v=20261107-ack2"></script>
         <script>
         (function () {
             const Gate = window.SkyfunPolicyDocGate;
@@ -6086,10 +5963,1694 @@
             </div>
         </div>
 
-        <!-- 專區頁面：房客 -->
+        <!-- 專區頁面：人資 -->
+        <div id="page-hr" class="hidden max-w-4xl mx-auto space-y-6">
+            <button type="button" onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">← 返回首頁</button>
+            <div class="bz-shell">
+                <header class="bz-head">
+                    <div class="bz-kicker">HR</div>
+                    <h2 class="bz-title">👥 人資專區</h2>
+                    <p class="bz-sub">出勤相關回報（延展休假、加班、報到離職、資遣、調班）。</p>
+                </header>
+                <div class="hr-quick" role="navigation" aria-label="報到離職入口">
+                    <button type="button" class="apt-entry hr-hero hr-hero--onboard" onclick="showPage('hr-onboard')">
+                        <span class="apt-entry-icon" aria-hidden="true">📥</span>
+                        <span class="apt-entry-text">
+                            <strong>內勤報到通知</strong>
+                            <small>有底薪人員報到；上傳入職人事表單、簽署信任租、試用期協議書</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
+                    <button type="button" class="apt-entry hr-hero hr-hero--resign" onclick="showPage('hr-resign')">
+                        <span class="apt-entry-icon" aria-hidden="true">📤</span>
+                        <span class="apt-entry-text">
+                            <strong>內勤離職通知</strong>
+                            <small>有底薪人員離職通報；上傳離職文件並通知財務部會計</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
+                </div>
+                <p class="bz-sec">常用工具</p>
+                <div class="hr-home-tools" role="navigation" aria-label="人資常用工具">
+                    <button type="button" class="bz-card hr-home-main" onclick="showPage('hr-report')">
+                        <span class="bz-ico" aria-hidden="true">📝</span>
+                        <span class="bz-copy">
+                            <span class="bz-name">人資問題回報</span>
+                            <span class="bz-hint">延展休假、加班、資遣、調班；送出後通知財務部會計</span>
+                        </span>
+                        <span class="bz-go" aria-hidden="true">進入</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 人資：問題回報表單 -->
+        <div id="page-hr-report" class="hidden max-w-3xl mx-auto space-y-4">
+            <button type="button" onclick="showPage('hr')" class="mb-2 btn btn-sm tone-slate-soft">← 返回人資專區</button>
+            <div class="hr-shell">
+                <p class="hr-kicker">HR REPORT</p>
+                <h2 class="hr-title">人資部問題回報</h2>
+                <p class="hr-lead">1. 填單後預計三個工作天完成。<br>2. 送出後會 LINE 通知財務部已綁定的會計；附件請至後台下載。</p>
+                <p class="hr-admin-link">
+                    <a class="hr-admin-btn" href="./admin/hr-report-dashboard.html" target="_blank" rel="noopener">人資問題回報後台 →</a>
+                </p>
+                <form id="hr-form" class="hr-form" autocomplete="off">
+                    <div class="hr-field">
+                        <label class="hr-req" for="hr-full-name">你的姓名全名</label>
+                        <input id="hr-full-name" name="fullName" type="text" required maxlength="40" placeholder="請填本名">
+                    </div>
+                    <div class="hr-field">
+                        <label class="hr-req" for="hr-office">所屬處所</label>
+                        <select id="hr-office" name="office" required></select>
+                    </div>
+                    <div class="hr-field" id="hr-office-other-wrap" hidden>
+                        <label for="hr-office-other">其他處所</label>
+                        <input id="hr-office-other" type="text" maxlength="40" placeholder="請填寫處所名稱">
+                    </div>
+                    <div class="hr-field">
+                        <span class="hr-label hr-req">出勤相關問題</span>
+                        <div class="hr-radios" role="radiogroup" aria-label="出勤相關問題">
+                            <label class="hr-radio"><input type="radio" name="hr-issue" value="延展休假申請" required> 延展休假申請</label>
+                            <label class="hr-radio"><input type="radio" name="hr-issue" value="加班超時申請"> 加班超時申請</label>
+                            <label class="hr-radio"><input type="radio" name="hr-issue" value="資遣通報"> 資遣通報</label>
+                            <label class="hr-radio"><input type="radio" name="hr-issue" value="整租部門_調班申請"> 整租部門_調班申請</label>
+                        </div>
+                    </div>
+
+                    <div class="hr-panel" data-hr-panel="延展休假申請">
+                        <h3 class="hr-panel-title">延展休假申請</h3>
+                        <div class="hr-field">
+                            <span class="hr-label hr-req">延展假期類別</span>
+                            <div class="hr-radios">
+                                <label class="hr-radio"><input type="radio" name="hr-leave-kind" value="特別休假"> 特別休假</label>
+                                <label class="hr-radio"><input type="radio" name="hr-leave-kind" value="加班補休"> 加班補休</label>
+                            </div>
+                        </div>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-leave-period">延展期間申請</label>
+                            <p class="hr-hint">例如：2025年的特別休假延展申請、加班補休延展</p>
+                            <textarea id="hr-leave-period" maxlength="200" placeholder="您的回答"></textarea>
+                        </div>
+                        <div class="hr-file-row">
+                            <label class="hr-label" for="hr-files-leave">佐證資料檔案</label>
+                            <p class="hr-hint">最多可上傳 5 個檔案，每個檔案上限約 10 MB（圖片／PDF／Word／Excel）。</p>
+                            <input id="hr-files-leave" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf" multiple>
+                            <ul class="hr-file-list" data-hr-file-list="leave"></ul>
+                        </div>
+                    </div>
+
+                    <div class="hr-panel" data-hr-panel="加班超時申請">
+                        <h3 class="hr-panel-title">加班超時申請</h3>
+                        <p class="hr-note">一天加班不可超過 4 小時；如因特殊狀況需超過 4 小時，須檢附主管同意簽呈，方可申請。</p>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-ot-date">申請日期</label>
+                            <input id="hr-ot-date" type="date">
+                        </div>
+                        <div class="hr-file-row">
+                            <label class="hr-label hr-req" for="hr-files-ot">主管同意簽呈</label>
+                            <p class="hr-hint">最多 5 個檔，每個約 10 MB。</p>
+                            <input id="hr-files-ot" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf" multiple>
+                            <ul class="hr-file-list" data-hr-file-list="ot"></ul>
+                        </div>
+                    </div>
+
+                    <div class="hr-panel" data-hr-panel="資遣通報">
+                        <h3 class="hr-panel-title">資遣通報</h3>
+                        <p class="hr-note">資遣日期後 3 個工作天寄送非自願離職書，至離職申請文件上提供的意送地址。<br>1. 新任職人員如不適任，須提前 10 天告知。<br>2. 滿一年人員如不適任，須提前 20 天告知。</p>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-layoff-name">資遣人員姓名</label>
+                            <input id="hr-layoff-name" type="text" maxlength="40">
+                        </div>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-layoff-date">預計資遣日期</label>
+                            <input id="hr-layoff-date" type="date">
+                        </div>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-layoff-office">資遣人員所屬處所</label>
+                            <select id="hr-layoff-office"></select>
+                        </div>
+                        <div class="hr-field" id="hr-layoff-office-other-wrap" hidden>
+                            <label for="hr-layoff-office-other">其他處所</label>
+                            <input id="hr-layoff-office-other" type="text" maxlength="40">
+                        </div>
+                    </div>
+
+                    <div class="hr-panel" data-hr-panel="整租部門_調班申請">
+                        <h3 class="hr-panel-title">整租部門_調班申請</h3>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-shift-person">申請人員</label>
+                            <input id="hr-shift-person" type="text" maxlength="40">
+                        </div>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-shift-orig-date">原上班日期</label>
+                            <input id="hr-shift-orig-date" type="date">
+                        </div>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-shift-orig-time">原上班時間</label>
+                            <input id="hr-shift-orig-time" type="time">
+                        </div>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-shift-partner">配合調班人員</label>
+                            <input id="hr-shift-partner" type="text" maxlength="40">
+                        </div>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-shift-new-date">調班後上班日期</label>
+                            <input id="hr-shift-new-date" type="date">
+                        </div>
+                        <div class="hr-field">
+                            <label class="hr-req" for="hr-shift-new-time">調班後上班時間</label>
+                            <input id="hr-shift-new-time" type="time">
+                        </div>
+                    </div>
+
+                    <div class="hr-actions">
+                        <button type="submit" id="hr-submit" class="btn tone-teal">送出</button>
+                        <button type="button" id="hr-clear" class="btn tone-slate-soft">清除</button>
+                    </div>
+                    <p id="hr-form-msg" class="hr-msg" role="status"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- 人資：內勤報到通知（對齊催收 term-sop 圖卡） -->
+        <div id="page-hr-onboard" class="hidden max-w-[1480px] mx-auto space-y-3">
+            <button type="button" onclick="showPage('hr')" class="mb-1 btn btn-sm tone-slate-soft">← 返回人資專區</button>
+            <div class="hr-onboard-zone">
+                <header class="hr-sop-head">
+                    <div class="hr-sop-head-main">
+                        <h2>行政入職 SOP</h2>
+                        <p class="hr-sop-sub">內勤報到通知（有底薪人員）</p>
+                        <ul class="hr-sop-pillars">
+                            <li>入職當下完成 1～6</li>
+                            <li>入職一週後完成 7～8</li>
+                            <li>送出後通知財務部會計</li>
+                        </ul>
+                    </div>
+                    <p class="hr-sop-tagline">從加入星鴻開始，一起創造更大的可能</p>
+                </header>
+                <p class="hr-sop-hint">點上方圖卡看「怎麼做＋上傳／填寫」（圖卡位置固定，左到右）</p>
+
+                <form id="hr-onboard-form" class="hr-form hr-onboard-form" autocomplete="off" data-hr-fixed-type="內勤報到通知(有底薪人員)">
+                    <div id="hr-sop-board" class="hr-sop-board" role="list" aria-label="行政入職 SOP 八步驟">
+                        <div class="hr-sop-card" role="button" tabindex="0" data-hr-step="1" aria-expanded="false">
+                            <span class="hr-sop-num">1</span>
+                            <span class="hr-sop-day">入職當下</span>
+                            <strong class="hr-sop-act">填寫入職人事表單</strong>
+                            <span class="hr-sop-icon" aria-hidden="true">📄</span>
+                            <ul class="hr-sop-items">
+                                <li>填寫姓名、處所、日期、薪資</li>
+                                <li>上傳身分證／存摺／人事表</li>
+                            </ul>
+                            <div class="hr-sop-focus"><b>重點</b><span>建立基本資料</span><span>開啟工作身份</span></div>
+                            <span class="hr-sop-cta">點卡片填寫＋上傳</span>
+                        </div>
+                        <div class="hr-sop-card" role="button" tabindex="0" data-hr-step="2" aria-expanded="false">
+                            <span class="hr-sop-num">2</span>
+                            <span class="hr-sop-day">入職當下</span>
+                            <strong class="hr-sop-act">簽署信任租</strong>
+                            <span class="hr-sop-icon" aria-hidden="true">✍️</span>
+                            <ul class="hr-sop-items">
+                                <li>東吳評等不可低於 D</li>
+                                <li>不得有 BLL 黑名單</li>
+                                <li>上傳已簽署檔案</li>
+                            </ul>
+                            <div class="hr-sop-focus"><b>重點</b><span>共同遵守規範</span><span>建立信任基礎</span></div>
+                            <span class="hr-sop-cta">點卡片上傳檔案</span>
+                        </div>
+                        <div class="hr-sop-card" role="button" tabindex="0" data-hr-step="3" aria-expanded="false">
+                            <span class="hr-sop-num">3</span>
+                            <span class="hr-sop-day">入職當下</span>
+                            <strong class="hr-sop-act">簽立試用期協議書</strong>
+                            <span class="hr-sop-icon" aria-hidden="true">🛡️</span>
+                            <ul class="hr-sop-items">
+                                <li>試用期須每月簽署一次</li>
+                                <li>上傳當期已簽署協議書</li>
+                            </ul>
+                            <div class="hr-sop-focus"><b>重點</b><span>保障雙方權益</span><span>攜手穩定合作</span></div>
+                            <span class="hr-sop-cta">點卡片上傳檔案</span>
+                        </div>
+                        <div class="hr-sop-card" role="button" tabindex="0" data-hr-step="4" aria-expanded="false">
+                            <span class="hr-sop-num">4</span>
+                            <span class="hr-sop-day">入職當下</span>
+                            <strong class="hr-sop-act">資料繳交財務部</strong>
+                            <span class="hr-sop-icon" aria-hidden="true">📁</span>
+                            <ul class="hr-sop-items">
+                                <li>相關資料繳交財務部</li>
+                                <li>以利完成投保</li>
+                            </ul>
+                            <div class="hr-sop-focus"><b>重點</b><span>完成投保流程</span><span>保障員工權益</span></div>
+                            <span class="hr-sop-cta">點卡片勾選完成</span>
+                        </div>
+                        <div class="hr-sop-card" role="button" tabindex="0" data-hr-step="5" aria-expanded="false">
+                            <span class="hr-sop-num">5</span>
+                            <span class="hr-sop-day">入職當下</span>
+                            <strong class="hr-sop-act">提供工作用 Gmail</strong>
+                            <span class="hr-sop-icon" aria-hidden="true">✉️</span>
+                            <ul class="hr-sop-items">
+                                <li>提供工作用途 Gmail</li>
+                                <li>以利開通雲端表單</li>
+                            </ul>
+                            <div class="hr-sop-focus"><b>重點</b><span>善用公司資源</span><span>提升作業效率</span></div>
+                            <span class="hr-sop-cta">點卡片填寫信箱</span>
+                        </div>
+                        <div class="hr-sop-card" role="button" tabindex="0" data-hr-step="6" aria-expanded="false">
+                            <span class="hr-sop-num">6</span>
+                            <span class="hr-sop-day">入職當下</span>
+                            <strong class="hr-sop-act">開通星鴻系統帳號</strong>
+                            <span class="hr-sop-icon" aria-hidden="true">💻</span>
+                            <ul class="hr-sop-items">
+                                <li>申請／開通星鴻系統</li>
+                                <li>完成帳號設定</li>
+                            </ul>
+                            <div class="hr-sop-focus"><b>重點</b><span>完成帳號設定</span><span>開始作業</span></div>
+                            <span class="hr-sop-cta">點卡片勾選完成</span>
+                        </div>
+                        <div class="hr-sop-card hr-sop-card--week" role="button" tabindex="0" data-hr-step="7" aria-expanded="false">
+                            <span class="hr-sop-num">7</span>
+                            <span class="hr-sop-day">入職一週後</span>
+                            <strong class="hr-sop-act">加入行政工作群組</strong>
+                            <span class="hr-sop-icon" aria-hidden="true">👥</span>
+                            <ul class="hr-sop-items">
+                                <li>各都行政及執秘溝通群</li>
+                                <li>即時掌握最新資訊</li>
+                            </ul>
+                            <div class="hr-sop-focus"><b>重點</b><span>即時溝通</span><span>掌握最新資訊</span></div>
+                            <span class="hr-sop-cta">點卡片勾選完成</span>
+                        </div>
+                        <div class="hr-sop-card hr-sop-card--week" role="button" tabindex="0" data-hr-step="8" aria-expanded="false">
+                            <span class="hr-sop-num">8</span>
+                            <span class="hr-sop-day">入職一週後</span>
+                            <strong class="hr-sop-act">申請中心系統帳號</strong>
+                            <span class="hr-sop-icon" aria-hidden="true">⚙️</span>
+                            <ul class="hr-sop-items">
+                                <li>舊系統與新系統分開填</li>
+                                <li>申請帳號啟用</li>
+                            </ul>
+                            <div class="hr-sop-focus"><b>重點</b><span>開啟系統權限</span><span>開始作業</span></div>
+                            <span class="hr-sop-cta">點卡片勾選完成</span>
+                        </div>
+                    </div>
+
+                    <div id="hr-sop-detail" class="hr-sop-detail" hidden>
+                        <div class="hr-sop-panel" data-hr-step-panel="1" hidden>
+                            <div class="hr-sop-detail-head">
+                                <span class="hr-sop-num">1</span>
+                                <div><p class="hr-sop-day">入職當下</p><h3>填寫入職人事表單　·　填寫＋上傳</h3></div>
+                                <button type="button" class="hr-sop-close" data-hr-sop-close aria-label="關閉">✕</button>
+                            </div>
+                            <p class="hr-hint">建立基本資料｜開啟工作身份。請先填寫基本資料，再依欄位分別上傳。</p>
+                            <div class="hr-onboard-basics">
+                                <div class="hr-field">
+                                    <label class="hr-req" for="hr-onboard-full-name">你的姓名全名</label>
+                                    <input id="hr-onboard-full-name" type="text" maxlength="40" placeholder="請填本名">
+                                </div>
+                                <div class="hr-field">
+                                    <label class="hr-req" for="hr-onboard-office">所屬處所</label>
+                                    <select id="hr-onboard-office"></select>
+                                </div>
+                                <div class="hr-field" id="hr-onboard-office-other-wrap" hidden>
+                                    <label for="hr-onboard-office-other">其他處所</label>
+                                    <input id="hr-onboard-office-other" type="text" maxlength="40">
+                                </div>
+                                <div class="hr-field">
+                                    <label class="hr-req" for="hr-onboard-date">報到日期</label>
+                                    <input id="hr-onboard-date" type="date">
+                                </div>
+                                <div class="hr-field">
+                                    <label class="hr-req" for="hr-onboard-salary">報到人員薪資</label>
+                                    <input id="hr-onboard-salary" type="text" maxlength="40" placeholder="直接填入金額">
+                                </div>
+                                <p class="hr-admin-link hr-onboard-admin">
+                                    <a class="hr-admin-btn" href="./admin/hr-report-dashboard.html" target="_blank" rel="noopener">人資問題回報後台 →</a>
+                                </p>
+                            </div>
+                            <div class="hr-file-row">
+                                <label class="hr-label hr-req" for="hr-files-onboard-id">身分證正反面</label>
+                                <p class="hr-hint">請上傳正、反面清晰影像或掃描檔，最多 5 個檔。</p>
+                                <input id="hr-files-onboard-id" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf" multiple>
+                                <ul class="hr-file-list" data-hr-file-list="onboardId"></ul>
+                            </div>
+                            <div class="hr-file-row">
+                                <label class="hr-label hr-req" for="hr-files-onboard-bank">存摺封面</label>
+                                <p class="hr-hint">請上傳本人存摺封面（須含戶名與帳號），最多 5 個檔。</p>
+                                <input id="hr-files-onboard-bank" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf" multiple>
+                                <ul class="hr-file-list" data-hr-file-list="onboardBank"></ul>
+                            </div>
+                            <div class="hr-file-row">
+                                <label class="hr-label hr-req" for="hr-files-onboard-personnel">人事資料表</label>
+                                <p class="hr-hint">請下載空白表填寫後上傳，最多 5 個檔。</p>
+                                <p class="hr-dl-wrap">
+                                    <a class="hr-dl-btn" href="./docs/hr/空白人事資料表.docx" download>下載空白人事資料表 ↘</a>
+                                    <span class="hr-hint">檔案稍後補上；補上後即可從此處下載。</span>
+                                </p>
+                                <input id="hr-files-onboard-personnel" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf" multiple>
+                                <ul class="hr-file-list" data-hr-file-list="onboardPersonnel"></ul>
+                            </div>
+                        </div>
+
+                        <div class="hr-sop-panel" data-hr-step-panel="2" hidden>
+                            <div class="hr-sop-detail-head">
+                                <span class="hr-sop-num">2</span>
+                                <div><p class="hr-sop-day">入職當下</p><h3>簽署信任租　·　上傳檔案</h3></div>
+                                <button type="button" class="hr-sop-close" data-hr-sop-close aria-label="關閉">✕</button>
+                            </div>
+                            <p class="hr-note">注意：東吳評等不可低於 D，且不得有 BLL 黑名單紀錄。</p>
+                            <div class="hr-file-row">
+                                <label class="hr-label hr-req" for="hr-files-onboard-trust">上傳已簽署信任租</label>
+                                <p class="hr-hint">共同遵守規範｜建立信任基礎。最多 5 個檔。</p>
+                                <input id="hr-files-onboard-trust" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf" multiple>
+                                <ul class="hr-file-list" data-hr-file-list="onboardTrust"></ul>
+                            </div>
+                        </div>
+
+                        <div class="hr-sop-panel" data-hr-step-panel="3" hidden>
+                            <div class="hr-sop-detail-head">
+                                <span class="hr-sop-num">3</span>
+                                <div><p class="hr-sop-day">入職當下</p><h3>簽立試用期協議書　·　上傳檔案</h3></div>
+                                <button type="button" class="hr-sop-close" data-hr-sop-close aria-label="關閉">✕</button>
+                            </div>
+                            <p class="hr-note">注意：試用期間須每月簽署一次，請上傳當期已簽署之協議書。</p>
+                            <div class="hr-file-row">
+                                <label class="hr-label hr-req" for="hr-files-onboard-probation">上傳試用期協議書</label>
+                                <p class="hr-hint">保障雙方權益｜攜手穩定合作。最多 5 個檔。</p>
+                                <input id="hr-files-onboard-probation" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf" multiple>
+                                <ul class="hr-file-list" data-hr-file-list="onboardProbation"></ul>
+                            </div>
+                        </div>
+
+                        <div class="hr-sop-panel" data-hr-step-panel="4" hidden>
+                            <div class="hr-sop-detail-head">
+                                <span class="hr-sop-num">4</span>
+                                <div><p class="hr-sop-day">入職當下</p><h3>資料繳交財務部　·　確認</h3></div>
+                                <button type="button" class="hr-sop-close" data-hr-sop-close aria-label="關閉">✕</button>
+                            </div>
+                            <p class="hr-hint">完成投保流程｜保障員工權益。請確認入職文件已繳交財務部。</p>
+                            <label class="hr-check"><input type="checkbox" id="hr-onboard-finance-done"> 已將相關資料繳交財務部</label>
+                        </div>
+
+                        <div class="hr-sop-panel" data-hr-step-panel="5" hidden>
+                            <div class="hr-sop-detail-head">
+                                <span class="hr-sop-num">5</span>
+                                <div><p class="hr-sop-day">入職當下</p><h3>提供工作用 Gmail　·　填寫</h3></div>
+                                <button type="button" class="hr-sop-close" data-hr-sop-close aria-label="關閉">✕</button>
+                            </div>
+                            <p class="hr-hint">以利公司開通雲端表單｜善用公司資源、提升效率。</p>
+                            <div class="hr-field">
+                                <label class="hr-req" for="hr-onboard-gmail">工作用 Gmail</label>
+                                <input id="hr-onboard-gmail" type="email" maxlength="80" placeholder="例：name@gmail.com">
+                            </div>
+                        </div>
+
+                        <div class="hr-sop-panel" data-hr-step-panel="6" hidden>
+                            <div class="hr-sop-detail-head">
+                                <span class="hr-sop-num">6</span>
+                                <div><p class="hr-sop-day">入職當下</p><h3>開通星鴻系統帳號　·　確認</h3></div>
+                                <button type="button" class="hr-sop-close" data-hr-sop-close aria-label="關閉">✕</button>
+                            </div>
+                            <p class="hr-hint">完成帳號設定｜開始作業。</p>
+                            <label class="hr-check"><input type="checkbox" id="hr-onboard-sys-done"> 已申請／已開通星鴻系統帳號</label>
+                        </div>
+
+                        <div class="hr-sop-panel" data-hr-step-panel="7" hidden>
+                            <div class="hr-sop-detail-head">
+                                <span class="hr-sop-num">7</span>
+                                <div><p class="hr-sop-day">入職一週後</p><h3>加入行政工作群組　·　確認</h3></div>
+                                <button type="button" class="hr-sop-close" data-hr-sop-close aria-label="關閉">✕</button>
+                            </div>
+                            <p class="hr-hint">星鴻各都行政及執秘溝通群｜即時溝通、掌握最新資訊。</p>
+                            <label class="hr-check"><input type="checkbox" id="hr-onboard-group-done"> 已加入行政工作群組</label>
+                        </div>
+
+                        <div class="hr-sop-panel" data-hr-step-panel="8" hidden>
+                            <div class="hr-sop-detail-head">
+                                <span class="hr-sop-num">8</span>
+                                <div><p class="hr-sop-day">入職一週後</p><h3>申請中心系統帳號　·　確認</h3></div>
+                                <button type="button" class="hr-sop-close" data-hr-sop-close aria-label="關閉">✕</button>
+                            </div>
+                            <p class="hr-note">注意：舊系統與新系統要分開填寫。</p>
+                            <p class="hr-hint">開啟系統權限｜開始作業。</p>
+                            <label class="hr-check"><input type="checkbox" id="hr-onboard-center-done"> 已申請中心系統帳號啟用</label>
+                        </div>
+                    </div>
+
+                    <div class="hr-actions">
+                        <button type="submit" id="hr-onboard-submit" class="btn tone-teal">送出</button>
+                        <button type="button" id="hr-onboard-clear" class="btn tone-slate-soft">清除</button>
+                    </div>
+                    <p id="hr-onboard-msg" class="hr-msg" role="status"></p>
+                </form>
+
+                <footer class="hr-sop-foot">
+                    <span>星鴻租賃｜SKY FUN ASSET MANAGEMENT</span>
+                    <span>行政入職 SOP</span>
+                </footer>
+            </div>
+        </div>
+
+        <!-- 人資：內勤離職通知 -->
+        <div id="page-hr-resign" class="hidden max-w-3xl mx-auto space-y-4">
+            <button type="button" onclick="showPage('hr')" class="mb-2 btn btn-sm tone-slate-soft">← 返回人資專區</button>
+            <div class="hr-shell">
+                <p class="hr-kicker">HR RESIGN</p>
+                <h2 class="hr-title">內勤離職通知(有底薪人員)</h2>
+                <p class="hr-lead">送出後會 LINE 通知財務部已綁定的會計；附件請至後台下載。</p>
+                <p class="hr-admin-link">
+                    <a class="hr-admin-btn" href="./admin/hr-report-dashboard.html" target="_blank" rel="noopener">人資問題回報後台 →</a>
+                </p>
+                <form id="hr-resign-form" class="hr-form" autocomplete="off" data-hr-fixed-type="內勤離職通知(有底薪人員)">
+                    <div class="hr-field">
+                        <label class="hr-req" for="hr-resign-full-name">你的姓名全名</label>
+                        <input id="hr-resign-full-name" type="text" required maxlength="40" placeholder="請填本名">
+                    </div>
+                    <div class="hr-field">
+                        <label class="hr-req" for="hr-resign-office">所屬處所</label>
+                        <select id="hr-resign-office" required></select>
+                    </div>
+                    <div class="hr-field" id="hr-resign-office-other-wrap" hidden>
+                        <label for="hr-resign-office-other">其他處所</label>
+                        <input id="hr-resign-office-other" type="text" maxlength="40">
+                    </div>
+                    <div class="hr-field">
+                        <label class="hr-req" for="hr-resign-date">離職日期</label>
+                        <input id="hr-resign-date" type="date" required>
+                    </div>
+                    <div class="hr-field">
+                        <label class="hr-req" for="hr-resign-salary">薪資欄</label>
+                        <input id="hr-resign-salary" type="text" maxlength="40" value="無" placeholder="非報到通知請填「無」">
+                        <p class="hr-hint">非報到通知填「無」即可。</p>
+                    </div>
+                    <div class="hr-file-row">
+                        <label class="hr-label hr-req" for="hr-files-resign">離職文件上傳</label>
+                        <p class="hr-hint">最多 5 個檔，每個約 10 MB。</p>
+                        <input id="hr-files-resign" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf" multiple>
+                        <ul class="hr-file-list" data-hr-file-list="resign"></ul>
+                    </div>
+                    <div class="hr-actions">
+                        <button type="submit" id="hr-resign-submit" class="btn tone-teal">送出</button>
+                        <button type="button" id="hr-resign-clear" class="btn tone-slate-soft">清除</button>
+                    </div>
+                    <p id="hr-resign-msg" class="hr-msg" role="status"></p>
+                </form>
+            </div>
+        </div>
+
+                <!-- 專區頁面：財會 -->
+        <div id="page-finance" class="hidden max-w-4xl mx-auto space-y-6">
+            <button type="button" onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">← 返回首頁</button>
+            <div class="bz-shell fin-home-shell">
+                <header class="bz-head">
+                    <div class="bz-kicker">FINANCE</div>
+                    <h2 class="bz-title">📒 財會專區</h2>
+                    <p class="bz-sub">點選下方卡片展開填寫；送出後通知會計。</p>
+                </header>
+                <p class="fin-home-lead">1. 填單後預計三個工作天完成。<br>2. 如有退件會通知填單人員；退件意見三天未補會再次通知。<br>3. 北五處未提供六個月繳租證明不需要簽呈；若未走正常兩押一租，仍需提供領款收據，但不需要照會。<br>4. 送出後會 LINE 通知財務部已綁定的會計；附件請至後台下載。</p>
+                <p class="hr-admin-link">
+                    <a class="hr-admin-btn" href="./admin/fin-report-dashboard.html" target="_blank" rel="noopener">財務部問題回報後台 →</a>
+                </p>
+                <form id="fin-form" class="hr-form fin-home-form" autocomplete="off">
+                    <div id="fin-shared-hold" hidden>
+                        <div id="fin-shared-block" class="fin-shared-block">
+                            <div class="hr-field">
+                            <label class="hr-req" for="fin-full-name">你的姓名全名</label>
+                            <input id="fin-full-name" type="text" maxlength="40" placeholder="請填本名">
+                            </div>
+                            <div id="fin-office-block">
+                            <div class="hr-field">
+                            <label class="hr-req" for="fin-office">案件所屬處所</label>
+                            <select id="fin-office"></select>
+                            </div>
+                            <div class="hr-field" id="fin-office-other-wrap" hidden>
+                            <label for="fin-office-other">其他處所</label>
+                            <input id="fin-office-other" type="text" maxlength="40" placeholder="請填寫處所名稱">
+                            </div>
+                            </div>
+                            <div class="hr-panel" data-fin-when="issue-supp" id="fin-supp-top">
+                            <div class="hr-field">
+                            <span class="hr-label hr-req">資料項目</span>
+                            <div class="hr-radios">
+                            <label class="hr-radio"><input type="radio" name="fin-supp-item" value="退件補件/資料補正申請"> 退件補件／資料補正申請</label>
+                            <label class="hr-radio"><input type="radio" name="fin-supp-item" value="金流明細表調閱申請"> 金流明細表調閱申請</label>
+                            </div>
+                            </div>
+                            <div class="hr-panel" data-fin-when="supp:退件補件/資料補正申請">
+                            <div class="hr-field">
+                            <label class="hr-req" for="fin-origin-address">退件物件地址</label>
+                            <div class="fin-addr-row">
+                            <input id="fin-origin-address" type="text" maxlength="120" placeholder="輸入地址後按查退件">
+                            <button type="button" id="fin-origin-lookup" class="fin-addr-lookup-btn">查退件</button>
+                            </div>
+                            <p class="hr-hint">須為財務後台已退件的案件；可先輸入路名查出相符地址再選。</p>
+                            <p id="fin-origin-lookup-status" class="hr-hint" aria-live="polite"></p>
+                            </div>
+                            <div class="hr-field" id="fin-origin-pick-wrap" hidden>
+                            <label class="hr-req" for="fin-origin-pick">選擇退件案件</label>
+                            <select id="fin-origin-pick">
+                            <option value="">請選擇退件案件</option>
+                            </select>
+                            </div>
+                            <input id="fin-origin-serial" type="hidden" value="">
+                            <div class="hr-field">
+                            <label for="fin-missing-items">退件原因</label>
+                            <textarea id="fin-missing-items" maxlength="500" readonly placeholder="查退件後自動帶入"></textarea>
+                            <p id="fin-reject-meta" class="fin-reject-meta" hidden></p>
+                            </div>
+                            <div class="hr-field hr-files">
+                            <label class="hr-req" for="fin-files-supp">補件附件上傳</label>
+                            <input id="fin-files-supp" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                            <ul class="hr-file-list" data-fin-file-list="supp"></ul>
+                            </div>
+                            </div>
+                            <div class="hr-panel" data-fin-when="supp:金流明細表調閱申請">
+                            <div class="fin-grid-2">
+                            <div class="hr-field"><label class="hr-req" for="fin-expect-cancel">預計解約日期</label><input id="fin-expect-cancel" type="date"></div>
+                            </div>
+                            <div class="hr-field">
+                            <span class="hr-label hr-req">包租與轉租是否一起解約</span>
+                            <div class="hr-radios">
+                            <label class="hr-radio"><input type="radio" name="fin-cancel-together" value="是"> 是</label>
+                            <label class="hr-radio"><input type="radio" name="fin-cancel-together" value="否"> 否</label>
+                            </div>
+                            </div>
+                            </div>
+                            </div>
+                            <div class="hr-field fin-addr-wide" id="fin-address-block">
+                            <label id="fin-address-label" class="hr-req" for="fin-address">物件地址</label>
+                            <div class="fin-addr-row">
+                            <input id="fin-address" type="text" maxlength="120" placeholder="輸入地址後按查公司資料">
+                            <button type="button" id="fin-addr-lookup" class="fin-addr-lookup-btn">查公司資料</button>
+                            </div>
+                            <p class="hr-hint" id="fin-addr-hint">註記：可先輸入路名（例：文化一路）查出所有相符地址再選；查不到時請人工填寫租期與房東／房客姓名。</p>
+                            <p id="fin-addr-lookup-status" class="hr-hint" aria-live="polite"></p>
+                            </div>
+                            <div class="fin-grid-2" id="fin-party-names">
+                            <div class="hr-field">
+                            <label class="hr-req" for="fin-landlord">房東姓名</label>
+                            <input id="fin-landlord" type="text" maxlength="40" placeholder="查公司帶入，或人工填寫">
+                            </div>
+                            <div class="hr-field">
+                            <label class="hr-req" for="fin-tenant">房客姓名</label>
+                            <input id="fin-tenant" type="text" maxlength="40" placeholder="查公司帶入，或人工填寫">
+                            </div>
+                            </div>
+                            <div class="hr-field" id="fin-addr-pick-wrap" hidden>
+                            <span class="hr-label">選擇地址</span>
+                            <button type="button" id="fin-addr-pick-toggle" class="fin-addr-pick-toggle" aria-expanded="false">請選擇地址</button>
+                            <div id="fin-addr-pick-panel" class="fin-addr-pick-panel" hidden></div>
+                            </div>
+                            <div class="hr-field" id="fin-lease-pick-wrap" hidden>
+                            <label class="hr-req" for="fin-lease-pick">選擇租期</label>
+                            <select id="fin-lease-pick">
+                            <option value="">請選擇租期</option>
+                            </select>
+                            </div>
+                            <div class="fin-lease-block" data-fin-when="pkg-lease">
+                            <p class="fin-lease-caption">包租契約租期</p>
+                            <div class="fin-grid-2">
+                            <div class="hr-field"><label class="hr-req" for="fin-bao-lease-start">包租開始日期</label><input id="fin-bao-lease-start" type="date"></div>
+                            <div class="hr-field"><label class="hr-req" for="fin-bao-lease-end">包租到期日</label><input id="fin-bao-lease-end" type="date"></div>
+                            </div>
+                            <p class="fin-lease-caption">轉租契約租期</p>
+                            <div class="fin-grid-2">
+                            <div class="hr-field"><label class="hr-req" for="fin-zhuan-lease-start">轉租開始日期</label><input id="fin-zhuan-lease-start" type="date"></div>
+                            <div class="hr-field"><label class="hr-req" for="fin-zhuan-lease-end">轉租到期日</label><input id="fin-zhuan-lease-end" type="date"></div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fin-issue-stack">
+                    <div class="fin-issue-card" data-fin-card="社宅包租金流相關(進件、解約或資料異動)">
+                    <label class="fin-issue-head" for="fin-issue-pkg">
+                    <input id="fin-issue-pkg" type="radio" name="fin-issue" value="社宅包租金流相關(進件、解約或資料異動)" required>
+                    <span class="fin-issue-ico" aria-hidden="true">💰</span>
+                    <span class="fin-issue-copy">
+                    <strong class="fin-issue-name">社宅包租金流相關</strong>
+                    <small class="fin-issue-hint">進件、解約或資料異動</small>
+                    </span>
+                    <span class="fin-issue-go" aria-hidden="true">進入</span>
+                    </label>
+                    <div class="fin-issue-body" data-fin-panel="社宅包租金流相關(進件、解約或資料異動)">
+                    <h3 class="hr-panel-title">包租金流相關</h3>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">包租金流項目</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-item" value="新媒合申請"> 新媒合申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-item" value="續約轉包租申請"> 續約轉包租申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-item" value="包租續約包租申請"> 包租續約包租申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-item" value="解約再媒合/到期再媒合申請"> 解約再媒合/到期再媒合申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-item" value="到期或解約退押申請"> 到期或解約退押申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-item" value="房東或房客資料異動(異動-更換房東客)"> 房東或房客資料異動(異動-更換房東客)</label>
+                    </div>
+                    </div>
+                    <div class="hr-field hr-files" data-fin-when="pkg-contract">
+                    <label class="hr-req" for="fin-files-contract">契約書上傳</label>
+                    <p class="hr-hint">包租契約與轉租契約請上傳至同一欄位（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-contract" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="contract"></ul>
+                    </div>
+                    
+                    <!-- 進件類：押金／補押金／入應收／必檢附／簽呈（退押、資料異動不顯示） -->
+                    <div class="hr-panel" data-fin-when="pkg-intake">
+                    <div class="hr-field" data-fin-when="pkg-deposit">
+                    <span class="hr-label hr-req">押金類型</span>
+                    <div class="hr-radios" id="fin-deposit-options">
+                    <label class="hr-radio" data-fin-deposit="兩押一租"><input type="radio" name="fin-deposit-type" value="兩押一租"> 兩押一租</label>
+                    <label class="hr-radio" data-fin-deposit="領款收據"><input type="radio" name="fin-deposit-type" value="領款收據"> 領款收據</label>
+                    <label class="hr-radio" data-fin-deposit="兩押(續約轉包租才可選這個)"><input type="radio" name="fin-deposit-type" value="兩押(續約轉包租才可選這個)"> 兩押(續約轉包租才可選這個)</label>
+                    </div>
+                    </div>
+                    <div class="hr-field hr-files" data-fin-when="deposit-file">
+                    <label class="hr-req" for="fin-files-deposit" id="fin-files-deposit-label">押金證明上傳</label>
+                    <p class="hr-hint" id="fin-files-deposit-hint">請上傳對應截圖／證明檔（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-deposit" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="deposit"></ul>
+                    </div>
+                    <div class="hr-panel" data-fin-when="deposit-topup">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">包租續約包租是否要補押金</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-renew-topup" value="是"> 是</label>
+                    <label class="hr-radio"><input type="radio" name="fin-renew-topup" value="否"> 否</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="topup-yes">
+                    <div class="hr-field">
+                    <label class="hr-req" for="fin-topup-amount">補押金金額</label>
+                    <input id="fin-topup-amount" type="number" min="0" step="1" inputmode="numeric" placeholder="請填金額（元）">
+                    </div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-topup">差額明細上傳</label>
+                    <p class="hr-hint">請上傳補押金差額明細（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-topup" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="topup"></ul>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">入應收費用（可複選）</span>
+                    <div class="hr-checks">
+                    <label class="hr-check"><input type="checkbox" name="fin-receivable" value="沒有費用要入應收"> 沒有費用要入應收</label>
+                    <label class="hr-check"><input type="checkbox" name="fin-receivable" value="管理費"> 管理費</label>
+                    <label class="hr-check"><input type="checkbox" name="fin-receivable" value="網路費"> 網路費</label>
+                    <label class="hr-check"><input type="checkbox" name="fin-receivable" value="其他"> 其他</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="receivable-other">
+                    <div class="hr-field">
+                    <label class="hr-req" for="fin-receivable-other">其他費用說明</label>
+                    <input id="fin-receivable-other" type="text" maxlength="80" placeholder="請填寫其他費用項目">
+                    </div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-receivable">其他費用金額檔案上傳</label>
+                    <p class="hr-hint">請上傳金額相關證明（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-receivable" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="receivable"></ul>
+                    </div>
+                    </div>
+                    <div class="hr-field" data-fin-when="pkg-docs">
+                    <span class="hr-label hr-req">包租必檢附資料</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-docs" value="六個月繳租證明"> 六個月繳租證明</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-docs" value="保證人+簽呈"> 保證人+簽呈</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-docs" value="緊急連絡人+簽呈"> 緊急連絡人+簽呈</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-docs" value="個案簽呈"> 個案簽呈</label>
+                    </div>
+                    <p class="hr-hint" data-fin-when="docs-sign-district">含簽呈之項目：簽呈呈至區協理即可。</p>
+                    </div>
+                    <div class="hr-field hr-files" data-fin-when="docs-file">
+                    <label class="hr-req" for="fin-files-sign" id="fin-files-sign-label">必檢附資料上傳</label>
+                    <p class="hr-hint" id="fin-files-sign-hint">請依所選項目上傳對應檔案（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-sign" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="sign"></ul>
+                    </div>
+                    </div>
+                    
+                    <div class="hr-panel" data-fin-when="pkg:解約再媒合/到期再媒合申請">
+                    <h3 class="hr-panel-title">再媒合資料</h3>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">再媒合類型</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-rematch-type" value="包租未解約轉租再媒合(更換房客)"> 包租未解約轉租再媒合(更換房客)</label>
+                    <label class="hr-radio"><input type="radio" name="fin-rematch-type" value="包租未解約轉租再媒合(主房客換人+共住人沒換)"> 包租未解約轉租再媒合(主房客換人+共住人沒換)</label>
+                    <label class="hr-radio"><input type="radio" name="fin-rematch-type" value="包租未解約轉租再媒合(主房客沒換人+共住人更換或是共住人搬離)"> 包租未解約轉租再媒合(主房客沒換人+共住人更換或是共住人搬離)</label>
+                    <label class="hr-radio"><input type="radio" name="fin-rematch-type" value="包租+轉租契約都解約再媒合"> 包租+轉租契約都解約再媒合</label>
+                    <label class="hr-radio"><input type="radio" name="fin-rematch-type" value="包租+轉租到期再媒合(更換房客)"> 包租+轉租到期再媒合(更換房客)</label>
+                    <label class="hr-radio"><input type="radio" name="fin-rematch-type" value="包租+轉租到期再媒合(主房客沒換人+共住人更換或是共住人搬離)"> 包租+轉租到期再媒合(主房客沒換人+共住人更換或是共住人搬離)</label>
+                    <label class="hr-radio"><input type="radio" name="fin-rematch-type" value="包租+轉租到期再媒合(主房客換人+共住人沒換)"> 包租+轉租到期再媒合(主房客換人+共住人沒換)</label>
+                    <label class="hr-radio"><input type="radio" name="fin-rematch-type" value="包租+轉租到期再媒合(房客都沒換，租約沒有接續)"> 包租+轉租到期再媒合(房客都沒換，租約沒有接續)</label>
+                    </div>
+                    </div>
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-old-tenant">原房客姓名</label><input id="fin-old-tenant" type="text" maxlength="40" placeholder="必填"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-new-tenant">新房客姓名</label><input id="fin-new-tenant" type="text" maxlength="40" placeholder="必填"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-sublease-start">轉租契約新約起租日</label><input id="fin-sublease-start" type="date"></div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">有無共住人</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-has-roommate" value="有"> 有</label>
+                    <label class="hr-radio"><input type="radio" name="fin-has-roommate" value="無"> 無</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="roommate-yes">
+                    <div id="fin-roommate-list" class="fin-roommate-list"></div>
+                    <button type="button" id="fin-add-roommate" class="fin-add-btn">＋ 新增共住人</button>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">包租契約是否有空窗期</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-gap" value="是"> 是</label>
+                    <label class="hr-radio"><input type="radio" name="fin-gap" value="否"> 否</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="gap-yes">
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-gap">包租空窗簽呈上傳</label>
+                    <input id="fin-files-gap" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="gap"></ul>
+                    </div>
+                    </div>
+                    </div>
+                    
+                    <div class="hr-panel" data-fin-when="pkg:到期或解約退押申請">
+                    <h3 class="hr-panel-title">退押資料</h3>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">退押類型</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-refund-type" value="包租與轉租到期退押申請"> 包租與轉租到期退押申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-type" value="包租契約解約退押申請"> 包租契約解約退押申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-type" value="轉租契約解約退押申請"> 轉租契約解約退押申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-type" value="包租+轉租一起解約退押申請"> 包租+轉租一起解約退押申請</label>
+                    </div>
+                    </div>
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-refund-date">解約日/到期日</label><input id="fin-refund-date" type="date"></div>
+                    </div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-cancel-sheet">解約單上傳</label>
+                    <p class="hr-hint">請上傳解約單（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-cancel-sheet" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="cancelSheet"></ul>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">退押方式</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-refund-method" value="領款收據"> 領款收據</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-method" value="匯款"> 匯款</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-method" value="無須退押"> 無須退押</label>
+                    </div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">退押相關費用結清人員</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-refund-settle" value="房客自行結清"> 房客自行結清</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-settle" value="房東代墊"> 房東代墊</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-settle" value="業務代墊"> 業務代墊</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-settle" value="房東客自行約定結清"> 房東客自行約定結清</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="refund-sublease-term">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">包租契約是否有空窗期</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-refund-gap" value="有"> 有</label>
+                    <label class="hr-radio"><input type="radio" name="fin-refund-gap" value="無"> 無</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="refund-gap-yes">
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-refund-gap">空窗簽呈上傳（須呈總經理）</label>
+                    <p class="hr-hint">有空窗期時請上傳簽呈；簽呈須呈至總經理。</p>
+                    <input id="fin-files-refund-gap" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="refundGap"></ul>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="refund-gap-no">
+                    <div class="hr-field">
+                    <label class="hr-req" for="fin-refund-sublease-start">轉租契約新約起租日</label>
+                    <input id="fin-refund-sublease-start" type="date">
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    
+                    <div class="hr-panel" data-fin-when="pkg:房東或房客資料異動(異動-更換房東客)">
+                    <h3 class="hr-panel-title">房東／房客資料異動</h3>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">異動對象</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-change-target" value="包租契約-房東"> 包租契約-房東</label>
+                    <label class="hr-radio"><input type="radio" name="fin-change-target" value="轉租契約-房客"> 轉租契約-房客</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="change-landlord">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">【房東資料異動】異動原因</span>
+                    <div class="hr-radios fin-reason-stack">
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-landlord-reason" value="房東-繼承(房東死亡)"> 房東-繼承(房東死亡)</label>
+                    <div class="hr-panel fin-docs-box" data-fin-when="ll-inherit">
+                    <h4 class="fin-docs-title">繼承｜必檢附資料（請逐項上傳）</h4>
+                    <div class="fin-doc-uploads" data-fin-doc-set="ll-inherit"></div>
+                    </div>
+                    </div>
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-landlord-reason" value="房東-買賣"> 房東-買賣</label>
+                    <div class="hr-panel fin-docs-box" data-fin-when="ll-sale">
+                    <h4 class="fin-docs-title">買賣｜必檢附資料（請逐項上傳）</h4>
+                    <div class="fin-doc-uploads" data-fin-doc-set="ll-sale"></div>
+                    </div>
+                    </div>
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-landlord-reason" value="房東-更名"> 房東-更名</label>
+                    <div class="hr-panel fin-docs-box" data-fin-when="ll-rename">
+                    <h4 class="fin-docs-title">更名｜必檢附資料（請逐項上傳）</h4>
+                    <div class="fin-doc-uploads" data-fin-doc-set="ll-rename"></div>
+                    </div>
+                    </div>
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-landlord-reason" value="房東-更換存摺"> 房東-更換存摺</label>
+                    <div class="hr-panel" data-fin-when="ll-passbook-pick">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">更換存摺原因</span>
+                    <div class="hr-radios fin-reason-stack">
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-passbook-why" value="社宅如有申請異動"> 社宅如有申請異動</label>
+                    <div class="hr-panel fin-docs-box" data-fin-when="pb-apply">
+                    <h4 class="fin-docs-title">社宅如有申請異動｜必檢附資料（請逐項上傳）</h4>
+                    <div class="fin-doc-uploads" data-fin-doc-set="pb-apply"></div>
+                    </div>
+                    </div>
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-passbook-why" value="因帳戶被凍結"> 因帳戶被凍結</label>
+                    <div class="hr-panel fin-docs-box" data-fin-when="pb-frozen">
+                    <h4 class="fin-docs-title">因帳戶被凍結｜必檢附資料（請逐項上傳）</h4>
+                    <div class="fin-doc-uploads" data-fin-doc-set="pb-frozen"></div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="change-tenant">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">房客異動原因</span>
+                    <div class="hr-radios fin-reason-stack">
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-tenant-reason" value="房客-繼承(房客死亡)"> 房客-繼承(房客死亡)</label>
+                    <div class="hr-panel fin-docs-box" data-fin-when="tn-inherit">
+                    <h4 class="fin-docs-title">繼承｜必檢附資料（請逐項上傳）</h4>
+                    <div class="fin-doc-uploads" data-fin-doc-set="tn-inherit"></div>
+                    </div>
+                    </div>
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-tenant-reason" value="房客-更名"> 房客-更名</label>
+                    <div class="hr-panel fin-docs-box" data-fin-when="tn-rename">
+                    <h4 class="fin-docs-title">更名｜必檢附資料（請逐項上傳）</h4>
+                    <div class="fin-doc-uploads" data-fin-doc-set="tn-rename"></div>
+                    </div>
+                    </div>
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-tenant-reason" value="房客-更換存摺"> 房客-更換存摺</label>
+                    <div class="hr-panel" data-fin-when="tn-passbook-pick">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">更換存摺原因</span>
+                    <div class="hr-radios fin-reason-stack">
+                    <div class="fin-reason-block">
+                    <label class="hr-radio"><input type="radio" name="fin-tenant-passbook-why" value="社宅如有申請異動"> 社宅如有申請異動</label>
+                    <div class="hr-panel fin-docs-box" data-fin-when="tn-pb-apply">
+                    <h4 class="fin-docs-title">社宅如有申請異動｜必檢附資料（請逐項上傳）</h4>
+                    <div class="fin-doc-uploads" data-fin-doc-set="tn-pb-apply"></div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="fin-grid-2" data-fin-when="change-party-names">
+                    <div class="hr-field"><label class="hr-req" for="fin-old-party">原房東/客姓名</label><input id="fin-old-party" type="text" maxlength="40" placeholder="必填"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-new-party">新房東/客姓名</label><input id="fin-new-party" type="text" maxlength="40" placeholder="必填"></div>
+                    </div>
+                    <div class="hr-field"><label for="fin-change-note">異動備註</label><textarea id="fin-change-note" maxlength="500" placeholder="選填"></textarea></div>
+                    <div class="hr-panel" data-fin-when="passbook">
+                    <h3 class="hr-panel-title">更換存摺資料</h3>
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label for="fin-old-acc-name">原戶名</label><input id="fin-old-acc-name" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label for="fin-old-bank">原銀行名稱</label><input id="fin-old-bank" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label for="fin-old-bank-code">原銀行代碼</label><input id="fin-old-bank-code" type="text" maxlength="20"></div>
+                    <div class="hr-field"><label for="fin-old-branch">原銀行分行名稱</label><input id="fin-old-branch" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label for="fin-old-branch-code">原銀行分行代碼</label><input id="fin-old-branch-code" type="text" maxlength="20"></div>
+                    <div class="hr-field"><label for="fin-old-account">原銀行帳號</label><input id="fin-old-account" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label for="fin-new-acc-name">新戶名</label><input id="fin-new-acc-name" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label for="fin-new-bank">新銀行名稱</label><input id="fin-new-bank" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label for="fin-new-bank-code">新銀行代碼</label><input id="fin-new-bank-code" type="text" maxlength="20"></div>
+                    <div class="hr-field"><label for="fin-new-branch">新銀行分行名稱</label><input id="fin-new-branch" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label for="fin-new-branch-code">新銀行分行代碼</label><input id="fin-new-branch-code" type="text" maxlength="20"></div>
+                    <div class="hr-field"><label for="fin-new-account">新銀行帳號</label><input id="fin-new-account" type="text" maxlength="40"></div>
+                    </div>
+                    <div class="hr-field"><label for="fin-passbook-note">更換存摺備註</label><textarea id="fin-passbook-note" maxlength="500"></textarea></div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="fin-issue-card" data-fin-card="社宅租金及款項處理">
+                    <label class="fin-issue-head" for="fin-issue-pay">
+                    <input id="fin-issue-pay" type="radio" name="fin-issue" value="社宅租金及款項處理">
+                    <span class="fin-issue-ico" aria-hidden="true">💳</span>
+                    <span class="fin-issue-copy">
+                    <strong class="fin-issue-name">社宅租金及款項處理</strong>
+                    <small class="fin-issue-hint">補匯、退款、更正</small>
+                    </span>
+                    <span class="fin-issue-go" aria-hidden="true">進入</span>
+                    </label>
+                    <div class="fin-issue-body" data-fin-panel="社宅租金及款項處理">
+                    <h3 class="hr-panel-title">租金及款項處理</h3>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">租金及款項項目</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-pay-item" value="租金補匯款/重匯款申請"> 租金補匯款/重匯款申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pay-item" value="取消包租/退款訂金申請"> 取消包租/退款訂金申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pay-item" value="房東/房客匯款錯誤更正申請"> 房東/房客匯款錯誤更正申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pay-item" value="溢繳租金/重複付款退款申請"> 溢繳租金/重複付款退款申請</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="pay:取消包租/退款訂金申請">
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-virtual-account">匯款虛擬帳號</label><input id="fin-virtual-account" type="text" maxlength="40" placeholder="必填"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-payer-name">匯款人姓名</label><input id="fin-payer-name" type="text" maxlength="40" placeholder="必填"></div>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="pay:房東/房客匯款錯誤更正申請">
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-wrong-account">錯誤虛擬帳號</label><input id="fin-wrong-account" type="text" maxlength="40" placeholder="必填"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-correct-account">正確虛擬帳號</label><input id="fin-correct-account" type="text" maxlength="40" placeholder="必填"></div>
+                    </div>
+                    </div>
+                    <div class="hr-field" data-fin-when="pay-tx-date">
+                    <label class="hr-req" for="fin-tx-date">交易日期</label>
+                    <input id="fin-tx-date" type="date">
+                    </div>
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-amount">金額</label><input id="fin-amount" type="text" maxlength="40" placeholder="必填"></div>
+                    </div>
+                    <div class="hr-field"><label class="hr-req" for="fin-reason">原因</label><textarea id="fin-reason" maxlength="500" placeholder="必填"></textarea></div>
+                    <div class="hr-panel" data-fin-when="pay-passbook">
+                    <p class="hr-hint" data-fin-when="pay:租金補匯款/重匯款申請">註記：退款只能退表1帳號。</p>
+                    <p class="hr-hint" data-fin-when="pay:取消包租/退款訂金申請">註記：退款只能退原匯款帳號。</p>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-pay-passbook">匯款人存摺封面上傳</label>
+                    <p class="hr-hint">請上傳匯款人存摺封面（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-pay-passbook" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="payPassbook"></ul>
+                    </div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-pay-origin">原匯款明細上傳</label>
+                    <p class="hr-hint">請上傳原匯款明細（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-pay-origin" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="payOrigin"></ul>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="pay-overpay">
+                    <p class="hr-hint">註記：退款只能退原匯款帳號。</p>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-pay-passbook-over">匯款人存摺封面上傳</label>
+                    <p class="hr-hint">請上傳匯款人存摺封面（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-pay-passbook-over" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="payPassbook"></ul>
+                    </div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-pay-origin-over">原匯款明細上傳</label>
+                    <p class="hr-hint">請上傳原匯款明細（圖片／PDF／Word／Excel）。</p>
+                    <input id="fin-files-pay-origin-over" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="payOrigin"></ul>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="fin-issue-card" data-fin-card="社宅催收管理相關問題">
+                    <label class="fin-issue-head" for="fin-issue-collect">
+                    <input id="fin-issue-collect" type="radio" name="fin-issue" value="社宅催收管理相關問題">
+                    <span class="fin-issue-ico" aria-hidden="true">📋</span>
+                    <span class="fin-issue-copy">
+                    <strong class="fin-issue-name">社宅催收管理相關問題</strong>
+                    <small class="fin-issue-hint">應收調整與異常</small>
+                    </span>
+                    <span class="fin-issue-go" aria-hidden="true">進入</span>
+                    </label>
+                    <div class="fin-issue-body" data-fin-panel="社宅催收管理相關問題">
+                    <h3 class="hr-panel-title">催收管理相關問題</h3>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">催收管理項目</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-collect-item" value="金流應收調整"> 金流應收調整</label>
+                    <label class="hr-radio"><input type="radio" name="fin-collect-item" value="應收款項異常問題回報"> 應收款項異常問題回報</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="collect:金流應收調整">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">包租案件應收調整項目</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-adjust-item" value="管理費"> 管理費</label>
+                    <label class="hr-radio"><input type="radio" name="fin-adjust-item" value="網路費"> 網路費</label>
+                    <label class="hr-radio"><input type="radio" name="fin-adjust-item" value="其他費用"> 其他費用</label>
+                    </div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">新增減少或改變費用</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-fee-change" value="改成要入應收"> 改成要入應收</label>
+                    <label class="hr-radio"><input type="radio" name="fin-fee-change" value="改成不入應收"> 改成不入應收</label>
+                    <label class="hr-radio"><input type="radio" name="fin-fee-change" value="改變費用"> 改變費用</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="fee-change">
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-changed-amount">變更後金額</label><input id="fin-changed-amount" type="text" maxlength="40" placeholder="必填"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-sub-change-start">轉租變更起始日</label><input id="fin-sub-change-start" type="date"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-pkg-change-start">包租變更起始日</label><input id="fin-pkg-change-start" type="date"></div>
+                    </div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-fee">費用改變相關檔案佐證</label>
+                    <input id="fin-files-fee" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="fee"></ul>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="collect:應收款項異常問題回報">
+                    <div class="hr-field"><label class="hr-req" for="fin-abnormal-note">應收款項異常回報</label><textarea id="fin-abnormal-note" maxlength="800" placeholder="必填"></textarea></div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-collect">相關資料</label>
+                    <input id="fin-files-collect" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="collect"></ul>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="fin-issue-card" data-fin-card="補件與資料查詢">
+                    <label class="fin-issue-head" for="fin-issue-supp">
+                    <input id="fin-issue-supp" type="radio" name="fin-issue" value="補件與資料查詢">
+                    <span class="fin-issue-ico" aria-hidden="true">📎</span>
+                    <span class="fin-issue-copy">
+                    <strong class="fin-issue-name">補件與資料查詢</strong>
+                    <small class="fin-issue-hint">退件補件、明細調閱</small>
+                    </span>
+                    <span class="fin-issue-go" aria-hidden="true">進入</span>
+                    </label>
+                    <div class="fin-issue-body" data-fin-panel="補件與資料查詢">
+                    <h3 class="hr-panel-title">補件與資料查詢</h3>
+                    </div>
+                    </div>
+                    <div class="fin-issue-card" data-fin-card="止付通知">
+                    <label class="fin-issue-head" for="fin-issue-stop">
+                    <input id="fin-issue-stop" type="radio" name="fin-issue" value="止付通知">
+                    <span class="fin-issue-ico" aria-hidden="true">🛑</span>
+                    <span class="fin-issue-copy">
+                    <strong class="fin-issue-name">止付通知</strong>
+                    <small class="fin-issue-hint">停止付款與簽呈</small>
+                    </span>
+                    <span class="fin-issue-go" aria-hidden="true">進入</span>
+                    </label>
+                    <div class="fin-issue-body" data-fin-panel="止付通知">
+                    <h3 class="hr-panel-title">止付通知</h3>
+                    <div class="hr-field"><label class="hr-req" for="fin-stop-start">包租契約停止付款起始日</label><input id="fin-stop-start" type="date"></div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-stop">止付通知簽呈</label>
+                    <input id="fin-files-stop" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="stop"></ul>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="fin-issue-card" data-fin-card="一般宅金流相關(進件、解約)">
+                    <label class="fin-issue-head" for="fin-issue-gen">
+                    <input id="fin-issue-gen" type="radio" name="fin-issue" value="一般宅金流相關(進件、解約)">
+                    <span class="fin-issue-ico" aria-hidden="true">🏠</span>
+                    <span class="fin-issue-copy">
+                    <strong class="fin-issue-name">一般宅金流相關</strong>
+                    <small class="fin-issue-hint">一般宅進件／解約</small>
+                    </span>
+                    <span class="fin-issue-go" aria-hidden="true">進入</span>
+                    </label>
+                    <div class="fin-issue-body" data-fin-panel="一般宅金流相關(進件、解約)">
+                    <h3 class="hr-panel-title">一般宅金流相關</h3>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">一般宅金流項目</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-gen-item" value="新媒合申請"> 新媒合申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-gen-item" value="續約申請"> 續約申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-gen-item" value="再媒合申請"> 再媒合申請</label>
+                    <label class="hr-radio"><input type="radio" name="fin-gen-item" value="解約申請"> 解約申請</label>
+                    </div>
+                    </div>
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-gen-lease-start">租約開始日期</label><input id="fin-gen-lease-start" type="date"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-gen-lease-end">租約到期日期</label><input id="fin-gen-lease-end" type="date"></div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="gen-intake">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">一般宅項目</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-gen-kind" value="單純代租"> 單純代租</label>
+                    <label class="hr-radio"><input type="radio" name="fin-gen-kind" value="代租代管"> 代租代管</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="gen-lease-docs">
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-gen-lease-auth">委託租賃</label>
+                    <input id="fin-files-gen-lease-auth" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="genLeaseAuth"></ul>
+                    </div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-gen-lease-contract">租賃契約</label>
+                    <input id="fin-files-gen-lease-contract" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="genLeaseContract"></ul>
+                    </div>
+                    <div class="hr-field hr-files" data-fin-when="gen-manage-doc">
+                    <label class="hr-req" for="fin-files-gen-manage-auth">委託管理</label>
+                    <input id="fin-files-gen-manage-auth" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="genManageAuth"></ul>
+                    </div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">服務費確認-房東方</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-fee-landlord" value="1個月"> 1個月</label>
+                    <label class="hr-radio"><input type="radio" name="fin-fee-landlord" value="0.5個月"> 0.5個月</label>
+                    <label class="hr-radio"><input type="radio" name="fin-fee-landlord" value="不收費"> 不收費</label>
+                    </div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">服務費確認-房客方</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-fee-tenant" value="1個月"> 1個月</label>
+                    <label class="hr-radio"><input type="radio" name="fin-fee-tenant" value="0.5個月"> 0.5個月</label>
+                    <label class="hr-radio"><input type="radio" name="fin-fee-tenant" value="不收費"> 不收費</label>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="gen-manage">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">代管費百分比</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-manage-pct" value="10%"> 10%</label>
+                    <label class="hr-radio"><input type="radio" name="fin-manage-pct" value="15%"> 15%</label>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="hr-panel" data-fin-when="gen:解約申請">
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-gen-cancel-date">解約日期</label><input id="fin-gen-cancel-date" type="date"></div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">退押相關費用結清人員</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-gen-settle" value="房客自行結清"> 房客自行結清</label>
+                    <label class="hr-radio"><input type="radio" name="fin-gen-settle" value="房東代墊"> 房東代墊</label>
+                    <label class="hr-radio"><input type="radio" name="fin-gen-settle" value="業務代墊"> 業務代墊</label>
+                    <label class="hr-radio"><input type="radio" name="fin-gen-settle" value="房東客自行約定結清"> 房東客自行約定結清</label>
+                    </div>
+                    </div>
+                    <div class="hr-field hr-files">
+                    <label class="hr-req" for="fin-files-gen-cancel">解約單</label>
+                    <input id="fin-files-gen-cancel" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                    <ul class="hr-file-list" data-fin-file-list="genCancel"></ul>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="fin-issue-card" data-fin-card="商辦部">
+                    <label class="fin-issue-head" for="fin-issue-biz">
+                    <input id="fin-issue-biz" type="radio" name="fin-issue" value="商辦部">
+                    <span class="fin-issue-ico" aria-hidden="true">🏢</span>
+                    <span class="fin-issue-copy">
+                    <strong class="fin-issue-name">商辦部</strong>
+                    <small class="fin-issue-hint">商辦合約與費用</small>
+                    </span>
+                    <span class="fin-issue-go" aria-hidden="true">進入</span>
+                    </label>
+                    <div class="fin-issue-body" data-fin-panel="商辦部">
+                    <h3 class="hr-panel-title">商辦部</h3>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">請選擇館別</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-venue" value="中華館"> 中華館</label>
+                    <label class="hr-radio"><input type="radio" name="fin-venue" value="信義館"> 信義館</label>
+                    <label class="hr-radio"><input type="radio" name="fin-venue" value="新莊館"> 新莊館</label>
+                    <label class="hr-radio"><input type="radio" name="fin-venue" value="大安館"> 大安館</label>
+                    <label class="hr-radio"><input type="radio" name="fin-venue" value="台中館"> 台中館</label>
+                    </div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">這是一筆什麼性質的款項？</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-biz-item" value="新合約/續約簽約"> 新合約／續約簽約</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-item" value="會議室租借與影印費"> 會議室租借與影印費</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-item" value="郵資費"> 郵資費</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-item" value="退押"> 退押</label>
+                    </div>
+                    </div>
+
+                    <div class="hr-panel" data-fin-when="biz:新合約/續約簽約">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">案件類型</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-biz-case" value="工商登記"> 工商登記</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-case" value="辦公室出租"> 辦公室出租</label>
+                    </div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">合約性質</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-contract-type" value="新約"> 新約</label>
+                    <label class="hr-radio"><input type="radio" name="fin-contract-type" value="續約"> 續約</label>
+                    </div>
+                    </div>
+                    <div class="hr-field"><label class="hr-req" for="fin-contract-serial">合約序號（公司NAS合約資料夾序號）</label><input id="fin-contract-serial" type="text" maxlength="80" placeholder="請填公司NAS合約資料夾序號"></div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">作業需求</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-biz-action" value="查帳＋開立發票"> 查帳＋開立發票</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-action" value="僅查帳"> 僅查帳</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-action" value="僅開立發票"> 僅開立發票</label>
+                    </div>
+                    </div>
+                    </div>
+
+                    <div class="hr-panel" data-fin-when="biz:會議室租借與影印費">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">收入類型</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-biz-income" value="會議室租借"> 會議室租借</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-income" value="影印費"> 影印費</label>
+                    </div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">作業需求</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-biz-room-action" value="查帳＋開立發票"> 查帳＋開立發票</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-room-action" value="僅查帳"> 僅查帳</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-room-action" value="僅開立發票"> 僅開立發票</label>
+                    </div>
+                    </div>
+                    </div>
+
+                    <div class="hr-panel" data-fin-when="biz:退押">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">作業需求</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-biz-refund-action" value="退押＋開立日租金發票"> 退押＋開立日租金發票</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-refund-action" value="僅退押"> 僅退押</label>
+                    </div>
+                    </div>
+                    </div>
+
+                    <div class="hr-panel" data-fin-when="biz-signed">
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">合約是否已簽約完成？</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-signed-done" value="是"> 是</label>
+                    <label class="hr-radio"><input type="radio" name="fin-signed-done" value="否"> 否</label>
+                    </div>
+                    </div>
+                    <p class="hr-hint" data-fin-when="biz-signed-to-check">未簽約完成時改走「僅查帳」欄位。</p>
+                    <p class="hr-hint" data-fin-when="biz-signed-block" style="color:#b91c1c;font-weight:700;">合約未簽約完成，請先完成合約簽約再提出需求。</p>
+                    </div>
+
+                    <div class="hr-panel" data-fin-when="biz-check">
+                    <h3 class="hr-panel-title">查帳資訊</h3>
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-client-info">客戶資訊</label><input id="fin-client-info" type="text" maxlength="80"></div>
+                    <div class="hr-field" data-fin-when="biz-check-simple"><label class="hr-req" for="fin-remit-amount">匯款金額</label><input id="fin-remit-amount" type="text" maxlength="40"></div>
+                    <div class="hr-field" data-fin-when="biz-check-room"><label class="hr-req" for="fin-remit-total">匯款總金額</label><input id="fin-remit-total" type="text" maxlength="40"></div>
+                    <div class="hr-field" data-fin-when="biz-check-room"><label class="hr-req" for="fin-remit-deposit">匯款押金金額</label><input id="fin-remit-deposit" type="text" maxlength="40"></div>
+                    <div class="hr-field" data-fin-when="biz-check-room"><label class="hr-req" for="fin-remit-rent">匯款租金金額</label><input id="fin-remit-rent" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-remit-date">匯款日期</label><input id="fin-remit-date" type="date"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-remit-tail">匯款後5碼</label><input id="fin-remit-tail" type="text" maxlength="10"></div>
+                    </div>
+                    <div class="hr-field"><label for="fin-biz-check-note">備註</label><textarea id="fin-biz-check-note" maxlength="500" placeholder="選填"></textarea></div>
+                    </div>
+
+                    <div class="hr-panel" data-fin-when="biz-contract-info">
+                    <h3 class="hr-panel-title">合約資訊</h3>
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-contract-start">合約開始日期</label><input id="fin-contract-start" type="date"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-contract-end">合約到期日期</label><input id="fin-contract-end" type="date"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-contract-periods">合約期數</label><input id="fin-contract-periods" type="text" maxlength="20"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-period-price">合約每期價格（含稅）</label><input id="fin-period-price" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-rent-total">合約租金總額（不含押金）</label><input id="fin-rent-total" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-deposit">合約押金</label><input id="fin-deposit" type="text" maxlength="40"></div>
+                    </div>
+                    </div>
+
+                    <div class="hr-panel" data-fin-when="biz-invoice">
+                    <h3 class="hr-panel-title">發票資訊</h3>
+                    <div class="hr-field" data-fin-when="biz-invoice-item">
+                    <span class="hr-label hr-req">發票項目</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-invoice-item" value="工商登記日租金"> 工商登記日租金</label>
+                    <label class="hr-radio"><input type="radio" name="fin-invoice-item" value="辦公室日租金"> 辦公室日租金</label>
+                    </div>
+                    </div>
+                    <div class="fin-grid-2">
+                    <div class="hr-field" data-fin-when="biz-invoice-client"><label class="hr-req" for="fin-invoice-client">客戶資訊</label><input id="fin-invoice-client" type="text" maxlength="80"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-invoice-buyer">買受人</label><input id="fin-invoice-buyer" type="text" maxlength="80"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-invoice-tax">統一編號</label><input id="fin-invoice-tax" type="text" maxlength="20"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-invoice-amount">發票金額</label><input id="fin-invoice-amount" type="text" maxlength="40"></div>
+                    </div>
+                    <div class="hr-field"><label for="fin-biz-invoice-note">備註</label><textarea id="fin-biz-invoice-note" maxlength="500" placeholder="選填"></textarea></div>
+                    </div>
+
+                    <div class="hr-panel" data-fin-when="biz-refund-info">
+                    <h3 class="hr-panel-title">退押資訊</h3>
+                    <div class="fin-grid-2">
+                    <div class="hr-field"><label class="hr-req" for="fin-biz-refund-client">客戶資訊</label><input id="fin-biz-refund-client" type="text" maxlength="80"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-biz-refund-bank">退押帳戶銀行</label><input id="fin-biz-refund-bank" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-biz-refund-branch">退押帳戶銀行分行</label><input id="fin-biz-refund-branch" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-biz-refund-name">退押帳戶戶名</label><input id="fin-biz-refund-name" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-biz-refund-account">退押帳戶號碼</label><input id="fin-biz-refund-account" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-biz-refund-amount">退押金額</label><input id="fin-biz-refund-amount" type="text" maxlength="40"></div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">是否扣手續費</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-biz-refund-fee" value="是"> 是</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-refund-fee" value="否"> 否</label>
+                    </div>
+                    </div>
+                    <div class="hr-field"><label for="fin-biz-refund-note">備註</label><textarea id="fin-biz-refund-note" maxlength="500" placeholder="選填"></textarea></div>
+                    </div>
+
+                    </div>
+                    </div>
+                    </div>
+                    <div id="fin-footer-hold" hidden>
+                        <div id="fin-footer-block" class="fin-footer-block">
+                            <div class="hr-field">
+                            <label id="fin-note-label" for="fin-note">其他備註</label>
+                            <textarea id="fin-note" maxlength="800" placeholder="選填"></textarea>
+                            </div>
+                            <div class="hr-field hr-files">
+                            <label for="fin-files-misc">其他附件（選填）</label>
+                            <input id="fin-files-misc" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
+                            <ul class="hr-file-list" data-fin-file-list="misc"></ul>
+                            </div>
+                            
+                            <p id="fin-form-msg" class="hr-msg" role="status"></p>
+                            <div class="hr-actions">
+                            <button type="submit" id="fin-submit" class="btn tone-teal">送出</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 舊 fin-report 入口改導向財會專區 -->
+        <div id="page-fin-report" class="hidden"></div>
+
+        <!-- 總經理室：一進入即顯示會議計分中心 -->
+        <div id="page-gm-office" class="hidden"></div>
+        <div id="page-meeting-scoreboard" class="hidden">
+            <div class="msb-app" id="msb-app">
+                <aside class="msb-sidebar" aria-label="會議計分導覽">
+                    <div class="msb-brand">
+                        <span class="msb-brand-mark" aria-hidden="true">▦</span>
+                        <div>
+                            <strong>會議計分中心</strong>
+                            <small>總經理室專區</small>
+                        </div>
+                    </div>
+                    <button type="button" class="msb-nav-toggle" id="msb-nav-toggle" aria-expanded="false" aria-controls="msb-side-nav">選單</button>
+                    <nav class="msb-side-nav" id="msb-side-nav">
+                        <button type="button" class="msb-side-link is-on" data-msb-view="dash">
+                            <span aria-hidden="true">▦</span> 分數儀表板
+                        </button>
+                        <button type="button" class="msb-side-link" data-msb-view="records">
+                            <span aria-hidden="true">☷</span> 加減分紀錄
+                        </button>
+                        <button type="button" class="msb-side-link" data-msb-view="settings">
+                            <span aria-hidden="true">⚙</span> 後台設定
+                        </button>
+                    </nav>
+                    <button type="button" class="msb-back" onclick="showPage('home')">← 返回首頁</button>
+                </aside>
+
+                <div class="msb-main">
+                    <p id="msb-msg" class="msb-msg" role="status"></p>
+
+                    <section class="msb-panel" data-msb-panel="dash">
+                        <div class="msb-topbar">
+                            <div class="msb-crumb">工作空間／分數儀表板</div>
+                            <div class="msb-top-actions">
+                                <button type="button" id="msb-export" class="msb-btn msb-btn--ghost">↓ 匯出紀錄</button>
+                                <button type="button" id="msb-open-add" class="msb-btn msb-btn--primary">＋ 新增加減分</button>
+                            </div>
+                        </div>
+                        <header class="msb-hero">
+                            <div>
+                                <h2>讓每一分努力，清楚可見。</h2>
+                                <p>從會議參與到專案貢獻，掌握團隊每一次的累積。</p>
+                            </div>
+                        </header>
+                        <div class="msb-toolbar">
+                            <div class="msb-board-tabs" role="tablist" aria-label="計分表">
+                                <button type="button" class="is-on" data-msb-board="system">系統會議計分表</button>
+                                <button type="button" data-msb-board="monthly">月會主管計分表</button>
+                            </div>
+                            <div class="msb-period">
+                                <input id="msb-month" type="month" aria-label="統計月份">
+                                <button type="button" id="msb-all-period" class="msb-btn msb-btn--ghost">全部期間</button>
+                            </div>
+                        </div>
+                        <div class="msb-kpis">
+                            <div class="msb-kpi msb-kpi--dark">
+                                <span class="msb-kpi-label">累計總分</span>
+                                <strong id="msb-kpi-total" class="msb-kpi-val">0 分</strong>
+                                <span id="msb-kpi-total-sub" class="msb-kpi-sub">本月累計</span>
+                            </div>
+                            <div class="msb-kpi msb-kpi--plus">
+                                <span class="msb-kpi-label">期間加分</span>
+                                <strong id="msb-kpi-plus" class="msb-kpi-val msb-pos">+0 分</strong>
+                                <span id="msb-kpi-plus-sub" class="msb-kpi-sub">共 0 筆加分紀錄</span>
+                            </div>
+                            <div class="msb-kpi msb-kpi--minus">
+                                <span class="msb-kpi-label">期間減分</span>
+                                <strong id="msb-kpi-minus" class="msb-kpi-val msb-neg">0 分</strong>
+                                <span id="msb-kpi-minus-sub" class="msb-kpi-sub">共 0 筆減分紀錄</span>
+                            </div>
+                            <div class="msb-kpi">
+                                <span class="msb-kpi-label">加分人員</span>
+                                <strong id="msb-kpi-people" class="msb-kpi-val">0 位</strong>
+                                <span id="msb-kpi-people-sub" class="msb-kpi-sub">0 個專案區塊參與計分</span>
+                            </div>
+                        </div>
+                        <div class="msb-split msb-split--rank">
+                            <div class="msb-card msb-card--wide">
+                                <h3>人員分數排行</h3>
+                                <div id="msb-person-rank"></div>
+                            </div>
+                            <div class="msb-card">
+                                <h3>專案分數總覽</h3>
+                                <div id="msb-project-rank"></div>
+                            </div>
+                        </div>
+                        <div class="msb-card">
+                            <div class="msb-card-head">
+                                <h3>人員 × 專案計分表</h3>
+                                <button type="button" id="msb-goto-settings" class="msb-linkish">管理 ↗</button>
+                            </div>
+                            <div class="msb-table-wrap"><table id="msb-matrix" class="msb-table"></table></div>
+                        </div>
+                        <div class="msb-card">
+                            <div class="msb-card-head">
+                                <h3>最近加減分紀錄</h3>
+                                <button type="button" id="msb-goto-records" class="msb-linkish">查看全部紀錄 →</button>
+                            </div>
+                            <div class="msb-table-wrap"><table id="msb-recent-table" class="msb-table"></table></div>
+                        </div>
+                    </section>
+
+                    <section class="msb-panel" data-msb-panel="records" hidden>
+                        <div class="msb-topbar">
+                            <div>
+                                <div class="msb-crumb">工作空間／加減分紀錄</div>
+                                <h2 class="msb-page-title">加減分紀錄</h2>
+                                <p class="msb-page-sub">搜尋與篩選套用目前計分表的全部期間資料。</p>
+                            </div>
+                            <div class="msb-top-actions">
+                                <button type="button" id="msb-export-records" class="msb-btn msb-btn--ghost">↓ 匯出紀錄</button>
+                                <button type="button" id="msb-open-add-2" class="msb-btn msb-btn--primary">＋ 新增加減分</button>
+                            </div>
+                        </div>
+                        <div class="msb-toolbar">
+                            <div class="msb-board-tabs" role="tablist" aria-label="計分表">
+                                <button type="button" class="is-on" data-msb-board="system">系統會議計分表</button>
+                                <button type="button" data-msb-board="monthly">月會主管計分表</button>
+                            </div>
+                        </div>
+                        <div class="msb-card">
+                            <div class="msb-filters">
+                                <input id="msb-q" type="search" placeholder="搜尋人員／項目／備註" aria-label="搜尋人員項目備註">
+                                <select id="msb-filter-project" aria-label="專案篩選"></select>
+                                <input id="msb-date-from" type="date" aria-label="起始日期">
+                                <input id="msb-date-to" type="date" aria-label="結束日期">
+                                <button type="button" id="msb-filter-clear" class="msb-btn msb-btn--ghost">清除篩選</button>
+                            </div>
+                            <p id="msb-records-count" class="msb-filter-note"></p>
+                            <div class="msb-table-wrap"><table id="msb-all-table" class="msb-table"></table></div>
+                        </div>
+                    </section>
+
+                    <section class="msb-panel" data-msb-panel="settings" hidden>
+                        <div class="msb-topbar">
+                            <div>
+                                <div class="msb-crumb">工作空間／後台設定</div>
+                                <h2 class="msb-page-title">後台設定</h2>
+                                <p class="msb-page-sub">管理加分人員與專案名稱；依職稱分組顯示。進入需密碼。</p>
+                            </div>
+                        </div>
+                        <div id="msb-settings-lock" class="msb-settings-lock">
+                            <form id="msb-settings-gate" class="msb-settings-gate" autocomplete="off">
+                                <p class="msb-settings-gate-lead">後台設定僅限授權人員。請輸入密碼後繼續（與辦法完整檔／處長密碼同一組）。</p>
+                                <label for="msb-settings-pwd">密碼</label>
+                                <div class="msb-settings-gate-row">
+                                    <input id="msb-settings-pwd" type="password" inputmode="numeric" required placeholder="請輸入密碼" autocomplete="current-password">
+                                    <button type="submit" class="msb-btn msb-btn--primary">解鎖</button>
+                                </div>
+                                <p id="msb-settings-gate-msg" class="msb-msg" role="status"></p>
+                            </form>
+                        </div>
+                        <div id="msb-settings-body" hidden>
+                            <div class="msb-toolbar">
+                                <div class="msb-board-tabs" role="tablist" aria-label="計分表">
+                                    <button type="button" class="is-on" data-msb-board="system">系統會議計分表</button>
+                                    <button type="button" data-msb-board="monthly">月會主管計分表</button>
+                                </div>
+                            </div>
+                            <div class="msb-split">
+                                <div class="msb-card">
+                                    <h3>加分人員</h3>
+                                    <div class="msb-add-row">
+                                        <input id="msb-new-person" type="text" maxlength="40" placeholder="輸入新增人員姓名">
+                                        <button type="button" id="msb-add-person" class="msb-btn msb-btn--primary">＋ 新增人員</button>
+                                    </div>
+                                    <div id="msb-people-list"></div>
+                                </div>
+                                <div class="msb-card">
+                                    <h3>專案區塊</h3>
+                                    <div class="msb-add-row">
+                                        <input id="msb-new-project" type="text" maxlength="60" placeholder="輸入新專案名稱">
+                                        <button type="button" id="msb-add-project" class="msb-btn msb-btn--primary">＋ 新增專案</button>
+                                    </div>
+                                    <div id="msb-projects-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="msb-modal" id="msb-modal" hidden>
+                <div class="msb-modal-backdrop" data-msb-close="1"></div>
+                <div class="msb-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="msb-form-title">
+                    <div class="msb-modal-head">
+                        <div>
+                            <h3 id="msb-form-title">新增加減分</h3>
+                            <p id="msb-modal-board" class="msb-modal-board">系統會議計分表</p>
+                        </div>
+                        <button type="button" class="msb-modal-x" data-msb-close="1" aria-label="關閉">×</button>
+                    </div>
+                    <form id="msb-entry-form" class="msb-form" autocomplete="off">
+                        <div class="msb-form-grid">
+                            <div class="msb-field">
+                                <label class="msb-req" for="msb-person">加分人員</label>
+                                <select id="msb-person" required></select>
+                            </div>
+                            <div class="msb-field">
+                                <label class="msb-req" for="msb-project">專案／區塊</label>
+                                <select id="msb-project" required></select>
+                            </div>
+                            <div class="msb-field">
+                                <label class="msb-req" for="msb-date">計分日期</label>
+                                <input id="msb-date" type="date" required>
+                            </div>
+                            <div class="msb-field">
+                                <label class="msb-req" for="msb-score">分數（減分請輸入負數）</label>
+                                <input id="msb-score" type="number" step="0.01" required placeholder="例如 6 或 -2">
+                            </div>
+                            <div class="msb-field" id="msb-session-wrap" hidden>
+                                <label for="msb-session">月會場次</label>
+                                <input id="msb-session" type="text" maxlength="40" placeholder="例：11 月月會">
+                            </div>
+                            <div class="msb-field">
+                                <label class="msb-req" for="msb-item">加減分項目</label>
+                                <input id="msb-item" type="text" maxlength="80" required placeholder="例：會議提案">
+                            </div>
+                            <div class="msb-field msb-field--full">
+                                <label for="msb-note">當天加減分備註</label>
+                                <textarea id="msb-note" maxlength="500" rows="3" placeholder="選填"></textarea>
+                            </div>
+                        </div>
+                        <p id="msb-form-msg" class="msb-msg" role="status"></p>
+                        <div class="msb-modal-actions">
+                            <button type="button" class="msb-btn msb-btn--ghost" data-msb-close="1">取消</button>
+                            <button type="submit" id="msb-save" class="msb-btn msb-btn--primary">儲存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 專區頁面：業務主管 -->
+        <div id="page-biz-supervisor" class="hidden max-w-4xl mx-auto space-y-6">
+            <button type="button" onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">← 返回首頁</button>
+            <div class="bz-shell">
+                <header class="bz-head">
+                    <div class="bz-kicker">SALES LEAD</div>
+                    <h2 class="bz-title">🧭 業務主管專區</h2>
+                    <p class="bz-sub">主管獎金、誠信險投保率、工具箱綁定與考核辦法。</p>
+                </header>
+                <div class="bz-quick">
+                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--cover" onclick="showPage('business-coverage')">
+                        <span class="apt-entry-icon" aria-hidden="true">◎</span>
+                        <span class="apt-entry-text">
+                            <strong>誠信險</strong>
+                            <small>各營業處投保率。點未投保的人，看 11/1 起的新媒合和處長電訪</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
+                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--cover" onclick="showPage('business-toolbox')">
+                        <span class="apt-entry-icon" aria-hidden="true">▣</span>
+                        <span class="apt-entry-text">
+                            <strong>工具箱綁定</strong>
+                            <small>各營業處綁定率，點開看還沒使用工具箱的人</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
+                </div>
+                <p class="bz-sec">常用工具</p>
+                <div class="bz-tools" role="navigation" aria-label="業務主管常用工具">
+                    <button type="button" class="bz-card" onclick="showPage('manager-bonus')">
+                        <span class="bz-ico" aria-hidden="true">🔒</span>
+                        <span class="bz-copy">
+                            <span class="bz-name">主管獎金專區</span>
+                            <span class="bz-hint">主管獎金、津貼、考核辦法（需密碼）</span>
+                        </span>
+                        <span class="bz-go" aria-hidden="true">進入</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 專區頁面：房客（掛在業務專區下） -->
         <div id="page-tenant" class="hidden max-w-4xl mx-auto space-y-6">
-            <button onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">
-                ← 返回首頁
+            <button type="button" onclick="showPage('business')" class="mb-4 btn btn-sm tone-slate-soft">
+                ← 返回業務專區
             </button>
             <div class="bz-shell">
                 <header class="bz-head">
@@ -7670,15 +9231,43 @@
                 <header class="bz-head">
                     <div class="bz-kicker">BUSINESS</div>
                     <h2 class="bz-title">💼 業務專區</h2>
-                    <p id="sf591-biz-desc" class="bz-sub">獎金辦法、租金水準、公證費、表單、考試與線上表單後台。解約退還金額試算請至首頁「催收解約專區」。</p>
+                    <p id="sf591-biz-desc" class="bz-sub">含房東／房客／新人入口。獎金辦法、租金水準、公證費、表單與考試；解約退還請至首頁「催收解約專區」。</p>
                 </header>
+
+                <p class="bz-sec">子專區</p>
+                <div class="bz-tools" role="navigation" aria-label="業務子專區">
+                    <button type="button" class="bz-card" onclick="showPage('landlord')">
+                        <span class="bz-ico" aria-hidden="true">🏠</span>
+                        <span class="bz-copy">
+                            <span class="bz-name">房東專區</span>
+                            <span class="bz-hint">稅務試算、房屋稅級距</span>
+                        </span>
+                        <span class="bz-go" aria-hidden="true">進入</span>
+                    </button>
+                    <button type="button" class="bz-card" onclick="showPage('tenant')">
+                        <span class="bz-ico" aria-hidden="true">🏃</span>
+                        <span class="bz-copy">
+                            <span class="bz-name">房客專區</span>
+                            <span class="bz-hint">承租資格、條件與通訊錄</span>
+                        </span>
+                        <span class="bz-go" aria-hidden="true">進入</span>
+                    </button>
+                    <button type="button" class="bz-card" onclick="showPage('newbie')">
+                        <span class="bz-ico" aria-hidden="true">🚀</span>
+                        <span class="bz-copy">
+                            <span class="bz-name">新人專區</span>
+                            <span class="bz-hint">專線、任務板與教材快篩</span>
+                        </span>
+                        <span class="bz-go" aria-hidden="true">進入</span>
+                    </button>
+                </div>
 
                 <div class="bz-quick">
                     <button type="button" class="apt-entry adz-hero bz-hero bz-hero--bonus" onclick="showPage('business-bonus')">
                         <span class="apt-entry-icon" aria-hidden="true">💰</span>
                         <span class="apt-entry-text">
                             <strong>業務獎金辦法</strong>
-                            <small>點辦法看各處完成率、誰還沒勾；可預覽檔案並打勾知悉</small>
+                            <small>辦法知悉、各處完成率；並含原簽呈公告與公司公告列表</small>
                         </span>
                         <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                     </button>
@@ -7687,22 +9276,6 @@
                         <span class="apt-entry-text">
                             <strong>系統欄位更改通報</strong>
                             <small>系統資料有誤時通報處經理或行政：地址、媒合編號、節點與內容，可附圖片</small>
-                        </span>
-                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
-                    </button>
-                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--cover" onclick="showPage('business-coverage')">
-                        <span class="apt-entry-icon" aria-hidden="true">◎</span>
-                        <span class="apt-entry-text">
-                            <strong>誠信險</strong>
-                            <small>各營業處投保率。點未投保的人，看 11/1 起的新媒合和處長電訪</small>
-                        </span>
-                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
-                    </button>
-                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--cover" onclick="showPage('business-toolbox')">
-                        <span class="apt-entry-icon" aria-hidden="true">▣</span>
-                        <span class="apt-entry-text">
-                            <strong>工具箱綁定</strong>
-                            <small>各營業處綁定率，點開看還沒使用工具箱的人</small>
                         </span>
                         <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                     </button>
@@ -9736,24 +11309,24 @@
             <div id="biz-handover-root"></div>
         </div>
 
-        <!-- 業務專區：誠信險 -->
+        <!-- 業務主管專區：誠信險 -->
         <div id="page-business-coverage" class="hidden max-w-7xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('business')" class="mb-2 btn btn-sm tone-slate-soft">
-                ← 返回業務專區
+            <button type="button" onclick="showPage('biz-supervisor')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回業務主管專區
             </button>
             <div class="cv-shell">
                 <p class="cv-kicker">誠信險</p>
                 <h2 class="cv-title">誠信險投保</h2>
-                <p class="cv-lead">先看全區，再點北區、中區、南區、高雄看各處。點未投保的人，看 115/11/1 起租的新媒合。處長用公司電話電訪後，勾完五項才留下撥打時間。</p>
+                <p class="cv-lead">先看全區，再點北區、中區、南區、高雄看各處。「代管」是累積代管件數；「新案」只算 115/11/1 起租的新媒合（預審通過／複審通過／複審退件／待產編／已生效；不含再媒合／續約）。點未投保的人可電訪。處長用公司電話電訪後，勾完五項才留下撥打時間。</p>
                 <p class="cv-admin-link"><a href="./admin/coverage-call-dashboard.html" target="_blank" rel="noopener">電訪紀錄後台 ↗</a></p>
                 <div class="cv-body"></div>
             </div>
         </div>
 
-        <!-- 業務專區：工具箱綁定 -->
+        <!-- 業務主管專區：工具箱綁定 -->
         <div id="page-business-toolbox" class="hidden max-w-7xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('business')" class="mb-2 btn btn-sm tone-slate-soft">
-                ← 返回業務專區
+            <button type="button" onclick="showPage('biz-supervisor')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回業務主管專區
             </button>
             <div class="cv-shell">
                 <p class="cv-kicker">工具箱</p>
@@ -9769,10 +11342,16 @@
                 ← 返回業務專區
             </button>
             <div class="bb-shell">
-                <div class="bb-kicker">BONUS</div>
+                <div class="bb-kicker">BONUS &amp; NOTICE</div>
                 <h2 class="bb-title">💰 業務獎金辦法</h2>
-                <p class="bb-lead">點辦法卡片可預覽浮水印檔、看各營業處完成率；再點營業處可看誰還沒勾。營業處業務請打勾「已閱畢知悉」。</p>
+                <p class="bb-lead">點辦法卡片可預覽浮水印檔、看各營業處完成率；再點營業處可看誰還沒勾。下方另有公司公告與簽呈彙整（原簽呈公告專區）。</p>
                 <div id="bb-body"></div>
+
+                <div class="bb-notice-block space-y-4 mt-6">
+                    <h3 class="bb-sec-title">📣 簽呈與公司公告</h3>
+                    <p class="bb-lead" style="margin-top:0">集中管理公司公告與簽呈重點。主管獎金請至首頁「業務主管專區」。</p>
+                    <div id="notice-ack-root"></div>
+                </div>
             </div>
         </div>
 
@@ -11271,7 +12850,7 @@
 
         <!-- 專區頁面：新人（Magic UI 風格：Bento + Magic Card + Shine Border + Blur Fade） -->
         <div id="page-newbie" class="hidden max-w-6xl mx-auto nb-magic nb-magic-page">
-            <button type="button" class="nb-magic-back" onclick="showPage('home')">← 首頁</button>
+            <button type="button" class="nb-magic-back" onclick="showPage('business')">← 業務專區</button>
 
             <header class="nb-magic-head">
                 <p class="nb-ui-stack" aria-label="設計風格">Magic UI · shadcn/ui · Aceternity UI</p>
@@ -11604,7 +13183,7 @@
                         <a href="./1151001%20公告%20星財補獎金辦法.pdf" class="btn btn-sm tone-slate-mid">📄 預覽（需密碼）</a>
                         <a href="./1151001%20公告%20星財補獎金辦法.pdf" download="1151001 公告 星財補獎金辦法.pdf" class="btn btn-sm tone-slate-soft">⬇️ 下載（需密碼）</a>
                     </div>
-                    <p class="text-xs text-slate-500 mt-2">上方精簡規則可公開查閱；完整公告檔僅限處長密碼預覽／下載。舊版請見 <button type="button" class="nb-inline-link" onclick="showPage('announcement')">簽呈公告專區</button>。</p>
+                    <p class="text-xs text-slate-500 mt-2">上方精簡規則可公開查閱；完整公告檔僅限處長密碼預覽／下載。舊版請見 <button type="button" class="nb-inline-link" onclick="showPage('business-bonus')">業務獎金辦法／公司公告</button>。</p>
                 </div>
             </div>
         </div>
@@ -12571,12 +14150,16 @@
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
         <script src="./js/guide-exam.js?v=20261015-1"></script>
         <script src="./js/biz-guide-exam.js?v=20261029-hide"></script>
-        <script src="./js/biz-handover.js?v=20261101-dedupe"></script>
-        <script src="./js/admin-handover.js?v=20261101-cards"></script>
-        <script src="./js/biz-system-change.js?v=20261105-donebucket"></script>
+        <script src="./js/handover-core.js?v=20261107-sop"></script>
+        <script src="./js/biz-handover.js?v=20261107-sop"></script>
+        <script src="./js/admin-handover.js?v=20261107-sop"></script>
+        <script src="./js/biz-system-change.js?v=20261107-ownonly"></script>
         <script src="./js/biz-bonus-data.js?v=20261105-layout"></script>
         <script src="./js/biz-bonus.js?v=20261105-ownack"></script>
-        <script src="./js/biz-coverage.js?v=20261107-escrow10"></script>
+        <script src="./js/biz-coverage.js?v=20261107-5line"></script>
+        <script src="./js/hr-report.js?v=20261107-hr12"></script>
+        <script src="./js/fin-report.js?v=20261108-fin62"></script>
+        <script src="./js/meeting-scoreboard.js?v=20261107-msb8"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>
@@ -14365,17 +15948,17 @@
             { page: 'business', title: '業務周會檔案', category: '業務專區', keywords: '周會 週會 簡報 業務周會 管理部 下載 領款收據', file: './docs/weekly-meeting/' },
             { file: './docs/weekly-meeting/', title: '業務周會檔案', category: '首頁專區', keywords: '周會 週會 簡報 業務周會 管理部 下載 領款收據' },
             { file: './docs/collection-flow/', title: '催收解約專區 · 完整 SOP', category: '催收解約專區', keywords: '欠租 催收 SOP 流程 存證信函 調解 強制執行 還款協議 本票 面訪 催收解約' },
-            { page: 'landlord', title: '房東專區', category: '首頁專區', keywords: '房東 出租 業主 房東客' },
+            { page: 'landlord', title: '房東專區', category: '業務專區', keywords: '房東 出租 業主 房東客' },
             { page: 'calculator', title: '房東稅務試算表', category: '房東專區', keywords: '稅務試算 稅 所得 二代健保 預扣 綜所稅 社宅優惠 四種租賃' },
             { page: 'landlord-house-tax', title: '房屋稅課稅級距', category: '房東專區', keywords: '房屋稅 級距 自用 非自用 課稅' },
             { page: 'business-land-value-tax', title: '土地增值稅', category: '房東專區', keywords: '土地 增值稅 一生一次 一生一屋 重購退稅' },
-            { page: 'tenant', title: '房客專區', category: '首頁專區', keywords: '房客 承租人 租客 房客客' },
+            { page: 'tenant', title: '房客專區', category: '業務專區', keywords: '房客 承租人 租客 房客客' },
             { page: 'tenant-criteria', title: '房客承租條件', category: '房客專區', keywords: '承租 條件 資格 社宅 房客資格' },
             { page: 'tenant-eligibility', title: '承租資格試算', category: '房客專區', keywords: '承租資格 試算 租補試算 社宅試算 所得 動產 不動產 300億 資格' },
             { page: 'tenant-kinship', title: '親屬等親表', category: '房客專區', keywords: '親等 親屬 二等親 三等親 血親 姻親' },
             { page: 'business-income-standards', title: '低收/中低收收入標準', category: '房客專區', keywords: '低收入 中低收入 租補 補助 115年 標準' },
             { external: 'https://pip.moi.gov.tw/Publicize/Info/B1021', title: '300億租金補貼試算', category: '房客專區', keywords: '300億 租補 租金補貼 內政部 試算 pip' },
-            { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
+            { page: 'business', title: '業務專區', category: '首頁專區', keywords: '業務 媒合 簽約 開發 房東 房客 新人 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件' },
             { page: 'rent', title: '租金水準試算器', category: '業務專區', keywords: '租金水準試算器 租金水準 試算器 計算器 租金 坪數 行情 估租 單坪 屋齡 行政區 評定 待租 評定結果 擬定月租 收件上限 社宅' },
             { page: 'newbie-subsidy', title: '財補專區', category: '新人專區', keywords: '財補 星財補 獎金 獎金辦法 1151001 1150922 補助 基本規則 補充說明 延續財補 證照 合約考試 簽到 競業條款 承攬契約 純新媒合 財補試算 到職日 結績日 第幾個月 財補區間 考試 線上考試 財補考試 考卷 A卷 B卷 結訓考 試題 打卡 每日打卡 打卡照片 上傳照片 照片上傳 場勘照 證照上課中 請假 簽呈 展延 展延財補 簽呈上傳 特殊個案 報名表 財補報名表 報名 下載報名表 上傳報名表' },
             { page: 'newbie-quest', title: '業績任務板', category: '新人專區', keywords: '業績 任務板 打卡 新人 考核 kpi 追蹤 任務 新人任務' },
@@ -14392,9 +15975,9 @@
             { page: 'business-guide-exam', title: '執行要點考試', category: '業務專區', keywords: '執行要點 考試 題庫 業務考試 補考 成績 公開成績 20題' },
             { page: 'business-handover', title: '業務離職交接', category: '業務專區', keywords: '離職 交接 業務 接手 代管 案件 checklist 匯出' },
             { page: 'business-system-change', title: '系統欄位更改通報', category: '業務專區', keywords: '系統 欄位 更改 修改 通報 媒合編號 物件地址 系統資料' },
-            { page: 'business-bonus', title: '業務獎金辦法', category: '業務專區', keywords: '獎金 獎金辦法 高專 星財補 點獎金 激勵 婚育 知悉 儀表板 媒合費 代管費' },
-            { page: 'business-coverage', title: '誠信險', category: '業務專區', keywords: '誠信險 投保率 未投保 電訪 處長 分機 新媒合' },
-            { page: 'business-toolbox', title: '工具箱綁定', category: '業務專區', keywords: '工具箱 綁定率 未綁定 正職 兼職 營業處' },
+            { page: 'business-bonus', title: '業務獎金辦法', category: '業務專區', keywords: '獎金 獎金辦法 高專 星財補 點獎金 激勵 婚育 知悉 儀表板 媒合費 代管費 簽呈 公告 通知 公司 第9 第10 第11 業績月 1150824' },
+            { page: 'business-coverage', title: '誠信險', category: '業務主管專區', keywords: '誠信險 投保率 未投保 電訪 處長 分機 新媒合' },
+            { page: 'business-toolbox', title: '工具箱綁定', category: '業務主管專區', keywords: '工具箱 綁定率 未綁定 正職 兼職 營業處' },
             { file: './admin/coverage-call-dashboard.html', title: '誠信險電訪紀錄後台', category: '管理工具', keywords: '後台 誠信險 電訪 處長 分機 撥打時間' },
             { file: './admin/biz-system-change-dashboard.html', title: '系統欄位更改通報後台', category: '管理工具', keywords: '後台 admin 系統欄位 更改 通報 業務' },
             { page: 'admin-handover', title: '行政離職交接', category: '行政專區', keywords: '離職 交接 行政 經手 審核 接手 checklist 匯出' },
@@ -14408,7 +15991,7 @@
             { page: 'newbie-transcript', title: '調閱一類謄本 SOP', category: '新人專區', keywords: '調閱 一類 第一類 謄本 建物謄本 登記謄本 電子謄本 地政 HiNet 送件 領件 預覽列印 確定付費 建號 地段 共有人 SOP 教學 新人' },
             { page: 'newbie-glossary', title: '社宅白話詞典', category: '新人專區', keywords: '詞典 名詞 包租 代租 第三至五期 修繕獎勵 轉軌戶 換居戶 市場租金 公證 信任租 租補 白話 業務問答' },
             { page: 'newbie-screening', title: '進件資格速查', category: '新人專區', keywords: '資格 速查 快篩 能不能做 新青安 營業用' },
-            { page: 'newbie', title: '新人專區', category: '首頁專區', keywords: '新人 菜鳥 話術 場勘 拒絕 邀約 路線圖 詞典 快篩' },
+            { page: 'newbie', title: '新人專區', category: '業務專區', keywords: '新人 菜鳥 話術 場勘 拒絕 邀約 路線圖 詞典 快篩' },
             { page: 'newbie-playbook', title: '新人業務開發心法', category: '新人專區', keywords: '心法 開發 業務技巧  playbook' },
             { page: 'rentmanager', title: '租管師專區', category: '首頁專區', keywords: '租管師 租管 sop 流程' },
             { page: 'rentmanager-links', title: '會議表單連結', category: '租管師專區', keywords: '表單 連結 續約明細 星鴻系統' },
@@ -14442,10 +16025,22 @@
             { page: 'practice-timeline', title: '催收期程試算', category: '催收解約專區', keywords: '催收 期程 時程 天數 存證 調解 強制執行 時間軸 timeline' },
             { page: 'rentmanager-line-endorse', title: '租管 LINE 照會流程', category: '租管師專區', keywords: 'LINE 照會 領款收據 送件 主管照會 照會群 租管' },
             { page: 'practice-contacts', title: '租金補貼辦理單位', category: '房客專區', keywords: '窗口 通訊錄 300億 租金補貼 辦理單位 縣市 電話 傳真 臨櫃 pip' },
-            { page: 'announcement', title: '簽呈公告專區', category: '首頁專區', keywords: '簽呈 公告 通知 公司 高專 激勵 第9 第10 第11 業績月 1150824' },
-            { page: 'manager-bonus', title: '主管獎金專區', category: '簽呈公告專區', keywords: '主管 獎金 營業處 特定地區 津貼 考核 補貼 請款 協理 儲備處 經理 密碼' },
+            { page: 'business-bonus', title: '簽呈與公司公告', category: '業務專區', keywords: '簽呈 公告 通知 公司 高專 激勵 第9 第10 第11 業績月 1150824' },
+            { page: 'manager-bonus', title: '主管獎金專區', category: '業務主管專區', keywords: '主管 獎金 營業處 特定地區 津貼 考核 補貼 請款 協理 儲備處 經理 密碼' },
+            { page: 'biz-supervisor', title: '業務主管專區', category: '首頁專區', keywords: '業務主管 處長 營業處 主管 督導 獎金 津貼 考核 誠信險 投保 工具箱 綁定' },
             { page: 'petition', title: '簽呈簽核', category: '行政專區', keywords: '簽呈 簽核 送簽 簽名 上傳簽呈 承辦單位 第一線人員 主管 審核 經理 協理 會辦單位 總經理室 決行 總經理 退回 重送 LINE 通知 陳情 申訴 客訴' },
             { page: 'administration', title: '行政專區', category: '首頁專區', keywords: '行政 請款 天數 庶務 管理部 簽呈 點數表 成長羅盤 羅盤 行事曆 問答 QA 各式表單 表單 中心系統申請 離職 離職通報 系統資料修正 獎金補發 獎金收回 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件 註銷 註銷物件 註銷物件申請 物件註銷 承接業者 不續約 複審 檢核表 代管複審 包租複審' },
+            { page: 'hr', title: '人資專區', category: '首頁專區', keywords: '人資 人事 HR 員工 離職 到職 出勤' },
+            { page: 'hr-onboard', title: '內勤報到通知', category: '人資專區', keywords: '報到 入職 人事表單 信任租 試用期 底薪' },
+            { page: 'hr-resign', title: '內勤離職通知', category: '人資專區', keywords: '離職 內勤 底薪' },
+            { page: 'hr-report', title: '人資問題回報', category: '人資專區', keywords: '人資 出勤 延展休假 加班 資遣 調班 回報表單' },
+            { page: 'finance', title: '財會專區', category: '首頁專區', keywords: '財會 會計 財務 請款 發票' },
+            { page: 'fin-report', title: '財務部問題回報', category: '財會專區', keywords: '財務 包租 金流 退押 催收 止付 商辦 回報表單' },
+            { file: './admin/fin-report-dashboard.html', title: '財務部問題回報後台', category: '管理工具', keywords: '財務 回報 會計 後台 下載' },
+            { file: './admin/hr-report-dashboard.html', title: '人資問題回報後台', category: '管理工具', keywords: '人資 回報 出勤 附件 會計 後台 下載' },
+            { page: 'gm-office', title: '總經理室專區', category: '首頁專區', keywords: '總經理室 總經理 決策 經營' },
+            { page: 'meeting-scoreboard', title: '會議計分中心', category: '總經理室專區', keywords: '會議 計分 加減分 排行 系統會議 月會 主管 專案' },
+
             { page: 'admin-qa', title: '行政問答 QA', category: '行政專區', keywords: '行政 問答 QA 提問 回答 點數 關鍵字 搜尋 小組長 檢核' },
             { page: 'admin-points', title: '行政績效中心', category: '行政專區', keywords: '行政 績效中心 行政點數表 點數 點數表 每日點數 績效 評等 審件 客訴 教育訓練 成長羅盤 羅盤 物審 房客 預審 複審 產編 修繕 保險費 公證費 補助審核 實價登錄 審核時間紀錄 第一階段 第二階段 250 350 組長 人力明細' },
             { external: 'https://docs.google.com/forms/d/e/1FAIpQLSdZES7NkG92YpgofUmN-8yCBBskyiqWxvkGto-BIFHBvJg5hQ/viewform?usp=publish-editor', title: '意見回饋', category: '全站', keywords: '意見 回饋 表單 feedback 建議' },
@@ -14488,9 +16083,19 @@
             'rentmanager-crossarea-bonus': 'page-rentmanager-crossarea-bonus',
             'rentmanager-perf': 'page-rentmanager-perf',
             'rentmanager-line-endorse': 'page-rentmanager-line-endorse',
-            announcement: 'page-announcement',
+            announcement: 'page-business-bonus',
             'manager-bonus': 'page-manager-bonus',
             administration: 'page-administration',
+            'hr-finance': 'page-hr',
+            hr: 'page-hr',
+            'hr-report': 'page-hr-report',
+            'hr-onboard': 'page-hr-onboard',
+            'hr-resign': 'page-hr-resign',
+            finance: 'page-finance',
+            'fin-report': 'page-finance',
+            'gm-office': 'page-meeting-scoreboard',
+            'meeting-scoreboard': 'page-meeting-scoreboard',
+            'biz-supervisor': 'page-biz-supervisor',
             'admin-qa': 'page-admin-qa',
             'admin-points': 'page-admin-points',
             petition: 'page-petition',
@@ -14544,7 +16149,7 @@
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-591-listing', 'page-business-deposit-refund',
             'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-business-bonus', 'page-business-coverage', 'page-business-toolbox', 'page-business-handover', 'page-business-system-change', 'page-termination',
             'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus', 'page-rentmanager-perf', 'page-rentmanager-line-endorse',
-            'page-announcement', 'page-manager-bonus', 'page-administration', 'page-admin-qa', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
+            'page-announcement', 'page-manager-bonus', 'page-administration', 'page-hr', 'page-hr-report', 'page-hr-onboard', 'page-hr-resign', 'page-finance', 'page-gm-office', 'page-meeting-scoreboard', 'page-biz-supervisor', 'page-admin-qa', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
             'page-practice-timeline', 'page-collection-case', 'page-mediation-flow', 'page-equip-dep', 'page-practice-templates', 'page-practice-contacts', 'page-lal-generator', 'page-care-visit-notice'
         ];
 
@@ -14740,6 +16345,21 @@
             }
             if (pageName === 'business-guide-exam' && window.BizGuideExam && typeof window.BizGuideExam.mount === 'function') {
                 window.BizGuideExam.mount();
+            }
+            if ((pageName === 'fin-report' || pageName === 'finance') && window.FinReport && typeof window.FinReport.onShow === 'function') {
+                window.FinReport.onShow();
+            }
+            if (pageName === 'hr-report' && window.HrReport && typeof window.HrReport.onShowForm === 'function') {
+                window.HrReport.onShowForm();
+            }
+            if (pageName === 'hr-onboard' && window.HrReport && typeof window.HrReport.onShowOnboard === 'function') {
+                window.HrReport.onShowOnboard();
+            }
+            if (pageName === 'hr-resign' && window.HrReport && typeof window.HrReport.onShowResign === 'function') {
+                window.HrReport.onShowResign();
+            }
+            if ((pageName === 'meeting-scoreboard' || pageName === 'gm-office') && window.MeetingScoreboard && typeof window.MeetingScoreboard.onShow === 'function') {
+                window.MeetingScoreboard.onShow();
             }
 
             if (!isSamePage) {

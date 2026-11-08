@@ -1,3 +1,4 @@
+/* FORCE_DEPLOY_AREA 20261107b */
 /* 誠信險投保與工具箱綁定（限定 :is(#page-business-coverage, #page-business-toolbox)） */
 :is(#page-business-coverage, #page-business-toolbox).cv-locked .cv-lead,
 :is(#page-business-coverage, #page-business-toolbox).cv-locked .cv-admin-link { display: none; }
@@ -27,34 +28,32 @@
   cursor: pointer;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-shell {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(180, 140, 74, 0.16), transparent 34%),
-    linear-gradient(180deg, #fbf8f3 0%, #f6f3ee 100%);
-  border: 1px solid #e6dfd2;
-  border-radius: 1.5rem;
-  padding: 1.25rem 1.2rem 1.5rem;
-  box-shadow: 0 18px 40px rgba(28, 25, 23, 0.06);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 1.1rem 1rem 1.35rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-kicker {
   margin: 0;
   font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.22em;
-  color: #a08a62;
+  letter-spacing: 0.18em;
+  color: #64748b;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-title {
   margin: 0.25rem 0 0.35rem;
-  font-size: 1.7rem;
-  font-weight: 800;
+  font-size: 1.55rem;
+  font-weight: 900;
   letter-spacing: -0.02em;
-  color: #1c1917;
+  color: #0f172a;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-lead {
   margin: 0;
-  max-width: 40rem;
+  max-width: 42rem;
   font-size: 0.88rem;
   line-height: 1.6;
-  color: #6b6258;
+  color: #64748b;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-toolbar {
   display: flex;
@@ -64,13 +63,15 @@
   gap: 0.6rem;
   margin-top: 1rem;
 }
+:is(#page-business-coverage, #page-business-toolbox) .cv-pills,
 :is(#page-business-coverage, #page-business-toolbox) .cv-filters {
   display: inline-flex;
   padding: 0.2rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid #e6dfd2;
+  background: #fff;
+  border: 1px solid #e2e8f0;
 }
+:is(#page-business-coverage, #page-business-toolbox) .cv-pill,
 :is(#page-business-coverage, #page-business-toolbox) .cv-filter {
   border: 0;
   background: transparent;
@@ -78,23 +79,24 @@
   padding: 0.32rem 0.75rem;
   font: inherit;
   font-size: 0.78rem;
-  font-weight: 700;
-  color: #6b6258;
+  font-weight: 800;
+  color: #64748b;
   cursor: pointer;
 }
+:is(#page-business-coverage, #page-business-toolbox) .cv-pill.is-on,
 :is(#page-business-coverage, #page-business-toolbox) .cv-filter.is-on {
-  background: #1c1917;
-  color: #faf7f2;
+  background: #4f46e5;
+  color: #fff;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-refresh {
-  border: 1px solid #e6dfd2;
+  border: 1px solid #e2e8f0;
   background: #fff;
   border-radius: 999px;
   padding: 0.32rem 0.8rem;
   font: inherit;
   font-size: 0.78rem;
-  font-weight: 700;
-  color: #1c1917;
+  font-weight: 800;
+  color: #334155;
   cursor: pointer;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-note,
@@ -113,9 +115,10 @@
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-flag {
   background: #fff;
-  border: 1px solid #ece6db;
-  border-radius: 1.15rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
   padding: 0.85rem 0.9rem 0.7rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-flag h3 {
   display: flex;
@@ -124,11 +127,43 @@
   gap: 0.5rem;
   margin: 0;
   font-size: 0.95rem;
-  font-weight: 800;
-  color: #1c1917;
+  font-weight: 900;
+  color: #0f172a;
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-flag h3 small { color: #a08a62; font-size: 0.78rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-flag p { margin: 0.3rem 0 0.45rem; font-size: 0.78rem; color: #8a8176; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-flag h3 small { color: #6366f1; font-size: 0.78rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-flag p { margin: 0.3rem 0 0.45rem; font-size: 0.78rem; color: #64748b; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.45rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-sort-btn {
+  appearance: none;
+  border: 1.5px solid #c7d2fe;
+  background: #eef2ff;
+  color: #312e81;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1.35;
+  text-align: left;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-sort-btn:hover {
+  border-color: #818cf8;
+  background: #e0e7ff;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-sort-btn b { color: #1d4ed8; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-sort-btn small {
+  display: inline;
+  margin-left: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+}
 :is(#page-business-coverage, #page-business-toolbox) .cv-flag-list {
   list-style: none;
   max-height: 18.5rem;
@@ -157,76 +192,219 @@
   margin-top: 1rem;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-board {
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid #ece6db;
-  border-radius: 1.25rem;
-  padding: 0.9rem 0.85rem 1rem;
-}
-:is(#page-business-coverage, #page-business-toolbox) .cv-board-title {
-  margin: 0 0 0.65rem;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #1c1917;
-}
-:is(#page-business-coverage, #page-business-toolbox) .cv-flow {
   display: grid;
-  grid-template-columns: 1.7fr repeat(4, minmax(0, 1fr));
-  gap: 0.55rem;
-  align-items: stretch;
+  gap: 0.85rem;
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-company,
-:is(#page-business-coverage, #page-business-toolbox) .cv-region-hit {
-  grid-row: 1;
+:is(#page-business-coverage, #page-business-toolbox) .cv-sub-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-company {
+:is(#page-business-coverage, #page-business-toolbox) .cv-sub-note b { color: #0f172a; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-zone {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-sec-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-sec-title small {
+  margin-left: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauges {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 0.7rem 0.4rem;
-  background: #fff;
-  border: 1px solid #e7d7b8;
-  border-radius: 1.05rem;
-  box-shadow: 0 10px 24px rgba(28, 25, 23, 0.04);
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.95rem;
+  background: #f8fafc;
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-company .cv-ring { width: 100%; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-company .cv-ring-fig { width: 8.4rem; height: 8.4rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-company .cv-ring-mid b { font-size: 1.7rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-company .cv-ring-k { font-size: 0.82rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-flow-break {
-  grid-column: 1 / -1;
-  grid-row: 2;
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide { justify-content: center; gap: 1.4rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-ring { flex: none; width: 6.5rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-ring .apc-donut { width: 100%; display: block; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-text { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-label { font-size: 1rem; font-weight: 900; color: #0f172a; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-meta { font-size: 0.85rem; font-weight: 700; color: #334155; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-meta b { color: #0f172a; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge small { font-size: 0.74rem; color: #94a3b8; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-cards {
+  display: grid;
+  gap: 0.75rem;
+  transition: grid-template-columns 0.3s ease;
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-board .cv-ring-fig { width: 4.6rem; height: 4.6rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-board .cv-company .cv-ring-fig { width: 8.4rem; height: 8.4rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-board .cv-company .cv-ring-mid b { font-size: 1.7rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-region-hit .cv-ring { width: 100%; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-region-hit .cv-ring-k { white-space: nowrap; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-board .cv-ring-mid b { font-size: 0.92rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-region-hit {
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card {
+  --t: #6366f1; --t-bg: #eef2ff; --t-line: #c7d2fe;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
   margin: 0;
-  padding: 0.7rem 0.4rem 0.55rem;
-  border: 1px solid #ece6db;
-  border-radius: 1.05rem;
-  background: #fff;
+  padding: 1rem 1rem 0.75rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: radial-gradient(120% 90% at 100% 0%, var(--t-bg) 0%, rgba(255, 255, 255, 0) 55%), #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px -16px rgba(15, 23, 42, 0.35);
   font: inherit;
   color: inherit;
+  text-align: left;
   cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-region-hit.is-on {
-  border-color: #d6c4a3;
-  box-shadow: 0 8px 18px rgba(28, 25, 23, 0.06);
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--t), var(--t-line));
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-board .cv-offices { margin-top: 0; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-split--one { grid-template-columns: 1fr; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-region { margin-top: 1.25rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-region-name {
-  margin: 0 0 0.55rem;
-  font-size: 0.78rem;
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card--north { --t: #0ea5e9; --t-bg: #e0f2fe; --t-line: #bae6fd; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card--mid { --t: #f59e0b; --t-bg: #fef3c7; --t-line: #fde68a; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card--south { --t: #ef4444; --t-bg: #fee2e2; --t-line: #fecaca; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card--kh { --t: #8b5cf6; --t-bg: #ede9fe; --t-line: #ddd6fe; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card:hover {
+  border-color: var(--t-line);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -18px var(--t);
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card.is-on {
+  border-color: var(--t);
+  box-shadow: 0 0 0 2px var(--t-line), 0 16px 32px -18px var(--t);
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card.is-dim { gap: 0; padding: 0.85rem 0.75rem 0.7rem; opacity: 0.75; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card.is-dim:hover { opacity: 1; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-top { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--t), var(--t-line));
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 900;
+  box-shadow: 0 6px 14px -6px var(--t), inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card.is-dim .cv-region-avatar { width: 2rem; height: 2rem; font-size: 0.9rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-id { display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; min-width: 0; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-id b { font-size: 1.1rem; font-weight: 900; color: #0f172a; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card.is-dim .cv-region-id b { font-size: 0.95rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-area-pill {
+  padding: 0.08rem 0.55rem;
+  border-radius: 999px;
+  background: var(--t-bg);
+  box-shadow: inset 0 0 0 1px var(--t-line);
+  font-size: 0.72rem;
+  font-style: normal;
   font-weight: 800;
-  letter-spacing: 0.14em;
-  color: #8d7b5e;
+  color: #1e293b;
 }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: auto;
+  line-height: 1;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-stat strong { font-size: 1.45rem; font-weight: 900; color: var(--t); }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card.is-dim .cv-region-stat strong { font-size: 1.1rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-stat small { margin-top: 0.15rem; font-size: 0.66rem; font-weight: 700; color: #94a3b8; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-offices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 0.3rem;
+  width: 100%;
+  min-height: 1.6rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-offices > .cv-region-none { grid-column: 1 / -1; justify-self: start; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-offices i {
+  display: block;
+  padding: 0.22rem 0.35rem;
+  border-radius: 0.55rem;
+  background: var(--t-bg);
+  box-shadow: inset 0 0 0 1px var(--t-line);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+  color: #1e293b;
+  text-align: center;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-none {
+  padding: 0.2rem 0.6rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-style: normal;
+  color: #94a3b8;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-places {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-card.is-on .cv-region-offices i {
+  padding: 0.22rem 0.4rem;
+  font-size: 0.86rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-region-back {
+  flex: none;
+  margin-left: auto;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #475569;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-office-top {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.45rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-office-id { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-office-id b { font-size: 1rem; font-weight: 900; color: #0f172a; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-office-id i { font-size: 0.72rem; font-style: normal; font-weight: 700; color: #94a3b8; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-office-stat { margin-left: auto; text-align: right; line-height: 1; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-office-stat strong { font-size: 1.2rem; font-weight: 900; color: #4f46e5; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-office-stat small { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-weight: 700; color: #94a3b8; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-split--one { grid-template-columns: 1fr; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-offices {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
@@ -251,7 +429,7 @@
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-office-name { margin: 0; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-rings { justify-content: flex-start; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-ring-fig { width: 3.1rem; height: 3.1rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-ring-fig { width: 3.4rem; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-split,
 :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-col,
 :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-cases,
@@ -293,59 +471,23 @@
   text-align: center;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-ring-fig {
-  position: relative;
-  width: 5.4rem;
-  height: 5.4rem;
+  width: 5.6rem;
   margin: 0 auto;
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-ring-fig svg {
+:is(#page-business-coverage, #page-business-toolbox) .cv-ring-fig .apc-donut {
+  display: block;
   width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-:is(#page-business-coverage, #page-business-toolbox) .cv-ring-fig circle {
-  fill: none;
-  stroke-width: 7;
-  stroke-linecap: round;
-}
-:is(#page-business-coverage, #page-business-toolbox) .cv-track { stroke: #f1ece4; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-bar--ins { stroke: #b45309; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-bar--box { stroke: #1e3a5f; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-ring.is-done .cv-bar--ins,
-:is(#page-business-coverage, #page-business-toolbox) .cv-ring.is-done .cv-bar--box { stroke: #047857; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-ring-mid {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.05;
-}
-:is(#page-business-coverage, #page-business-toolbox) .cv-ring-mid b {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #1c1917;
-  white-space: nowrap;
-}
-:is(#page-business-coverage, #page-business-toolbox) .cv-ring-mid b small { font-size: 0.62rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-ring-mid span {
-  margin-top: 0.12rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #8a8176;
-  white-space: nowrap;
+  height: auto;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-ring-k {
   display: block;
-  margin-top: 0.28rem;
+  margin-top: 0.2rem;
   font-size: 0.72rem;
   font-weight: 700;
   color: #6b6258;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-stat { padding: 0.9rem 0.7rem 0.8rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-stat .cv-ring-fig { width: 6.6rem; height: 6.6rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-stat .cv-ring-mid b { font-size: 1.35rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-stat .cv-ring-fig { width: 6.6rem; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -617,7 +759,7 @@
   color: #9a3412;
   font-weight: 800;
 }
-#page-business .bz-hero--cover {
+:is(#page-business, #page-biz-supervisor) .bz-hero--cover {
   --hero-ink: #1c1917;
   --hero-sub: #6b6258;
   --hero-accent: #a08a62;
@@ -626,31 +768,199 @@
   background: linear-gradient(135deg, #ffffff 0%, #fbf8f3 48%, #f3ead8 100%);
   grid-column: 1 / -1;
 }
-#page-business .bz-hero--cover::before { --hero-glow: rgba(180, 140, 74, 0.45); }
-#page-business .bz-hero--cover::after {
+:is(#page-business, #page-biz-supervisor) .bz-hero--cover::before { --hero-glow: rgba(180, 140, 74, 0.45); }
+:is(#page-business, #page-biz-supervisor) .bz-hero--cover::after {
   background-image: radial-gradient(rgba(160, 138, 98, 0.16) 1px, transparent 1px);
 }
-@media (max-width: 1100px) {
-  :is(#page-business-coverage, #page-business-toolbox) .cv-flow {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-zone {
+  margin-top: 0.35rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.45rem 0.85rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-head .cv-sec-title {
+  margin: 0;
+  flex: 1 1 12rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-range {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.15rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-range-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #64748b;
+  cursor: pointer;
+  line-height: 1.2;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-range-btn:hover {
+  color: #0f172a;
+  background: #fff;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-range-btn.is-on {
+  background: #192437;
+  color: #fff;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-hit {
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 1rem;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-hit:hover,
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-hit.is-on {
+  border-color: #c9a227;
+  box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.18);
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-hit-hint {
+  display: block;
+  margin: 0.35rem 0.15rem 0.15rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-close {
+  appearance: none;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #475569;
+  cursor: pointer;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.95rem;
+  margin: 0.35rem 0 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #475569;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-leg::before {
+  content: '';
+  display: inline-block;
+  width: 1.1rem;
+  height: 0.22rem;
+  margin-right: 0.4rem;
+  border-radius: 99px;
+  vertical-align: middle;
+  background: var(--leg, #64748b);
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-latest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.55rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #64748b;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-chip i { font-style: normal; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-chip b { color: var(--leg, #0f172a); }
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-stack {
+  display: grid;
+  gap: 0.75rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-regions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+@media (min-width: 900px) {
+  :is(#page-business-coverage, #page-business-toolbox) .cv-trend-regions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  :is(#page-business-coverage, #page-business-toolbox) .cv-company,
-  :is(#page-business-coverage, #page-business-toolbox) .cv-region-hit,
-  :is(#page-business-coverage, #page-business-toolbox) .cv-flow-break { grid-row: auto; }
-  :is(#page-business-coverage, #page-business-toolbox) .cv-company,
-  :is(#page-business-coverage, #page-business-toolbox) .cv-flow-break { grid-column: 1 / -1; }
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 0.55rem 0.55rem 0.35rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-card-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-card-title small {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-chart {
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.2rem 0.1rem 0;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-card--wide .cv-trend-chart {
+  border: 0;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-chart .apc-svg--trend {
+  display: block;
+  width: 100%;
+  min-width: 22rem;
+  height: auto;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-trend-card--wide .cv-trend-chart .apc-svg--trend {
+  min-width: 34rem;
+}
+@media (max-width: 960px) {
+  :is(#page-business-coverage, #page-business-toolbox) .cv-region-cards {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
 @media (max-width: 720px) {
   :is(#page-business-coverage, #page-business-toolbox) .cv-offices,
   :is(#page-business-coverage, #page-business-toolbox) .cv-flags,
   :is(#page-business-coverage, #page-business-toolbox) .cv-split,
   :is(#page-business-coverage, #page-business-toolbox) .cv-board .cv-flags { grid-template-columns: 1fr; }
-  :is(#page-business-coverage, #page-business-toolbox) .cv-regions { grid-template-columns: 1fr 1fr; }
-  :is(#page-business-coverage, #page-business-toolbox) .cv-title { font-size: 1.4rem; }
+  :is(#page-business-coverage, #page-business-toolbox) .cv-title { font-size: 1.35rem; }
   :is(#page-business-coverage, #page-business-toolbox) .cv-person { align-items: flex-start; }
   :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-office-hit {
     flex-direction: column;
     align-items: stretch;
   }
   :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-rings { justify-content: space-around; }
+  :is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide { flex-direction: column; text-align: center; }
 }

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>財務部問題回報後台 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
+  <style>
+    table { font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.5rem; vertical-align: top; }
+    .body { white-space: pre-wrap; word-break: break-word; max-width: 22rem; }
+    .atts a {
+      display: inline-block; margin: 0.15rem 0.35rem 0.15rem 0;
+      padding: 0.2rem 0.55rem; border-radius: 999px;
+      background: #059669; color: #fff; font-size: 0.75rem; font-weight: 800;
+      text-decoration: none;
+    }
+    .atts a:hover { background: #047857; }
+    .type { font-weight: 900; color: #047857; }
+    .muted { color: #64748b; font-size: 0.78rem; }
+    .st { display: inline-block; padding: 0.12rem 0.45rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800; }
+    .st-submitted { background: #ecfdf5; color: #047857; }
+    .st-rejected { background: #fee2e2; color: #991b1b; }
+    .st-resubmitted { background: #eff6ff; color: #1d4ed8; }
+    .reject-box { margin-top: 0.4rem; display: grid; gap: 0.35rem; max-width: 16rem; }
+    .reject-box textarea { width: 100%; min-height: 3.2rem; border: 1px solid #fecaca; border-radius: 0.45rem; padding: 0.35rem 0.45rem; font: inherit; font-size: 0.8rem; }
+    .reject-box button { border: 1px solid #dc2626; background: #fff; color: #b91c1c; border-radius: 0.45rem; padding: 0.28rem 0.7rem; font-weight: 800; font-size: 0.78rem; cursor: pointer; }
+    .reject-box button:hover { background: #fef2f2; }
+    .reject-box button:disabled { opacity: 0.6; cursor: wait; }
+    .reject-reason { margin: 0.25rem 0 0; color: #7f1d1d; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+  <header>
+    <div class="topbar">
+      <h1>財務部問題回報後台</h1>
+      <a class="back" href="../index.html">← 回工具箱</a>
+    </div>
+    <p class="lead">查看財務回報單、退件與下載附件。下方可勾選誰要收新單 LINE 推播（須先綁定工具箱 LINE）。退件後同仁才能用「補件與資料查詢」補件。</p>
+  </header>
+
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">總管密碼</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="總管密碼" class="flex-1 min-w-[12rem]" />
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm err hidden"></p>
+  </section>
+
+  <section class="hidden space-y-4" id="main-panel">
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-base font-extrabold text-slate-800 m-0">LINE 通知對象</h2>
+        <button type="button" id="btn-line-refresh" class="btn btn-ghost">重新整理名單</button>
+      </div>
+      <p class="text-sm text-slate-500 m-0">請用下方搜尋找人後勾選「收通知」。預設只顯示已勾選的人，不會一次列出全部綁定帳號。</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <input type="search" id="line-search" placeholder="搜尋姓名／帳號／處別／LINE 名稱" class="flex-1 min-w-[14rem] max-w-md" autocomplete="off" />
+        <button type="button" id="btn-line-search-clear" class="btn btn-ghost">清除搜尋</button>
+      </div>
+      <p id="line-msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
+      <div class="overflow-auto border border-slate-200 rounded-xl bg-white">
+        <table>
+          <thead>
+            <tr>
+              <th>工具箱帳號</th>
+              <th>處別</th>
+              <th>LINE 名稱</th>
+              <th>綁定時間</th>
+              <th>收財務回報通知</th>
+            </tr>
+          </thead>
+          <tbody id="line-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <input type="search" id="search" placeholder="搜尋類型／姓名／處所／填表人／內容" class="max-w-md" autocomplete="off" />
+        <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+      </div>
+      <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
+      <div class="overflow-auto border border-slate-200 rounded-xl bg-white">
+        <table>
+          <thead>
+            <tr>
+              <th>時間</th>
+              <th>序號</th>
+              <th>狀態</th>
+              <th>類型</th>
+              <th>填表人</th>
+              <th>姓名／處所</th>
+              <th>內容</th>
+              <th>附件</th>
+              <th>LINE／退件</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-fin-report-admin';
+      let client = null;
+      let secret = '';
+      let allRows = [];
+      let allLineItems = [];
+
+      function cfg() {
+        const c = window.SKYFUN_SUPABASE || {};
+        return { url: String(c.url || '').trim(), anonKey: String(c.anonKey || c.anon_key || '').trim() };
+      }
+      function sb() {
+        if (client) return client;
+        const { url, anonKey } = cfg();
+        client = window.supabase.createClient(url, anonKey);
+        return client;
+      }
+      async function rpc(name, args) {
+        const { data, error } = await sb().rpc(name, args);
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        return data;
+      }
+      function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      }
+      function fmt(iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('zh-TW', { hour12: false }); } catch { return iso; }
+      }
+      function payloadText(p) {
+        p = p || {};
+        const skip = new Set(['note']);
+        const lines = [];
+        Object.keys(p).forEach((k) => {
+          if (skip.has(k)) return;
+          const v = p[k];
+          if (v == null || v === '' || (Array.isArray(v) && !v.length)) return;
+          lines.push(k + '：' + (Array.isArray(v) ? v.join('、') : String(v)));
+        });
+        if (p.note) lines.push('備註：' + p.note);
+        return lines.join('\n') || '—';
+      }
+      function filesHtml(files) {
+        const list = Array.isArray(files) ? files : [];
+        if (!list.length) return '—';
+        return '<div class="atts">' + list.map((f) =>
+          '<a href="' + esc(f.url || '') + '" target="_blank" rel="noopener" download="' + esc(f.name || '附件') + '">' + esc(f.name || '下載') + '</a>'
+        ).join('') + '</div>';
+      }
+      function statusLabel(st) {
+        const s = String(st || 'submitted');
+        if (s === 'rejected') return '<span class="st st-rejected">已退件</span>';
+        if (s === 'resubmitted') return '<span class="st st-resubmitted">已補件</span>';
+        return '<span class="st st-submitted">待處理</span>';
+      }
+      function filtered() {
+        const q = document.getElementById('search').value.trim().toLowerCase();
+        if (!q) return allRows.slice();
+        return allRows.filter((r) => {
+          const blob = [r.id, r.status, r.rejectReason, r.issueType, r.userName, r.fullName, r.office, r.lineError, payloadText(r.payload)].join(' ').toLowerCase();
+          return blob.includes(q);
+        });
+      }
+      function render() {
+        const list = filtered();
+        document.getElementById('msg').textContent = list.length ? '共 ' + list.length + ' 筆' : '沒有符合的回報';
+        document.getElementById('rows').innerHTML = list.map((r) => {
+          const line = (r.lineRecipients > 0)
+            ? ('已推 ' + r.lineRecipients + ' 人')
+            : (r.lineError ? esc(r.lineError) : '未推播');
+          const st = String(r.status || 'submitted');
+          let action = '<div class="muted">' + line + '</div>';
+          if (st === 'rejected') {
+            action += '<p class="reject-reason"><b>退件原因</b><br>' + esc(r.rejectReason || '—') + '</p>';
+          } else if (st === 'resubmitted') {
+            action += '<p class="reject-reason muted">原退件：' + esc(r.rejectReason || '—') + '</p>';
+          } else {
+            action +=
+              '<div class="reject-box">' +
+              '<textarea data-fin-reject-reason="' + esc(r.id) + '" placeholder="財務退件原因（必填）"></textarea>' +
+              '<button type="button" data-fin-reject="' + esc(r.id) + '">退件</button>' +
+              '</div>';
+          }
+          return '<tr>' +
+            '<td class="whitespace-nowrap">' + esc(fmt(r.createdAt)) + '</td>' +
+            '<td class="whitespace-nowrap"><b>#' + esc(r.id) + '</b></td>' +
+            '<td>' + statusLabel(st) + '</td>' +
+            '<td class="type">' + esc(r.issueType) + '</td>' +
+            '<td>' + esc(r.userName || '—') + '</td>' +
+            '<td>' + esc(r.fullName || '—') + '<div class="muted">' + esc(r.office || '') + '</div></td>' +
+            '<td class="body">' + esc(payloadText(r.payload)) + '</td>' +
+            '<td>' + filesHtml(r.files) + '</td>' +
+            '<td>' + action + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+      async function load() {
+        document.getElementById('msg').textContent = '載入中…';
+        const data = await rpc('fin_report_admin_list', { p_secret: secret, p_limit: 300 });
+        if (!data || data.ok === false) throw new Error((data && data.error) || '載入失敗');
+        allRows = Array.isArray(data.rows) ? data.rows : [];
+        render();
+      }
+      function lineQuery() {
+        return (document.getElementById('line-search')?.value || '').trim().toLowerCase();
+      }
+      function filteredLineItems() {
+        const q = lineQuery();
+        if (!q) return allLineItems.filter((b) => b.notifyFinReport);
+        return allLineItems.filter((b) => {
+          const blob = [b.name, b.username, b.team, b.lineName].join(' ').toLowerCase();
+          return blob.includes(q);
+        });
+      }
+      function renderLine() {
+        const msg = document.getElementById('line-msg');
+        const rows = document.getElementById('line-rows');
+        const q = lineQuery();
+        const on = allLineItems.filter((b) => b.notifyFinReport).length;
+        const list = filteredLineItems();
+        if (!allLineItems.length) {
+          msg.textContent = '還沒有人綁定 LINE';
+          rows.innerHTML = '<tr><td colspan="5" class="muted">還沒有人綁定 LINE</td></tr>';
+          return;
+        }
+        if (!q) {
+          msg.textContent = '已綁定 ' + allLineItems.length + ' 人，目前 ' + on + ' 人會收到通知。請搜尋姓名／帳號後再勾選；下方僅顯示已勾選者。';
+        } else {
+          msg.textContent = '搜尋「' + q + '」找到 ' + list.length + ' 人（全部已綁定 ' + allLineItems.length + ' 人，已勾選收通知 ' + on + ' 人）';
+        }
+        if (!list.length) {
+          rows.innerHTML = '<tr><td colspan="5" class="muted">' +
+            (q ? '沒有符合的人，請換關鍵字' : '尚未勾選任何人。請在上方搜尋後勾選「收通知」。') +
+            '</td></tr>';
+          return;
+        }
+        rows.innerHTML = list.map((b) =>
+          '<tr>' +
+          '<td>' + esc(b.name || b.username || '—') + ' <span class="muted">' + esc(b.username || '') + '</span></td>' +
+          '<td class="whitespace-nowrap">' + esc(b.team || '—') + '</td>' +
+          '<td>' + esc(b.lineName || '—') + '</td>' +
+          '<td class="whitespace-nowrap">' + esc(fmt(b.boundAt)) + '</td>' +
+          '<td><label class="inline-flex items-center gap-2 cursor-pointer">' +
+          '<input type="checkbox" data-fin-line-notify="' + esc(b.userId) + '"' + (b.notifyFinReport ? ' checked' : '') + ' class="w-4 h-4 accent-emerald-600"> 收通知</label></td>' +
+          '</tr>'
+        ).join('');
+      }
+      async function loadLine() {
+        const msg = document.getElementById('line-msg');
+        msg.textContent = '載入中…';
+        try {
+          const data = await rpc('fin_report_admin_line_list', { p_secret: secret });
+          if (!data || data.ok === false) throw new Error((data && data.error) || '載入失敗');
+          allLineItems = Array.isArray(data.items) ? data.items : [];
+          renderLine();
+        } catch (e) {
+          msg.textContent = e.message || String(e);
+        }
+      }
+      async function login() {
+        const msg = document.getElementById('login-msg');
+        msg.classList.add('hidden');
+        secret = document.getElementById('admin-secret').value.trim();
+        if (!secret) {
+          msg.textContent = '請輸入總管密碼';
+          msg.classList.remove('hidden');
+          return;
+        }
+        try {
+          await load();
+          try { sessionStorage.setItem(SECRET_KEY, secret); } catch (_) {}
+          document.getElementById('login-panel').classList.add('hidden');
+          document.getElementById('main-panel').classList.remove('hidden');
+          loadLine();
+        } catch (e) {
+          msg.textContent = e.message || String(e);
+          msg.classList.remove('hidden');
+        }
+      }
+      document.getElementById('btn-login').addEventListener('click', login);
+      document.getElementById('admin-secret').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') login();
+      });
+      document.getElementById('btn-refresh').addEventListener('click', () => load().catch((e) => {
+        document.getElementById('msg').textContent = e.message || String(e);
+      }));
+      document.getElementById('btn-line-refresh').addEventListener('click', loadLine);
+      document.getElementById('line-search').addEventListener('input', renderLine);
+      document.getElementById('btn-line-search-clear').addEventListener('click', () => {
+        const el = document.getElementById('line-search');
+        if (el) el.value = '';
+        renderLine();
+        el?.focus();
+      });
+      document.getElementById('line-rows').addEventListener('change', async (e) => {
+        const box = e.target.closest('[data-fin-line-notify]');
+        if (!box) return;
+        const uid = box.getAttribute('data-fin-line-notify');
+        const on = box.checked;
+        box.disabled = true;
+        try {
+          const res = await rpc('fin_report_admin_set_line_notify', {
+            p_secret: secret,
+            p_user_id: uid,
+            p_on: on
+          });
+          if (!res || res.ok === false) throw new Error((res && res.error) || '儲存失敗');
+          const item = allLineItems.find((b) => String(b.userId) === String(uid));
+          if (item) item.notifyFinReport = on;
+          renderLine();
+        } catch (err) {
+          box.checked = !on;
+          box.disabled = false;
+          document.getElementById('line-msg').textContent = err.message || String(err);
+        }
+      });
+      document.getElementById('search').addEventListener('input', render);
+      document.getElementById('rows').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-fin-reject]');
+        if (!btn) return;
+        const id = btn.getAttribute('data-fin-reject');
+        const ta = document.querySelector('[data-fin-reject-reason="' + id + '"]');
+        const reason = (ta && ta.value || '').trim();
+        if (!reason) {
+          document.getElementById('msg').textContent = '請先填退件原因';
+          ta?.focus();
+          return;
+        }
+        btn.disabled = true;
+        try {
+          const res = await rpc('fin_report_admin_reject', {
+            p_secret: secret,
+            p_id: Number(id),
+            p_reason: reason
+          });
+          if (!res || res.ok === false) throw new Error((res && res.error) || '退件失敗');
+          const idx = allRows.findIndex((r) => String(r.id) === String(id));
+          if (idx >= 0 && res.row) allRows[idx] = res.row;
+          else await load();
+          render();
+          document.getElementById('msg').textContent = '已退件 #' + id;
+        } catch (err) {
+          btn.disabled = false;
+          document.getElementById('msg').textContent = err.message || String(err);
+        }
+      });
+      try {
+        const saved = sessionStorage.getItem(SECRET_KEY) || '';
+        if (saved) {
+          document.getElementById('admin-secret').value = saved;
+          login();
+        }
+      } catch (_) {}
+    })();
+  </script>
+</body>
+</html>
