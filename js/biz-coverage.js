@@ -31,6 +31,7 @@
     hrError: '',
     sheetError: '',
     people: [],
+    hrAllNames: [],
     insured: [],
     production: null,
     users: [],
@@ -39,7 +40,6 @@
     casesLoaded: false,
     caseError: '',
     caseTries: 0,
-    gateError: '',
     callError: '',
     openPerson: '',
     kind: 'all',
@@ -52,7 +52,7 @@
     rateTrendRange: 'day',
     /** 點全區投保率／綁定率才展開五線圖 */
     rateTrendOpen: false,
-    /** 未產件名單：暫以代管件數代理「未產件時間」；desc=多→少、asc=少→多 */
+    /** 第二排序：代管件數；desc=多→少、asc=少→多（第一排序固定營業處北→南） */
     idleSortDir: 'desc',
     busySortDir: 'desc'
   };
@@ -94,27 +94,9 @@
     return window.skyfunAuth?.getToken?.() || '';
   }
 
-  const GATE_HASH = '97247b836a6dda78d0f933ab0028b358a85051f38074af6dfe65ac91b3638967';
-  const GATE_SALT = 'skyfun-coverage-gate:';
-  const GATE_KEY = 'skyfun-coverage-gate';
-
+  /** 誠信險／工具箱綁定：已取消頁面密碼，登入即可看 */
   function gateOpen() {
-    try { return sessionStorage.getItem(GATE_KEY) === '1'; } catch (err) { return false; }
-  }
-
-  async function gateMatches(raw) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(GATE_SALT + String(raw || '').trim()));
-    const hex = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
-    return hex === GATE_HASH;
-  }
-
-  function gateHtml() {
-    return `<form class="cv-lock" data-cv-gate>
-      <p>這兩頁要密碼才能看。</p>
-      <input type="password" inputmode="numeric" autocomplete="current-password" required placeholder="請輸入密碼">
-      <button type="submit">進入</button>
-      ${state.gateError ? `<p class="cv-error">${esc(state.gateError)}</p>` : ''}
-    </form>`;
+    return true;
   }
 
   function rpaBase() {
@@ -234,12 +216,16 @@
     return OFFICES.includes(o) || REGIONS.some((r) => r.teams.includes(o));
   }
 
+  /** 誠信險／工具箱綁定不列入 */
+  const EXCLUDE_NAMES = new Set(['尤聖權']);
+
   function scopedPeople() {
     const kind = state.kind === '正職' || state.kind === '兼職' ? state.kind : 'all';
     return state.people.filter((person) => {
       if (kind !== 'all' && person.kind !== kind) return false;
       if (person.lane === 'rent') return false;
       const name = String(person.name || '').trim();
+      if (EXCLUDE_NAMES.has(norm(name))) return false;
       if (name === '公司' || name === '本公司' || name === '星鴻') return false;
       return isBizOffice(person.office);
     });
@@ -338,6 +324,7 @@
       if (person.office !== office) return false;
       if (!isBizOffice(person.office)) return false;
       const name = String(person.name || '').trim();
+      if (EXCLUDE_NAMES.has(norm(name))) return false;
       if (name === '公司' || name === '本公司' || name === '星鴻') return false;
       if (kind !== 'all' && person.kind !== kind) return false;
       return person.lane !== 'rent';
@@ -353,18 +340,39 @@
     const ringLabel = mode === 'ins' ? '誠信險投保' : '工具箱綁定';
     let detail = '';
     if (open && mode === 'ins') {
-      const uninsured = officeRoster(office).filter((person) => !person.insured).map((person) => ({ person }));
-      const orphans = state.insured.filter((row) => row.office === office && !state.people.some((person) => norm(person.name) === norm(row.name)));
-      const orphanFoot = orphans.length
-        ? `<p class="cv-empty">名冊有、人事查無 ${orphans.length} 人：${esc(orphans.map((row) => row.name).join('、'))}</p>`
+      const roster = officeRoster(office);
+      const insured = roster.filter((person) => person.insured).map((person) => ({ person }));
+      const uninsured = roster.filter((person) => !person.insured).map((person) => ({ person }));
+      /* 投保／查無都只比姓名，不看處別 */
+      const hrNames = new Set(
+        (state.hrAllNames.length ? state.hrAllNames : state.people.map((p) => p.name)).map((n) => norm(n))
+      );
+      const orphanNames = [];
+      const orphanSeen = new Set();
+      state.insured.forEach((row) => {
+        if (row.office !== office) return;
+        const name = norm(row.name);
+        if (!name || orphanSeen.has(name) || hrNames.has(name)) return;
+        orphanSeen.add(name);
+        orphanNames.push(row.name);
+      });
+      const orphanFoot = orphanNames.length
+        ? `<p class="cv-empty">名冊有、人事查無 ${orphanNames.length} 人：${esc(orphanNames.join('、'))}</p>`
         : '';
-      detail = `<div class="cv-split cv-split--one">${nameColumn('ins', '未投保誠信險', uninsured, '這處都有保', orphanFoot, true)}</div>`;
+      detail = `<div class="cv-split">
+        ${nameColumn('ok', '已投保誠信險', insured, '這處尚無已投保', '', false)}
+        ${nameColumn('ins', '未投保誠信險', uninsured, '這處都有保', orphanFoot, true)}
+      </div>`;
     } else if (open) {
+      const bound = list.filter((person) => person.bound).map((person) => ({ person }));
       const unbound = list.filter((person) => !person.bound).map((person) => ({
         person,
         extra: person.toolboxTeam && person.toolboxTeam !== office ? `工具箱在${person.toolboxTeam}` : ''
       }));
-      detail = `<div class="cv-split cv-split--one">${nameColumn('box', '未使用工具箱', unbound, '這處都有綁定', '')}</div>`;
+      detail = `<div class="cv-split">
+        ${nameColumn('ok', '已使用工具箱', bound, '這處尚無已綁定', '', false)}
+        ${nameColumn('box', '未使用工具箱', unbound, '這處都有綁定', '', false)}
+      </div>`;
     }
     const pct = ringPct(done, stat.total);
     return `<article class="cv-office${open ? ' is-open' : ''}">
@@ -581,17 +589,59 @@
         values,
         color: series.color,
         area: idx === 0,
-        dash: idx > 0
+        thick: idx === 0,
+        dash: false
       };
     });
     const hasPoint = lines.some((line) => line.values.some((v) => v != null));
-    const latestChips = TREND_SERIES.map((series, idx) => {
+    const allVals = lines.flatMap((line) => line.values).filter((v) => v != null && Number.isFinite(v));
+    let yMin = 0;
+    let yMax = 100;
+    let yStep = 20;
+    if (allVals.length) {
+      const lo = Math.min(...allVals);
+      const hi = Math.max(...allVals);
+      const span = Math.max(8, hi - lo);
+      const pad = Math.max(4, span * 0.22);
+      yMin = Math.max(0, Math.floor((lo - pad) / 5) * 5);
+      yMax = Math.min(100, Math.ceil((hi + pad) / 5) * 5);
+      if (yMax - yMin < 12) {
+        yMin = Math.max(0, yMin - 5);
+        yMax = Math.min(100, yMax + 5);
+      }
+      const yRange = yMax - yMin;
+      yStep = yRange <= 20 ? 5 : yRange <= 40 ? 10 : 20;
+    }
+    const rankRows = TREND_SERIES.map((series, idx) => {
       const vals = lines[idx].values;
       let last = null;
+      let prev = null;
       for (let i = vals.length - 1; i >= 0; i -= 1) {
-        if (vals[i] != null) { last = vals[i]; break; }
+        if (vals[i] == null) continue;
+        if (last == null) last = vals[i];
+        else { prev = vals[i]; break; }
       }
-      return `<span class="cv-trend-chip" style="--leg:${esc(series.color)}"><i>${esc(series.name)}</i><b>${last == null ? '—' : Math.round(last) + '%'}</b></span>`;
+      const delta = last != null && prev != null ? last - prev : null;
+      return { series, last, delta };
+    })
+      .filter((row) => row.last != null)
+      .sort((a, b) => b.last - a.last);
+    const latestChips = rankRows.map((row, rank) => {
+      const gap = Math.max(0, COVER_GOAL - row.last);
+      const deltaCls = row.delta == null ? 'is-flat' : row.delta > 0 ? 'is-up' : row.delta < 0 ? 'is-down' : 'is-flat';
+      const deltaTxt = row.delta == null
+        ? '—'
+        : `${row.delta > 0 ? '+' : ''}${Math.round(row.delta)}`;
+      return `<article class="cv-trend-rank" style="--leg:${esc(row.series.color)}">
+        <span class="cv-trend-rank-n">#${rank + 1}</span>
+        <div class="cv-trend-rank-main">
+          <b>${esc(row.series.name)}</b>
+          <strong>${Math.round(row.last)}%</strong>
+        </div>
+        <em class="cv-trend-delta ${deltaCls}">${esc(deltaTxt)}</em>
+        <span class="cv-trend-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.min(100, row.last))}%"></i></span>
+        <small class="cv-trend-gap">距目標還差 ${Math.round(gap)}%</small>
+      </article>`;
     }).join('');
     const CH = window.AdminPointsCharts;
     const chart = !hasPoint
@@ -601,22 +651,24 @@
           id: 'cv-rate-trend-5-' + metric + '-' + range,
           labels,
           lines,
-          target: { value: COVER_GOAL, name: '目標' },
+          // 目標 100% 不畫進縮放後的 Y，以免把差異壓扁；改在排名卡顯示距目標
           fmt: (v) => `${Math.round(v)}%`,
-          min: 0,
-          max: 100,
-          step: 20,
+          min: yMin,
+          max: yMax,
+          step: yStep,
+          pointLabels: 'last',
           width: 960,
-          height: 280,
-          padL: 48,
-          padR: 24
+          height: 320,
+          padL: 52,
+          padR: 28,
+          padT: 28
         })
         : '<p class="cv-note">圖表元件讀不到。</p>';
     const rangeHint = range === 'week'
-      ? `五區${metricLabel} · 每周最後快照（${labels.length} 週）`
+      ? `五區${metricLabel} · 每周最後快照（${labels.length} 週）· Y 軸依資料縮放`
       : range === 'month'
-        ? `五區${metricLabel} · 每月最後快照（${labels.length} 月）`
-        : `五區${metricLabel} · 每日快照（${labels.length} 點）`;
+        ? `五區${metricLabel} · 每月最後快照（${labels.length} 月）· Y 軸依資料縮放`
+        : `五區${metricLabel} · 每日快照（${labels.length} 點）· Y 軸依資料縮放`;
     return `<section class="cv-zone cv-trend-zone is-open">
       <div class="cv-trend-head">
         <h4 class="cv-sec-title">${esc(metricLabel)}變化<small>${esc(rangeHint)}</small></h4>
@@ -628,7 +680,7 @@
           `<span class="cv-trend-leg" style="--leg:${esc(s.color)}">${esc(s.name)}</span>`
         ).join('')}
       </div>
-      <div class="cv-trend-latest">${latestChips}</div>
+      <div class="cv-trend-latest cv-trend-latest--rank">${latestChips || '<p class="cv-note">尚無最新比率。</p>'}</div>
       <div class="cv-trend-chart cv-trend-chart--wide">${chart}</div>
     </section>`;
   }
@@ -704,7 +756,6 @@
   }
 
   function renderBody(mode) {
-    if (!gateOpen()) return gateHtml();
     const waiting = mode === 'ins'
       ? '正在讀今天早上的誠信險資料…'
       : '正在讀今天早上的工具箱綁定…';
@@ -725,37 +776,47 @@
       </div>`;
   }
 
+  function officeSortRank(office) {
+    const o = String(office || '').trim();
+    const idx = OFFICES.indexOf(o);
+    if (idx >= 0) return idx;
+    /* 南區別名等：盡量排在南區附近 */
+    if (/南區/.test(o)) {
+      const south = OFFICES.indexOf('南一處');
+      return south >= 0 ? south : OFFICES.length;
+    }
+    return OFFICES.length + 1;
+  }
+
   function sortIdleRows(list, dir) {
     const sign = dir === 'asc' ? 1 : -1;
     return list.slice().sort((a, b) => {
+      const off = officeSortRank(a.person.office) - officeSortRank(b.person.office);
+      if (off) return off;
       const ea = escrowTotal(a.person.name);
       const eb = escrowTotal(b.person.name);
       const na = ea == null ? -1 : ea;
       const nb = eb == null ? -1 : eb;
       if (na !== nb) return (na - nb) * sign;
-      const oa = String(a.person.office || '');
-      const ob = String(b.person.office || '');
-      const off = oa.localeCompare(ob, 'zh-Hant');
-      if (off) return off * sign;
-      return String(a.person.name || '').localeCompare(String(b.person.name || ''), 'zh-Hant') * sign;
+      return String(a.person.name || '').localeCompare(String(b.person.name || ''), 'zh-Hant');
     });
   }
 
   function sortBusyRows(list, dir) {
     const sign = dir === 'asc' ? 1 : -1;
     return list.slice().sort((a, b) => {
+      const off = officeSortRank(a.person.office) - officeSortRank(b.person.office);
+      if (off) return off;
       if (a.total !== b.total) return (a.total - b.total) * sign;
-      const off = String(a.person.office || '').localeCompare(String(b.person.office || ''), 'zh-Hant');
-      if (off) return off * sign;
-      return String(a.person.name || '').localeCompare(String(b.person.name || ''), 'zh-Hant') * sign;
+      return String(a.person.name || '').localeCompare(String(b.person.name || ''), 'zh-Hant');
     });
   }
 
-  function sortToggleHtml(which, dir, primaryLabel) {
+  function sortToggleHtml(which, dir, secondaryLabel) {
     const arrow = dir === 'asc' ? '少→多' : '多→少';
     return `<div class="cv-sort-bar">
       <button type="button" class="cv-sort-btn" data-cv-sort="${which}" aria-pressed="${dir === 'asc' ? 'true' : 'false'}">
-        排序：${esc(primaryLabel)} → 營業處 · <b>${arrow}</b><small>點一下切換</small>
+        排序：營業處（北→南） → ${esc(secondaryLabel)} · <b>${arrow}</b><small>點一下切換件數</small>
       </button>
     </div>`;
   }
@@ -789,7 +850,7 @@
       <section class="cv-flag">
         <h3>連續兩個月未產件又未保<small>${idle.length}</small></h3>
         <p>${esc(label)}產件都是 0（認列產件，不是新媒合），而且沒有投保。只列業務、租管師。人名下的「新案」另算 115/11/1 起新媒合。</p>
-        <p class="cv-note">暫無「末次產件日」：第一排序暫用代管件數代理未產件時間，第二排序營業處。</p>
+        <p class="cv-note">第一排序：營業處北→南；第二排序：代管件數（暫代未產件時間，可切換多／少）。</p>
         ${idle.length ? sortToggleHtml('idle', state.idleSortDir, '代管件數（暫代未產件時間）') : ''}
         ${idle.length ? `<div class="cv-flag-list">${idle.map((row) => line(row, [`近兩月產件 0`])).join('')}</div>` : '<p class="cv-empty">沒有符合的人。</p>'}
       </section>
@@ -891,9 +952,8 @@
   }
 
   function render() {
-    const locked = !gateOpen();
     pages().forEach(({ mode, el }) => {
-      el.classList.toggle('cv-locked', locked);
+      el.classList.remove('cv-locked');
       const body = el.querySelector('.cv-body');
       if (!body) return;
       const saved = scrollBoxes(body).map((box) => ({ box, top: box.scrollTop, left: box.scrollLeft }));
@@ -930,11 +990,6 @@
   }
 
   async function load(force) {
-    if (!gateOpen()) {
-      state.loading = false;
-      render();
-      return;
-    }
     const t = token();
     if (!t) {
       state.loaded = false;
@@ -959,6 +1014,7 @@
       state.hrError = roster.hrError || '';
       state.sheetError = roster.sheetError || '';
       state.insured = roster.insured || [];
+      state.hrAllNames = roster.hrAllNames || [];
       state.production = roster.production || { months: [], counts: [], error: '產件無資料' };
       state.users = (dashRes && dashRes.users) || [];
       state.people = joinPeople(roster.people || [], state.insured, state.users);
@@ -1169,21 +1225,6 @@
     render();
   }
 
-  async function onGate(event) {
-    const form = event.target.closest('[data-cv-gate]');
-    if (!form) return;
-    event.preventDefault();
-    const raw = form.querySelector('input')?.value || '';
-    if (!(await gateMatches(raw))) {
-      state.gateError = '密碼不對';
-      render();
-      return;
-    }
-    try { sessionStorage.setItem(GATE_KEY, '1'); } catch (err) { /* 這個分頁記不住時，下次再問 */ }
-    state.gateError = '';
-    load(true);
-  }
-
   function bind() {
     pages().forEach(({ el }) => {
       if (el.dataset.cvBound === '1') return;
@@ -1192,7 +1233,6 @@
       if (body) {
         body.addEventListener('click', onClick);
         body.addEventListener('change', onChange);
-        body.addEventListener('submit', onGate);
       }
       new MutationObserver(() => {
         if (!el.classList.contains('hidden')) load(false);

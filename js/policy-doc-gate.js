@@ -44,6 +44,16 @@
     '讓渡'
   ];
 
+  /** 免密碼、直接浮水印預覽（業務不可下載原檔） */
+  const FREE_WATERMARK = [
+    '高專業務獎金制度1151031',
+    '星財補獎金辦法',
+    '高專點獎金辦法',
+    '第9至第11業績月高專業務激勵方案',
+    '第9至第11業績月',
+    '婚育家庭獎金辦法展延'
+  ];
+
   /** 精簡版：依檔名關鍵字對應（愈前面愈優先） */
   const SUMMARIES = [
     {
@@ -204,6 +214,11 @@
     return INCLUDE.some((k) => path.includes(k) || name.includes(k));
   }
 
+  function isFreeWatermark(href) {
+    const blob = decodePath(href) + ' ' + fileNameOf(href);
+    return FREE_WATERMARK.some((k) => blob.includes(k));
+  }
+
   function summaryFor(href, title) {
     const blob = decodePath(href) + ' ' + fileNameOf(href) + ' ' + (title || '');
     for (const s of SUMMARIES) {
@@ -328,6 +343,7 @@
     });
 
     root.querySelector('#pdg-download').addEventListener('click', () => {
+      if (root.dataset.freeWm === '1') return;
       if (!isUnlocked()) {
         setTab('full');
         return;
@@ -403,9 +419,12 @@
       </body></html>`;
     } else {
       frame.removeAttribute('srcdoc');
-      frame.src = href;
+      // 業務免密碼預覽：關掉 PDF 工具列，降低直接下載機會
+      frame.src = root.dataset.freeWm === '1'
+        ? href + (href.indexOf('#') >= 0 ? '' : '#toolbar=0&navpanes=0')
+        : href;
     }
-    if (root.dataset.wantDownload === '1') {
+    if (root.dataset.wantDownload === '1' && root.dataset.freeWm !== '1') {
       root.dataset.wantDownload = '';
       root.querySelector('#pdg-download').click();
     }
@@ -423,8 +442,55 @@
       </div>`;
   }
 
+  function openFreeWatermark(href, opts) {
+    const root = ensureUi();
+    root.hidden = false;
+    document.body.classList.add('pdg-open');
+    root.dataset.href = href;
+    root.dataset.title = (opts && opts.title) || fileNameOf(href);
+    root.dataset.download = '';
+    root.dataset.wantDownload = '';
+    root.dataset.freeWm = '1';
+    root.querySelector('#pdg-title').textContent = root.dataset.title || '辦法';
+    root.querySelectorAll('.pdg-tab').forEach((b) => {
+      b.hidden = true;
+    });
+    root.querySelector('#pdg-summary').hidden = true;
+    root.querySelector('#pdg-full').hidden = false;
+    root.querySelector('#pdg-lock').hidden = true;
+    root.querySelector('#pdg-view').hidden = false;
+    const dl = root.querySelector('#pdg-download');
+    const relock = root.querySelector('#pdg-relock');
+    if (dl) {
+      dl.hidden = true;
+      dl.textContent = '⬇️ 下載完整檔';
+    }
+    if (relock) relock.hidden = true;
+    root.querySelector('#pdg-sub').textContent = '浮水印預覽｜免密碼｜僅供內部參考｜禁止外流｜不可下載';
+    const note = root.querySelector('.pdg-wm-note');
+    if (note) note.textContent = '預覽含浮水印｜星鴻內部文件｜禁止外流｜業務不可下載原檔';
+    showFullView();
+  }
+
   function openGate(href, opts) {
     const root = ensureUi();
+    root.dataset.freeWm = '';
+    root.querySelectorAll('.pdg-tab').forEach((b) => {
+      b.hidden = false;
+    });
+    const dl = root.querySelector('#pdg-download');
+    const relock = root.querySelector('#pdg-relock');
+    if (dl) dl.hidden = false;
+    if (relock) relock.hidden = false;
+    const note = root.querySelector('.pdg-wm-note');
+    if (note) note.textContent = '預覽含浮水印；下載檔為原檔（無浮水印），請妥善保管。';
+
+    // 免密碼浮水印檔：業務只能預覽，想下載也擋下（不開原檔）
+    if (isFreeWatermark(href)) {
+      openFreeWatermark(href, opts);
+      return;
+    }
+
     root.hidden = false;
     document.body.classList.add('pdg-open');
     root.dataset.href = href;
@@ -432,6 +498,7 @@
     root.dataset.download = (opts && opts.download) || fileNameOf(href);
     root.dataset.wantDownload = opts && opts.wantDownload ? '1' : '';
     root.querySelector('#pdg-title').textContent = root.dataset.title || '辦法';
+    if (dl) dl.textContent = '⬇️ 下載完整檔';
     paintSummary();
     if (opts && opts.wantDownload && isUnlocked()) {
       setTab('full');
@@ -483,10 +550,12 @@
 
   window.SkyfunPolicyDocGate = {
     isPolicyDoc,
+    isFreeWatermark,
     isUnlocked,
     setUnlocked,
     checkPassword,
     open: openGate,
+    openFreeWatermark,
     close,
     lock: () => {
       setUnlocked(false);

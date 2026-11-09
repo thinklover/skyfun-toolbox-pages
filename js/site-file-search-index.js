@@ -5,14 +5,15 @@
     'use strict';
 
     window.SITE_FILE_SEARCH_INDEX = [
-        { file: './docs/weekly-meeting/files/1102業務週會.pdf', title: '115/11/02 1102業務週會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1102 獎金 結績 紙本合約 高專 代管 1101 包租率 55% 季考核 公會 退件 複審 實價登錄 獎懲 領款收據 青年婚育 競賽 工具箱 手機版' },
-        { file: './docs/weekly-meeting/files/1012業務周會.pdf', title: '115/10/12 1012業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1012 獎金 結績 紙本合約 工具箱 手機版 官方LINE 退件 1019 包租 解約 退押 押金 新制 虛擬帳號 帳號查詢 財產 所得 資格審查 家庭成員 限額 所得清單 給付總額 平均每人每月所得 動產 利息 存款本金 不動產 房屋現值 土地現值 自有住宅 更換房東 更換房客 死亡 繼承 買賣 更名 代管 轉租 異動 契約起日 行政審核' },
-        { file: './docs/weekly-meeting/files/1005業務周會.pdf', title: '115/10/05 1005業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 1005 獎金 結績 工具箱 手機版 官方LINE 退件 星財補 財補 證照補助 代管 1101 證照 公司登錄 代管費 雙證照 點交 糾紛 自然耗損 人為毀損 折舊 殘值 窗簾 油漆 壁癌 補漆 判決 調解 押金返還 虛擬帳戶 匯錯 帳戶凍結 配偶 賣屋 換約' },
+        { file: './docs/weekly-meeting/?v=20261110-nodl', title: '115/11/09 1109業務週會（僅預覽）', category: '檔案 · 預覽 · 業務周會', keywords: '周會 週會 簡報 業務周會 1109 獎金 核對 結績 紙本合約 高專 代管費 包租率 55% 季考核 代管 1101 證照 登錄 雙證照 管理辦法 代扣 健保 違規 離職交接 工具箱 業務專區 系統欄位 手機版 LINE 退件' },
+        { file: './docs/weekly-meeting/?v=20261110-nodl', title: '115/11/02 1102業務週會（僅預覽）', category: '檔案 · 預覽 · 業務周會', keywords: '周會 週會 簡報 業務周會 1102 獎金 結績 紙本合約 高專 代管 1101 包租率 55% 季考核 公會 退件 複審 實價登錄 獎懲 領款收據 青年婚育 競賽 工具箱 手機版' },
+        { file: './docs/weekly-meeting/?v=20261110-nodl', title: '115/10/12 1012業務週會（僅預覽）', category: '檔案 · 預覽 · 業務周會', keywords: '周會 週會 簡報 業務周會 1012 獎金 結績 紙本合約 工具箱 手機版 官方LINE 退件 1019 包租 解約 退押 押金 新制 虛擬帳號 帳號查詢 財產 所得 資格審查 家庭成員 限額 所得清單 給付總額 平均每人每月所得 動產 利息 存款本金 不動產 房屋現值 土地現值 自有住宅 更換房東 更換房客 死亡 繼承 買賣 更名 代管 轉租 異動 契約起日 行政審核' },
+        { file: './docs/weekly-meeting/?v=20261110-nodl', title: '115/10/05 1005業務週會（僅預覽）', category: '檔案 · 預覽 · 業務周會', keywords: '周會 週會 簡報 業務周會 1005 獎金 結績 工具箱 手機版 官方LINE 退件 星財補 財補 證照補助 代管 1101 證照 公司登錄 代管費 雙證照 點交 糾紛 自然耗損 人為毀損 折舊 殘值 窗簾 油漆 壁癌 補漆 判決 調解 押金返還 虛擬帳戶 匯錯 帳戶凍結 配偶 賣屋 換約' },
         { file: './docs/weekly-meeting/files/人員登錄及配置異動同意書_合併版.docx', title: '人員登錄及配置異動同意書（合併版）', category: '檔案 · Word · 業務周會', keywords: '人員登錄 配置異動 租賃管理人員 配置調整 同意書 證照 代管 合併版 表單 周會' },
-        { file: './docs/weekly-meeting/files/0914業務周會.pdf', title: '115/09/14 0914業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0914 獎金 結績 廣告 591 複審 解約 催收 SOP 本票 強制執行' },
-        { file: './docs/weekly-meeting/files/0907業務周會.pdf', title: '115/09/07 0907業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0907 軍公教 優存 代管 信任租 獎金 結績 證照 印鑑 星鴻 星華 BLL 東吳' },
-        { file: './docs/weekly-meeting/files/2025-08-31_管理部週會.pdf', title: '115/08/31 0831業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 業務周會 0831 高專 寄居蟹 轉銜 300億 租金補貼 解編 激勵' },
-        { file: './docs/weekly-meeting/files/2025-08-24_管理部週會_預審複審分工調整.pdf', title: '115/08/24 0824業務周會', category: '檔案 · PDF · 業務周會', keywords: '周會 週會 簡報 0824 預審 複審 300億 租金補貼 第一產物 轉保 0907' },
+        { file: './docs/weekly-meeting/?v=20261110-nodl', title: '115/09/14 0914業務週會（僅預覽）', category: '檔案 · 預覽 · 業務周會', keywords: '周會 週會 簡報 業務周會 0914 獎金 結績 廣告 591 複審 解約 催收 SOP 本票 強制執行' },
+        { file: './docs/weekly-meeting/?v=20261110-nodl', title: '115/09/07 0907業務週會（僅預覽）', category: '檔案 · 預覽 · 業務周會', keywords: '周會 週會 簡報 業務周會 0907 軍公教 優存 代管 信任租 獎金 結績 證照 印鑑 星鴻 星華 BLL 東吳' },
+        { file: './docs/weekly-meeting/?v=20261110-nodl', title: '115/08/31 0831業務週會（僅預覽）', category: '檔案 · 預覽 · 業務周會', keywords: '周會 週會 簡報 業務周會 0831 高專 寄居蟹 轉銜 300億 租金補貼 解編 激勵' },
+        { file: './docs/weekly-meeting/?v=20261110-nodl', title: '115/08/24 0824業務週會（僅預覽）', category: '檔案 · 預覽 · 業務周會', keywords: '周會 週會 簡報 0824 預審 複審 300億 租金補貼 第一產物 轉保 0907' },
         { file: './docs/weekly-meeting/files/媒合-領款收據_1151016版_星鴻.pdf', title: '媒合-領款收據 1151016版（星鴻）', category: '檔案 · PDF · 業務周會', keywords: '領款 收據 媒合 星鴻 周會 表單 1151016' },
         { file: './docs/weekly-meeting/files/媒合-領款收據_1151016版_星華.pdf', title: '媒合-領款收據 1151016版（星華）', category: '檔案 · PDF · 業務周會', keywords: '領款 收據 媒合 星華 周會 表單 1151016' },
         { file: './docs/weekly-meeting/files/解約-領款收據_1151016版_星鴻.pdf', title: '解約-領款收據 1151016版（星鴻）', category: '檔案 · PDF · 業務周會', keywords: '領款 收據 解約 星鴻 周會 表單 1151016' },

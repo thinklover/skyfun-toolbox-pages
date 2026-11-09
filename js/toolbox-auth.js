@@ -908,8 +908,17 @@
     syncAdminZoneEntry();
   }
 
+  /** 全區開通：不看處別／職稱，首頁各專區都能進 */
+  const FULL_ACCESS_NAMES = new Set(['簡為倢', '邱奕棋', '黃怡婷']);
+
+  function hasFullToolboxAccess() {
+    const u = session?.supabaseUser || session?.user || {};
+    return FULL_ACCESS_NAMES.has(String(u.name || '').trim());
+  }
+
   /** 行政專區：行政、營業處經理、儲備處經理、總經理室、區協理 */
   function canEnterAdminZone() {
+    if (hasFullToolboxAccess()) return true;
     const u = session?.supabaseUser || session?.user || {};
     const team = String(u.team || '').trim();
     const title = String(u.jobTitle || u.job_title || '').trim();
@@ -921,11 +930,47 @@
     return false;
   }
 
+  /** 業務主管專區：儲備處經理以上（含營業處經理、區協理、總經理室） */
+  function canEnterBizSupervisor() {
+    if (hasFullToolboxAccess()) return true;
+    const u = session?.supabaseUser || session?.user || {};
+    const team = String(u.team || '').trim();
+    const title = String(u.jobTitle || u.job_title || '').trim();
+    if (title === '工讀生') return false;
+    if (team === '總經理室') return true;
+    if (title === '儲備處經理' || title === '儲備營業處經理') return true;
+    if (title === '營業處經理') return true;
+    if (title === '營業區協理' || title === '區協理') return true;
+    return false;
+  }
+
+  /** 財會／人資專區：行政管理部、財務部、簡為倢／邱奕棋 */
+  function canEnterFinanceHr() {
+    if (hasFullToolboxAccess()) return true;
+    const u = session?.supabaseUser || session?.user || {};
+    const team = String(u.team || '').trim();
+    const title = String(u.jobTitle || u.job_title || '').trim();
+    if (team === '行政管理部' || team === '財務部') return true;
+    if (title.indexOf('行政') >= 0) return true;
+    return false;
+  }
+
   function syncAdminZoneEntry() {
-    const ok = !!(session?.user && canEnterAdminZone());
+    const loggedIn = !!session?.user;
+    const adminOk = loggedIn && canEnterAdminZone();
     document.querySelectorAll('.home-card-administration').forEach((el) => {
-      el.classList.toggle('hidden', !ok);
-      el.toggleAttribute('aria-hidden', !ok);
+      el.classList.toggle('hidden', !adminOk);
+      el.toggleAttribute('aria-hidden', !adminOk);
+    });
+    const bizSupOk = loggedIn && canEnterBizSupervisor();
+    document.querySelectorAll('.home-card-biz-sup').forEach((el) => {
+      el.classList.toggle('hidden', !bizSupOk);
+      el.toggleAttribute('aria-hidden', !bizSupOk);
+    });
+    const finHrOk = loggedIn && canEnterFinanceHr();
+    document.querySelectorAll('.home-card-finance, .home-card-hr').forEach((el) => {
+      el.classList.toggle('hidden', !finHrOk);
+      el.toggleAttribute('aria-hidden', !finHrOk);
     });
   }
 
@@ -1234,6 +1279,9 @@
     },
     getUser: () => session?.user || null,
     canEnterAdminZone,
+    canEnterBizSupervisor,
+    canEnterFinanceHr,
+    hasFullToolboxAccess,
     getProfile: () => null,
     rpc,
     authHeaders: () => ({ 'Content-Type': 'application/json' }),

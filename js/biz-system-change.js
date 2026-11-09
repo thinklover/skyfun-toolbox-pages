@@ -190,9 +190,12 @@
     return !!(n && String(r.handledBy || '').trim() === n);
   }
 
-  /** 處長／行政／管理員自己送出、尚未完成的案件（處長按完成的要離開這裡） */
+  /** 處長／行政／管理員自己送出、尚未完成的案件（待處理／已轉出不重複列在已送出） */
   function handlerOpenRows() {
-    return state.rows.filter((r) => r.status !== 'done');
+    const hide = new Set();
+    (state.inbox || []).forEach((r) => { if (r && r.id != null) hide.add(String(r.id)); });
+    (state.transferred || []).forEach((r) => { if (r && r.id != null) hide.add(String(r.id)); });
+    return state.rows.filter((r) => r.status !== 'done' && !hide.has(String(r.id)));
   }
 
   /** 前台已完成：只顯示自己經手（handledBy＝本人）或自己送出且已完成；全員一覽僅後台 */
@@ -271,7 +274,9 @@
     try {
       const res = await window.skyfunAuth.rpc('biz_system_change_admins', { p_token: token() });
       if (!res?.ok) throw new Error(res?.error || '行政名單讀取失敗');
-      state.admins = Array.isArray(res.admins) ? res.admins : [];
+      const raw = Array.isArray(res.admins) ? res.admins : [];
+      // 邱奕棋不列入「轉交行政」可選名單
+      state.admins = raw.filter((a) => String(a?.name || '').trim() !== '邱奕棋');
     } catch (e) {
       state.admins = [];
       const hint = $('bsc-xfer-hint');
@@ -361,9 +366,13 @@
       btns.push(`<button type="button" class="bsc-done-btn" data-bsc-edit="${esc(r.id)}">修改並重新送出</button>`);
       return `<div class="bsc-item-actions">${btns.join('')}</div>`;
     }
+    const me = myDisplayName();
+    const assignedAdmin = String(r.handlerAdminName || '').trim();
+    const isAssignedAdmin = !assignedAdmin || assignedAdmin === me;
     const canFinish =
       (role === 'manager' && level === 'manager') ||
-      ((role === 'admin' || role === 'super') && level === 'admin') ||
+      (role === 'admin' && level === 'admin' && isAssignedAdmin) ||
+      (role === 'super' && level === 'admin') ||
       (role === 'super' && level === 'super');
     if (canFinish) {
       btns.push(`<button type="button" class="bsc-done-btn" data-bsc-done="${esc(r.id)}">已修改完畢</button>`);
@@ -372,7 +381,7 @@
     if (role === 'manager' && level === 'manager') {
       btns.push(`<button type="button" class="bsc-xfer-btn" data-bsc-xfer="admin" data-id="${esc(r.id)}">轉交行政</button>`);
     }
-    if ((role === 'admin' || role === 'super') && level === 'admin') {
+    if ((role === 'admin' && level === 'admin' && isAssignedAdmin) || (role === 'super' && level === 'admin')) {
       btns.push(`<button type="button" class="bsc-xfer-btn" data-bsc-xfer="super" data-id="${esc(r.id)}">轉交管理員</button>`);
     }
     if (!btns.length) return '';
@@ -390,9 +399,11 @@
       const m = t.match(/^退回填寫人｜([^｜]+)｜([^｜]+)｜原因：([\s\S]+)$/);
       if (m) {
         reasons.push({ by: m[1], at: m[2], reason: m[3].trim() });
-      } else {
-        rest.push(t);
+        return;
       }
+      // 轉單只靠層級標籤顯示當前狀態，不重複列轉單歷程
+      if (/^(處長轉行政｜|行政轉管理員｜|行政轉處長｜)/.test(t) || t === '修改人已標記完成') return;
+      rest.push(t);
     });
     return { reasons, rest };
   }
@@ -942,8 +953,11 @@
     if (sel) sel.value = '';
     syncXferConfirm();
     if (modal) {
+      // 掛到 body，避免被專區捲動容器影響，固定出現在螢幕正中央
+      if (modal.parentElement !== document.body) document.body.appendChild(modal);
       modal.hidden = false;
       modal.classList.remove('hidden');
+      document.body.classList.add('bsc-modal-open');
     }
     if (!state.admins.length) loadAdmins();
     else renderAdminSelect('');
@@ -956,6 +970,11 @@
       modal.hidden = true;
       modal.classList.add('hidden');
     }
+    if (!$('bsc-reject-modal') || $('bsc-reject-modal').hidden) {
+      if (!$('bsc-edit-modal') || $('bsc-edit-modal').hidden) {
+        document.body.classList.remove('bsc-modal-open');
+      }
+    }
   }
 
   async function transferCase(id, to) {
@@ -964,7 +983,7 @@
       openXferModal(id);
       return;
     }
-    if (!confirm('確定轉交管理員？適用於預設租金、押金月份、押金金額等需進階權限的項目。')) return;
+    if (!confirm('確定轉交管理員黃怡婷？適用於預設租金、押金月份、押金金額等需進階權限的項目。')) return;
     state.busy = true;
     const btn = document.querySelector(`[data-bsc-xfer="${to}"][data-id="${id}"]`);
     if (btn) { btn.disabled = true; btn.textContent = '轉交中…'; }
@@ -976,7 +995,7 @@
         p_admin_name: null
       });
       if (!res?.ok) throw new Error(res?.error || '轉單失敗');
-      setMsg(lineNote(res.line, '已轉交管理員，並已 LINE 通知', '已轉交管理員，但 LINE 未送出'), 'ok');
+      setMsg(lineNote(res.line, '已轉交管理員黃怡婷，並已 LINE 通知', '已轉交管理員黃怡婷，但 LINE 未送出'), 'ok');
       await Promise.all([loadInbox(), loadMine()]);
     } catch (e) {
       setMsg(e.message || String(e), 'err');

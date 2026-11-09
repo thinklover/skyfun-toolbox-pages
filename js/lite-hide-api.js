@@ -43,10 +43,12 @@
 
     HIDE_SELECTORS.forEach((sel) => document.querySelectorAll(sel).forEach(hideEl));
 
+    // 只比對主標題，避免副標（例如「專線、任務板與教材」）把整張「新人專區」入口誤藏
     document.querySelectorAll('button, a, .card, .menu-item, .tool-card, .nb-hub-tile, .practice-hub-card').forEach((el) => {
-      const t = (el.textContent || '').replace(/\s+/g, ' ').trim();
+      const nameEl = el.querySelector('.bz-name, .hc-name, .nb-hub-title, .practice-hub-title, strong');
+      const t = (nameEl ? nameEl.textContent : el.textContent || '').replace(/\s+/g, ' ').trim();
       if (!t) return;
-      if (HIDE_TEXT.some((k) => t.includes(k))) hideEl(el);
+      if (HIDE_TEXT.some((k) => t === k || t.startsWith(k))) hideEl(el);
     });
   }
 

@@ -58,6 +58,7 @@
     openPoint: '',
     lkpi: null,
     guildOpen: null,
+    spotQualityOpen: false,
     leaseFolded: false,
     courseOpen: {},
     trainShut: true,
@@ -268,6 +269,11 @@
       if (!state.person && state.result.people.some((p) => p.name === myName())) state.person = myName();
       setMsg(state.termNote, state.termNote ? 'warn' : '');
       syncLvrAdminBtn();
+      // 進績效中心後用同一套結果覆寫卡片前三名快取，避免行政專區卡與內頁數字不一致
+      if (state.meta.range?.start === monthOptions()[0]?.start) {
+        rememberTop3(range, top3FromPeople(state.result.people));
+        if ($('apt-card-top')) window.adminPointsCardTop?.();
+      }
       render();
       loadOpenOpinions();
     } catch (err) {
@@ -2968,6 +2974,50 @@
     return { rate: checked ? correct / checked : null, checked, correct };
   }
 
+  /** 本業績月抽查案件（不含跨月；與上方業績月選擇器同一區間） */
+  function monthSpotChecks(names) {
+    const only = names ? new Set(names) : null;
+    return (state.sb?.checks || [])
+      .filter((c) => c && c.spotKey && (!only || only.has(c.name)))
+      .slice()
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant')));
+  }
+
+  function internalSpotDetail(names) {
+    if (!state.spotQualityOpen) return '';
+    const list = monthSpotChecks(names);
+    const fail = list.filter((c) => !(c.correct > 0)).length;
+    const range = state.meta?.range;
+    const period = range
+      ? `${range.year - 1911}/${String(range.month).padStart(2, '0')}（${String(range.start || '').slice(5)}～${String(range.end || '').slice(5)}）`
+      : state.monthKey || '';
+    const rows = list
+      .map((c) => {
+        const pass = c.correct > 0;
+        const note = String(c.note || '').replace(/^小組長抽查｜/, '');
+        return `<tr class="${pass ? '' : 'is-err'}">
+          <td>${esc(c.date)}</td>
+          <td>${esc(c.name)}</td>
+          <td>${esc(c.spotNode || '')}</td>
+          <td>${esc(note)}</td>
+          <td>${pass ? '✅ 通過' : '❌ 未通過'}</td>
+          <td>${esc(c.createdBy || '')}</td>
+        </tr>`;
+      })
+      .join('');
+    return `<div class="apt-spot-qdetail" data-internal-spot-detail>
+      <div class="apt-spot-qdetail-head">
+        <strong>本業績月抽查案件</strong>
+        <span>共 ${list.length} 件 · 未通過 ${fail} 件 · ${esc(period)}</span>
+        <button type="button" class="apt-btn-lite" data-internal-spot-close>收起</button>
+      </div>
+      <div class="apt-table-wrap"><table class="apt-table apt-spot-table">
+        <thead><tr><th>案件日期</th><th>姓名</th><th>節點</th><th>內容</th><th>結果</th><th>登錄人</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" class="apt-empty">本業績月還沒有抽查紀錄</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+  }
+
   function guildQuality(lk, kind, regions) {
     const q = lk?.quality;
     if (!q || q.error) return null;
@@ -2985,16 +3035,22 @@
     const lk = state.lkpi;
     const guild = lk?.guild || prevGuild(range).guild;
     const pct = (rate) => (rate >= 1 ? '100%' : `${(rate * 100).toFixed(1)}%`);
-    const card = (label, rate, meta, note, kind) => {
-      const on = kind && state.guildOpen?.kind === kind;
-      const attrs = kind ? ` data-guild-kind="${kind}" role="button" tabindex="0" aria-expanded="${on ? 'true' : 'false'}" title="點一下看每月良率（本期 vs 同期）與缺失類別"` : '';
-      return `<div class="apt-gauge${kind ? ' apt-gauge--pick' : ''}${on ? ' is-on' : ''}"${attrs}>
+    const card = (label, rate, meta, note, kind, spotOpen) => {
+      const on = kind ? state.guildOpen?.kind === kind : !!spotOpen;
+      const attrs = kind
+        ? ` data-guild-kind="${kind}" role="button" tabindex="0" aria-expanded="${on ? 'true' : 'false'}" title="點一下看每月良率（本期 vs 同期）與缺失類別"`
+        : spotOpen != null
+          ? ` data-internal-spot="1" role="button" tabindex="0" aria-expanded="${on ? 'true' : 'false'}" title="點一下看本業績月抽查案件與明細"`
+          : '';
+      const pick = kind || spotOpen != null;
+      return `<div class="apt-gauge${pick ? ' apt-gauge--pick' : ''}${on ? ' is-on' : ''}"${attrs}>
         <span class="apt-gauge-ring">${CH.donut({ value: rate == null ? null : rate * 100, text: rate == null ? '-' : pct(rate), sub: '目標 90%', color: gaugeColor(rate), marks: [90] })}</span>
         <span class="apt-gauge-text">
           <span class="apt-gauge-label">${label}</span>
           <span class="apt-gauge-meta">${meta}</span>
           <small>${note}</small>
           ${kind ? `<em class="apt-gauge-more">${on ? '▲ 收起每月趨勢' : '📈 點看每月趨勢・缺失類別'}</em>` : ''}
+          ${spotOpen != null ? `<em class="apt-gauge-more">${on ? '▲ 收起抽查案件' : '📋 點看本業績月抽查案件・明細'}</em>` : ''}
         </span>
       </div>`;
     };
@@ -3009,10 +3065,11 @@
       return card(label, x.rate, x.total ? `錯 <b>${x.err}</b> 件／總 <b>${x.total}</b> 件` : '這期沒有件數', note, kind);
     };
     return `<div class="apt-gauges">
-        ${card('內部審件良率', inQ.rate, inQ.checked ? `抽查 <b>${inQ.checked}</b> 件・正確 <b>${inQ.correct}</b> 件` : '本業績月還沒有抽查', '本業績月・組長抽查')}
+        ${card('內部審件良率', inQ.rate, inQ.checked ? `抽查 <b>${inQ.checked}</b> 件・正確 <b>${inQ.correct}</b> 件` : '本業績月還沒有抽查', '本業績月・組長抽查', null, state.spotQualityOpen)}
         ${guildCard('公會審件良率', 'audit')}
         ${guildCard('公會清冊良率', 'roster')}
       </div>
+      ${internalSpotDetail(o.names)}
       ${guildDetail(range, o)}`;
   }
 
@@ -3963,19 +4020,26 @@
     const CH = window.AdminPointsCharts;
     if (state.lkpi?.key !== `${range.year}-${range.month}`) loadLeaderKpi(range).catch((e) => console.warn('品質儀表板', e));
     const period = prevGuild(range).guild;
-    const card = (label, rate, goal, meta, note) => `<div class="apt-gauge">
+    const card = (label, rate, goal, meta, note, spotPick) => {
+      const on = !!spotPick && state.spotQualityOpen;
+      const attrs = spotPick
+        ? ` data-internal-spot="1" role="button" tabindex="0" aria-expanded="${on ? 'true' : 'false'}" title="點一下看本業績月抽查案件與明細"`
+        : '';
+      return `<div class="apt-gauge${spotPick ? ' apt-gauge--pick' : ''}${on ? ' is-on' : ''}"${attrs}>
         <span class="apt-gauge-ring">${CH.donut({ value: rate == null ? null : rate * 100, text: rate == null ? '-' : rate >= 1 ? '100%' : `${(rate * 100).toFixed(1)}%`, sub: `目標 ${Math.round(goal * 100)}%`, color: rate == null ? C_ALL : rate >= goal ? '#16a34a' : rate >= goal - 0.1 ? '#f59e0b' : '#dc2626', marks: [goal * 100] })}</span>
         <span class="apt-gauge-text">
           <span class="apt-gauge-label">${label}</span>
           <span class="apt-gauge-meta">${meta}</span>
           <small>${note}</small>
+          ${spotPick ? `<em class="apt-gauge-more">${on ? '▲ 收起抽查案件' : '📋 點看本業績月抽查案件・明細'}</em>` : ''}
         </span>
       </div>`;
+    };
     const inQ = internalQuality([name]);
-    const internal = card('內部審件良率', inQ.rate, 0.9, inQ.checked ? `抽查 <b>${inQ.checked}</b> 件・正確 <b>${inQ.correct}</b> 件` : '本業績月還沒有抽查', '本業績月・組長抽查');
+    const internal = card('內部審件良率', inQ.rate, 0.9, inQ.checked ? `抽查 <b>${inQ.checked}</b> 件・正確 <b>${inQ.correct}</b> 件` : '本業績月還沒有抽查', '本業績月・組長抽查', true);
     if (period < GUILD_SYS_START) {
       const na = (label) => card(label, null, 0.9, `公會期數 ${GUILD_SYS_START} 起才有逐筆案件`, `公會期數 ${esc(period)}`);
-      return `<div class="apt-gauges">${internal}${na('我的公會審件良率')}${na('我的公會清冊良率')}</div>`;
+      return `<div class="apt-gauges">${internal}${na('我的公會審件良率')}${na('我的公會清冊良率')}</div>${internalSpotDetail([name])}`;
     }
     const st = personGuildStats(name, period);
     const areaRate = (kind) => {
@@ -4017,7 +4081,7 @@
             .join('')}</tbody>
         </table></div></details>`
       : '';
-    return `<div class="apt-gauges">${internal}${guildCard('我的公會審件良率', 'audit', st.audit)}${guildCard('我的公會清冊良率', 'roster', st.roster)}</div>${list}`;
+    return `<div class="apt-gauges">${internal}${guildCard('我的公會審件良率', 'audit', st.audit)}${guildCard('我的公會清冊良率', 'roster', st.roster)}</div>${internalSpotDetail([name])}${list}`;
   }
 
   function guildDetail(range, o) {
@@ -5078,8 +5142,46 @@
     return !!me && (Core.isSupervisor(me) || me === state.leader);
   }
 
+  /** 抽查紀錄依「案件日期」歸業績月；抽到上月案件時要一併帶上月抽查，否則判定後下面像沒寫入 */
+  async function ensureSpotExtraChecks() {
+    const opts = monthOptions();
+    const idx = opts.findIndex((m) => `${m.year}-${m.month}` === state.monthKey);
+    const prev = idx >= 0 ? opts[idx + 1] : null;
+    if (!prev) {
+      state.spotChecksExtra = { key: '', checks: [] };
+      return;
+    }
+    const prevKey = `${prev.year}-${prev.month}`;
+    if (state.spotChecksExtra?.key === prevKey && Array.isArray(state.spotChecksExtra.checks)) return;
+    state.spotChecksExtra = { key: prevKey, loading: true, checks: [] };
+    try {
+      const data = await fetchSupabase(prev);
+      state.spotChecksExtra = {
+        key: prevKey,
+        checks: (data.checks || []).filter((c) => c.spotKey)
+      };
+    } catch (e) {
+      state.spotChecksExtra = { key: prevKey, checks: [], error: String(e.message || e) };
+    }
+    if (state.tab === 'spot') render();
+  }
+
+  function allSpotChecks() {
+    const map = new Map();
+    for (const c of state.sb?.checks || []) {
+      if (!c) continue;
+      map.set(c.spotKey ? `k:${c.spotKey}` : `id:${c.id}`, c);
+    }
+    for (const c of state.spotChecksExtra?.checks || []) {
+      if (!c) continue;
+      const key = c.spotKey ? `k:${c.spotKey}` : `id:${c.id}`;
+      if (!map.has(key)) map.set(key, c);
+    }
+    return [...map.values()];
+  }
+
   function spotResult(key) {
-    return (state.sb?.checks || []).find((c) => c.spotKey === key) || null;
+    return allSpotChecks().find((c) => c.spotKey === key) || null;
   }
 
   function spotReason(note) {
@@ -5123,9 +5225,17 @@
         p_reason: reason || ''
       });
       if (!res?.ok) throw new Error(res?.error || '儲存失敗');
-      const checks = (state.sb.checks || []).filter((c) => c.spotKey !== s.key);
-      checks.push({ id: res.id, date: s.date, name: s.name, checked: 1, correct: passed ? 1 : 0, note: res.note, spotKey: s.key, spotNode: s.node, createdBy: myName() });
-      state.sb.checks = checks;
+      const row = { id: res.id, date: s.date, name: s.name, checked: 1, correct: passed ? 1 : 0, note: res.note, spotKey: s.key, spotNode: s.node, createdBy: myName() };
+      const inMonth = state.meta?.range && s.date >= state.meta.range.start && s.date <= state.meta.range.end;
+      if (inMonth || !state.meta?.range) {
+        const checks = (state.sb.checks || []).filter((c) => c.spotKey !== s.key);
+        checks.push(row);
+        state.sb.checks = checks;
+      } else {
+        const extra = (state.spotChecksExtra?.checks || []).filter((c) => c.spotKey !== s.key);
+        extra.push(row);
+        state.spotChecksExtra = { ...(state.spotChecksExtra || {}), checks: extra };
+      }
       state.spotWeek = null;
       delete state.spotEdit[i];
       const n = res.notice;
@@ -5142,16 +5252,21 @@
   }
 
   function spotLog() {
-    const names = new Set(spotStaff().map((s) => s.name));
-    const list = (state.sb?.checks || []).filter((c) => c.spotKey && names.has(c.name));
-    if (!list.length) return '';
+    const names = spotStaff().map((s) => s.name);
+    const list = monthSpotChecks(names);
+    const range = state.meta?.range;
+    const period = range
+      ? `${range.year - 1911}/${String(range.month).padStart(2, '0')}（${String(range.start || '').slice(5)}～${String(range.end || '').slice(5)}）`
+      : state.monthKey || '';
+    if (!list.length) {
+      return `<p class="apt-sub-note">本業績月（${esc(period)}）這組還沒有抽查紀錄。每件按「通過／未通過」當下就會寫入；若抽到其他業績月的案件，請切換上方業績月查看該月紀錄。</p>`;
+    }
     const fail = list.filter((c) => !(c.correct > 0)).length;
-    return `<h4 class="apt-sec-title">本業績月抽查紀錄<small>共 ${list.length} 件 · 未通過 ${fail} 件 · 已計入審件良率</small></h4>
+    return `<h4 class="apt-sec-title">抽查紀錄<small>本業績月 ${esc(period)} · 共 ${list.length} 件 · 未通過 ${fail} 件 · 已計入審件良率</small></h4>
+      <p class="apt-sub-note">跟上方業績月同一區間（每月 29 日至次月 28 日）。每件判定當下即寫入；抽到其他業績月的案件，請切換業績月查看。</p>
       <div class="apt-table-wrap"><table class="apt-table apt-spot-table">
         <thead><tr><th>案件日期</th><th>姓名</th><th>結果</th><th>登錄人</th></tr></thead>
         <tbody>${list
-          .slice()
-          .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
           .map(
             (c) => `<tr><td>${esc(c.date)}</td><td>${esc(c.name)}</td><td>${esc(String(c.note || '').replace(/^小組長抽查｜/, ''))}</td><td>${esc(c.createdBy)}</td></tr>`
           )
@@ -5167,6 +5282,7 @@
     else if (state.leader && !leaders.includes(state.leader)) state.leader = '';
     if (state.spotDraws?.day !== Core.isoDate(new Date())) loadSpotDraws();
     if (state.spotWeek?.day !== Core.isoDate(new Date())) loadSpotWeek();
+    ensureSpotExtraChecks();
     const scopes = new Map(Core.leaderScopes(sb.staff || []).map((x) => [x.leader, x]));
     const leaderOpts = (leaders.length === 1 ? leaders : ['', ...leaders])
       .map((l) => {
@@ -5218,7 +5334,7 @@
         ${status}
       </div>
       ${state.leader ? spotWeekNote() : ''}
-      <p class="apt-sub-note">抽前一天的案件：每位在職行政各從前一天審過的物審、房客、預審、修繕審核、解約審核抽一件（前一天＝今天以前最近一個有審核紀錄的日子，週一會抽上週五）。按「複製網址」再貼到已登入的星鴻分頁；也可以把按鈕直接拖到那個分頁上。物審→物件審核、房客→房客審核、修繕→該筆補助申請。看完按「通過」或「未通過」（要寫原因），結果算一件審件抽查，計入審件良率；同一件改判會覆蓋原本結果。判「未通過」會立刻用 LINE 通知該行政（他要先綁定 LINE），並顯示在他的工具箱首頁；改判通過會收起通知。</p>
+      <p class="apt-sub-note">抽前一天的案件：每位在職行政各從前一天審過的物審、房客、預審、修繕審核、解約審核抽一件（前一天＝今天以前最近一個有審核紀錄的日子，週一會抽上週五）。按「複製網址」再貼到已登入的星鴻分頁；也可以把按鈕直接拖到那個分頁上。物審→物件審核、房客→房客審核、修繕→該筆補助申請。看完按「通過」或「未通過」（要寫原因），每件當下就寫入抽查紀錄與審件良率，不必等全部審完；同一件改判會覆蓋原本結果。判「未通過」會立刻用 LINE 通知該行政（他要先綁定 LINE），並顯示在他的工具箱首頁；改判通過會收起通知。</p>
       ${drawn ? `<div class="apt-table-wrap"><table class="apt-table apt-spot-table">
         <thead><tr><th>姓名</th><th>節點</th><th>案件</th><th>審核時間</th><th></th><th>抽查結果</th></tr></thead>
         <tbody>${rows}</tbody>
@@ -8042,6 +8158,8 @@
     sel.addEventListener('change', () => {
       state.monthKey = sel.value;
       state.spot = null;
+      state.spotChecksExtra = null;
+      state.spotQualityOpen = false;
       load(false);
     });
     $('apt-refresh').addEventListener('click', () => load(true));
@@ -8167,7 +8285,19 @@
       const guildCardEl = e.target.closest('[data-guild-kind]');
       if (guildCardEl) {
         const kind = guildCardEl.dataset.guildKind;
+        state.spotQualityOpen = false;
         state.guildOpen = state.guildOpen?.kind === kind ? null : { kind, period: '', city: state.guildOpen?.city || '' };
+        render();
+        return;
+      }
+      if (e.target.closest('[data-internal-spot-close]')) {
+        state.spotQualityOpen = false;
+        render();
+        return;
+      }
+      if (e.target.closest('[data-internal-spot]')) {
+        state.guildOpen = null;
+        state.spotQualityOpen = !state.spotQualityOpen;
         render();
         return;
       }
@@ -8493,7 +8623,7 @@
         render();
         return;
       }
-      if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[data-pick], [data-guild-kind], td[data-guild-month]')) {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[data-pick], [data-guild-kind], [data-internal-spot], td[data-guild-month]')) {
         e.preventDefault();
         e.target.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       }
@@ -8564,26 +8694,42 @@
     if (state.result) render();
   };
 
-  /** 行政專區「行政績效中心」卡片：本業績月點數前三名（Worker 有快取，不強制重抓；同一分頁 10 分鐘內沿用） */
-  const TOP_KEY = 'skyfun-apt-top3-v1';
+  /** 行政專區卡片前三名：與月累計表「行政」區塊同一套算點（含補助／解約／停用認點／實登補點） */
+  const TOP_KEY = 'skyfun-apt-top3-v2';
   let topLoading = null;
+
+  function top3FromPeople(people) {
+    return (people || [])
+      .filter((p) => p.group === '行政' && p.month.total > 0)
+      .slice(0, 3)
+      .map((p) => ({ name: p.name, points: p.month.total }));
+  }
+
+  function rememberTop3(range, top) {
+    try {
+      sessionStorage.setItem(TOP_KEY, JSON.stringify({ key: `${range.start}:${range.end}`, at: Date.now(), top }));
+    } catch { /* 存不了就算了 */ }
+  }
 
   async function currentTop3() {
     const range = monthOptions()[0];
     const key = `${range.start}:${range.end}`;
-    if (state.result && state.meta?.range?.start === range.start) {
-      return state.result.people.filter((p) => p.month.total > 0).slice(0, 3).map((p) => ({ name: p.name, points: p.month.total }));
+    if (state.result && state.meta?.range?.start === range.start && state.meta?.range?.end === range.end) {
+      const top = top3FromPeople(state.result.people);
+      rememberTop3(range, top);
+      return top;
     }
     try {
       const saved = JSON.parse(sessionStorage.getItem(TOP_KEY) || 'null');
       if (saved?.key === key && Date.now() - saved.at < 10 * 60 * 1000) return saved.top;
     } catch { /* 沒存過就重算 */ }
-    const [audit, expenses, term, dis, sb] = await Promise.all([
+    const [audit, expenses, term, dis, sb, lvrBf] = await Promise.all([
       fetchWorker('/admin-points/audit-log', '審核時間紀錄', range, false),
       fetchWorker('/admin-points/expenses', '補助審核', range, false),
       fetchTerminations(range, false),
       fetchDisableCredits(range, false),
-      fetchSupabase(range)
+      fetchSupabase(range),
+      fetchLvrBackfill(range).catch(() => ({ ok: true, credits: [], empty: true }))
     ]);
     const result = Core.computePoints(auditRowsOf(audit), {
       start: range.start,
@@ -8594,10 +8740,11 @@
       opinions: sb.opinions || [],
       expenses: auditRowsOf(expenses),
       terminations: auditRowsOf(term),
+      lvrBackfill: Core.dropExcludedRows(Core.lvrBackfillRows(lvrBf), excludedStaff),
       ...Core.disableCreditOpts(dis, sb.excluded)
     });
-    const top = result.people.filter((p) => p.month.total > 0).slice(0, 3).map((p) => ({ name: p.name, points: p.month.total }));
-    try { sessionStorage.setItem(TOP_KEY, JSON.stringify({ key, at: Date.now(), top })); } catch { /* 存不了就算了 */ }
+    const top = top3FromPeople(result.people);
+    rememberTop3(range, top);
     return top;
   }
 

@@ -469,10 +469,14 @@
           try { return encodeURIComponent(decodeURIComponent(seg)); } catch (e) { return encodeURIComponent(seg); }
         }).join('/');
       }
-      function pdfSrc(href, page) {
+      function pdfSrc(href, page, noDl) {
         const start = Math.max(1, Number(page) || 1);
         // 路徑分段編碼，避免中文檔名在 iframe／手機瀏覽器打不開
-        return encodePdfPath(href) + '?t=' + Date.now() + '#page=' + start + '&view=FitH';
+        // 週會簡報加 toolbar=0，隱藏 Chrome／Edge 內建 PDF 工具列的下載鈕
+        const hash = noDl
+          ? '#toolbar=0&navpanes=0&scrollbar=1&page=' + start + '&view=FitH'
+          : '#page=' + start + '&view=FitH';
+        return encodePdfPath(href) + '?t=' + Date.now() + hash;
       }
       function isMobilePreview() {
         return window.matchMedia('(max-width: 768px), (pointer: coarse)').matches
@@ -487,42 +491,56 @@
         const date = b.getAttribute('data-date');
         const start = Math.max(1, Number(page) || Number(b.getAttribute('data-page')) || 1);
         document.getElementById('pvm-title').innerHTML = (date ? '<small>' + esc(date) + '</small>' : '') + esc(title) + (start > 1 ? '<small>第 ' + start + ' 頁</small>' : '');
-        const src = pdfSrc(href, start);
-        const openBtn = document.getElementById('pvm-open');
-        openBtn.href = src;
-        openBtn.classList.remove('pvm-hide-sm');
         const noDl = b.getAttribute('data-no-dl') === '1';
+        const src = pdfSrc(href, start, noDl);
+        const openBtn = document.getElementById('pvm-open');
         const dl = document.getElementById('pvm-dl');
         if (noDl) {
+          // 不可下載：不給「新分頁／下載」，避免開出帶完整工具列的 PDF
+          openBtn.hidden = true;
+          openBtn.removeAttribute('href');
           dl.hidden = true;
           dl.removeAttribute('href');
           dl.removeAttribute('download');
         } else {
+          openBtn.hidden = false;
+          openBtn.href = src;
+          openBtn.classList.remove('pvm-hide-sm');
           dl.hidden = false;
           dl.href = encodePdfPath(href);
           dl.setAttribute('download', (href.split('/').pop() || 'download.pdf').split('?')[0]);
         }
         // 先清空再載入，確保換頁有重讀
         pvBody.innerHTML = '';
+        pvBody.oncontextmenu = noDl ? function (e) { e.preventDefault(); } : null;
         if (/\.pdf$/i.test(href.split('?')[0])) {
-          // 手機／LINE 內建瀏覽器常無法在 iframe 顯示 PDF → 直接新分頁
+          // 手機／LINE 內建瀏覽器常無法在 iframe 顯示 PDF
           if (isMobilePreview()) {
             const fallback = document.createElement('div');
             fallback.className = 'pvm-fallback is-on';
-            fallback.innerHTML = '<p>手機瀏覽器通常無法在頁面內預覽 PDF。<br>請用下方按鈕開啟。</p>'
-              + '<a href="' + escAttr(src) + '" target="_blank" rel="noopener">↗ 開啟簡報</a>'
-              + (noDl ? '<p style="margin:0.5rem 0 0;font-size:0.85rem;color:#64748b">週會簡報僅供預覽，不可下載。</p>'
-                : '<a href="' + escAttr(encodePdfPath(href)) + '" download style="background:#fff;color:#4338ca;border:1px solid #c7d2fe">⬇ 下載 PDF</a>');
+            if (noDl) {
+              // 週會不可下載：不自動另開分頁、不提供下載；請用電腦預覽
+              fallback.innerHTML = '<p>週會簡報僅供線上預覽、不可下載。<br>手機瀏覽器通常無法內嵌顯示 PDF，請改用電腦開啟本頁預覽。</p>';
+            } else {
+              fallback.innerHTML = '<p>手機瀏覽器通常無法在頁面內預覽 PDF。<br>請用下方按鈕開啟。</p>'
+                + '<a href="' + escAttr(src) + '" target="_blank" rel="noopener">↗ 開啟簡報</a>'
+                + '<a href="' + escAttr(encodePdfPath(href)) + '" download style="background:#fff;color:#4338ca;border:1px solid #c7d2fe">⬇ 下載 PDF</a>';
+              try { window.open(src, '_blank', 'noopener'); } catch (e) { /* 被擋時留畫面按鈕 */ }
+            }
             pvBody.appendChild(fallback);
-            try { window.open(src, '_blank', 'noopener'); } catch (e) { /* 被擋時留畫面按鈕 */ }
           } else {
             const frame = document.createElement('iframe');
             frame.title = title || 'PDF';
             frame.src = src;
             const fallback = document.createElement('div');
             fallback.className = 'pvm-fallback';
-            fallback.innerHTML = '<p>若預覽畫面空白，請改用新分頁開啟。</p>'
-              + '<a href="' + escAttr(src) + '" target="_blank" rel="noopener">↗ 新分頁開啟</a>';
+            if (noDl) {
+              fallback.innerHTML = '<p>若預覽畫面空白，請改用電腦版 Chrome／Edge 再開啟本頁。</p>'
+                + '<p style="margin:0.5rem 0 0;font-size:0.85rem;color:#64748b">週會簡報僅供預覽，不可下載。</p>';
+            } else {
+              fallback.innerHTML = '<p>若預覽畫面空白，請改用新分頁開啟。</p>'
+                + '<a href="' + escAttr(src) + '" target="_blank" rel="noopener">↗ 新分頁開啟</a>';
+            }
             pvBody.appendChild(frame);
             pvBody.appendChild(fallback);
             // 約 2.5 秒仍無法判斷內容時，顯示備援（部分瀏覽器 iframe 空白）

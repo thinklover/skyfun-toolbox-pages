@@ -147,7 +147,7 @@
     const H = o.height || 280;
     const padL = o.padL ?? 56;
     const padR = o.padR ?? 16;
-    const padT = 30;
+    const padT = o.padT ?? 30;
     /* 底部留空畫月份標籤（可用 o.padB／o.showXLabels 覆寫） */
     const showX = o.showXLabels !== false && labels.some((l) => String(l || '').trim());
     const padB = o.padB != null ? o.padB : showX ? 28 : 12;
@@ -189,24 +189,43 @@
     }
     const ptsOf = (l) => l.values.map((v, i) => (v == null || !Number.isFinite(v) ? null : [Number(xOf(i).toFixed(1)), y(v)]));
     const base = padT + plotH;
+    const labelMode = o.pointLabels === 'last' || o.pointLabels === 'none' ? o.pointLabels : 'all';
     [...lines].reverse().forEach((l) => {
       const runs = runsOf(ptsOf(l));
       if (l.area) runs.forEach((r) => out.push(`<path d="${curve(r)} L${r[r.length - 1][0]},${base} L${r[0][0]},${base} Z" fill="url(#${uid}-fill)"/>`));
-      runs.forEach((r) => out.push(`<path d="${curve(r)}" fill="none" stroke="${l.color}" stroke-width="${l.area ? 3.2 : 2.4}" stroke-linecap="round" stroke-linejoin="round"${l.dash ? ' stroke-dasharray="6 5"' : ''}/>`));
+      runs.forEach((r) => out.push(`<path d="${curve(r)}" fill="none" stroke="${l.color}" stroke-width="${l.area ? 3.6 : (l.thick ? 3.1 : 2.6)}" stroke-linecap="round" stroke-linejoin="round"${l.dash ? ' stroke-dasharray="6 5"' : ''}/>`));
     });
     labels.forEach((_, i) => {
       const here = lines.map((l, li) => ({ l, li, v: l.values[i] })).filter((x) => x.v != null && Number.isFinite(x.v));
       const sorted = [...here].sort((a, b) => b.v - a.v);
       here.forEach((x) => {
         const py = y(x.v);
-        const below = sorted.length > 1 && sorted[sorted.length - 1] === x;
         const on = i === active;
-        out.push(`<circle class="apc-tr-dot" cx="${xOf(i)}" cy="${py}" r="${on ? 6 : x.li ? 3.6 : 4.6}" stroke="${x.l.color}"><title>${esc(labels[i])} ${esc(x.l.name)}：${esc(fmt(x.v))}</title></circle>`);
+        out.push(`<circle class="apc-tr-dot" cx="${xOf(i)}" cy="${py}" r="${on ? 6.5 : x.li ? 4.2 : 5.2}" stroke="${x.l.color}"><title>${esc(labels[i])} ${esc(x.l.name)}：${esc(fmt(x.v))}</title></circle>`);
+      });
+      if (labelMode === 'none') return;
+      const labelHere = labelMode === 'last'
+        ? here.filter((x) => {
+            const vals = x.l.values;
+            let last = -1;
+            for (let j = vals.length - 1; j >= 0; j -= 1) {
+              if (vals[j] != null && Number.isFinite(vals[j])) { last = j; break; }
+            }
+            return last === i;
+          })
+        : here;
+      const sortedLab = [...labelHere].sort((a, b) => b.v - a.v);
+      sortedLab.forEach((x, rank) => {
+        const py = y(x.v);
         const text = fmt(x.v);
-        if (x.li === 0) {
-          const w = text.length * 7.6 + 12;
-          const ty = below ? Math.min(base - 10, py + 22) : Math.max(padT - 12, py - 22);
-          out.push(`<rect x="${xOf(i) - w / 2}" y="${ty - 10}" width="${w}" height="19" rx="9.5" fill="${x.l.color}"/><text class="apc-tr-pill" x="${xOf(i)}" y="${ty + 4}" text-anchor="middle">${esc(text)}</text>`);
+        const below = sortedLab.length > 1 && rank === sortedLab.length - 1;
+        const stagger = labelMode === 'last' ? Math.min(rank, 4) * 2 : 0;
+        if (x.li === 0 || labelMode === 'last') {
+          const w = Math.max(36, text.length * 8.2 + 14);
+          const ty = below
+            ? Math.min(base - 10, py + 22 + stagger)
+            : Math.max(padT - 10, py - 22 - stagger);
+          out.push(`<rect x="${xOf(i) - w / 2}" y="${ty - 10}" width="${w}" height="20" rx="10" fill="${x.l.color}"/><text class="apc-tr-pill" x="${xOf(i)}" y="${ty + 4}" text-anchor="middle">${esc(text)}</text>`);
         } else {
           const ty = below ? Math.min(base - 2, py + 19) : Math.max(padT - 8, py - 10);
           out.push(`<text class="apc-tr-val" x="${xOf(i)}" y="${ty}" text-anchor="middle" style="fill:${x.l.color}">${esc(text)}</text>`);

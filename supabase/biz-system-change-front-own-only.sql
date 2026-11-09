@@ -1,6 +1,9 @@
 -- 前台案件儀表板：已完成／退件只顯示「自己經手」
 -- 行政管理部／管理員不再於前台一次撈全部已完成；全員一覽請用後台。
--- 待處理：行政只看 handler_level=admin，管理員只看 super（不再丟全部 pending）。
+-- 待處理：
+--   處長：只看指定給自己（modifier_name）
+--   行政：只看指定給自己（handler_admin_name＝本人）的待行政協辦
+--   管理員：只看 handler_level=super
 
 create or replace function public.biz_system_change_for_me(p_token text)
 returns json
@@ -34,7 +37,11 @@ begin
           and (
             (x.handler_level = 'author' and x.user_id = v_uid)
             or (v_role_key = 'manager' and x.handler_level = 'manager' and trim(x.modifier_name) = v_name)
-            or (v_role_key = 'admin' and x.handler_level = 'admin')
+            or (
+              v_role_key = 'admin'
+              and x.handler_level = 'admin'
+              and trim(coalesce(x.handler_admin_name, '')) = v_name
+            )
             or (v_role_key = 'super' and x.handler_level = 'super')
           )
         order by x.created_at desc, x.id desc

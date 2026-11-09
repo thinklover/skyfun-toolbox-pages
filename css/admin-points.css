@@ -1560,6 +1560,31 @@ div.apt-lvr-office-hit { cursor: default; }
 .apt-gauge--pick.is-on { border-color: #4f46e5; box-shadow: 0 0 0 2px #c7d2fe; background: #fafaff; }
 .apt-gauge--pick:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
 .apt-gauge-more { font-style: normal; font-size: 0.72rem; font-weight: 800; color: #4f46e5; }
+.apt-spot-qdetail {
+  margin: 0.65rem 0 0.85rem;
+  padding: 0.75rem 0.85rem 0.9rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 1rem;
+  background: #f0fdf4;
+}
+.apt-spot-qdetail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.apt-spot-qdetail-head strong {
+  font-size: 0.95rem;
+  color: #065f46;
+}
+.apt-spot-qdetail-head span {
+  flex: 1 1 auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #047857;
+}
+.apt-spot-qdetail .apt-table tr.is-err td { background: #fff1f2; }
 .apt-guild {
   margin: -0.3rem 0 1rem; padding: 0.85rem 1rem 0.7rem; border: 1.5px solid #c7d2fe; border-radius: 1rem;
   background: linear-gradient(180deg, #f8faff, #fff 5rem); animation: apt-due-in 0.2s ease-out;

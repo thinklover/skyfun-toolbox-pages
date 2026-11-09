@@ -513,24 +513,34 @@
   display: grid;
   gap: 0.85rem;
 }
-#page-business-system-change .bsc-modal {
+body.bsc-modal-open {
+  overflow: hidden;
+}
+#page-business-system-change .bsc-modal,
+body > .bsc-modal {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: 10080;
   display: grid;
   place-items: center;
+  place-content: center;
   padding: 1rem;
+  margin: 0;
 }
 #page-business-system-change .bsc-modal.hidden,
-#page-business-system-change .bsc-modal[hidden] {
-  display: none;
+#page-business-system-change .bsc-modal[hidden],
+body > .bsc-modal.hidden,
+body > .bsc-modal[hidden] {
+  display: none !important;
 }
-#page-business-system-change .bsc-modal-backdrop {
+#page-business-system-change .bsc-modal-backdrop,
+body > .bsc-modal .bsc-modal-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(15, 23, 42, 0.55);
 }
-#page-business-system-change .bsc-modal-panel {
+#page-business-system-change .bsc-modal-panel,
+body > .bsc-modal .bsc-modal-panel {
   position: relative;
   z-index: 1;
   width: min(920px, 96vw);
@@ -542,7 +552,12 @@
   overflow: hidden;
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
 }
-#page-business-system-change .bsc-modal-head {
+body > .bsc-modal .bsc-xfer-panel {
+  max-width: 26rem;
+  width: min(26rem, 96vw);
+}
+#page-business-system-change .bsc-modal-head,
+body > .bsc-modal .bsc-modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -551,25 +566,29 @@
   border-bottom: 1px solid #e9d5ff;
   background: #faf5ff;
 }
-#page-business-system-change .bsc-modal-head h3 {
+#page-business-system-change .bsc-modal-head h3,
+body > .bsc-modal .bsc-modal-head h3 {
   margin: 0;
   font-size: 1rem;
   font-weight: 900;
   color: #4c1d95;
 }
-#page-business-system-change .bsc-modal-body {
+#page-business-system-change .bsc-modal-body,
+body > .bsc-modal .bsc-modal-body {
   overflow: auto;
   padding: 0.75rem;
   background: #f8fafc;
 }
-#page-business-system-change .bsc-modal-body img {
+#page-business-system-change .bsc-modal-body img,
+body > .bsc-modal .bsc-modal-body img {
   display: block;
   width: 100%;
   height: auto;
   border-radius: 0.75rem;
   border: 1px solid #e2e8f0;
 }
-#page-business-system-change .bsc-modal-foot {
+#page-business-system-change .bsc-modal-foot,
+body > .bsc-modal .bsc-modal-foot {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -578,6 +597,43 @@
   padding: 0.85rem 1rem;
   border-top: 1px solid #e2e8f0;
   background: #fff;
+}
+body > .bsc-modal .bsc-xfer-body {
+  display: grid;
+  gap: 0.45rem;
+}
+body > .bsc-modal .bsc-xfer-lead {
+  margin: 0 0 0.35rem;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+body > .bsc-modal .bsc-xfer-label {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #334155;
+}
+body > .bsc-modal .bsc-xfer-body select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #fff;
+}
+body > .bsc-modal .bsc-xfer-hint {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 650;
+}
+body > .bsc-modal .bsc-xfer-hint.is-err {
+  color: #b91c1c;
+}
+body > .bsc-modal .bsc-req {
+  color: #dc2626;
 }
 #page-business-system-change .bsc-policy-check {
   display: inline-flex;

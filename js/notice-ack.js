@@ -1,5 +1,6 @@
 /**
- * 業務獎金辦法頁（原簽呈公告）：業務同仁逐則打勾「已閱畢知悉」，紀錄寫入 Supabase（toolbox_notice_ack）
+ * 業務獎金辦法頁（原簽呈公告）：第一版樣式
+ * 白卡＋右側逐則「已閱畢知悉」；前五則重點在上；浮水印預覽不可下載
  */
 (function () {
   'use strict';
@@ -34,12 +35,12 @@
     if (state.error) return state.error;
     if (!state.loaded) return state.loading ? '讀取確認紀錄中…' : '登入工具箱後即可打勾';
     if (!state.isSales) return '本區公告由業務同仁打勾確認；你的處別不需打勾，可直接閱讀。';
-    return '請逐則閱讀後打勾，打勾後無法取消，系統會記錄確認時間。';
+    return '前五則為重點獎金／激勵辦法（皆展開）。請逐則預覽後打勾，打勾後無法取消。';
   }
 
   function render() {
     const el = root();
-    if (!el) return;
+    if (!el) return false;
     const d = data();
     const items = d.items || [];
     const done = items.filter((it) => state.acks[it.id]).length;
@@ -60,7 +61,11 @@
             <div class="nack-item-main">
               <div class="nack-item-title"><span class="nack-no">${i + 1}</span>${esc(it.title)}</div>
               ${lines ? `<ul class="nack-lines">${lines}</ul>` : ''}
-              ${it.file ? `<a href="${esc(it.file)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid nack-file">📄 開啟公告</a>` : ''}
+              ${it.file ? (
+                it.freeWm
+                  ? `<button type="button" class="btn btn-sm tone-slate-mid nack-file" data-nack-wm="${esc(it.file)}" data-nack-wm-title="${esc(it.title)}">📄 預覽浮水印檔</button>`
+                  : `<a href="${esc(it.file)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid nack-file">📄 開啟公告</a>`
+              ) : ''}
             </div>
             <label class="nack-check${canTick ? '' : ' is-off'}">
               <input type="checkbox" data-nack-id="${esc(it.id)}" ${at ? 'checked' : ''} ${!canTick || at || busy ? 'disabled' : ''}>
@@ -70,6 +75,7 @@
           </li>`;
         }).join('')}
       </ol>`;
+    return true;
   }
 
   async function load() {
@@ -117,12 +123,27 @@
 
   function bind() {
     const el = root();
-    if (!el) return;
+    if (!el) {
+      setTimeout(bind, 50);
+      return;
+    }
     render();
+    if (el.dataset.nackBound === '1') return;
+    el.dataset.nackBound = '1';
     el.addEventListener('change', (e) => {
       const box = e.target.closest('input[data-nack-id]');
       if (!box || !box.checked) return;
       ack(box.getAttribute('data-nack-id'), box);
+    });
+    el.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-nack-wm]');
+      if (!btn) return;
+      const href = btn.getAttribute('data-nack-wm') || '';
+      const title = btn.getAttribute('data-nack-wm-title') || '';
+      const Gate = window.SkyfunPolicyDocGate;
+      if (Gate?.openFreeWatermark) Gate.openFreeWatermark(href, { title });
+      else if (Gate?.open) Gate.open(href, { title });
+      else window.open(href, '_blank', 'noopener');
     });
     document.addEventListener('skyfun-auth-ready', load);
     const page = document.getElementById('page-business-bonus');

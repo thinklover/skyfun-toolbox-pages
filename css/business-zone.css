@@ -1,53 +1,73 @@
-﻿/* 專區入口共用樣式：業務／房東／房客 */
+﻿/* 專區入口共用樣式：業務／房東／房客
+   對齊行政專區：白底淺色漸層、右上柔光＋點點、白圖示方塊、實心膠囊「進入 →」 */
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) {
-  --bz-ink: #0f172a;
-  --bz-muted: #64748b;
+  --bz-ink: #1e1b4b;
+  --bz-muted: #5b5f86;
   --bz-line: #e8ecf4;
   --bz-card: #ffffff;
-  --bz-shadow: 0 10px 28px -18px rgba(15, 23, 42, 0.35);
-  --bz-accent: #6d28d9;
-  --bz-accent-soft: #f5f3ff;
-  --bz-accent-mid: #ede9fe;
+  --bz-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.05);
+  --bz-accent: #7c3aed;
+  --bz-accent-soft: #f4efff;
+  --bz-accent-mid: #ece9ff;
   --bz-glow-a: rgba(167, 139, 250, 0.28);
-  --bz-glow-b: rgba(196, 181, 253, 0.22);
-  --bz-dot: rgba(109, 40, 217, 0.06);
-  --bz-hover-line: #c4b5fd;
-  --bz-hover-shadow: rgba(109, 40, 217, 0.45);
+  --bz-glow-b: rgba(196, 181, 253, 0.18);
+  --bz-dot: rgba(124, 58, 237, 0.09);
+  --bz-hover-line: #d8ccfd;
+  --bz-hover-shadow: rgba(124, 58, 237, 0.45);
+  --bz-card-ink: #2e1065;
+  --bz-card-sub: #6b5b8c;
+  --bz-card-line: #e6dcfd;
+  --bz-card-bg1: #f4efff;
+  --bz-card-bg2: #ece9ff;
 }
 
 #page-landlord {
   --bz-accent: #0284c7;
-  --bz-accent-soft: #e0f2fe;
-  --bz-accent-mid: #bae6fd;
+  --bz-accent-soft: #eaf6fe;
+  --bz-accent-mid: #e3f1fb;
   --bz-glow-a: rgba(56, 189, 248, 0.28);
-  --bz-glow-b: rgba(125, 211, 252, 0.2);
-  --bz-dot: rgba(2, 132, 199, 0.07);
-  --bz-hover-line: #7dd3fc;
+  --bz-glow-b: rgba(125, 211, 252, 0.18);
+  --bz-dot: rgba(2, 132, 199, 0.09);
+  --bz-hover-line: #bae6fd;
   --bz-hover-shadow: rgba(2, 132, 199, 0.4);
+  --bz-ink: #0c3b5e;
+  --bz-muted: #4f6f86;
+  --bz-card-ink: #0c3b5e;
+  --bz-card-sub: #4f6f86;
+  --bz-card-line: #d3ecfb;
+  --bz-card-bg1: #eaf6fe;
+  --bz-card-bg2: #e3f1fb;
 }
 
 #page-tenant {
-  --bz-accent: #059669;
-  --bz-accent-soft: #d1fae5;
-  --bz-accent-mid: #a7f3d0;
+  --bz-accent: #10a37f;
+  --bz-accent-soft: #eafbf4;
+  --bz-accent-mid: #e2f5fb;
   --bz-glow-a: rgba(52, 211, 153, 0.28);
-  --bz-glow-b: rgba(110, 231, 183, 0.2);
-  --bz-dot: rgba(5, 150, 105, 0.07);
-  --bz-hover-line: #6ee7b7;
-  --bz-hover-shadow: rgba(5, 150, 105, 0.4);
+  --bz-glow-b: rgba(110, 231, 183, 0.18);
+  --bz-dot: rgba(16, 163, 127, 0.09);
+  --bz-hover-line: #a7f3d0;
+  --bz-hover-shadow: rgba(16, 163, 127, 0.4);
+  --bz-ink: #064e3b;
+  --bz-muted: #4f7a6c;
+  --bz-card-ink: #064e3b;
+  --bz-card-sub: #4f7a6c;
+  --bz-card-line: #cdf1e3;
+  --bz-card-bg1: #eafbf4;
+  --bz-card-bg2: #e2f5fb;
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-shell {
   position: relative;
   overflow: hidden;
-  border-radius: 1.75rem;
+  border-radius: 1.5rem;
   border: 1px solid var(--bz-line);
   background:
     radial-gradient(120% 80% at 100% -10%, var(--bz-glow-a), transparent 55%),
     radial-gradient(90% 60% at -10% 110%, var(--bz-glow-b), transparent 50%),
-    linear-gradient(180deg, #fbfaff 0%, #ffffff 42%, #f8fafc 100%);
-  box-shadow: var(--bz-shadow);
-  padding: 1.35rem 1.2rem 1.4rem;
+    linear-gradient(180deg, #ffffff 0%, #fbfaff 42%, #f8fafc 100%);
+  box-shadow: 0 16px 36px -24px rgba(15, 23, 42, 0.2);
+  padding: 1.4rem 1.25rem 1.5rem;
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-shell::before {
@@ -55,9 +75,11 @@
   position: absolute;
   inset: 0;
   background-image: radial-gradient(var(--bz-dot) 1px, transparent 1px);
-  background-size: 18px 18px;
+  background-size: 16px 16px;
+  -webkit-mask-image: linear-gradient(115deg, transparent 40%, #000 100%);
+  mask-image: linear-gradient(115deg, transparent 40%, #000 100%);
   pointer-events: none;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-head,
@@ -78,6 +100,9 @@
 @media (min-width: 720px) {
   :is(#page-business, #page-biz-supervisor) .bz-quick {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #page-business .bz-quick .bz-hero--span {
+    grid-column: 1 / -1;
   }
 }
 
@@ -273,7 +298,7 @@
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-sec {
-  margin: 0 0 0.65rem;
+  margin: 0 0 0.75rem;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -284,80 +309,231 @@
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-tools {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.65rem;
-  margin-bottom: 0.25rem;
+  gap: 0.85rem;
+  margin-bottom: 0.35rem;
 }
 
 #page-business .bz-tools {
   margin-bottom: 1.25rem;
 }
 
+#page-business .bz-tools--zones {
+  gap: 1rem;
+}
+
+#page-business .bz-tools--utils {
+  gap: 0.65rem;
+}
+
 @media (min-width: 720px) {
   :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  #page-business .bz-tools .bz-card--span {
+    grid-column: 1 / -1;
+  }
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card {
+  --card-m: var(--bz-accent);
+  --card-ink: var(--bz-card-ink);
+  --card-sub: var(--bz-card-sub);
+  --card-line: var(--bz-card-line);
+  --card-bg1: var(--bz-card-bg1);
+  --card-bg2: var(--bz-card-bg2);
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.9rem;
   width: 100%;
-  min-height: 4.6rem;
-  padding: 0.95rem 1rem;
-  border: 1px solid var(--bz-line);
+  min-height: 5.2rem;
+  padding: 1.1rem 1.15rem;
+  border: 1px solid var(--card-line);
   border-radius: 1.15rem;
-  background: var(--bz-card);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 20px -16px rgba(15, 23, 42, 0.28);
+  background: linear-gradient(135deg, #ffffff 0%, var(--card-bg1) 55%, var(--card-bg2) 100%);
+  box-shadow: 0 16px 36px -24px color-mix(in srgb, var(--card-m) 55%, transparent), 0 1px 3px rgba(15, 23, 42, 0.05);
   text-align: left;
   text-decoration: none;
   color: inherit;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* 尺寸層級：主卡（全寬大）→ 子專區中卡 → 常用工具小卡 */
+#page-business .bz-tools--zones .bz-card:not(.bz-card--hero) {
+  min-height: 6.1rem;
+  padding: 1.2rem 1.2rem;
+  border-radius: 1.2rem;
+}
+
+#page-business .bz-tools--zones .bz-card:not(.bz-card--hero) .bz-ico {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1rem;
+  font-size: 1.5rem;
+}
+
+#page-business .bz-tools--zones .bz-card:not(.bz-card--hero) .bz-name {
+  font-size: 1.12rem;
+}
+
+/* 次主卡：獎金／系統通報（比一般子專區大、比新人主卡略小） */
+#page-business .bz-card--lg {
+  min-height: 8.4rem;
+  padding: 1.55rem 1.35rem;
+  border-radius: 1.35rem;
+  gap: 1.1rem;
+  box-shadow: 0 22px 40px -20px color-mix(in srgb, var(--card-m) 62%, transparent), 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+#page-business .bz-card--lg .bz-ico {
+  width: 3.85rem;
+  height: 3.85rem;
+  border-radius: 1.1rem;
+  font-size: 1.85rem;
+}
+
+#page-business .bz-card--lg .bz-name {
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+
+#page-business .bz-card--lg .bz-hint {
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+#page-business .bz-card--lg .bz-go {
+  min-width: 3.6rem;
+  height: 2.4rem;
+  padding: 0 1.05rem;
+  font-size: 0.86rem;
+}
+
+#page-business .bz-card--hero {
+  min-height: 10.5rem;
+  padding: 1.85rem 1.6rem;
+  border-radius: 1.5rem;
+  gap: 1.25rem;
+  box-shadow: 0 26px 48px -20px color-mix(in srgb, var(--card-m) 70%, transparent), 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+#page-business .bz-card--hero .bz-ico {
+  width: 4.6rem;
+  height: 4.6rem;
+  border-radius: 1.25rem;
+  font-size: 2.25rem;
+}
+
+#page-business .bz-card--hero .bz-name {
+  font-size: 1.75rem;
+  letter-spacing: 0.03em;
+}
+
+#page-business .bz-card--hero .bz-hint {
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+#page-business .bz-card--hero .bz-go {
+  min-width: 4rem;
+  height: 2.55rem;
+  padding: 0 1.15rem;
+  font-size: 0.9rem;
+}
+
+#page-business .bz-card--sm {
+  min-height: 4.15rem;
+  padding: 0.78rem 0.9rem;
+  gap: 0.7rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 22px -18px color-mix(in srgb, var(--card-m) 45%, transparent), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+#page-business .bz-card--sm .bz-ico {
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 0.75rem;
+  font-size: 1.15rem;
+}
+
+#page-business .bz-card--sm .bz-name {
+  font-size: 0.98rem;
+}
+
+#page-business .bz-card--sm .bz-hint {
+  font-size: 0.74rem;
+}
+
+#page-business .bz-card--sm .bz-go {
+  min-width: 2.7rem;
+  height: 1.9rem;
+  padding: 0 0.7rem;
+  font-size: 0.72rem;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 14rem;
+  height: 14rem;
+  right: -5rem;
+  top: -7rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--card-m) 22%, transparent), transparent 70%);
+  pointer-events: none;
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card:hover {
   transform: translateY(-2px);
-  border-color: var(--bz-hover-line);
-  box-shadow: 0 14px 28px -18px var(--bz-hover-shadow);
+  border-color: var(--card-line);
+  box-shadow: 0 22px 44px -22px color-mix(in srgb, var(--card-m) 60%, transparent), 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card:active {
   transform: translateY(0);
 }
 
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card:hover .bz-go {
+  transform: translateX(2px);
+}
+
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-ico {
   display: grid;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 0.9rem;
-  background: linear-gradient(160deg, var(--bz-accent-soft), #fff);
-  border: 1px solid color-mix(in srgb, var(--bz-accent) 22%, #ffffff);
-  font-size: 1.35rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.95rem;
+  background: #fff;
+  border: none;
+  box-shadow: inset 0 0 0 1px var(--card-line), 0 6px 14px -8px color-mix(in srgb, var(--card-m) 70%, transparent);
+  font-size: 1.4rem;
   line-height: 1;
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-copy {
   min-width: 0;
   display: grid;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-name {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 900;
-  color: var(--bz-ink);
+  color: var(--card-ink);
   letter-spacing: 0.02em;
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-hint {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: var(--bz-muted);
-  line-height: 1.4;
+  color: var(--card-sub);
+  line-height: 1.45;
 }
 
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-go {
@@ -365,22 +541,69 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.4rem;
-  height: 2.1rem;
-  padding: 0 0.65rem;
+  gap: 0.15rem;
+  min-width: 3.2rem;
+  height: 2.15rem;
+  padding: 0 0.9rem;
   border-radius: 999px;
-  background: var(--bz-accent);
+  background: var(--card-m);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--card-m) 80%, transparent);
+  transition: transform 0.15s ease;
+}
+
+/* 子專區分色：對齊行政／首頁色票 */
+#page-business .bz-card--newbie {
+  --card-m: #d97706;
+  --card-ink: #5c3200;
+  --card-sub: #86684a;
+  --card-line: #fbe3bf;
+  --card-bg1: #fff7e8;
+  --card-bg2: #fff1df;
+}
+#page-business .bz-card--bonus {
+  --card-m: #7c3aed;
+  --card-ink: #2e1065;
+  --card-sub: #6b5b8c;
+  --card-line: #e6dcfd;
+  --card-bg1: #f4efff;
+  --card-bg2: #ece9ff;
+}
+#page-business .bz-card--sys {
+  --card-m: #475569;
+  --card-ink: #0f172a;
+  --card-sub: #64748b;
+  --card-line: #cbd5e1;
+  --card-bg1: #f8fafc;
+  --card-bg2: #e2e8f0;
+}
+#page-business .bz-card--ll {
+  --card-m: #0284c7;
+  --card-ink: #0c3b5e;
+  --card-sub: #4f6f86;
+  --card-line: #d3ecfb;
+  --card-bg1: #eaf6fe;
+  --card-bg2: #e3f1fb;
+}
+#page-business .bz-card--tn {
+  --card-m: #10a37f;
+  --card-ink: #064e3b;
+  --card-sub: #4f7a6c;
+  --card-line: #cdf1e3;
+  --card-bg1: #eafbf4;
+  --card-bg2: #e2f5fb;
 }
 
 #page-business .bz-forms {
-  border-radius: 1.25rem;
+  border-radius: 1.15rem;
   border: 1px solid var(--bz-line);
-  background: rgba(255, 255, 255, 0.88);
-  padding: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--bz-shadow);
+  padding: 1.1rem;
 }
 
 #page-business .bz-forms > h3 {
@@ -403,5 +626,35 @@
   }
   :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-hint {
     font-size: 0.78rem;
+  }
+  #page-business .bz-card--lg {
+    min-height: 6.6rem;
+    padding: 1.15rem 0.95rem;
+    gap: 0.8rem;
+  }
+  #page-business .bz-card--lg .bz-ico {
+    width: 3.2rem;
+    height: 3.2rem;
+    font-size: 1.55rem;
+  }
+  #page-business .bz-card--lg .bz-name {
+    font-size: 1.15rem;
+  }
+  #page-business .bz-card--hero {
+    min-height: 7.2rem;
+    padding: 1.2rem 1rem;
+    gap: 0.85rem;
+  }
+  #page-business .bz-card--hero .bz-ico {
+    width: 3.4rem;
+    height: 3.4rem;
+    font-size: 1.65rem;
+  }
+  #page-business .bz-card--hero .bz-name {
+    font-size: 1.28rem;
+  }
+  #page-business .bz-card--sm {
+    min-height: 3.8rem;
+    padding: 0.7rem 0.75rem;
   }
 }

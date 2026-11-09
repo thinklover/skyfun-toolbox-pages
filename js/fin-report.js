@@ -76,6 +76,7 @@
   };
 
   const DOCS_FILE_LABEL = {
+    '信任租': '信任租上傳',
     '六個月繳租證明': '六個月繳租證明上傳',
     '保證人+簽呈': '保證人＋簽呈上傳',
     '緊急連絡人+簽呈': '緊急連絡人＋簽呈上傳',
@@ -84,6 +85,14 @@
 
   const DOCS_WITH_SIGN = ['保證人+簽呈', '緊急連絡人+簽呈', '個案簽呈'];
   const PKG_SIGN_TO_DISTRICT = [PKG_NEW, PKG_RENEW_SUB];
+  const DOCS_PATH_SIGN = '簽呈';
+
+  function resolvePkgDocs() {
+    const path = checked('fin-pkg-docs-path');
+    if (!path) return '';
+    if (path === DOCS_PATH_SIGN) return checked('fin-pkg-docs-sign') || '';
+    return path;
+  }
 
   /** 房東／房客異動：各原因逐項上傳（key 同時當 state.files 鍵） */
   const LL_DOC_SETS = {
@@ -826,7 +835,8 @@
     const genKind = checked('fin-gen-kind');
 
     const depositType = checked('fin-deposit-type');
-    const pkgDocs = checked('fin-pkg-docs');
+    const docsPath = checked('fin-pkg-docs-path');
+    const pkgDocs = resolvePkgDocs();
     const hasRoommate = checked('fin-has-roommate');
     const receivableChecked = Array.from(document.querySelectorAll('#page-finance input[name="fin-receivable"]:checked')).map((x) => x.value);
     const showIntake = issue === ISSUE_PKG && PKG_INTAKE.includes(pkgItem);
@@ -836,6 +846,7 @@
     const showTopup = issue === ISSUE_PKG && pkgItem === PKG_RENEW_PKG;
     const showTopupAmt = showTopup && renewTopup === '是';
     const showDepositFile = showDeposit && !!depositType;
+    const showSignPick = showDocs && docsPath === DOCS_PATH_SIGN;
     const showDocsFile = showDocs && !!pkgDocs;
     const showReceivableOther = showIntake && receivableChecked.includes('其他');
     const showRoommateYes = issue === ISSUE_PKG && pkgItem === PKG_REMATCH && hasRoommate === '有';
@@ -873,8 +884,9 @@
       else if (rule === 'pkg-intake') ok = showIntake;
       else if (rule === 'pkg-deposit') ok = showDeposit;
       else if (rule === 'pkg-docs') ok = showDocs;
+      else if (rule === 'docs-sign-pick') ok = showSignPick;
       else if (rule === 'docs-sign-district') {
-        ok = showDocs && PKG_SIGN_TO_DISTRICT.includes(pkgItem);
+        ok = showSignPick && PKG_SIGN_TO_DISTRICT.includes(pkgItem);
       }
       else if (rule === 'deposit-file') ok = showDepositFile;
       else if (rule === 'docs-file') ok = showDocsFile;
@@ -982,7 +994,7 @@
       }
       const wasOpen = el.classList.contains('is-open');
       el.classList.toggle('is-open', !!ok);
-      if (wasOpen && !ok && (rule === 'pkg-intake' || rule === 'pkg-deposit' || rule === 'pkg-docs' || rule === 'deposit-topup' || rule === 'topup-yes' || rule === 'receivable-other' || rule === 'pkg-contract')) {
+      if (wasOpen && !ok && (rule === 'pkg-intake' || rule === 'pkg-deposit' || rule === 'pkg-docs' || rule === 'docs-sign-pick' || rule === 'deposit-topup' || rule === 'topup-yes' || rule === 'receivable-other' || rule === 'pkg-contract')) {
         clearFields(el);
         if (rule === 'topup-yes') {
           state.files.topup = [];
@@ -1336,7 +1348,7 @@
         }
         payload.receivable = Array.from(document.querySelectorAll('#page-finance input[name="fin-receivable"]:checked')).map((x) => x.value);
         if (payload.receivable.includes('其他')) payload.receivableOther = val('fin-receivable-other');
-        if (payload.pkgItem !== PKG_RENEW_PKG) payload.pkgDocs = checked('fin-pkg-docs');
+        if (payload.pkgItem !== PKG_RENEW_PKG) payload.pkgDocs = resolvePkgDocs();
       }
       payload.rematchType = checked('fin-rematch-type');
       payload.oldTenant = val('fin-old-tenant');
@@ -1525,13 +1537,14 @@
         }
       }
       if (PKG_CONTRACT.includes(payload.pkgItem) && (fileCount.contract || 0) < 1) {
-        return '請上傳契約書（包租／轉租可傳同一欄）';
+        return '請上傳契約書+行政檢核表（包租／轉租可傳同一欄）';
       }
       if ((DEPOSIT_BY_PKG[payload.pkgItem] || []).length && !payload.depositType) return '請選押金類型';
       if (payload.depositType && (fileCount.deposit || 0) < 1) {
         return '請上傳' + (DEPOSIT_FILE_LABEL[payload.depositType] || '押金證明').replace(/上傳$/, '');
       }
       if (PKG_INTAKE.includes(payload.pkgItem) && payload.pkgItem !== PKG_RENEW_PKG && !payload.pkgDocs) {
+        if (checked('fin-pkg-docs-path') === DOCS_PATH_SIGN) return '請選簽呈類型';
         return '請選包租必檢附資料';
       }
       if (payload.pkgDocs && (fileCount.sign || 0) < 1) {
@@ -1907,7 +1920,7 @@
         const docsLabel = DOCS_FILE_LABEL[payload.pkgDocs] || '必檢附資料';
         const llDocGroups = Object.values(LL_DOC_SETS).flat().map((d) => ({ key: d.key, label: '異動｜' + d.label }));
         const groups = [
-          { key: 'contract', label: '契約書' },
+          { key: 'contract', label: '契約書+行政檢核表' },
           { key: 'deposit', label: depositLabel.replace(/上傳$/, '') },
           { key: 'sign', label: docsLabel.replace(/上傳$/, '') },
           { key: 'receivable', label: '其他費用金額' },

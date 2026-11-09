@@ -9,38 +9,116 @@
   <script src="../js/supabase-config.js"></script>
   <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
   <style>
-    table { font-size: 0.85rem; }
-    th, td { padding: 0.55rem 0.5rem; vertical-align: top; }
-    .badge { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; font-weight: 800; }
+    .badge { font-size: 0.7rem; padding: 0.12rem 0.45rem; border-radius: 0.3rem; white-space: nowrap; font-weight: 800; }
     .b-pending { background: #fef3c7; color: #92400e; }
     .b-done { background: #d1fae5; color: #065f46; }
     .b-rejected { background: #fee2e2; color: #b91c1c; }
-    .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.65rem; padding: 0.6rem 0.75rem; cursor: pointer; }
+    .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.55rem; padding: 0.45rem 0.65rem; cursor: pointer; min-width: 4.8rem; text-align: left; }
     .stat.is-active { border-color: #7c3aed; box-shadow: 0 0 0 1px #7c3aed inset; }
-    .stat b { display: block; font-size: 1.35rem; color: #4c1d95; line-height: 1.2; }
-    .stat span { font-size: 0.75rem; color: #64748b; }
-    .atts a { color: #6d28d9; text-decoration: underline; margin-right: 0.4rem; font-size: 0.78rem; }
-    .atts img { width: 56px; height: 56px; object-fit: cover; border-radius: 0.4rem; border: 1px solid #e2e8f0; margin: 0.15rem 0.25rem 0 0; }
-    .note-input { width: 100%; min-width: 10rem; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 0.45rem; padding: 0.35rem 0.45rem; }
-    .act { font-size: 0.78rem; padding: 0.3rem 0.65rem; border-radius: 0.45rem; font-weight: 800; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
+    .stat b { display: block; font-size: 1.2rem; color: #4c1d95; line-height: 1.15; }
+    .stat span { font-size: 0.72rem; color: #64748b; }
+    .atts { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; }
+    .atts a { color: #6d28d9; text-decoration: underline; font-size: 0.78rem; }
+    .atts img { width: 48px; height: 48px; object-fit: cover; border-radius: 0.35rem; border: 1px solid #e2e8f0; }
+    .note-input { width: 100%; max-width: 28rem; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 0.4rem; padding: 0.35rem 0.5rem; }
+    .act { font-size: 0.78rem; padding: 0.32rem 0.65rem; border-radius: 0.4rem; font-weight: 800; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
     .act-done { background: #059669; border-color: #059669; color: #fff; }
     .act-rej { background: #dc2626; border-color: #dc2626; color: #fff; }
     .act-del { background: #fff; border-color: #fca5a5; color: #b91c1c; }
-    .body { white-space: pre-wrap; word-break: break-word; max-width: 22rem; }
-    .node-tag { display: inline-block; margin: 0.1rem 0.2rem 0.1rem 0; padding: 0.1rem 0.45rem; border-radius: 999px; background: #ede9fe; color: #5b21b6; font-size: 0.72rem; font-weight: 800; }
-    .lv { display: inline-block; margin-top: 0.25rem; font-size: 0.7rem; font-weight: 800; padding: 0.1rem 0.45rem; border-radius: 999px; }
+    .node-tag { display: inline-block; margin: 0 0.2rem 0 0; padding: 0.08rem 0.4rem; border-radius: 999px; background: #ede9fe; color: #5b21b6; font-size: 0.7rem; font-weight: 800; }
+    .lv { display: inline-block; font-size: 0.68rem; font-weight: 800; padding: 0.08rem 0.4rem; border-radius: 999px; vertical-align: middle; }
     .lv-manager { background: #ede9fe; color: #5b21b6; }
     .lv-admin { background: #ffedd5; color: #9a3412; }
     .lv-super { background: #fee2e2; color: #b91c1c; }
+    .city-tag { display: inline-block; margin-left: 0.35rem; padding: 0.08rem 0.4rem; border-radius: 999px; background: #e0f2fe; color: #075985; font-size: 0.68rem; font-weight: 800; }
+    .case-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      background: #fff;
+      padding: 0.7rem 0.85rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+    .case-card + .case-card { margin-top: 0.5rem; }
+    .case-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.75rem;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+    .case-title { font-weight: 900; color: #0f172a; font-size: 0.95rem; line-height: 1.35; }
+    .case-sub { font-size: 0.72rem; color: #64748b; margin-top: 0.1rem; }
+    .case-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.2rem 1rem;
+      font-size: 0.82rem;
+      color: #334155;
+      line-height: 1.4;
+    }
+    .case-meta span em {
+      font-style: normal;
+      color: #94a3b8;
+      font-size: 0.72rem;
+      margin-right: 0.25rem;
+    }
+    .case-body {
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.45;
+      font-size: 0.86rem;
+      color: #0f172a;
+      background: #f8fafc;
+      border: 1px solid #eef2f7;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.65rem;
+    }
+    .case-history {
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.4;
+      font-size: 0.78rem;
+      color: #475569;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 0.5rem;
+      padding: 0.45rem 0.6rem;
+    }
+    .case-foot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem 0.75rem;
+      align-items: center;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 0.5rem;
+    }
+    .case-foot .btn-row { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+    }
+    .filter-bar select,
+    .filter-bar input[type="search"] {
+      min-height: 2.2rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.45rem;
+      padding: 0.3rem 0.55rem;
+      font-size: 0.88rem;
+    }
+    .filter-bar select { min-width: 8rem; }
+    .filter-bar input[type="search"] { flex: 1; min-width: 12rem; }
   </style>
 </head>
-<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+<body class="p-3 md:p-5 max-w-[56rem] mx-auto space-y-3">
   <header>
     <div class="topbar">
       <h1>系統欄位更改通報後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">層級：業務 → 營業處經理 → 行政 → 管理員。預設租金／押金月份／押金金額等請由管理員處理。</p>
+    <p class="lead">地區可篩台中、台南、桃園等（依物件地址）。層級：業務 → 處長 → 行政 → 管理員黃怡婷。</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
@@ -52,33 +130,19 @@
     <p id="login-msg" class="text-sm err hidden"></p>
   </section>
 
-  <section class="hidden space-y-4" id="main-panel">
+  <section class="hidden space-y-3" id="main-panel">
     <div class="flex flex-wrap gap-2" id="stats"></div>
-    <div class="card p-4 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <input type="search" id="search" placeholder="搜尋地址／媒合編號／填寫人／修改人／內容" class="max-w-md" autocomplete="off" />
+    <div class="card p-3 space-y-2">
+      <div class="filter-bar">
+        <label class="text-sm font-bold text-slate-600" for="region">地區</label>
+        <select id="region">
+          <option value="">全部地區</option>
+        </select>
+        <input type="search" id="search" placeholder="搜尋地址／媒合編號／填寫人／修改人／內容" autocomplete="off" />
         <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
       </div>
-      <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
-      <div class="overflow-auto border border-slate-200 rounded-xl bg-white">
-        <table>
-          <thead>
-            <tr>
-              <th>時間</th>
-              <th>填寫人</th>
-              <th>處長／層級</th>
-              <th>地址</th>
-              <th>媒合編號</th>
-              <th>節點</th>
-              <th>修改內容</th>
-              <th>附件</th>
-              <th>狀態</th>
-              <th>處理</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
-      </div>
+      <p id="msg" class="text-sm text-slate-500 min-h-[1.1rem]"></p>
+      <div id="rows"></div>
     </div>
   </section>
 
@@ -89,8 +153,50 @@
       let secret = '';
       let allRows = [];
       let statusFilter = '';
+      let regionFilter = '';
       const LABEL = { pending: '處理中', done: '已完成', rejected: '已退回' };
       const LEVEL = { manager: '待處長', admin: '待行政', super: '待管理員' };
+      const CITY_ORDER = ['台北', '新北', '基隆', '宜蘭', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '花蓮', '台東', '澎湖', '金門', '連江', '其他'];
+      const CITY_FROM_ADDR = [
+        [/臺?北市|台北市/, '台北'],
+        [/新北市/, '新北'],
+        [/基隆市/, '基隆'],
+        [/宜蘭[縣市]/, '宜蘭'],
+        [/桃園市/, '桃園'],
+        [/新竹[縣市]/, '新竹'],
+        [/苗栗縣/, '苗栗'],
+        [/臺?中市|台中市/, '台中'],
+        [/彰化縣/, '彰化'],
+        [/南投縣/, '南投'],
+        [/雲林縣/, '雲林'],
+        [/嘉義[縣市]/, '嘉義'],
+        [/臺?南市|台南市/, '台南'],
+        [/高雄市/, '高雄'],
+        [/屏東縣/, '屏東'],
+        [/花蓮縣/, '花蓮'],
+        [/臺?東縣|台東縣/, '台東'],
+        [/澎湖縣/, '澎湖'],
+        [/金門縣/, '金門'],
+        [/連江縣/, '連江'],
+        [/汐止|板橋|中和|永和|新莊|三重|蘆洲|樹林|鶯歌|三峽|淡水|五股|泰山|林口|土城|瑞芳/, '新北'],
+        [/中壢|平鎮|楊梅|蘆竹|大園|龜山|八德|龍潭|大溪/, '桃園'],
+        [/豐原|大里|太平|清水|沙鹿|梧棲|大甲|烏日|潭子|神岡|大雅|霧峰/, '台中'],
+        [/永康|新營|歸仁|仁德|佳里|麻豆|善化|新化/, '台南'],
+        [/鳳山|左營|楠梓|三民|苓雅|鼓山|前鎮|小港|岡山|路竹|林園/, '高雄']
+      ];
+      const CITY_FROM_TEAM = [
+        [/^北/, '新北'],
+        [/^基/, '基隆'],
+        [/^宜/, '宜蘭'],
+        [/^桃/, '桃園'],
+        [/^竹/, '新竹'],
+        [/^中/, '台中'],
+        [/^彰/, '彰化'],
+        [/^投/, '南投'],
+        [/^嘉/, '嘉義'],
+        [/^南/, '台南'],
+        [/^高/, '高雄']
+      ];
 
       function cfg() {
         const c = window.SKYFUN_SUPABASE || {};
@@ -114,30 +220,119 @@
         if (!iso) return '—';
         try { return new Date(iso).toLocaleString('zh-TW'); } catch { return iso; }
       }
+      function officeOf(r) {
+        return String(r.modifierTeam || r.team || '').trim() || '未填處別';
+      }
+      function cityOf(r) {
+        const addr = String(r.address || '');
+        for (let i = 0; i < CITY_FROM_ADDR.length; i++) {
+          if (CITY_FROM_ADDR[i][0].test(addr)) return CITY_FROM_ADDR[i][1];
+        }
+        const team = officeOf(r);
+        for (let i = 0; i < CITY_FROM_TEAM.length; i++) {
+          if (CITY_FROM_TEAM[i][0].test(team)) return CITY_FROM_TEAM[i][1];
+        }
+        return '其他';
+      }
       function attsHtml(atts) {
         const list = Array.isArray(atts) ? atts : [];
         if (!list.length) return '—';
-        return '<div class="atts">' + list.map((a) => {
+        return '<span class="atts">' + list.map((a) => {
           const url = esc(a.url || '');
           const name = esc(a.name || '附件');
           if (a.kind === 'image' || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(a.url || '')) {
             return '<a href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '" alt="' + name + '"></a>';
           }
           return '<a href="' + url + '" target="_blank" rel="noopener">📎 ' + name + '</a>';
-        }).join('') + '</div>';
+        }).join('') + '</span>';
+      }
+
+      /** 轉單／系統列不重複顯示；畫面只留當前狀態與人工備註 */
+      function isSystemNoteLine(t) {
+        const s = String(t || '').trim();
+        return /^(處長轉行政｜|行政轉管理員｜|行政轉處長｜|退回填寫人｜)/.test(s)
+          || s === '修改人已標記完成';
+      }
+      function splitAdminNote(note) {
+        const system = [];
+        const user = [];
+        const rejects = [];
+        String(note || '').split(/\n+/).forEach((line) => {
+          const t = line.trim();
+          if (!t) return;
+          if (/^退回填寫人｜/.test(t)) rejects.push(t);
+          else if (isSystemNoteLine(t)) system.push(t);
+          else user.push(t);
+        });
+        return { system, rejects, user };
+      }
+      function mergeAdminNote(original, userInput) {
+        const { system, rejects } = splitAdminNote(original);
+        const user = String(userInput || '').trim();
+        return system.concat(rejects).concat(user ? [user] : []).join('\n').slice(0, 1000);
+      }
+      function currentLevelHtml(r) {
+        const lv = r.handlerLevel || 'manager';
+        let text = LEVEL[lv] || lv;
+        if (lv === 'admin' && r.handlerAdminName) text += '｜' + r.handlerAdminName;
+        if (lv === 'super') text += '｜黃怡婷';
+        if (r.status === 'done' && r.handledBy) text = '完成｜' + r.handledBy;
+        if (r.status === 'rejected') text = '已退回';
+        return '<span class="lv lv-' + esc(lv) + '">' + esc(text) + '</span>';
+      }
+
+      function addrKey(r) {
+        return String(r.address || '')
+          .replace(/\s+/g, '')
+          .replace(/台/g, '臺')
+          .toLowerCase();
+      }
+
+      /** 同地址多筆「已完成」只留最新一筆，避免同一物件重複出現 */
+      function collapseDoneDupes(list) {
+        const bestDone = new Map();
+        list.forEach((r) => {
+          if (r.status !== 'done') return;
+          const k = addrKey(r);
+          if (!k) return;
+          const prev = bestDone.get(k);
+          if (!prev || Number(r.id) > Number(prev.id)) bestDone.set(k, r);
+        });
+        return list.filter((r) => {
+          if (r.status !== 'done') return true;
+          const k = addrKey(r);
+          if (!k) return true;
+          const keep = bestDone.get(k);
+          return keep && Number(keep.id) === Number(r.id);
+        });
       }
 
       function filtered() {
         let list = allRows.slice();
         if (statusFilter) list = list.filter((r) => r.status === statusFilter);
+        if (regionFilter) list = list.filter((r) => cityOf(r) === regionFilter);
         const q = document.getElementById('search').value.trim().toLowerCase();
         if (q) {
           list = list.filter((r) =>
-            [r.address, r.matchNo, r.authorName, r.team, r.modifierName, r.modifierTeam, r.content, r.adminNote]
+            [r.address, r.matchNo, r.authorName, r.team, r.modifierName, r.modifierTeam, r.content, r.adminNote, r.handlerAdminName, cityOf(r)]
               .some((v) => String(v || '').toLowerCase().includes(q))
           );
         }
-        return list;
+        return collapseDoneDupes(list);
+      }
+
+      function fillRegions() {
+        const sel = document.getElementById('region');
+        const cur = regionFilter;
+        const found = new Set(allRows.map(cityOf));
+        const regions = CITY_ORDER.filter((c) => found.has(c))
+          .concat([...found].filter((c) => !CITY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b, 'zh-Hant')));
+        sel.innerHTML = '<option value="">全部地區</option>' +
+          regions.map((r) => '<option value="' + esc(r) + '"' + (r === cur ? ' selected' : '') + '>' + esc(r) + '</option>').join('');
+        if (cur && !regions.includes(cur)) {
+          regionFilter = '';
+          sel.value = '';
+        }
       }
 
       function renderStats(counts) {
@@ -154,39 +349,64 @@
       }
 
       function renderRows() {
+        const rawCount = (() => {
+          let list = allRows.slice();
+          if (statusFilter) list = list.filter((r) => r.status === statusFilter);
+          if (regionFilter) list = list.filter((r) => cityOf(r) === regionFilter);
+          const q = document.getElementById('search').value.trim().toLowerCase();
+          if (q) {
+            list = list.filter((r) =>
+              [r.address, r.matchNo, r.authorName, r.team, r.modifierName, r.modifierTeam, r.content, r.adminNote, r.handlerAdminName, cityOf(r)]
+                .some((v) => String(v || '').toLowerCase().includes(q))
+            );
+          }
+          return list.length;
+        })();
         const list = filtered();
-        document.getElementById('msg').textContent = list.length ? '共 ' + list.length + ' 筆' : '沒有符合的通報';
+        const hidden = Math.max(0, rawCount - list.length);
+        document.getElementById('msg').textContent = list.length
+          ? ('共 ' + list.length + ' 筆' + (regionFilter ? '（' + regionFilter + '）' : '') +
+            (hidden ? '（同址已完成較舊 ' + hidden + ' 筆已收合）' : ''))
+          : '沒有符合的通報';
         document.getElementById('rows').innerHTML = list.map((r) => {
-          return '<tr data-id="' + r.id + '">' +
-            '<td class="whitespace-nowrap">' + esc(fmt(r.createdAt)) + '</td>' +
-            '<td>' + esc(r.authorName) + '<div class="text-xs text-slate-500">' + esc(r.team || '') + '</div></td>' +
-            '<td>' + esc(r.modifierName || '—') + '<div class="text-xs text-slate-500">' + esc(r.modifierTeam || '') + '</div>' +
-              (r.status === 'pending'
-                ? '<div><span class="lv lv-' + esc(r.handlerLevel || 'manager') + '">' + esc(LEVEL[r.handlerLevel || 'manager'] || r.handlerLevel) +
-                  (r.handlerLevel === 'admin' && r.handlerAdminName ? '｜' + esc(r.handlerAdminName) : '') +
-                  '</span></div>'
-                : '') +
-            '</td>' +
-            '<td>' + esc(r.address) + '</td>' +
-            '<td>' + esc(r.matchNo) + '</td>' +
-            '<td>' + (Array.isArray(r.nodes) && r.nodes.length
-              ? r.nodes.map((n) => '<span class="node-tag">' + esc(n) + '</span>').join('')
-              : '—') + '</td>' +
-            '<td class="body">' + esc(r.content) + '</td>' +
-            '<td>' + attsHtml(r.attachments) + '</td>' +
-            '<td><span class="badge b-' + esc(r.status) + '">' + esc(LABEL[r.status] || r.status) + '</span>' +
-              (r.adminNote ? '<div class="text-xs text-slate-500 mt-1">' + esc(r.adminNote) + '</div>' : '') +
-            '</td>' +
-            '<td class="space-y-1">' +
-              '<input class="note-input" data-note placeholder="處理備註" value="' + esc(r.adminNote || '') + '" />' +
-              '<div class="flex flex-wrap gap-1">' +
+          const city = cityOf(r);
+          const split = splitAdminNote(r.adminNote);
+          const userNote = split.user.join('\n');
+          const history = split.rejects.length
+            ? '<div class="case-history">' + esc(split.rejects.join('\n')) + '</div>'
+            : '';
+          const nodes = Array.isArray(r.nodes) && r.nodes.length
+            ? r.nodes.map((n) => '<span class="node-tag">' + esc(n) + '</span>').join('')
+            : '—';
+          return '<article class="case-card" data-id="' + r.id + '" data-admin-note="' + encodeURIComponent(r.adminNote || '') + '">' +
+            '<div class="case-top">' +
+              '<div>' +
+                '<div class="case-title">' + esc(r.address || '（無地址）') +
+                  '<span class="city-tag">' + esc(city) + '</span></div>' +
+                '<div class="case-sub">' + esc(fmt(r.createdAt)) + ' · #' + r.id + '</div>' +
+              '</div>' +
+              '<span class="badge b-' + esc(r.status) + '">' + esc(LABEL[r.status] || r.status) + '</span>' +
+            '</div>' +
+            '<div class="case-meta">' +
+              '<span><em>填寫</em>' + esc(r.authorName || '—') + '（' + esc(r.team || '—') + '）</span>' +
+              '<span><em>處長</em>' + esc(r.modifierName || '—') + '（' + esc(officeOf(r)) + '）</span>' +
+              '<span><em>狀態</em>' + currentLevelHtml(r) + '</span>' +
+              '<span><em>媒合</em>' + esc(r.matchNo || '—') + '</span>' +
+              '<span><em>節點</em>' + nodes + '</span>' +
+              '<span><em>附件</em>' + attsHtml(r.attachments) + '</span>' +
+            '</div>' +
+            '<div class="case-body">' + esc(r.content || '（無內容）') + '</div>' +
+            history +
+            '<div class="case-foot">' +
+              '<input class="note-input" data-note placeholder="處理備註（轉單紀錄不重複顯示）" value="' + esc(userNote) + '" />' +
+              '<div class="btn-row">' +
                 '<button type="button" class="act act-done" data-act="done">完成</button>' +
                 '<button type="button" class="act act-rej" data-act="rejected">退回</button>' +
                 '<button type="button" class="act" data-act="pending">改回處理中</button>' +
                 '<button type="button" class="act act-del" data-del="1">刪除案件</button>' +
               '</div>' +
-            '</td>' +
-          '</tr>';
+            '</div>' +
+          '</article>';
         }).join('');
       }
 
@@ -194,6 +414,7 @@
         const data = await rpc('biz_system_change_admin_list', { p_secret: secret, p_status: '' });
         if (!data?.ok) throw new Error(data?.error || '讀取失敗');
         allRows = data.rows || [];
+        fillRegions();
         renderStats(data.counts);
         renderRows();
       }
@@ -237,6 +458,10 @@
         loadList().catch((e) => { document.getElementById('msg').textContent = e.message; });
       });
       document.getElementById('search').addEventListener('input', renderRows);
+      document.getElementById('region').addEventListener('change', (e) => {
+        regionFilter = e.target.value || '';
+        renderRows();
+      });
       document.getElementById('stats').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-st]');
         if (!btn) return;
@@ -253,9 +478,9 @@
         const delBtn = e.target.closest('[data-del]');
         const btn = e.target.closest('[data-act]');
         if (!delBtn && !btn) return;
-        const tr = (delBtn || btn).closest('tr[data-id]');
-        if (!tr) return;
-        const id = Number(tr.getAttribute('data-id'));
+        const card = (delBtn || btn).closest('[data-id]');
+        if (!card) return;
+        const id = Number(card.getAttribute('data-id'));
         try {
           if (delBtn) {
             if (!confirm('確定刪除這筆案件？刪除後無法復原。')) return;
@@ -263,7 +488,10 @@
             document.getElementById('msg').textContent = '已刪除案件 #' + id;
             return;
           }
-          const note = tr.querySelector('[data-note]')?.value || '';
+          const typed = card.querySelector('[data-note]')?.value || '';
+          let original = '';
+          try { original = decodeURIComponent(card.getAttribute('data-admin-note') || ''); } catch (_) { original = ''; }
+          const note = mergeAdminNote(original, typed);
           await updateRow(id, btn.getAttribute('data-act'), note);
         } catch (err) {
           document.getElementById('msg').textContent = err.message;
