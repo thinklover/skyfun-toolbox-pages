@@ -354,7 +354,11 @@
       pendingRows = null;
       location.reload();
     } catch (err) {
-      $('matchPreviewBody').textContent = (err && err.message) || '匯入失敗';
+      var msg = (err && err.message) || '匯入失敗';
+      if (/failed to fetch|networkerror|load failed/i.test(msg)) {
+        msg = '報表服務還沒上線，連不上。這份檔案還在你的電腦，沒有寫進系統。';
+      }
+      $('matchPreviewBody').textContent = msg;
       btn.disabled = false;
       btn.textContent = '確認匯入';
     }
