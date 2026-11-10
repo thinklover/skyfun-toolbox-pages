@@ -186,6 +186,12 @@ body.pdg-open { overflow: hidden; }
 .pdg-btn--main:hover { background: #4338ca; }
 .pdg-btn--soft { background: #f1f5f9; color: #475569; }
 
+.pdg-full:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 .pdg-view {
   display: flex;
   flex-direction: column;
@@ -203,7 +209,8 @@ body.pdg-open { overflow: hidden; }
 .pdg-stage {
   position: relative;
   flex: 1;
-  min-height: 55vh;
+  min-height: 0;
+  overflow: hidden;
   background: #e2e8f0;
 }
 .pdg-stage iframe {
@@ -216,8 +223,8 @@ body.pdg-open { overflow: hidden; }
 }
 .pdg-pages {
   height: 100%;
-  min-height: 55vh;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   background: #fff;
 }
 .pdg-pdf-page {
