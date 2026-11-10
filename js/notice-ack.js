@@ -35,7 +35,7 @@
     if (state.error) return state.error;
     if (!state.loaded) return state.loading ? '讀取確認紀錄中…' : '登入工具箱後即可打勾';
     if (!state.isSales) return '本區公告由業務同仁打勾確認；你的處別不需打勾，可直接閱讀。';
-    return '前五則為重點獎金／激勵辦法（皆展開）。請逐則預覽後打勾，打勾後無法取消。';
+    return '以下為其他公司公告（與上方重點辦法不重複）。請逐則預覽後打勾，打勾後無法取消。';
   }
 
   function render() {
