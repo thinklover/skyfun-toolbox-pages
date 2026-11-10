@@ -270,8 +270,6 @@
       person.kind !== '未分類' ? person.kind : '',
       person.office
     ];
-    const escrow = escrowTotal(person.name);
-    bits.push(escrow == null ? '代管無資料' : `代管 ${escrow} 件`);
     const neu = newMatchCount(person.name);
     if (neu == null) bits.push(state.casesLoaded ? '新媒合無資料' : '新媒合讀取中');
     else bits.push(`新案 ${neu}`);
