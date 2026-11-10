@@ -57,9 +57,7 @@
           const busy = !!state.busy[it.id];
           const meta = (it.lines || []).filter(Boolean).join(' · ');
           const fileBtn = it.file
-            ? (it.freeWm
-              ? `<button type="button" class="bb-btn bb-btn--main" data-nack-wm="${esc(it.file)}" data-nack-wm-title="${esc(it.title)}">📄 預覽浮水印檔</button>`
-              : `<a class="bb-btn bb-btn--main" href="${esc(it.file)}" target="_blank" rel="noopener noreferrer">📄 開啟公告</a>`)
+            ? `<button type="button" class="bb-btn bb-btn--main" data-nack-wm="${esc(it.file)}" data-nack-wm-title="${esc(it.title)}">📄 預覽浮水印檔</button>`
             : '';
           const ackLine = at
             ? `<p class="bb-doc-ackst">已勾 · ${esc(when(at))}</p>`

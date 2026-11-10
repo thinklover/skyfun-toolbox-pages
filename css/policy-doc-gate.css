@@ -214,6 +214,27 @@ body.pdg-open { overflow: hidden; }
   border: 0;
   background: #fff;
 }
+.pdg-pages {
+  height: 100%;
+  min-height: 55vh;
+  overflow: auto;
+  background: #fff;
+}
+.pdg-pdf-page {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 0.75rem;
+  background: #fff;
+}
+.pdg-pdf-wait {
+  margin: 0;
+  padding: 1.5rem;
+  color: #334155;
+}
+@media print {
+  #policy-doc-gate { display: none !important; }
+}
 .pdg-wm {
   pointer-events: none;
   position: absolute;

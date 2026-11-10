@@ -303,6 +303,7 @@
             </div>
             <div class="pdg-stage">
               <iframe id="pdg-frame" title="辦法預覽"></iframe>
+              <div id="pdg-pages" class="pdg-pages" hidden></div>
               <div class="pdg-wm" aria-hidden="true"></div>
               <p class="pdg-wm-note">預覽含浮水印；下載檔為原檔（無浮水印），請妥善保管。</p>
             </div>
@@ -364,10 +365,58 @@
       showFullLock();
     });
 
+    root.querySelector('.pdg-stage').addEventListener('contextmenu', (e) => {
+      if (root.dataset.freeWm === '1') e.preventDefault();
+    });
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !root.hidden) close();
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's') && !root.hidden && root.dataset.freeWm === '1') {
+        e.preventDefault();
+      }
     });
     return root;
+  }
+
+  function loadPdfJs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (loadPdfJs.promise) return loadPdfJs.promise;
+    loadPdfJs.promise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+      s.onload = () => {
+        if (!window.pdfjsLib) {
+          reject(new Error('預覽元件載入失敗'));
+          return;
+        }
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+      };
+      s.onerror = () => reject(new Error('預覽元件載入失敗'));
+      document.head.appendChild(s);
+    });
+    return loadPdfJs.promise;
+  }
+
+  async function renderProtectedPdf(host, url) {
+    if (!host) return;
+    host.innerHTML = '<p class="pdg-pdf-wait">全文載入中…</p>';
+    host.oncontextmenu = (e) => e.preventDefault();
+    const pdfjsLib = await loadPdfJs();
+    const pdf = await pdfjsLib.getDocument({ url, disableAutoFetch: false }).promise;
+    host.innerHTML = '';
+    const width = Math.max(320, Math.min(host.clientWidth || 860, 980));
+    for (let i = 1; i <= pdf.numPages; i += 1) {
+      const page = await pdf.getPage(i);
+      const base = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: width / base.width });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.className = 'pdg-pdf-page';
+      host.appendChild(canvas);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    }
   }
 
   function setTab(tab) {
@@ -409,7 +458,13 @@
     root.querySelector('#pdg-lock').hidden = true;
     root.querySelector('#pdg-view').hidden = false;
     const frame = root.querySelector('#pdg-frame');
+    const pages = root.querySelector('#pdg-pages');
     const isDoc = /\.docx?($|\?)/i.test(href) || /\.docx?$/i.test(fileNameOf(href));
+    if (pages) {
+      pages.hidden = true;
+      pages.innerHTML = '';
+    }
+    frame.hidden = false;
     if (isDoc) {
       frame.removeAttribute('src');
       frame.srcdoc = `<!doctype html><html><body style="font:16px/1.6 sans-serif;padding:2rem;color:#334155">
@@ -417,12 +472,17 @@
         <p>Word 檔無法在頁面內預覽，請按「下載完整檔」開啟。</p>
         <p style="color:#94a3b8;font-size:13px">${escapeHtml(WM)}</p>
       </body></html>`;
+    } else if (root.dataset.freeWm === '1' && pages) {
+      frame.removeAttribute('src');
+      frame.removeAttribute('srcdoc');
+      frame.hidden = true;
+      pages.hidden = false;
+      renderProtectedPdf(pages, href).catch(() => {
+        pages.innerHTML = '<p class="pdg-pdf-wait">全文預覽失敗，請稍後再試。</p>';
+      });
     } else {
       frame.removeAttribute('srcdoc');
-      // 業務免密碼預覽：關掉 PDF 工具列，降低直接下載機會
-      frame.src = root.dataset.freeWm === '1'
-        ? href + (href.indexOf('#') >= 0 ? '' : '#toolbar=0&navpanes=0')
-        : href;
+      frame.src = href;
     }
     if (root.dataset.wantDownload === '1' && root.dataset.freeWm !== '1') {
       root.dataset.wantDownload = '';
@@ -520,6 +580,8 @@
       frame.removeAttribute('src');
       frame.removeAttribute('srcdoc');
     }
+    const pages = root.querySelector('#pdg-pages');
+    if (pages) pages.innerHTML = '';
   }
 
   function linkTitle(a) {
@@ -556,6 +618,7 @@
     checkPassword,
     open: openGate,
     openFreeWatermark,
+    renderProtectedPdf,
     close,
     lock: () => {
       setUnlocked(false);

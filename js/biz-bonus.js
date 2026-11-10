@@ -303,9 +303,9 @@
           </header>
           <div class="bb-modal-scroll" id="bb-preview-scroll">
             <div class="bb-preview-stage">
-              <iframe src="${esc(doc.file)}#toolbar=0" title="${esc(doc.title)} 浮水印預覽"></iframe>
+              <div class="bb-pdf-pages" id="bb-pdf-pages" data-file="${esc(doc.file)}"></div>
               <div class="bb-wm" aria-hidden="true"><div class="bb-wm-grid">${wmGridHtml()}</div></div>
-              <p class="bb-wm-note">預覽含浮水印｜星鴻內部文件｜禁止外流</p>
+              <p class="bb-wm-note">預覽含浮水印｜全文｜不可下載、不可列印｜星鴻內部文件｜禁止外流</p>
             </div>
             ${ackFooter(doc)}
           </div>
@@ -328,6 +328,14 @@
     const sc = document.getElementById('bb-preview-scroll');
     if (!sc) return;
     sc.addEventListener('scroll', unlockAckIfNeeded, { passive: true });
+    const host = document.getElementById('bb-pdf-pages');
+    const file = host?.getAttribute('data-file') || '';
+    if (host && file && window.SkyfunPolicyDocGate?.renderProtectedPdf) {
+      host.addEventListener('contextmenu', (e) => e.preventDefault());
+      window.SkyfunPolicyDocGate.renderProtectedPdf(host, file).catch(() => {
+        host.innerHTML = '<p>全文預覽失敗，請稍後再試。</p>';
+      });
+    }
     requestAnimationFrame(() => {
       unlockAckIfNeeded();
       if (sc.scrollHeight <= sc.clientHeight + 8) {
@@ -727,6 +735,7 @@
         closePreview();
         render();
       }
+      if (state.previewModal && (e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) e.preventDefault();
     });
     document.addEventListener('skyfun-auth-ready', () => {
       if (!el.classList.contains('hidden')) refreshAll();
