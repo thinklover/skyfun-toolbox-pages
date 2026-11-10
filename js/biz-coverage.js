@@ -819,12 +819,18 @@
     </div>`;
   }
 
-  function flagHtml() {
+  function flagActionHtml(which) {
+    return `<div class="cv-flag-actions">
+      <button type="button" class="cv-flag-act" data-cv-flag-copy="${which}">複製</button>
+      <button type="button" class="cv-flag-act" data-cv-flag-xlsx="${which}">匯出 Excel</button>
+    </div>`;
+  }
+
+  function buildFlagLists() {
     const prod = state.production;
-    if (!prod) return '';
+    if (!prod || prod.error) return null;
     const months = prod.months || [];
     const label = months.map((month) => month.label).join('、') || '近兩個月';
-    if (prod.error) return `<p class="cv-note">產件：${esc(prod.error)}。未產件與代管 10 件名單暫不列出。</p>`;
     const countOf = new Map((prod.counts || []).map((row) => [norm(row.name), row]));
     const pool = scopedPeople();
     const rows = pool.filter((person) => !person.insured).map((person) => {
@@ -840,20 +846,125 @@
       rows.filter((row) => row.total >= 10),
       state.busySortDir
     );
+    return { prod, label, idle, busy };
+  }
+
+  function flagFlatRows(which) {
+    const pack = buildFlagLists();
+    if (!pack) return [];
+    const list = which === 'busy' ? pack.busy : pack.idle;
+    return list.map((row) => {
+      const neu = newMatchCount(row.person.name);
+      const escrow = escrowTotal(row.person.name);
+      return {
+        name: row.person.name || '',
+        title: row.person.title || '',
+        kind: row.person.kind || '',
+        office: row.person.office || '',
+        newCases: neu == null ? '' : neu,
+        escrow: escrow == null ? '' : escrow,
+        m1: row.m1,
+        m2: row.m2,
+        total: row.total
+      };
+    });
+  }
+
+  function csvEscape(v) {
+    const s = String(v ?? '');
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function flagSheetTitle(which) {
+    return which === 'busy' ? '代管10件以上未保' : '連續兩個月未產件又未保';
+  }
+
+  function flagCopyText(which) {
+    const rows = flagFlatRows(which);
+    const title = flagSheetTitle(which);
+    if (!rows.length) return title + '\n（沒有符合的人）';
+    const head = which === 'busy'
+      ? ['姓名', '職稱', '身分別', '營業處', '新案', '代管件數']
+      : ['姓名', '職稱', '身分別', '營業處', '新案', '代管件數', '近兩月產件'];
+    const lines = [title, head.join('\t')];
+    rows.forEach((r) => {
+      if (which === 'busy') {
+        lines.push([r.name, r.title, r.kind, r.office, r.newCases, r.escrow].join('\t'));
+      } else {
+        lines.push([r.name, r.title, r.kind, r.office, r.newCases, r.escrow, '0'].join('\t'));
+      }
+    });
+    return lines.join('\n');
+  }
+
+  function downloadFlagExcel(which) {
+    const rows = flagFlatRows(which);
+    const title = flagSheetTitle(which);
+    const head = which === 'busy'
+      ? ['姓名', '職稱', '身分別', '營業處', '新案', '代管件數']
+      : ['姓名', '職稱', '身分別', '營業處', '新案', '代管件數', '近兩月產件'];
+    const lines = [head];
+    rows.forEach((r) => {
+      if (which === 'busy') lines.push([r.name, r.title, r.kind, r.office, r.newCases, r.escrow]);
+      else lines.push([r.name, r.title, r.kind, r.office, r.newCases, r.escrow, 0]);
+    });
+    const body = lines.map((row) => row.map(csvEscape).join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF' + body], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = title + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  async function copyFlagList(which) {
+    const text = flagCopyText(which);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        window.prompt('請手動複製：', text);
+        return;
+      }
+      const btn = document.querySelector(`[data-cv-flag-copy="${which}"]`);
+      if (btn) {
+        const old = btn.textContent;
+        btn.textContent = '已複製';
+        setTimeout(() => { btn.textContent = old; }, 1200);
+      }
+    } catch (_) {
+      window.prompt('請手動複製：', text);
+    }
+  }
+
+  function flagHtml() {
+    const prod = state.production;
+    if (!prod) return '';
+    if (prod.error) return `<p class="cv-note">產件：${esc(prod.error)}。未產件與代管 10 件名單暫不列出。</p>`;
+    const pack = buildFlagLists();
+    if (!pack) return '';
+    const { label, idle, busy } = pack;
     const line = (row, extraBits) => personBlock(row.person, extraBits);
     const escrowNote = prod.cumulativeError
       ? `<p class="cv-note">代管：${esc(prod.cumulativeError)}。下列是目前已撈到的。</p>`
       : '';
     return `<div class="cv-flags">
       <section class="cv-flag">
-        <h3>連續兩個月未產件又未保<small>${idle.length}</small></h3>
+        <div class="cv-flag-head">
+          <h3>連續兩個月未產件又未保<small>${idle.length}</small></h3>
+          ${idle.length ? flagActionHtml('idle') : ''}
+        </div>
         <p>${esc(label)}產件都是 0（認列產件，不是新媒合），而且沒有投保。只列業務、租管師。人名下的「新案」另算 115/11/1 起新媒合。</p>
         <p class="cv-note">第一排序：營業處北→南；第二排序：代管件數（暫代未產件時間，可切換多／少）。</p>
         ${idle.length ? sortToggleHtml('idle', state.idleSortDir, '代管件數（暫代未產件時間）') : ''}
         ${idle.length ? `<div class="cv-flag-list">${idle.map((row) => line(row, [`近兩月產件 0`])).join('')}</div>` : '<p class="cv-empty">沒有符合的人。</p>'}
       </section>
       <section class="cv-flag">
-        <h3>代管 10 件以上未保<small>${busy.length}</small></h3>
+        <div class="cv-flag-head">
+          <h3>代管 10 件以上未保<small>${busy.length}</small></h3>
+          ${busy.length ? flagActionHtml('busy') : ''}
+        </div>
         <p>未投保、累積代管案件 10 件以上。人名下的「新案」另算 115/11/1 起新媒合，與代管件數分開。</p>
         ${escrowNote}
         ${busy.length ? sortToggleHtml('busy', state.busySortDir, '代管件數') : ''}
@@ -1122,6 +1233,16 @@
         state.busySortDir = state.busySortDir === 'desc' ? 'asc' : 'desc';
       }
       render();
+      return;
+    }
+    const copyBtn = event.target.closest('[data-cv-flag-copy]');
+    if (copyBtn) {
+      copyFlagList(copyBtn.getAttribute('data-cv-flag-copy') || 'idle');
+      return;
+    }
+    const xlsxBtn = event.target.closest('[data-cv-flag-xlsx]');
+    if (xlsxBtn) {
+      downloadFlagExcel(xlsxBtn.getAttribute('data-cv-flag-xlsx') || 'idle');
       return;
     }
     const trendToggle = event.target.closest('[data-cv-trend-toggle]');
