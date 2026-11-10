@@ -20,6 +20,11 @@
     '中一處', '中二處', '中三處', '中四處', '中五處', '中六處',
     '彰一處', '嘉一處', '南一處', '南二處', '高一處', '高二處'
   ];
+  /** 依填寫人處別預設修改人（營業處經理）。名單裡找不到該人就不預選。 */
+  const DEFAULT_MODIFIER_BY_TEAM = {
+    '北四處': '侯思廷',
+    '北五處': '侯思廷'
+  };
 
   const state = {
     busy: false,
@@ -158,6 +163,14 @@
     });
   }
 
+  function preferredModifierValue() {
+    const team = String(meUser()?.team || '').trim();
+    const want = DEFAULT_MODIFIER_BY_TEAM[team];
+    if (!want) return '';
+    const hit = (state.managers || []).find((m) => String(m?.name || '').trim() === want);
+    return hit ? modValue(hit) : '';
+  }
+
   function myRoleKey() {
     return String(state.role?.role || 'guest');
   }
@@ -228,8 +241,11 @@
       })
     );
     sel.innerHTML = opts.join('');
-    if (prev && Array.from(sel.options).some((o) => o.value === prev)) {
-      sel.value = prev;
+    const pick = (prev && Array.from(sel.options).some((o) => o.value === prev))
+      ? prev
+      : preferredModifierValue();
+    if (pick && Array.from(sel.options).some((o) => o.value === pick)) {
+      sel.value = pick;
     }
   }
 
