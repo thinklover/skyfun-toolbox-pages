@@ -51,30 +51,35 @@
         ${canTick ? `<span class="nack-progress${done === items.length ? ' is-done' : ''}">已確認 ${done} / ${items.length}</span>` : ''}
       </div>
       <p class="nack-hint${state.error ? ' is-error' : ''}">${esc(hintText())}</p>
-      <ol class="nack-list">
+      <div class="bb-docs bb-docs--accordion" aria-label="公司公告">
         ${items.map((it, i) => {
           const at = state.acks[it.id];
           const busy = !!state.busy[it.id];
-          const lines = (it.lines || []).map((l) => `<li>${esc(l)}</li>`).join('');
+          const meta = (it.lines || []).filter(Boolean).join(' · ');
+          const fileBtn = it.file
+            ? (it.freeWm
+              ? `<button type="button" class="bb-btn bb-btn--main" data-nack-wm="${esc(it.file)}" data-nack-wm-title="${esc(it.title)}">📄 預覽浮水印檔</button>`
+              : `<a class="bb-btn bb-btn--main" href="${esc(it.file)}" target="_blank" rel="noopener noreferrer">📄 開啟公告</a>`)
+            : '';
+          const ackLine = at
+            ? `<p class="bb-doc-ackst">已勾 · ${esc(when(at))}</p>`
+            : `<label class="nack-check${canTick ? '' : ' is-off'}">
+                <input type="checkbox" data-nack-id="${esc(it.id)}" ${!canTick || busy ? 'disabled' : ''}>
+                <span>已閱畢知悉</span>
+              </label>`;
           return `
-          <li class="nack-item${at ? ' is-acked' : ''}">
-            <div class="nack-item-main">
-              <div class="nack-item-title"><span class="nack-no">${i + 1}</span>${esc(it.title)}</div>
-              ${lines ? `<ul class="nack-lines">${lines}</ul>` : ''}
-              ${it.file ? (
-                it.freeWm
-                  ? `<button type="button" class="btn btn-sm tone-slate-mid nack-file" data-nack-wm="${esc(it.file)}" data-nack-wm-title="${esc(it.title)}">📄 預覽浮水印檔</button>`
-                  : `<a href="${esc(it.file)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid nack-file">📄 開啟公告</a>`
-              ) : ''}
-            </div>
-            <label class="nack-check${canTick ? '' : ' is-off'}">
-              <input type="checkbox" data-nack-id="${esc(it.id)}" ${at ? 'checked' : ''} ${!canTick || at || busy ? 'disabled' : ''}>
-              <span>已閱畢知悉</span>
-              ${at ? `<small>${esc(when(at))}</small>` : ''}
-            </label>
-          </li>`;
+          <article class="bb-doc-card">
+            <header class="bb-doc-head">
+              <div>
+                <h4>${i + 1}. ${esc(it.title)}</h4>
+                ${meta ? `<p class="bb-doc-meta">${esc(meta)}</p>` : ''}
+                ${ackLine}
+              </div>
+              ${fileBtn ? `<div class="bb-preview-actions">${fileBtn}</div>` : ''}
+            </header>
+          </article>`;
         }).join('')}
-      </ol>`;
+      </div>`;
     return true;
   }
 
