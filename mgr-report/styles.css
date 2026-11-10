@@ -56,6 +56,7 @@ main { flex: 1; min-width: 0; overflow: auto; }
   background: var(--brand); color: #fff; border: 0; border-radius: 18px;
   padding: 8px 18px; font-weight: 700; cursor: pointer; height: 36px;
 }
+.query-btn:disabled { opacity: .4; cursor: not-allowed; }
 .page { padding: 4px 16px 36px; }
 .hidden { display: none; }
 .period-title { font-size: 18px; font-weight: 700; margin: 2px 0 10px; color: #4b5563; }

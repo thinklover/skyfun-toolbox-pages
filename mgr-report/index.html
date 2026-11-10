@@ -1336,7 +1336,9 @@
   <style>
     #matchPreview[hidden] { display: none !important; }
     #matchPreview { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; display: flex; align-items: center; justify-content: center; padding: 24px; }
-    #matchPreview .box { background: #fff; max-width: 520px; width: 100%; border-radius: 12px; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+    #matchPreview .box { background: #fff; max-width: 520px; width: 100%; max-height: min(70vh, 520px); overflow: auto; border-radius: 12px; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+    #matchPreviewBody { white-space: pre-wrap; font-size: 14px; line-height: 1.55; color: #374151; }
+    #matchPreview .query-btn:disabled { opacity: .4; cursor: not-allowed; }
   </style>
   <div id="matchPreview" hidden>
     <div class="box">
@@ -1351,6 +1353,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js"></script>
   <script src="../js/toolbox-auth.js"></script>
-  <script src="loader.js"></script>
+  <script src="loader.js?v=190"></script>
 </body>
 </html>

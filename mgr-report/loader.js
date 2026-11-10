@@ -12,19 +12,19 @@
   var MATCH_EXTRA_COLUMNS = {
     id: ['id', '合約編號', '合約ID', '合約id', 'contractId', 'ContractId'],
     n: ['n', '媒合編號', 'matchNo', 'MatchNo'],
-    st: ['st', '狀態', 'displayStatus', 'applyStatus'],
-    ct: ['ct', '委託類型', 'contratType', 'contractType'],
-    ft: ['ft', '案件來源', 'contratFromType'],
+    st: ['st', '狀態', '資料狀態', 'displayStatus', 'applyStatus'],
+    ct: ['ct', '委託類型', '委託型式', 'contratType', 'contractType'],
+    ft: ['ft', '案件來源', '案件類型', 'contratFromType'],
     sl: ['sl', '業務', 'sales'],
     so: ['so', '營業處', 'salesOffice'],
     eu: ['eu', '業績歸屬業務', '業績歸屬', 'performanceUser'],
     eo: ['eo', '業績歸屬處', 'performanceOffice'],
-    ls: ['ls', '起租日', 'leaseStart'],
+    ls: ['ls', '起租日', '租約起日', 'leaseStart'],
     le: ['le', '迄租日', '租約迄日', 'leaseEnd'],
     i: ['i', '身分別', 'idClass', 'identityTypeName'],
     h: ['h', '房屋類型', 'houseType'],
     src: ['src', '媒合來源', 'matchSource', '來源'],
-    nl: ['nl', '新件類別', 'hasExistingLease'],
+    nl: ['nl', '新件類別', '是否帶租約', 'hasExistingLease'],
     fam: ['fam', '家庭', 'family'],
     cd: ['cd'],
     cls: ['cls'],
@@ -192,7 +192,7 @@
 
   function startApp() {
     var s = document.createElement('script');
-    s.src = 'app.js?v=189';
+    s.src = 'app.js?v=190';
     document.body.appendChild(s);
   }
 
@@ -258,39 +258,44 @@
     return { headers: headers, rows: rows, unknown: unknown };
   }
 
-  function summarize(parsed) {
-    var seen = Object.create(null);
-    var dup = 0;
-    var usable = 0;
-    parsed.rows.forEach(function (row) {
-      var id = String(row.id == null ? '' : row.id).trim();
-      if (!id) return;
-      usable += 1;
-      if (seen[id]) dup += 1;
-      seen[id] = true;
-    });
-    return { usable: usable, dup: dup, unique: Object.keys(seen).length };
-  }
-
   function showPreview(parsed) {
-    var sum = summarize(parsed);
-    var byId = Object.create(null);
+    var seen = Object.create(null);
+    var stored = Object.create(null);
     var order = [];
+    var dup = 0;
+    var skipped = 0;
+    var usedId = false;
+    var usedMatchNo = false;
     parsed.rows.forEach(function (row) {
       var id = String(row.id == null ? '' : row.id).trim();
-      if (!id) return;
-      if (!byId[id]) order.push(id);
-      byId[id] = row;
+      var matchNo = String(row.n == null ? '' : row.n).trim();
+      var key = id || matchNo;
+      if (!key) { skipped += 1; return; }
+      if (id) usedId = true;
+      else usedMatchNo = true;
+      if (seen[key]) dup += 1;
+      else order.push(key);
+      seen[key] = true;
+      var copy = Object.assign({}, row);
+      if (!id) copy.id = matchNo;
+      stored[key] = copy;
     });
-    pendingRows = order.map(function (id) { return byId[id]; });
-    var lines = [
-      '讀到 ' + parsed.rows.length + ' 列，有合約編號 ' + sum.usable + ' 列，不重複 ' + sum.unique + ' 筆。',
-      sum.dup ? ('重複編號 ' + sum.dup + ' 筆，同一編號保留最後一列。') : '沒有重複編號。',
-      parsed.unknown.length ? ('對不到的欄位：' + parsed.unknown.join('、')) : '表頭都對得到。'
-    ];
-    if (!sum.unique) lines.push('沒有合約編號，不能匯入。請確認表頭有「合約編號」或 id。');
+    pendingRows = order.map(function (key) { return stored[key]; });
+    var lines = ['讀到 ' + parsed.rows.length + ' 列，可匯入 ' + order.length + ' 筆。'];
+    if (!usedId && usedMatchNo) lines.push('這份沒有合約編號，改用媒合編號對應。');
+    else if (usedId && usedMatchNo) lines.push('有合約編號的用合約編號，沒有的改用媒合編號。');
+    if (dup) lines.push('重複 ' + dup + ' 筆，同一編號保留最後一列。');
+    if (skipped) lines.push(skipped + ' 列沒有合約編號也沒有媒合編號，已略過。');
+    if (parsed.unknown.length) {
+      var hasPrivate = parsed.unknown.some(function (name) { return /電話|地址|房東|房客/.test(name); });
+      lines.push('其餘 ' + parsed.unknown.length + ' 個欄位不會匯入。' + (hasPrivate ? '地址、電話和姓名不會寫進系統。' : ''));
+    }
+    if (!order.length) lines.push('不能匯入。表頭需要「合約編號」或「媒合編號」。');
+    else lines.push('代管營業處、業務營業處、簽約營業處先不當成業績歸屬。');
     $('matchPreviewBody').textContent = lines.join('\n');
-    $('matchPreviewOk').disabled = !sum.unique;
+    var ok = $('matchPreviewOk');
+    ok.disabled = !order.length;
+    ok.textContent = '確認匯入';
     $('matchPreview').hidden = false;
   }
 
@@ -336,6 +341,9 @@
           })
         });
         var data = await res.json().catch(function () { return null; });
+        if (res.status === 404) {
+          throw new Error('報表服務還沒上線，這份檔案還在你的電腦，沒有寫進系統。');
+        }
         if (!res.ok || !data || data.ok === false) {
           throw new Error((data && data.error) || ('匯入失敗 ' + res.status));
         }

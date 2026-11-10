@@ -5781,20 +5781,15 @@
   }
 
   function caseSource(r) {
-    const raw = String(r.src || r.ms || r.source || '').trim().replace('人脈推廣', '人脈').replace('既有房東客', '既有');
-    if (raw) {
-      const hit = SRC_LEAVES.find(x => raw === x.id || raw === x.leaf || (raw.includes(x.leaf) && raw.includes(x.group.slice(0, 2))));
-      if (hit) return hit;
-      const group = raw.includes('陌生') ? '陌生開發' : (raw.includes('轉介') ? '轉介紹' : '');
-      if (group) {
-        const leaf = SRC_LEAVES.find(x => x.group === group && raw.includes(x.leaf));
-        return leaf || SRC_LEAVES.find(x => x.group === group && x.leaf === '其他');
-      }
-    }
-    const key = String(r.id || r.n || r.addr || '');
-    let h = 0;
-    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
-    return SRC_LEAVES[h % SRC_LEAVES.length];
+    const extra = matchExtraOf(r) || {};
+    const raw = String(r.src || r.ms || r.source || extra.src || '').trim().replace('人脈推廣', '人脈').replace('既有房東客', '既有');
+    if (!raw) return null;
+    const hit = SRC_LEAVES.find(x => raw === x.id || raw === x.leaf || (raw.includes(x.leaf) && raw.includes(x.group.slice(0, 2))));
+    if (hit) return hit;
+    const group = raw.includes('陌生') ? '陌生開發' : (raw.includes('轉介') ? '轉介紹' : '');
+    if (!group) return null;
+    const leaf = SRC_LEAVES.find(x => x.group === group && raw.includes(x.leaf));
+    return leaf || SRC_LEAVES.find(x => x.group === group && x.leaf === '其他') || null;
   }
   function srcRange() {
     if (state.srcGrain === 'year') {
