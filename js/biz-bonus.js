@@ -24,7 +24,7 @@
 
   const state = {
     view: 'home', // home | people
-    personalOpen: false,
+    personalOpen: true,
     regionOpen: '',
     loaded: false,
     loading: false,
