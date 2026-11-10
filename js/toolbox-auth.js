@@ -944,6 +944,37 @@
     return false;
   }
 
+  /** 內勤經理級以上。比對用完整職稱，不用「包含經理」這種模糊判斷。 */
+  const BACK_OFFICE_MANAGER_TITLES = [
+    '經理', '部長', '協理',
+    '處經理', '營業處經理', '副理',
+    '區協理', '營業區協理',
+    '儲備處經理', '儲備營業處經理'
+  ];
+
+  function scoreUser(me) {
+    return me || session?.supabaseUser || session?.user || {};
+  }
+
+  /** 會議計分：看全部。與 SQL msb_can_view_all 同一套條件。不含姓名白名單。 */
+  function canViewAllScores(me) {
+    const u = scoreUser(me);
+    const team = String(u.team || '').trim();
+    const title = String(u.jobTitle || u.job_title || '').trim();
+    if (title === '工讀生') return false;
+    if (team === '總經理室') return true;
+    if (title === '營業區協理' || title === '區協理') return true;
+    if (title === '營業處經理' || title === '處經理') return true;
+    if (title === '儲備處經理' || title === '儲備營業處經理') return true;
+    if ((team === '行政管理部' || team === '財務部') && BACK_OFFICE_MANAGER_TITLES.indexOf(title) >= 0) return true;
+    return false;
+  }
+
+  /** 會議計分：誰可以輸入。第一版與可看全部相同。 */
+  function canEditScores(me) {
+    return canViewAllScores(me);
+  }
+
   /** 財會／人資專區：行政管理部、財務部、簡為倢／邱奕棋 */
   function canEnterFinanceHr() {
     if (hasFullToolboxAccess()) return true;
@@ -1281,6 +1312,8 @@
     canEnterAdminZone,
     canEnterBizSupervisor,
     canEnterFinanceHr,
+    canViewAllScores,
+    canEditScores,
     hasFullToolboxAccess,
     getProfile: () => null,
     rpc,
