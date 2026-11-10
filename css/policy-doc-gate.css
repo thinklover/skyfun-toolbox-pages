@@ -23,6 +23,7 @@ body.pdg-open { overflow: hidden; }
   position: relative;
   z-index: 1;
   width: min(960px, 100%);
+  height: min(92vh, 900px);
   max-height: min(92vh, 900px);
   display: flex;
   flex-direction: column;
@@ -210,7 +211,8 @@ body.pdg-open { overflow: hidden; }
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   background: #e2e8f0;
 }
 .pdg-stage iframe {
@@ -222,9 +224,8 @@ body.pdg-open { overflow: hidden; }
   background: #fff;
 }
 .pdg-pages {
-  height: 100%;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+  height: auto;
+  overflow: visible;
   background: #fff;
 }
 .pdg-pdf-page {
