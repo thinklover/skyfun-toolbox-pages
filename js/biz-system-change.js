@@ -385,8 +385,9 @@
     const me = myDisplayName();
     const assignedAdmin = String(r.handlerAdminName || '').trim();
     const isAssignedAdmin = !assignedAdmin || assignedAdmin === me;
+    const isAssignedModifier = level === 'manager' && String(r.modifierName || '').trim() === me;
     const canFinish =
-      (role === 'manager' && level === 'manager') ||
+      isAssignedModifier ||
       (role === 'admin' && level === 'admin' && isAssignedAdmin) ||
       (role === 'super' && level === 'admin') ||
       (role === 'super' && level === 'super');
@@ -394,7 +395,7 @@
       btns.push(`<button type="button" class="bsc-done-btn" data-bsc-done="${esc(r.id)}">已修改完畢</button>`);
       btns.push(`<button type="button" class="bsc-reject-btn" data-bsc-reject="${esc(r.id)}">退回修改</button>`);
     }
-    if (role === 'manager' && level === 'manager') {
+    if (isAssignedModifier) {
       btns.push(`<button type="button" class="bsc-xfer-btn" data-bsc-xfer="admin" data-id="${esc(r.id)}">轉交行政</button>`);
     }
     if ((role === 'admin' && level === 'admin' && isAssignedAdmin) || (role === 'super' && level === 'admin')) {
