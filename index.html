@@ -7408,23 +7408,20 @@
                     <p id="msb-msg" class="msb-msg" role="status"></p>
 
                     <section class="msb-panel" data-msb-panel="dash">
-                        <div class="msb-topbar">
-                            <div class="msb-crumb">工作空間／分數儀表板</div>
+                        <div class="msb-topbar msb-topbar--flat">
+                            <div>
+                                <div class="msb-crumb">工作空間／分數儀表板</div>
+                                <h2 class="msb-page-title">分數儀表板</h2>
+                            </div>
                             <div class="msb-top-actions">
-                                <button type="button" id="msb-export" class="msb-btn msb-btn--ghost">↓ 匯出紀錄</button>
+                                <button type="button" id="msb-export" class="msb-btn msb-btn--ghost">↓ 匯出</button>
                                 <button type="button" id="msb-open-add" class="msb-btn msb-btn--primary msb-edit-only">＋ 新增加減分</button>
                             </div>
                         </div>
-                        <header class="msb-hero">
-                            <div>
-                                <h2>讓每一分努力，清楚可見。</h2>
-                                <p>從會議參與到專案貢獻，掌握團隊每一次的累積。</p>
-                            </div>
-                        </header>
-                        <div class="msb-toolbar">
-                            <div class="msb-board-tabs" role="tablist" aria-label="計分表">
-                                <button type="button" class="is-on" data-msb-board="system">系統會議計分表</button>
-                                <button type="button" data-msb-board="monthly">月會主管計分表</button>
+                        <div class="msb-toolbar msb-toolbar--flat">
+                            <div class="msb-board-tabs apt-sub-tabs" role="tablist" aria-label="計分表">
+                                <button type="button" class="apt-sub-tab is-on" data-msb-board="system">系統會議計分表</button>
+                                <button type="button" class="apt-sub-tab" data-msb-board="monthly">月會主管計分表</button>
                             </div>
                             <div class="msb-period">
                                 <input id="msb-month" type="month" aria-label="統計月份">
@@ -7441,39 +7438,44 @@
                                     <option value="dept">部別</option>
                                     <option value="bonus">獎金由高到低</option>
                                 </select>
-                                <button type="button" id="msb-staff-view" class="msb-btn msb-btn--ghost">列表檢視</button>
+                                <button type="button" id="msb-staff-view" class="msb-btn msb-btn--ghost">大卡檢視</button>
                                 <button type="button" id="msb-open-month" class="msb-btn msb-btn--primary msb-edit-only">輸入分數／獎金</button>
                                 <button type="button" id="msb-open-batch" class="msb-btn msb-btn--ghost msb-edit-only">批次貼上</button>
                             </div>
+                            <p id="msb-scope-note" class="msb-scope-note" hidden></p>
                             <div id="msb-self" class="msb-self" hidden></div>
-                            <div id="msb-staff-cards" class="msb-staff-cards"></div>
+                            <div id="msb-staff-groups" class="msb-staff-groups"></div>
+                            <div id="msb-staff-cards" class="msb-staff-cards" hidden></div>
                             <div id="msb-staff-table-wrap" class="msb-table-wrap" hidden>
                                 <table id="msb-staff-table" class="msb-table"></table>
                             </div>
                             <p id="msb-score-month-note" class="msb-filter-note"></p>
                         </section>
-                        <div class="msb-kpis msb-company-only">
-                            <div class="msb-kpi msb-kpi--dark">
-                                <span class="msb-kpi-label">累計總分</span>
-                                <strong id="msb-kpi-total" class="msb-kpi-val">0 分</strong>
-                                <span id="msb-kpi-total-sub" class="msb-kpi-sub">本月累計</span>
+                        <details class="msb-kpi-fold msb-company-only">
+                            <summary>加減分摘要（期間統計）</summary>
+                            <div class="msb-kpis msb-kpis--chips">
+                                <div class="msb-kpi msb-kpi--dark">
+                                    <span class="msb-kpi-label">累計總分</span>
+                                    <strong id="msb-kpi-total" class="msb-kpi-val">0 分</strong>
+                                    <span id="msb-kpi-total-sub" class="msb-kpi-sub">本月累計</span>
+                                </div>
+                                <div class="msb-kpi msb-kpi--plus">
+                                    <span class="msb-kpi-label">期間加分</span>
+                                    <strong id="msb-kpi-plus" class="msb-kpi-val msb-pos">+0 分</strong>
+                                    <span id="msb-kpi-plus-sub" class="msb-kpi-sub">共 0 筆加分紀錄</span>
+                                </div>
+                                <div class="msb-kpi msb-kpi--minus">
+                                    <span class="msb-kpi-label">期間減分</span>
+                                    <strong id="msb-kpi-minus" class="msb-kpi-val msb-neg">0 分</strong>
+                                    <span id="msb-kpi-minus-sub" class="msb-kpi-sub">共 0 筆減分紀錄</span>
+                                </div>
+                                <div class="msb-kpi">
+                                    <span class="msb-kpi-label">加分人員</span>
+                                    <strong id="msb-kpi-people" class="msb-kpi-val">0 位</strong>
+                                    <span id="msb-kpi-people-sub" class="msb-kpi-sub">0 個專案區塊參與計分</span>
+                                </div>
                             </div>
-                            <div class="msb-kpi msb-kpi--plus">
-                                <span class="msb-kpi-label">期間加分</span>
-                                <strong id="msb-kpi-plus" class="msb-kpi-val msb-pos">+0 分</strong>
-                                <span id="msb-kpi-plus-sub" class="msb-kpi-sub">共 0 筆加分紀錄</span>
-                            </div>
-                            <div class="msb-kpi msb-kpi--minus">
-                                <span class="msb-kpi-label">期間減分</span>
-                                <strong id="msb-kpi-minus" class="msb-kpi-val msb-neg">0 分</strong>
-                                <span id="msb-kpi-minus-sub" class="msb-kpi-sub">共 0 筆減分紀錄</span>
-                            </div>
-                            <div class="msb-kpi">
-                                <span class="msb-kpi-label">加分人員</span>
-                                <strong id="msb-kpi-people" class="msb-kpi-val">0 位</strong>
-                                <span id="msb-kpi-people-sub" class="msb-kpi-sub">0 個專案區塊參與計分</span>
-                            </div>
-                        </div>
+                        </details>
                         <div class="msb-split msb-split--rank msb-company-only">
                             <div class="msb-card msb-card--wide">
                                 <h3>人員分數排行</h3>
@@ -7700,6 +7702,43 @@
                             <button type="button" class="msb-btn msb-btn--ghost" data-msb-batch-close="1">取消</button>
                             <button type="button" id="msb-batch-check" class="msb-btn msb-btn--ghost">預覽</button>
                             <button type="submit" id="msb-batch-save" class="msb-btn msb-btn--primary" disabled>確認寫入</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="msb-modal" id="msb-bind-modal" hidden>
+                <div class="msb-modal-backdrop" data-msb-bind-close="1"></div>
+                <div class="msb-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="msb-bind-title">
+                    <div class="msb-modal-head">
+                        <div>
+                            <h3 id="msb-bind-title">補部別／對帳號</h3>
+                            <p id="msb-bind-person-label" class="msb-modal-board">人員</p>
+                        </div>
+                        <button type="button" class="msb-modal-x" data-msb-bind-close="1" aria-label="關閉">×</button>
+                    </div>
+                    <form id="msb-bind-form" class="msb-form" autocomplete="off">
+                        <input type="hidden" id="msb-bind-person-id" value="">
+                        <div class="msb-form-grid">
+                            <div class="msb-field msb-field--full">
+                                <label for="msb-bind-dept">部別</label>
+                                <select id="msb-bind-dept"></select>
+                            </div>
+                            <div class="msb-field msb-field--full">
+                                <label for="msb-bind-account-q">搜尋在職帳號</label>
+                                <input id="msb-bind-account-q" type="search" placeholder="輸入姓名或帳號關鍵字">
+                            </div>
+                            <div class="msb-field msb-field--full">
+                                <label for="msb-bind-account">對到帳號</label>
+                                <select id="msb-bind-account">
+                                    <option value="">（不改帳號）</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p id="msb-bind-msg" class="msb-msg" role="status"></p>
+                        <div class="msb-modal-actions">
+                            <button type="button" class="msb-btn msb-btn--ghost" data-msb-bind-close="1">取消</button>
+                            <button type="submit" id="msb-bind-save" class="msb-btn msb-btn--primary">儲存</button>
                         </div>
                     </form>
                 </div>
@@ -14284,7 +14323,7 @@
         <script src="./js/biz-coverage.js?v=20261110-noescrow"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
         <script src="./js/fin-report.js?v=20261108-fin62"></script>
-        <script src="./js/meeting-scoreboard.js?v=20261110-msb9"></script>
+        <script src="./js/meeting-scoreboard.js?v=20261111-msb-dense"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>

@@ -984,3 +984,241 @@ body.msb-modal-open { overflow: hidden; }
     transform: none;
   }
 }
+
+/* 分數儀表板密集表（2026-11-11） */
+#page-meeting-scoreboard.msb-wide,
+#page-meeting-scoreboard {
+  width: min(96vw, 94rem);
+  max-width: min(96vw, 94rem) !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#page-meeting-scoreboard .msb-topbar--flat {
+  margin-bottom: 0.45rem;
+  gap: 0.5rem;
+}
+
+#page-meeting-scoreboard .msb-toolbar--flat {
+  margin-bottom: 0.55rem;
+  gap: 0.4rem;
+}
+
+#page-meeting-scoreboard .msb-board-tabs.apt-sub-tabs {
+  margin-bottom: 0;
+  border-radius: 0.6rem;
+  background: #f1f5f9;
+  border: 0;
+  padding: 0.2rem;
+}
+
+#page-meeting-scoreboard .msb-board-tabs.apt-sub-tabs button,
+#page-meeting-scoreboard .msb-board-tabs .apt-sub-tab {
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: #475569;
+  min-height: 0;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+#page-meeting-scoreboard .msb-board-tabs.apt-sub-tabs button.is-on,
+#page-meeting-scoreboard .msb-board-tabs .apt-sub-tab.is-on {
+  background: #fff;
+  color: #4338ca;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+#page-meeting-scoreboard .msb-staff-tools {
+  margin-bottom: 0.55rem;
+  gap: 0.4rem;
+}
+
+#page-meeting-scoreboard .msb-scope-note {
+  margin: 0 0 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.45rem;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+#page-meeting-scoreboard .msb-scope-note[hidden] {
+  display: none !important;
+}
+
+#page-meeting-scoreboard .msb-kpi-fold {
+  margin: 0.35rem 0 0.85rem;
+  border: 1px solid var(--msb-line);
+  border-radius: 0.7rem;
+  background: #fff;
+  padding: 0.35rem 0.65rem 0.55rem;
+}
+
+#page-meeting-scoreboard .msb-kpi-fold > summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #475569;
+  list-style: none;
+}
+
+#page-meeting-scoreboard .msb-kpi-fold > summary::-webkit-details-marker { display: none; }
+
+#page-meeting-scoreboard .msb-kpis--chips {
+  margin-top: 0.55rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+@media (min-width: 900px) {
+  #page-meeting-scoreboard .msb-kpis--chips {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+#page-meeting-scoreboard .msb-kpis--chips .msb-kpi {
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.7rem;
+  min-height: 0;
+}
+
+#page-meeting-scoreboard .msb-kpis--chips .msb-kpi-val {
+  font-size: 1.05rem;
+}
+
+#page-meeting-scoreboard .msb-staff-groups {
+  display: grid;
+  gap: 0.15rem;
+}
+
+#page-meeting-scoreboard .msb-staff-groups .apt-group-title {
+  margin: 0.65rem 0 0.25rem;
+  font-size: 0.88rem;
+}
+
+#page-meeting-scoreboard .msb-staff-groups .apt-group-title:first-child {
+  margin-top: 0.1rem;
+}
+
+#page-meeting-scoreboard .msb-dense-wrap {
+  margin-bottom: 0.35rem;
+}
+
+#page-meeting-scoreboard .msb-dense-table {
+  font-size: 0.84rem !important;
+}
+
+#page-meeting-scoreboard .msb-dense-table th,
+#page-meeting-scoreboard .msb-dense-table td {
+  padding: 0.22rem 0.35rem !important;
+  line-height: 1.25;
+  vertical-align: middle;
+}
+
+#page-meeting-scoreboard .msb-dense-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  font-size: 0.78rem;
+}
+
+#page-meeting-scoreboard .msb-dense-table .apt-name {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+#page-meeting-scoreboard .msb-dense-table td.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#page-meeting-scoreboard .msb-dense-table tr.is-mine > td {
+  background: #fff7ed;
+}
+
+#page-meeting-scoreboard .msb-you-mark {
+  display: inline-block;
+  margin-left: 0.2rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  background: #ffedd5;
+  color: #c2410c;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+#page-meeting-scoreboard .msb-tiny-mark {
+  display: inline-block;
+  margin-left: 0.15rem;
+  padding: 0.02rem 0.35rem !important;
+  font-size: 0.65rem !important;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+
+#page-meeting-scoreboard .msb-bind-link {
+  border: 0;
+  background: none;
+  color: #4338ca;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: underline dotted #a5b4fc;
+  padding: 0 0.15rem;
+  margin-left: 0.1rem;
+}
+
+#page-meeting-scoreboard .msb-bind-link:hover {
+  color: #312e81;
+}
+
+#page-meeting-scoreboard .msb-self-summary {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 28rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--msb-line);
+  border-radius: 0.8rem;
+  background: #fff;
+}
+
+#page-meeting-scoreboard .msb-self-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+}
+
+#page-meeting-scoreboard .msb-self-summary-row > span {
+  color: var(--msb-muted);
+  font-weight: 700;
+}
+
+#page-meeting-scoreboard .msb-self-summary-row > b {
+  font-weight: 800;
+  color: var(--msb-ink);
+  text-align: right;
+}
+
+#page-meeting-scoreboard #msb-staff-groups[hidden],
+#page-meeting-scoreboard .msb-kpi-fold[hidden] {
+  display: none !important;
+}
+
+@media (min-width: 900px) {
+  #page-meeting-scoreboard {
+    --msb-side: 12.5rem;
+  }
+  #page-meeting-scoreboard .msb-main {
+    padding: 0.85rem 1rem 1.2rem;
+  }
+}

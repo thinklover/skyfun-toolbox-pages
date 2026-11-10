@@ -31,8 +31,10 @@
     viewerId: '',
     scoreMonth: '',
     serverScoped: false,
-    staff: { q: '', dept: '', sort: 'score', list: false },
-    batchRows: []
+    staff: { q: '', dept: '', sort: 'score', list: true },
+    batchRows: [],
+    bindPersonId: null,
+    accountOptions: []
   };
 
   function settingsUnlocked() {
@@ -149,8 +151,32 @@
 
   function bonusText(v) {
     const n = bonusAmount(v);
-    if (n == null) return '未發放';
+    if (n == null) return '—';
     return n.toLocaleString('zh-TW');
+  }
+
+  function bonusCellHtml(p) {
+    const n = bonusAmount(p?.bonus);
+    const status = String(p?.bonusStatus || '').trim();
+    if (n == null) return '<span class="apt-nil">—</span>';
+    const badge = (status === '待發放' || status === '已發放')
+      ? ` <span class="apt-chip apt-chip--muted">${esc(status)}</span>`
+      : '';
+    return `<span class="msb-bonus-amt">${esc(n.toLocaleString('zh-TW'))}</span>${badge}`;
+  }
+
+  function scoreCellHtml(v) {
+    const n = numOrNull(v);
+    if (n == null) return '<span class="apt-nil">—</span>';
+    return esc(manualScoreText(v));
+  }
+
+  function nameMarksHtml(p) {
+    const bits = [];
+    if (isMine(p)) bits.push('<span class="msb-you-mark">你</span>');
+    if (!personDept(p)) bits.push('<span class="apt-chip apt-chip--muted msb-tiny-mark">未填部別</span>');
+    if (!p.accountId) bits.push('<span class="apt-chip apt-chip--muted msb-tiny-mark">未對帳</span>');
+    return bits.join(' ');
   }
 
   function isMine(p) {
@@ -465,19 +491,71 @@
 
   function scoreCard(p, large) {
     const mine = isMine(p);
-    const status = String(p.bonusStatus || '').trim();
-    const statusBadge = status && status !== '未發放'
-      ? `<span class="msb-badge">${esc(status)}</span>`
-      : '';
-    const unbound = state.canViewAll && !p.accountId
-      ? '<span class="msb-badge">未對到帳號</span>'
-      : '';
+    const dept = personDept(p);
     return `<article class="msb-person-card${mine ? ' is-mine' : ''}${large ? ' is-large' : ''}" ${state.canEdit ? `data-msb-score-person="${p.id}" tabindex="0"` : ''}>
-      <div class="msb-person-meta">${esc(personDept(p) || '未填部別')}${mine ? '<span class="msb-badge">這是你的</span>' : ''}${unbound}</div>
+      <div class="msb-person-meta">${dept ? esc(dept) : '<span class="apt-nil">—</span>'} ${nameMarksHtml(p)}</div>
       <div class="msb-person-name">${esc(p.name || '—')}</div>
       <div class="msb-person-score">${manualScoreText(p.score)}</div>
-      <div class="msb-person-bonus">${esc(bonusText(p.bonus))}${statusBadge}</div>
+      <div class="msb-person-bonus">${bonusCellHtml(p)}</div>
     </article>`;
+  }
+
+  function staffRowHtml(p) {
+    const dept = personDept(p);
+    const deptCell = dept
+      ? `<td class="apt-mt-dept"><span>${esc(dept)}</span></td>`
+      : '<td class="apt-mt-dept"><span class="apt-nil">—</span></td>';
+    const nameBtn = state.canEdit
+      ? `<button type="button" class="apt-name" data-msb-score-person="${esc(p.id)}">${esc(p.name || '—')}</button>`
+      : `<span class="apt-name">${esc(p.name || '—')}</span>`;
+    const bindBtn = state.canEdit && (!dept || !p.accountId)
+      ? ` <button type="button" class="msb-bind-link" data-msb-bind="${esc(p.id)}">補</button>`
+      : '';
+    return `<tr class="${isMine(p) ? 'is-mine' : ''}">
+      ${deptCell}
+      <td>${nameBtn} ${nameMarksHtml(p)}${bindBtn}</td>
+      <td class="num">${scoreCellHtml(p.score)}</td>
+      <td class="num">${bonusCellHtml(p)}</td>
+    </tr>`;
+  }
+
+  function groupStaffByDept(rows) {
+    const map = new Map();
+    rows.forEach((p) => {
+      const key = personDept(p) || '未填部別';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(p);
+    });
+    const keys = Array.from(map.keys()).sort((a, b) => {
+      if (a === '未填部別') return 1;
+      if (b === '未填部別') return -1;
+      return a.localeCompare(b, 'zh-Hant');
+    });
+    return keys.map((dept) => {
+      const people = map.get(dept).slice().sort((a, b) => {
+        const sa = numOrNull(a.score);
+        const sb = numOrNull(b.score);
+        if (sa == null && sb == null) return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+        if (sa == null) return 1;
+        if (sb == null) return -1;
+        if (sb !== sa) return sb - sa;
+        return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+      });
+      return { dept, people };
+    });
+  }
+
+  function staffTableHtml(people) {
+    const body = people.map(staffRowHtml).join('');
+    const sort = state.staff.sort || 'score';
+    const th = (key, label) =>
+      `<th class="apt-sortable${sort === key ? ' is-sorted' : ''}" data-msb-sort="${key}">${label}</th>`;
+    return `<div class="apt-table-wrap msb-dense-wrap"><table class="apt-table apt-month-table msb-dense-table">
+      <thead><tr>
+        ${th('dept', '部別')}${th('name', '姓名')}${th('score', '分數')}${th('bonus', '獎金')}
+      </tr></thead>
+      <tbody>${body || '<tr><td colspan="4" class="apt-empty">這個月還沒有可顯示的人員</td></tr>'}</tbody>
+    </table></div>`;
   }
 
   function renderDeptChips() {
@@ -505,50 +583,63 @@
         ? '全部期間只展開加減分。分數與獎金仍是 ' + month + '。'
         : '分數與獎金是 ' + month + ' 的手動輸入，不是加減分加總。';
     }
+    const groupsEl = $('msb-staff-groups');
+    const cards = $('msb-staff-cards');
+    const wrap = $('msb-staff-table-wrap');
     if (!state.canViewAll) {
       const box = $('msb-self');
       const mine = (state.people || []).find(isMine) || null;
-      if (!box) return;
-      if (!mine) {
-        box.innerHTML = '<p class="msb-empty">目前還沒有你的分數資料</p>';
-      } else {
-        const ownEntries = (state.entries || []).slice(0, 8).map((e) =>
-          `<li><span>${esc(fmtDate(e.scoreDate))}</span><span>${esc(e.item || '')}</span>${scoreChip(e.score)}</li>`
-        ).join('');
-        box.innerHTML = '<p class="msb-self-kicker">這是你的成績</p>' + scoreCard(mine, true) +
-          (ownEntries ? `<ul class="msb-self-entries">${ownEntries}</ul>` : '<p class="msb-empty">這個月沒有你的加減分紀錄</p>');
+      if (box) {
+        if (!mine) {
+          box.innerHTML = '<p class="msb-empty">目前還沒有你的分數資料</p>';
+        } else {
+          const dept = personDept(mine);
+          const ownEntries = (state.entries || []).slice(0, 8).map((e) =>
+            `<li><span>${esc(fmtDate(e.scoreDate))}</span><span>${esc(e.item || '')}</span>${scoreChip(e.score)}</li>`
+          ).join('');
+          box.innerHTML = `<div class="msb-self-summary">
+            <div class="msb-self-summary-row"><span>部別</span><b>${dept ? esc(dept) : '<span class="apt-nil">—</span>'}</b></div>
+            <div class="msb-self-summary-row"><span>姓名</span><b>${esc(mine.name || '—')}</b></div>
+            <div class="msb-self-summary-row"><span>分數</span><b>${scoreCellHtml(mine.score)}</b></div>
+            <div class="msb-self-summary-row"><span>獎金</span><b>${bonusCellHtml(mine)}</b></div>
+          </div>` +
+            (ownEntries ? `<ul class="msb-self-entries">${ownEntries}</ul>` : '<p class="msb-empty">這個月沒有你的加減分紀錄</p>');
+        }
       }
-      if ($('msb-staff-cards')) $('msb-staff-cards').innerHTML = '';
-      if ($('msb-staff-table-wrap')) $('msb-staff-table-wrap').hidden = true;
+      if (groupsEl) groupsEl.innerHTML = '';
+      if (cards) { cards.hidden = true; cards.innerHTML = ''; }
+      if (wrap) wrap.hidden = true;
       return;
     }
     renderDeptChips();
     const rows = staffRows();
-    const cards = $('msb-staff-cards');
-    const wrap = $('msb-staff-table-wrap');
-    const table = $('msb-staff-table');
     const viewBtn = $('msb-staff-view');
-    if (viewBtn) viewBtn.textContent = state.staff.list ? '卡片檢視' : '列表檢視';
+    const showTable = !!state.staff.list;
+    if (viewBtn) viewBtn.textContent = showTable ? '大卡檢視' : '表格式檢視';
     if (cards) {
-      cards.hidden = !!state.staff.list;
-      cards.innerHTML = rows.length
+      cards.hidden = showTable;
+      cards.innerHTML = (!showTable && rows.length)
         ? rows.map((p) => scoreCard(p, false)).join('')
-        : '<p class="msb-empty">這個月還沒有可顯示的人員</p>';
+        : (!showTable ? '<p class="msb-empty">這個月還沒有可顯示的人員</p>' : '');
     }
-    if (wrap) wrap.hidden = !state.staff.list;
-    if (table && state.staff.list) {
-      const body = rows.map((p) => {
-        const status = String(p.bonusStatus || '').trim();
-        return `<tr class="${isMine(p) ? 'is-mine' : ''}" ${state.canEdit ? `data-msb-score-person="${p.id}"` : ''}>
-          <td>${esc(personDept(p) || '—')}</td>
-          <td>${esc(p.name || '—')}${isMine(p) ? ' <span class="msb-badge">這是你的</span>' : ''}${!p.accountId ? ' <span class="msb-badge">未對到帳號</span>' : ''}</td>
-          <td class="msb-num">${manualScoreText(p.score)}</td>
-          <td class="msb-num">${esc(bonusText(p.bonus))}${status && status !== '未發放' ? ' <span class="msb-badge">' + esc(status) + '</span>' : ''}</td>
-        </tr>`;
-      }).join('');
-      table.innerHTML = `<thead><tr>
-        <th data-msb-sort="dept">部別</th><th data-msb-sort="name">姓名</th><th data-msb-sort="score">分數</th><th data-msb-sort="bonus">獎金</th>
-      </tr></thead><tbody>${body || '<tr><td colspan="4">這個月還沒有可顯示的人員</td></tr>'}</tbody>`;
+    if (wrap) wrap.hidden = true;
+    if (groupsEl) {
+      groupsEl.hidden = !showTable;
+      if (showTable) {
+        if (!rows.length) {
+          groupsEl.innerHTML = '<p class="msb-empty">這個月還沒有可顯示的人員</p>';
+        } else if (state.staff.dept || state.staff.sort !== 'score') {
+          groupsEl.innerHTML = staffTableHtml(rows);
+        } else {
+          const groups = groupStaffByDept(rows);
+          groupsEl.innerHTML = groups.map((g) =>
+            `<div class="apt-group-title">${esc(g.dept)} <small>${g.people.length} 人</small></div>` +
+            staffTableHtml(g.people)
+          ).join('');
+        }
+      } else {
+        groupsEl.innerHTML = '';
+      }
     }
   }
 
@@ -678,9 +769,18 @@
         state.recordsEntries = state.entries.slice();
       }
 
+      const scopeNote = $('msb-scope-note');
       if (!state.serverScoped) {
-        setMsg('分數權限的資料庫更新還沒套用。一般員工先不顯示名單。', 'err');
+        if (scopeNote) {
+          scopeNote.hidden = false;
+          scopeNote.textContent = '權限 SQL 尚未套用（meeting-scoreboard-staff-month.sql）。有權限者仍可看名單；一般員工先不顯示。';
+        }
+        setMsg('');
       } else {
+        if (scopeNote) {
+          scopeNote.hidden = true;
+          scopeNote.textContent = '';
+        }
         setMsg('');
       }
       renderAll();
@@ -800,7 +900,9 @@
   function closeMonthModal() {
     const modal = $('msb-month-modal');
     if (modal) modal.hidden = true;
-    if ($('msb-modal')?.hidden && $('msb-batch-modal')?.hidden) document.body.classList.remove('msb-modal-open');
+    if ($('msb-modal')?.hidden && $('msb-batch-modal')?.hidden && $('msb-bind-modal')?.hidden) {
+      document.body.classList.remove('msb-modal-open');
+    }
   }
 
   function closeBatchModal() {
@@ -808,7 +910,74 @@
     if (modal) modal.hidden = true;
     state.batchRows = [];
     if ($('msb-batch-save')) $('msb-batch-save').disabled = true;
-    if ($('msb-modal')?.hidden && $('msb-month-modal')?.hidden) document.body.classList.remove('msb-modal-open');
+    if ($('msb-modal')?.hidden && $('msb-month-modal')?.hidden && $('msb-bind-modal')?.hidden) {
+      document.body.classList.remove('msb-modal-open');
+    }
+  }
+
+  function fillBindDept(selected) {
+    const el = $('msb-bind-dept');
+    if (!el) return;
+    if (typeof window.buildSkyfunDepartmentSelectHtml === 'function') {
+      el.innerHTML = window.buildSkyfunDepartmentSelectHtml(selected || '');
+    } else {
+      el.innerHTML = `<option value="">請選擇處別</option><option value="${esc(selected || '')}" selected>${esc(selected || '')}</option>`;
+    }
+  }
+
+  function fillBindAccounts(selectedId) {
+    const el = $('msb-bind-account');
+    if (!el) return;
+    const q = String($('msb-bind-account-q')?.value || '').trim().toLowerCase();
+    const opts = (state.accountOptions || []).filter((a) => {
+      if (!q) return true;
+      return (String(a.name || '') + ' ' + String(a.username || '') + ' ' + String(a.team || '')).toLowerCase().includes(q);
+    }).slice(0, 80);
+    const cur = String(selectedId || el.value || '');
+    el.innerHTML = '<option value="">（不改帳號）</option>' +
+      (cur ? '' : '') +
+      opts.map((a) => {
+        const label = `${a.name || a.username || ''}${a.team ? '（' + a.team + '）' : ''}`;
+        return `<option value="${esc(a.id)}"${String(a.id) === cur ? ' selected' : ''}>${esc(label)}</option>`;
+      }).join('');
+    if (cur && !opts.some((a) => String(a.id) === cur)) {
+      el.insertAdjacentHTML('beforeend', `<option value="${esc(cur)}" selected>目前已綁定</option>`);
+    }
+  }
+
+  async function openBindModal(personId) {
+    if (!state.canEdit) return;
+    const person = (state.people || []).find((p) => String(p.id) === String(personId));
+    if (!person) return;
+    state.bindPersonId = person.id;
+    if ($('msb-bind-person-id')) $('msb-bind-person-id').value = String(person.id);
+    if ($('msb-bind-person-label')) $('msb-bind-person-label').textContent = person.name || '人員';
+    fillBindDept(personDept(person));
+    if ($('msb-bind-account-q')) $('msb-bind-account-q').value = person.name || '';
+    setMsg('', '', 'msb-bind-msg');
+    try {
+      if (!state.accountOptions.length) {
+        const res = await rpc('msb_accounts_lookup', { p_token: token(), p_q: '' });
+        if (!res?.ok) throw new Error(res?.error || '帳號名單載入失敗');
+        state.accountOptions = res.accounts || [];
+      }
+    } catch (err) {
+      setMsg(err.message || String(err), 'err', 'msb-bind-msg');
+      state.accountOptions = state.accountOptions || [];
+    }
+    fillBindAccounts(person.accountId || '');
+    const modal = $('msb-bind-modal');
+    if (modal) modal.hidden = false;
+    document.body.classList.add('msb-modal-open');
+  }
+
+  function closeBindModal() {
+    const modal = $('msb-bind-modal');
+    if (modal) modal.hidden = true;
+    state.bindPersonId = null;
+    if ($('msb-modal')?.hidden && $('msb-month-modal')?.hidden && $('msb-batch-modal')?.hidden) {
+      document.body.classList.remove('msb-modal-open');
+    }
   }
 
   function showBatchPreview() {
@@ -923,6 +1092,12 @@
         renderStaff();
         return;
       }
+      const bindBtn = e.target.closest('[data-msb-bind]');
+      if (bindBtn && state.canEdit) {
+        e.preventDefault();
+        await openBindModal(bindBtn.getAttribute('data-msb-bind'));
+        return;
+      }
       const scorePerson = e.target.closest('[data-msb-score-person]');
       if (scorePerson && state.canEdit) {
         openMonthModal(scorePerson.getAttribute('data-msb-score-person'));
@@ -934,6 +1109,10 @@
       }
       if (e.target.closest('[data-msb-batch-close]')) {
         closeBatchModal();
+        return;
+      }
+      if (e.target.closest('[data-msb-bind-close]')) {
+        closeBindModal();
         return;
       }
       if (e.target.id === 'msb-goto-records') {
@@ -1015,6 +1194,48 @@
     $('msb-staff-sort')?.addEventListener('change', () => {
       state.staff.sort = $('msb-staff-sort')?.value || 'score';
       renderStaff();
+    });
+
+    let bindSearchTimer = null;
+    $('msb-bind-account-q')?.addEventListener('input', () => {
+      clearTimeout(bindSearchTimer);
+      bindSearchTimer = setTimeout(async () => {
+        const q = String($('msb-bind-account-q')?.value || '').trim();
+        try {
+          const res = await rpc('msb_accounts_lookup', { p_token: token(), p_q: q });
+          if (res?.ok) state.accountOptions = res.accounts || [];
+        } catch (_) { /* keep previous options */ }
+        fillBindAccounts($('msb-bind-account')?.value || '');
+      }, 220);
+    });
+
+    $('msb-bind-form')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!state.canEdit || state.busy) return;
+      const personId = Number($('msb-bind-person-id')?.value || state.bindPersonId || 0);
+      if (!personId) return;
+      state.busy = true;
+      const btn = $('msb-bind-save');
+      if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
+      setMsg('', '', 'msb-bind-msg');
+      try {
+        const accountVal = String($('msb-bind-account')?.value || '').trim();
+        const res = await rpc('msb_person_patch', {
+          p_token: token(),
+          p_id: personId,
+          p_department: $('msb-bind-dept')?.value || '',
+          p_account_id: accountVal || null
+        });
+        if (!res?.ok) throw new Error(res?.error || '儲存失敗');
+        closeBindModal();
+        setMsg('已更新部別／帳號', 'ok');
+        await reload();
+      } catch (err) {
+        setMsg(err.message || String(err), 'err', 'msb-bind-msg');
+      } finally {
+        state.busy = false;
+        if (btn) { btn.disabled = false; btn.textContent = '儲存'; }
+      }
     });
 
     $('msb-month-form')?.addEventListener('submit', async (ev) => {
