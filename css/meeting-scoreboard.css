@@ -1,16 +1,19 @@
 /* 會議計分中心｜參考左側導覽＋右側工作區（僅作用於此頁） */
 #page-meeting-scoreboard {
-  --msb-ink: #14532d;
-  --msb-ink-deep: #0f2f1c;
-  --msb-text: #1f2937;
-  --msb-muted: #6b7280;
-  --msb-line: #e5e7eb;
-  --msb-soft: #ecfdf5;
-  --msb-soft-2: #f3f6f4;
-  --msb-bg: #f5f7f6;
+  --msb-ink: hsl(0, 0%, 6%);
+  --msb-ink-deep: hsl(0, 0%, 6%);
+  --msb-text: hsl(0, 0%, 6%);
+  --msb-muted: hsl(24, 2%, 41%);
+  --msb-faint: hsl(24, 3%, 53%);
+  --msb-line: hsl(0, 0%, 90%);
+  --msb-soft: hsl(30, 7%, 95%);
+  --msb-soft-2: hsl(27, 10%, 91%);
+  --msb-bg: #ffffff;
+  --msb-accent: #e06500;
   --msb-pos: #15803d;
   --msb-neg: #c2410c;
-  --msb-radius: 1rem;
+  --msb-radius: 16px;
+  --msb-shadow: 0px 4px 4px hsla(0, 0%, 0%, 0.04), 0px 0px 1px hsla(0, 0%, 0%, 0.35);
   --msb-side: 15.5rem;
   margin: -0.5rem -0.75rem 0;
   max-width: none !important;
@@ -201,8 +204,9 @@
 
 #page-meeting-scoreboard .msb-hero h2 {
   margin: 0;
-  font-size: clamp(1.45rem, 2.6vw, 1.95rem);
-  font-weight: 900;
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 560;
+  line-height: 1.1;
   color: var(--msb-ink-deep);
   letter-spacing: -0.01em;
 }
@@ -786,4 +790,197 @@ body.msb-modal-open { overflow: hidden; }
 #page-meeting-scoreboard #msb-settings-body[hidden],
 #page-meeting-scoreboard #msb-settings-lock[hidden] {
   display: none !important;
+}
+
+#page-meeting-scoreboard .msb-edit-only[hidden],
+#page-meeting-scoreboard .msb-company-only[hidden],
+#page-meeting-scoreboard #msb-staff-tools[hidden],
+#page-meeting-scoreboard #msb-self[hidden],
+#page-meeting-scoreboard #msb-staff-cards[hidden],
+#page-meeting-scoreboard #msb-staff-table-wrap[hidden] {
+  display: none !important;
+}
+
+#page-meeting-scoreboard .msb-month-board {
+  margin: 0 0 1.4rem;
+}
+
+#page-meeting-scoreboard .msb-staff-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+#page-meeting-scoreboard .msb-staff-tools input,
+#page-meeting-scoreboard .msb-staff-tools select,
+#page-meeting-scoreboard #msb-batch-text,
+#page-meeting-scoreboard #msb-month-form input,
+#page-meeting-scoreboard #msb-month-form select,
+#page-meeting-scoreboard #msb-month-form textarea {
+  border: 1px solid var(--msb-line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--msb-text);
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+}
+
+#page-meeting-scoreboard .msb-chips {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 0.15rem;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+}
+
+#page-meeting-scoreboard .msb-chips::-webkit-scrollbar { display: none; }
+
+#page-meeting-scoreboard .msb-chip,
+#page-meeting-scoreboard .msb-badge {
+  border: 0;
+  border-radius: 9999px;
+  background: var(--msb-soft);
+  color: var(--msb-muted);
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#page-meeting-scoreboard .msb-badge {
+  cursor: default;
+  margin-left: 0.35rem;
+  font-size: 13px;
+}
+
+#page-meeting-scoreboard .msb-chip.is-on {
+  background: var(--msb-ink);
+  color: #fff;
+}
+
+#page-meeting-scoreboard .msb-staff-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  #page-meeting-scoreboard .msb-staff-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+#page-meeting-scoreboard .msb-person-card {
+  background: var(--msb-soft);
+  border-radius: 16px;
+  corner-shape: superellipse(1.2);
+  box-shadow: var(--msb-shadow);
+  padding: 14px 16px;
+  color: var(--msb-text);
+}
+
+#page-meeting-scoreboard .msb-person-card.is-mine {
+  box-shadow: inset 0 0 0 1px var(--msb-accent), var(--msb-shadow);
+}
+
+#page-meeting-scoreboard .msb-person-meta,
+#page-meeting-scoreboard .msb-dept,
+#page-meeting-scoreboard .msb-person-bonus {
+  color: var(--msb-muted);
+  font-size: 14px;
+}
+
+#page-meeting-scoreboard .msb-dept:empty { display: none; }
+
+#page-meeting-scoreboard .msb-person-name {
+  margin-top: 0.2rem;
+  font-size: 16px;
+  font-weight: 560;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#page-meeting-scoreboard .msb-person-score {
+  margin-top: 0.35rem;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 560;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+#page-meeting-scoreboard .msb-person-card.is-large .msb-person-score {
+  font-size: clamp(40px, 6vw, 64px);
+}
+
+#page-meeting-scoreboard .msb-self-kicker {
+  margin: 0 0 0.6rem;
+  color: var(--msb-muted);
+  font-size: 15px;
+}
+
+#page-meeting-scoreboard .msb-self-entries {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+#page-meeting-scoreboard .msb-self-entries li {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  color: var(--msb-muted);
+}
+
+#page-meeting-scoreboard .msb-table tr.is-mine td {
+  box-shadow: inset 0 0 0 1px var(--msb-accent);
+}
+
+#page-meeting-scoreboard .msb-num {
+  font-variant-numeric: tabular-nums;
+}
+
+#page-meeting-scoreboard #msb-batch-preview {
+  white-space: pre-wrap;
+}
+
+#page-meeting-scoreboard .msb-chip:focus-visible,
+#page-meeting-scoreboard .msb-btn:focus-visible,
+#page-meeting-scoreboard .msb-staff-tools input:focus-visible,
+#page-meeting-scoreboard .msb-staff-tools select:focus-visible,
+#page-meeting-scoreboard #msb-month:focus-visible {
+  outline: 2px solid var(--msb-accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  #page-meeting-scoreboard .msb-chip:hover,
+  #page-meeting-scoreboard .msb-btn--ghost:hover {
+    background: var(--msb-soft-2);
+  }
+  #page-meeting-scoreboard .msb-chip.is-on:hover {
+    background: var(--msb-ink);
+  }
+}
+
+#page-meeting-scoreboard .msb-chip:active,
+#page-meeting-scoreboard .msb-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #page-meeting-scoreboard .msb-chip:active,
+  #page-meeting-scoreboard .msb-btn:active {
+    transform: none;
+  }
 }

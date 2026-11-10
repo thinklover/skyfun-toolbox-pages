@@ -25,7 +25,14 @@
     editId: null,
     busy: false,
     formDirty: false,
-    filter: { q: '', projectId: '', from: '', to: '' }
+    filter: { q: '', projectId: '', from: '', to: '' },
+    canViewAll: false,
+    canEdit: false,
+    viewerId: '',
+    scoreMonth: '',
+    serverScoped: false,
+    staff: { q: '', dept: '', sort: 'score', list: false },
+    batchRows: []
   };
 
   function settingsUnlocked() {
@@ -115,6 +122,59 @@
 
   function currentMonth() {
     return todayStr().slice(0, 7);
+  }
+
+  function listMonthArg() {
+    const month = state.month || currentMonth();
+    return state.allMonths ? month + '|all' : month;
+  }
+
+  function numOrNull(v) {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function manualScoreText(v) {
+    const n = numOrNull(v);
+    if (n == null) return '—';
+    return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+  }
+
+  function bonusAmount(v) {
+    const n = numOrNull(v);
+    if (n == null || n === 0) return null;
+    return n;
+  }
+
+  function bonusText(v) {
+    const n = bonusAmount(v);
+    if (n == null) return '未發放';
+    return n.toLocaleString('zh-TW');
+  }
+
+  function isMine(p) {
+    return !!(state.viewerId && p && p.accountId && String(p.accountId) === String(state.viewerId));
+  }
+
+  function personDept(p) {
+    return String(p?.department || '').trim();
+  }
+
+  function applyAccess() {
+    const all = !!state.canViewAll;
+    const edit = !!state.canEdit;
+    document.querySelectorAll('#page-meeting-scoreboard .msb-edit-only').forEach((el) => {
+      el.hidden = !edit;
+    });
+    document.querySelectorAll('#page-meeting-scoreboard .msb-company-only').forEach((el) => {
+      el.hidden = !all;
+    });
+    const tools = $('msb-staff-tools');
+    if (tools) tools.hidden = !all;
+    const self = $('msb-self');
+    if (self) self.hidden = all;
+    if (!edit && state.view === 'settings') setView('dash');
   }
 
   function boardLabel() {
@@ -231,6 +291,18 @@
       projectSel.innerHTML = '<option value="">請選擇</option>' +
         state.projects.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
     }
+    const monthPerson = $('msb-month-person');
+    if (monthPerson) {
+      const groups = peopleGrouped();
+      const cur = monthPerson.value;
+      monthPerson.innerHTML = '<option value="">請選擇</option>' +
+        groups.map((g) =>
+          `<optgroup label="${esc(g.title)}">` +
+          g.people.map((p) => `<option value="${p.id}">${esc((personDept(p) ? personDept(p) + ' ' : '') + p.name)}</option>`).join('') +
+          '</optgroup>'
+        ).join('');
+      if (cur) monthPerson.value = cur;
+    }
     const filterProject = $('msb-filter-project');
     if (filterProject) {
       const cur = filterProject.value;
@@ -274,6 +346,7 @@
         ? s.personRank.map((r, i) =>
             `<div class="msb-rank-row"><b>${String(i + 1).padStart(2, '0')}</b>` +
             `<div><div>${esc(r.name)}</div>` +
+            `<small class="msb-dept">${esc(personDept(state.people.find((p) => String(p.id) === String(r.id))) || '')}</small>` +
             `<div class="msb-bar${r.score < 0 ? ' is-neg' : ''}"><i style="width:${Math.min(100, Math.abs(r.score) / maxP * 100)}%"></i></div></div>` +
             scoreChip(r.score, { size: 'lg' }) + '</div>'
           ).join('')
@@ -336,6 +409,7 @@
 
   function renderTable(table, list) {
     if (!table) return;
+    const edit = !!state.canEdit;
     const body = (list || []).map((e) =>
       `<tr>
         <td>${esc(fmtDate(e.scoreDate))}</td>
@@ -344,15 +418,181 @@
         <td>${esc(e.item)}</td>
         <td class="msb-score-cell">${scoreChip(e.score, { size: 'lg' })}</td>
         <td>${noteCell(e.note)}</td>
-        <td>
+        ${edit ? `<td>
           <button type="button" class="msb-linkish" data-msb-edit="${e.id}">編輯</button>
           <button type="button" class="msb-linkish is-danger" data-msb-del="${e.id}">刪除</button>
-        </td>
+        </td>` : ''}
       </tr>`
     ).join('');
+    const cols = edit ? 7 : 6;
     table.innerHTML = `<thead><tr>
-      <th>計分日期</th><th>人員</th><th>專案／區塊</th><th>加減分項目</th><th>分數</th><th>當天備註</th><th>操作</th>
-    </tr></thead><tbody>${body || '<tr><td colspan="7">尚無紀錄</td></tr>'}</tbody>`;
+      <th>計分日期</th><th>人員</th><th>專案／區塊</th><th>加減分項目</th><th>分數</th><th>當天備註</th>${edit ? '<th>操作</th>' : ''}
+    </tr></thead><tbody>${body || '<tr><td colspan="' + cols + '">尚無紀錄</td></tr>'}</tbody>`;
+  }
+
+  function staffRows() {
+    const q = String(state.staff.q || '').trim().toLowerCase();
+    const dept = String(state.staff.dept || '');
+    let rows = (state.people || []).filter((p) => {
+      if (dept && personDept(p) !== dept) return false;
+      if (!q) return true;
+      return (String(p.name || '') + ' ' + personDept(p)).toLowerCase().includes(q);
+    });
+    const sort = state.staff.sort || 'score';
+    rows = rows.slice().sort((a, b) => {
+      if (sort === 'name') return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+      if (sort === 'dept') {
+        const d = personDept(a).localeCompare(personDept(b), 'zh-Hant');
+        return d || String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+      }
+      if (sort === 'bonus') {
+        const ba = bonusAmount(a.bonus);
+        const bb = bonusAmount(b.bonus);
+        if (ba == null && bb == null) return 0;
+        if (ba == null) return 1;
+        if (bb == null) return -1;
+        return bb - ba;
+      }
+      const sa = numOrNull(a.score);
+      const sb = numOrNull(b.score);
+      if (sa == null && sb == null) return 0;
+      if (sa == null) return 1;
+      if (sb == null) return -1;
+      return sb - sa;
+    });
+    return rows;
+  }
+
+  function scoreCard(p, large) {
+    const mine = isMine(p);
+    const status = String(p.bonusStatus || '').trim();
+    const statusBadge = status && status !== '未發放'
+      ? `<span class="msb-badge">${esc(status)}</span>`
+      : '';
+    const unbound = state.canViewAll && !p.accountId
+      ? '<span class="msb-badge">未對到帳號</span>'
+      : '';
+    return `<article class="msb-person-card${mine ? ' is-mine' : ''}${large ? ' is-large' : ''}" ${state.canEdit ? `data-msb-score-person="${p.id}" tabindex="0"` : ''}>
+      <div class="msb-person-meta">${esc(personDept(p) || '未填部別')}${mine ? '<span class="msb-badge">這是你的</span>' : ''}${unbound}</div>
+      <div class="msb-person-name">${esc(p.name || '—')}</div>
+      <div class="msb-person-score">${manualScoreText(p.score)}</div>
+      <div class="msb-person-bonus">${esc(bonusText(p.bonus))}${statusBadge}</div>
+    </article>`;
+  }
+
+  function renderDeptChips() {
+    const box = $('msb-dept-chips');
+    if (!box) return;
+    const depts = [];
+    (state.people || []).forEach((p) => {
+      const d = personDept(p);
+      if (d && depts.indexOf(d) < 0) depts.push(d);
+    });
+    depts.sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+    const cur = state.staff.dept || '';
+    box.innerHTML = ['全部'].concat(depts).map((name) => {
+      const value = name === '全部' ? '' : name;
+      const on = value === cur ? ' is-on' : '';
+      return `<button type="button" class="msb-chip${on}" data-msb-dept="${esc(value)}">${esc(name)}</button>`;
+    }).join('');
+  }
+
+  function renderStaff() {
+    const month = state.scoreMonth || state.month || currentMonth();
+    const note = $('msb-score-month-note');
+    if (note) {
+      note.textContent = state.allMonths
+        ? '全部期間只展開加減分。分數與獎金仍是 ' + month + '。'
+        : '分數與獎金是 ' + month + ' 的手動輸入，不是加減分加總。';
+    }
+    if (!state.canViewAll) {
+      const box = $('msb-self');
+      const mine = (state.people || []).find(isMine) || null;
+      if (!box) return;
+      if (!mine) {
+        box.innerHTML = '<p class="msb-empty">目前還沒有你的分數資料</p>';
+      } else {
+        const ownEntries = (state.entries || []).slice(0, 8).map((e) =>
+          `<li><span>${esc(fmtDate(e.scoreDate))}</span><span>${esc(e.item || '')}</span>${scoreChip(e.score)}</li>`
+        ).join('');
+        box.innerHTML = '<p class="msb-self-kicker">這是你的成績</p>' + scoreCard(mine, true) +
+          (ownEntries ? `<ul class="msb-self-entries">${ownEntries}</ul>` : '<p class="msb-empty">這個月沒有你的加減分紀錄</p>');
+      }
+      if ($('msb-staff-cards')) $('msb-staff-cards').innerHTML = '';
+      if ($('msb-staff-table-wrap')) $('msb-staff-table-wrap').hidden = true;
+      return;
+    }
+    renderDeptChips();
+    const rows = staffRows();
+    const cards = $('msb-staff-cards');
+    const wrap = $('msb-staff-table-wrap');
+    const table = $('msb-staff-table');
+    const viewBtn = $('msb-staff-view');
+    if (viewBtn) viewBtn.textContent = state.staff.list ? '卡片檢視' : '列表檢視';
+    if (cards) {
+      cards.hidden = !!state.staff.list;
+      cards.innerHTML = rows.length
+        ? rows.map((p) => scoreCard(p, false)).join('')
+        : '<p class="msb-empty">這個月還沒有可顯示的人員</p>';
+    }
+    if (wrap) wrap.hidden = !state.staff.list;
+    if (table && state.staff.list) {
+      const body = rows.map((p) => {
+        const status = String(p.bonusStatus || '').trim();
+        return `<tr class="${isMine(p) ? 'is-mine' : ''}" ${state.canEdit ? `data-msb-score-person="${p.id}"` : ''}>
+          <td>${esc(personDept(p) || '—')}</td>
+          <td>${esc(p.name || '—')}${isMine(p) ? ' <span class="msb-badge">這是你的</span>' : ''}${!p.accountId ? ' <span class="msb-badge">未對到帳號</span>' : ''}</td>
+          <td class="msb-num">${manualScoreText(p.score)}</td>
+          <td class="msb-num">${esc(bonusText(p.bonus))}${status && status !== '未發放' ? ' <span class="msb-badge">' + esc(status) + '</span>' : ''}</td>
+        </tr>`;
+      }).join('');
+      table.innerHTML = `<thead><tr>
+        <th data-msb-sort="dept">部別</th><th data-msb-sort="name">姓名</th><th data-msb-sort="score">分數</th><th data-msb-sort="bonus">獎金</th>
+      </tr></thead><tbody>${body || '<tr><td colspan="4">這個月還沒有可顯示的人員</td></tr>'}</tbody>`;
+    }
+  }
+
+  function parseBatch(text) {
+    const lines = String(text || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    const rows = [];
+    const unmatched = [];
+    lines.forEach((line, index) => {
+      const cells = line.split(/\t|,/).map((c) => c.trim());
+      if (!cells.length) return;
+      if (index === 0 && /姓名|分數|部別/.test(cells[0])) return;
+      let name = cells[0];
+      let score = cells[1] || '';
+      let bonus = cells[2] || '';
+      let status = cells[3] || '';
+      let note = cells[4] || '';
+      if (cells.length >= 6 || (cells[0] && cells[1] && !/^-?\d/.test(cells[1]) && /^-?\d/.test(cells[2] || ''))) {
+        name = cells[1];
+        score = cells[2] || '';
+        bonus = cells[3] || '';
+        status = cells[4] || '';
+        note = cells[5] || '';
+      }
+      if (!name) return;
+      const hits = (state.people || []).filter((p) => p.name === name);
+      if (hits.length !== 1) {
+        unmatched.push(name);
+        return;
+      }
+      const person = hits[0];
+      const hasExisting = numOrNull(person.score) != null || bonusAmount(person.bonus) != null || String(person.monthNote || '').trim();
+      rows.push({
+        personId: person.id,
+        name: person.name,
+        board: state.board,
+        periodMonth: state.month || currentMonth(),
+        score: score,
+        bonus: bonus,
+        bonusStatus: status,
+        note: note,
+        overwrite: !!hasExisting
+      });
+    });
+    return { rows: rows, unmatched: unmatched };
   }
 
   function renderRecords() {
@@ -371,7 +611,7 @@
         ? groups.map((g) =>
             `<div class="msb-people-group"><div class="msb-people-group-title">${esc(g.title)}</div>` +
             g.people.map((p) =>
-              `<div class="msb-list-item"><span>${esc(p.name)}</span>` +
+              `<div class="msb-list-item"><span>${esc(p.name)}${p.accountId ? '' : ' <span class="msb-badge">未對到帳號</span>'}${personDept(p) ? ' <small class="msb-dept">' + esc(personDept(p)) + '</small>' : ''}</span>` +
               `<button type="button" class="msb-linkish is-danger" data-msb-rm-person="${p.id}">移除</button></div>`
             ).join('') +
             '</div>'
@@ -389,8 +629,10 @@
   }
 
   function renderAll() {
+    applyAccess();
     syncBoardTabs();
     fillSelects();
+    renderStaff();
     renderDash();
     renderRecords();
     renderSettings();
@@ -413,22 +655,34 @@
     }
     setMsg('載入中…');
     try {
-      const month = monthValue();
-      const dash = await fetchList(month);
+      const dash = await fetchList(listMonthArg());
+      state.serverScoped = Object.prototype.hasOwnProperty.call(dash, 'canViewAll');
+      const me = window.skyfunAuth?.getUser?.() || {};
+      state.canViewAll = state.serverScoped ? !!dash.canViewAll : !!window.skyfunAuth?.canViewAllScores?.(me);
+      state.canEdit = state.serverScoped ? !!dash.canEdit : !!window.skyfunAuth?.canEditScores?.(me);
+      state.viewerId = dash.viewerId || me.id || '';
+      state.scoreMonth = dash.scoreMonth || state.month || currentMonth();
       state.people = dash.people || [];
       state.projects = dash.projects || [];
       state.entries = dash.entries || [];
+      if (!state.serverScoped && !state.canViewAll) {
+        state.people = [];
+        state.projects = [];
+        state.entries = [];
+      }
 
-      if (state.view === 'records') {
-        const all = month == null ? dash : await fetchList(null);
-        state.recordsEntries = all.entries || [];
-        if (!state.people.length) state.people = all.people || state.people;
-        if (!state.projects.length) state.projects = all.projects || state.projects;
-      } else if (month == null) {
+      if (state.view === 'records' && !state.allMonths) {
+        const all = await fetchList((state.month || currentMonth()) + '|all');
+        state.recordsEntries = (!state.serverScoped && !state.canViewAll) ? [] : (all.entries || []);
+      } else {
         state.recordsEntries = state.entries.slice();
       }
 
-      setMsg('');
+      if (!state.serverScoped) {
+        setMsg('分數權限的資料庫更新還沒套用。一般員工先不顯示名單。', 'err');
+      } else {
+        setMsg('');
+      }
       renderAll();
     } catch (err) {
       setMsg(err.message || String(err), 'err');
@@ -527,6 +781,49 @@
     URL.revokeObjectURL(a.href);
   }
 
+  function openMonthModal(personId) {
+    if (!state.canEdit) return;
+    fillSelects();
+    const person = (state.people || []).find((p) => String(p.id) === String(personId));
+    if ($('msb-month-person')) $('msb-month-person').value = person ? String(person.id) : '';
+    if ($('msb-month-period')) $('msb-month-period').value = state.scoreMonth || state.month || currentMonth();
+    if ($('msb-month-score')) $('msb-month-score').value = person && numOrNull(person.score) != null ? String(person.score) : '';
+    if ($('msb-month-bonus')) $('msb-month-bonus').value = person && bonusAmount(person.bonus) != null ? String(person.bonus) : '';
+    if ($('msb-month-status')) $('msb-month-status').value = person ? (person.bonusStatus || '') : '';
+    if ($('msb-month-note')) $('msb-month-note').value = person ? (person.monthNote || '') : '';
+    setMsg('', '', 'msb-month-msg');
+    const modal = $('msb-month-modal');
+    if (modal) modal.hidden = false;
+    document.body.classList.add('msb-modal-open');
+  }
+
+  function closeMonthModal() {
+    const modal = $('msb-month-modal');
+    if (modal) modal.hidden = true;
+    if ($('msb-modal')?.hidden && $('msb-batch-modal')?.hidden) document.body.classList.remove('msb-modal-open');
+  }
+
+  function closeBatchModal() {
+    const modal = $('msb-batch-modal');
+    if (modal) modal.hidden = true;
+    state.batchRows = [];
+    if ($('msb-batch-save')) $('msb-batch-save').disabled = true;
+    if ($('msb-modal')?.hidden && $('msb-month-modal')?.hidden) document.body.classList.remove('msb-modal-open');
+  }
+
+  function showBatchPreview() {
+    const parsed = parseBatch($('msb-batch-text')?.value || '');
+    state.batchRows = parsed.rows;
+    const overwrite = parsed.rows.filter((r) => r.overwrite).length;
+    const lines = [
+      '可寫入 ' + parsed.rows.length + ' 筆，月份 ' + (state.month || currentMonth()) + '。',
+      overwrite ? ('其中 ' + overwrite + ' 筆會覆寫這個月已有的分數或獎金。') : '沒有會覆寫的列。',
+      parsed.unmatched.length ? ('對不到的人：' + parsed.unmatched.join('、')) : '人員都對得到。'
+    ];
+    if ($('msb-batch-preview')) $('msb-batch-preview').textContent = lines.join('\n');
+    if ($('msb-batch-save')) $('msb-batch-save').disabled = !parsed.rows.length;
+  }
+
   function bind() {
     const page = $('page-meeting-scoreboard');
     if (!page || page.dataset.msbBound) return;
@@ -585,7 +882,58 @@
         return;
       }
       if (e.target.id === 'msb-open-add' || e.target.id === 'msb-open-add-2') {
+        if (!state.canEdit) return;
         openModal(null);
+        return;
+      }
+      if (e.target.id === 'msb-open-month') {
+        openMonthModal(null);
+        return;
+      }
+      if (e.target.id === 'msb-open-batch') {
+        if (!state.canEdit) return;
+        state.batchRows = [];
+        if ($('msb-batch-preview')) $('msb-batch-preview').textContent = '';
+        if ($('msb-batch-save')) $('msb-batch-save').disabled = true;
+        setMsg('', '', 'msb-batch-msg');
+        const modal = $('msb-batch-modal');
+        if (modal) modal.hidden = false;
+        document.body.classList.add('msb-modal-open');
+        return;
+      }
+      if (e.target.id === 'msb-staff-view') {
+        state.staff.list = !state.staff.list;
+        renderStaff();
+        return;
+      }
+      if (e.target.id === 'msb-batch-check') {
+        showBatchPreview();
+        return;
+      }
+      const deptBtn = e.target.closest('[data-msb-dept]');
+      if (deptBtn) {
+        state.staff.dept = deptBtn.getAttribute('data-msb-dept') || '';
+        renderStaff();
+        return;
+      }
+      const sortHead = e.target.closest('[data-msb-sort]');
+      if (sortHead) {
+        state.staff.sort = sortHead.getAttribute('data-msb-sort') || 'score';
+        if ($('msb-staff-sort')) $('msb-staff-sort').value = state.staff.sort;
+        renderStaff();
+        return;
+      }
+      const scorePerson = e.target.closest('[data-msb-score-person]');
+      if (scorePerson && state.canEdit) {
+        openMonthModal(scorePerson.getAttribute('data-msb-score-person'));
+        return;
+      }
+      if (e.target.closest('[data-msb-month-close]')) {
+        closeMonthModal();
+        return;
+      }
+      if (e.target.closest('[data-msb-batch-close]')) {
+        closeBatchModal();
         return;
       }
       if (e.target.id === 'msb-goto-records') {
@@ -609,11 +957,13 @@
 
       const edit = e.target.closest('[data-msb-edit]');
       if (edit) {
+        if (!state.canEdit) return;
         openModal(edit.getAttribute('data-msb-edit'));
         return;
       }
       const del = e.target.closest('[data-msb-del]');
       if (del) {
+        if (!state.canEdit) return;
         if (!window.confirm('確定刪除此筆加減分紀錄？')) return;
         try {
           const res = await rpc('msb_entry_delete', { p_token: token(), p_id: Number(del.getAttribute('data-msb-del')) });
@@ -656,6 +1006,90 @@
       state.month = e.target.value || currentMonth();
       state.allMonths = false;
       await reload();
+    });
+
+    $('msb-staff-q')?.addEventListener('input', () => {
+      state.staff.q = $('msb-staff-q')?.value || '';
+      renderStaff();
+    });
+    $('msb-staff-sort')?.addEventListener('change', () => {
+      state.staff.sort = $('msb-staff-sort')?.value || 'score';
+      renderStaff();
+    });
+
+    $('msb-month-form')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!state.canEdit || state.busy) return;
+      state.busy = true;
+      const btn = $('msb-month-save');
+      if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
+      setMsg('', '', 'msb-month-msg');
+      try {
+        const res = await rpc('msb_month_score_upsert', {
+          p_token: token(),
+          p_data: {
+            board: state.board,
+            personId: Number($('msb-month-person')?.value || 0) || null,
+            periodMonth: $('msb-month-period')?.value || state.month,
+            score: $('msb-month-score')?.value || '',
+            bonus: $('msb-month-bonus')?.value || '',
+            bonusStatus: $('msb-month-status')?.value || '',
+            note: $('msb-month-note')?.value || ''
+          }
+        });
+        if (!res?.ok) throw new Error(res?.error || '儲存失敗');
+        closeMonthModal();
+        if ($('msb-month-period')?.value && $('msb-month-period').value !== state.month) {
+          state.month = $('msb-month-period').value;
+          state.allMonths = false;
+          if ($('msb-month')) $('msb-month').value = state.month;
+        }
+        setMsg('已儲存這個月的分數', 'ok');
+        await reload();
+      } catch (err) {
+        setMsg(err.message || String(err), 'err', 'msb-month-msg');
+      } finally {
+        state.busy = false;
+        if (btn) { btn.disabled = false; btn.textContent = '儲存'; }
+      }
+    });
+
+    $('msb-batch-form')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!state.canEdit || state.busy || !state.batchRows.length) return;
+      state.busy = true;
+      const btn = $('msb-batch-save');
+      if (btn) { btn.disabled = true; btn.textContent = '寫入中…'; }
+      setMsg('', '', 'msb-batch-msg');
+      try {
+        const res = await rpc('msb_month_score_upsert_batch', {
+          p_token: token(),
+          p_rows: state.batchRows.map((row) => ({
+            board: row.board,
+            personId: row.personId,
+            name: row.name,
+            periodMonth: row.periodMonth,
+            score: row.score,
+            bonus: row.bonus,
+            bonusStatus: row.bonusStatus,
+            note: row.note
+          }))
+        });
+        if (!res?.ok) throw new Error(res?.error || '寫入失敗');
+        const errors = Array.isArray(res.errors) ? res.errors : [];
+        if (errors.length) {
+          setMsg('已寫入 ' + (res.saved || 0) + ' 筆。' + errors.slice(0, 5).join('、'), 'err', 'msb-batch-msg');
+        } else {
+          closeBatchModal();
+          setMsg('已寫入 ' + (res.saved || 0) + ' 筆', 'ok');
+        }
+        await reload();
+      } catch (err) {
+        setMsg(err.message || String(err), 'err', 'msb-batch-msg');
+      } finally {
+        state.busy = false;
+        if (btn) { btn.disabled = !state.batchRows.length; btn.textContent = '確認寫入'; }
+      }
     });
 
     ['msb-q', 'msb-filter-project', 'msb-date-from', 'msb-date-to'].forEach((id) => {
@@ -763,9 +1197,10 @@
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && $('msb-modal') && !$('msb-modal').hidden) {
-        closeModal(false);
-      }
+      if (e.key !== 'Escape') return;
+      if ($('msb-month-modal') && !$('msb-month-modal').hidden) closeMonthModal();
+      else if ($('msb-batch-modal') && !$('msb-batch-modal').hidden) closeBatchModal();
+      else if ($('msb-modal') && !$('msb-modal').hidden) closeModal(false);
     });
 
     setView('dash');
