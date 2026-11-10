@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>社宅管報儀表板｜星鴻包租代管系統</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="styles.css?v=158" />
+</head>
+<body>
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">星</div>
+      <div>
+        <div class="brand-name">社宅管報儀表板</div>
+        <div class="brand-sub">星鴻包租代管系統</div>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+  <main>
+    <header class="top">
+      <div class="filters" id="filters"></div>
+      <div class="top-actions">
+        <a id="mgrBack" href="../index.html" class="update-btn" style="text-decoration:none">← 返回業務主管專區</a>
+        <div class="update-wrap">
+          <span class="update-at" id="updateAt"></span>
+          <button type="button" class="update-btn" id="btnMatchImport" hidden>匯入 Excel</button>
+          <input id="matchFile" type="file" accept=".xlsx,.xls,.csv,text/csv" hidden />
+          <button type="button" class="update-btn" id="btnUpdate" title="向公司系統重建快照">更新</button>
+        </div>
+        <button type="button" class="query-btn" id="btnQuery">查詢</button>
+      </div>
+    </header>
+    <section class="page" id="page-cases">
+      <div class="period-title">社宅業績總覽</div>
+      <p class="hint" id="dataHint"></p>
+      <section class="kpi-row kpi-5" id="kpiRow"></section>
+      <section class="dash-body">
+        <article class="card trend-card">
+          <div class="trend-head">
+            <h3>社宅業績趨勢圖</h3>
+            <div class="seg" id="trendSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+          <p class="note" id="trendNote"></p>
+          <div class="chart-h tall"><canvas id="chartTrend"></canvas></div>
+        </article>
+        <div class="rank-slot">
+          <article class="card rank-card">
+            <h3>單位業績排行榜</h3>
+            <p class="note">依篩選單位轄下營業處業績件數排名</p>
+            <div class="rank-list" id="rankList"></div>
+          </article>
+        </div>
+        <article class="card month-card">
+          <h3>月別業績比較表</h3>
+          <p class="note" id="monthCmpNote"></p>
+          <div class="month-wrap" id="monthCmpTable"></div>
+        </article>
+        <article class="card tw-card">
+          <h3 id="twMapTitle">營業據點全台分佈</h3>
+          <div class="tw-layout">
+            <div id="twMap" class="tw-svg"></div>
+            <div id="twRank" class="tw-rank"></div>
+          </div>
+          <p class="note">色深表示件數較多；灰色為 0 件。圖示臺灣本島，圖資：Taiwan Atlas / 內政部</p>
+        </article>
+      </section>
+      <article class="card">
+        <h3>結績週期案件統計表</h3>
+        <p class="note" id="weekNote">週別依結績截止區間每 7 日分段。該月起租案件若早於結績起日計入第一週，晚於結績截止日計入最後一週；W1～W5 合計等於本月實績。上月比與同期比以該期結績週次對該期起租案件採相同歸週。目標依結績天數比例分配：目標數／結績總天數×當週天數。</p>
+        <div class="week-layout">
+          <div class="table-scroll" id="weekTable"></div>
+          <div class="chart-h week-chart"><canvas id="chartWeek"></canvas></div>
+        </div>
+      </article>
+      <article class="card unit-cmp-card">
+        <div class="unit-cmp-head">
+          <h3>單位業績比較表</h3>
+          <div class="unit-cmp-tools">
+            <label>排序</label>
+            <select id="cmpSort">
+              <option value="" selected>預設階層</option>
+              <option value="actual">實績</option>
+              <option value="target">目標</option>
+              <option value="gap">差異</option>
+              <option value="rate">達成率</option>
+            </select>
+            <div class="seg" id="cmpSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">依篩選單位對照階層，可展開所屬營業處；目標依 Dashboard_營業處目標對應月份加總；擔當者依 Dashboard_組織職稱對照表。</p>
+        <div class="table-scroll unit-detail-scroll" id="cmpTable"></div>
+        <div class="rev-mid lz-cmp-intel">
+          <div class="rev-panel" id="cmpJudge"></div>
+          <div class="rev-panel" id="cmpFocusNote"></div>
+        </div>
+      </article>
+      <article class="card grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="growTitle">業績達成與成長分析</h3>
+            <p class="note" id="growMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="growSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="growStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="growKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="growChartTitle">1-12月業績趨勢</h4>
+                <div class="grow-legend" id="growLegend">
+                  <button type="button" data-grow-ds="目標"><i class="lg-tgt"></i>目標</button>
+                  <button type="button" data-grow-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-grow-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="growChart"></canvas></div>
+              <p class="note" id="growChartNote"></p>
+            </div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="growCmpTbl"></div>
+            <div class="rev-panel" id="growJudge"></div>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-panel" id="growOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <p class="note" id="growUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="growUnitTbl"></div>
+          </div>
+        </div>
+        <div id="growStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card fcst-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3>新媒合營業預估與實動分析</h3>
+            <p class="note" id="fcstMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="fcstSeg">
+              <button type="button" data-g="week" class="on">週別</button>
+              <button type="button" data-g="month">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="fcstStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="fcstKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="fcstChartTitle">1–12月業績趨勢</h4>
+                <div class="grow-legend" id="fcstLegend">
+                  <button type="button" data-fcst-ds="目標"><i class="lg-tgt"></i>目標</button>
+                  <button type="button" data-fcst-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-fcst-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="fcstChart"></canvas></div>
+              <p class="note" id="fcstChartNote"></p>
+            </div>
+            <div class="rev-panel" id="fcstJudge"></div>
+          </div>
+          <div class="rev-side">
+            <p class="note" id="fcstUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="fcstUnitTbl"></div>
+            <div id="fcstWeekBox">
+              <p class="note" id="fcstWeekTitle">結績週期比較明細</p>
+              <div class="table-scroll" id="fcstWeekTbl"></div>
+            </div>
+          </div>
+        </div>
+        <div id="fcstStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="cgTitle">縣市業績概況與成長分析</h3>
+            <p class="note" id="cgMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="cgSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="cgStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="cgKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="cgChartTitle">1-12月業績趨勢</h4>
+                <div class="grow-legend" id="cgLegend">
+                  <button type="button" data-cg-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-cg-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="cgChart"></canvas></div>
+              <p class="note" id="cgChartNote"></p>
+            </div>
+            <div class="rev-panel city-rank" id="cgOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="cgCmpTbl"></div>
+            <p class="note" id="cgUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="cgUnitTbl"></div>
+            <div id="cgWeekBox" class="city-week-box">
+              <p class="note" id="cgWeekTitle">結績週期比較明細</p>
+              <div class="table-scroll city-week-tbl" id="cgWeekTbl"></div>
+            </div>
+            <div class="rev-panel" id="cgJudge"></div>
+          </div>
+        </div>
+        <div id="cgStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card crab-card">
+        <div class="unit-cmp-head">
+          <h3>寄居蟹轉銜專案業績影響比較分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="crabSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="crabStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="crabNote"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="crabKpis"></div>
+            <div class="rev-panel">
+              <h4>1–12月案件結構（非轉銜／轉銜占比）</h4>
+              <div id="crabMonthBars"></div>
+              <p class="note" id="crabTrendNote"></p>
+            </div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="crabCmpTbl"></div>
+            <div class="rev-panel" id="crabJudge"></div>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-panel" id="crabUnitJudge"></div>
+            <div class="rev-panel" id="crabTrack"></div>
+          </div>
+          <div class="rev-side">
+            <p class="note" id="crabUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="crabUnitTbl"></div>
+          </div>
+        </div>
+        <div id="crabStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card rev-card">
+        <div class="unit-cmp-head">
+          <h3>業績審件進度分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="revSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="revStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="revPeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="revKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>案件目前分佈</h4>
+                <div id="revDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>優先推進順序（依目前狀態）</h4>
+                <div id="revPrio"></div>
+              </div>
+            </div>
+            <div class="rev-panel" id="revJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="revTable"></div>
+            <div class="rev-panel" id="revFocusNote"></div>
+          </div>
+        </div>
+        <div id="revStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card type-card">
+        <div class="unit-cmp-head">
+          <h3>案件類型分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="typeSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="typeStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="typePeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="typeKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>案件類型占比</h4>
+                <div id="typeDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>再媒合(全)明細</h4>
+                <div id="typeReDist"></div>
+              </div>
+            </div>
+            <div class="rev-panel type-new-panel">
+              <h4>新媒合(全)明細</h4>
+              <div id="typeNewDist"></div>
+            </div>
+            <div class="rev-panel" id="typeJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="typeTable"></div>
+            <div class="rev-panel" id="typeFocusNote"></div>
+          </div>
+        </div>
+        <div id="typeStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card src-card">
+        <div class="unit-cmp-head">
+          <h3>媒合來源分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="srcSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="srcStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="srcPeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="srcKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>來源細項：轉介紹與陌生開發並列</h4>
+                <div id="srcPair"></div>
+              </div>
+              <div class="rev-panel" id="srcJudge"></div>
+            </div>
+            <div class="rev-panel" id="srcTrack"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="srcTable"></div>
+            <div class="rev-panel" id="srcFocusNote"></div>
+          </div>
+        </div>
+        <div id="srcStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card house-card">
+        <div class="unit-cmp-head">
+          <h3>房屋類型分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="houseSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="houseStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="housePeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="houseKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4 id="houseDistTitle">全部案件結構</h4>
+                <div id="houseDist"></div>
+              </div>
+              <div class="rev-panel" id="houseMix"></div>
+            </div>
+            <div class="rev-panel" id="houseJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="houseTable"></div>
+            <div class="rev-mid">
+              <div class="rev-panel" id="houseCheck"></div>
+              <div class="rev-panel" id="houseFocusNote"></div>
+            </div>
+          </div>
+        </div>
+        <div id="houseStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card nat-card">
+        <div class="unit-cmp-head">
+          <h3>全台業務分析</h3>
+          <div class="unit-cmp-tools">
+            <label>組別</label>
+            <select id="natBandSel">
+              <option value="all">全選</option>
+              <option value="前段">前段</option>
+              <option value="中段">中段</option>
+              <option value="後段">後段</option>
+            </select>
+            <div class="seg" id="salesNatSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+        </div>
+        <p class="note" id="natNote"></p>
+        <div id="natDash"></div>
+      </article>
+    </section>
+    <section class="page hidden" id="page-lease">
+      <div class="period-title">包租管理總覽</div>
+      <section class="kpi-row kpi-6" id="lzKpiRow"></section>
+      <section class="dash-body">
+        <article class="card trend-card">
+          <div class="trend-head">
+            <h3 id="lzTrendTitle">新媒合 包租率趨勢圖</h3>
+            <div class="seg" id="lzTrendSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+          <p class="note" id="lzTrendNote"></p>
+          <div class="chart-h tall"><canvas id="lzChartTrend"></canvas></div>
+        </article>
+        <div class="rank-slot">
+          <article class="card rank-card">
+            <h3 id="lzRankTitle">單位包租率排行榜</h3>
+            <p class="note" id="lzRankNote">依篩選單位轄下營業處包租率排名</p>
+            <div class="rank-list" id="lzRankList"></div>
+          </article>
+        </div>
+        <article class="card month-card">
+          <div class="unit-cmp-head">
+            <h3 id="lzMonthTitle">新媒合(全) 包租比較表</h3>
+          </div>
+          <p class="note" id="lzMonthNote"></p>
+          <div class="month-wrap" id="lzMonthTable"></div>
+        </article>
+        <article class="card tw-card">
+          <h3 id="lzMapTitle">營業據點全台包租率</h3>
+          <div class="tw-layout">
+            <div id="lzMap" class="tw-svg"></div>
+            <div id="lzRank" class="tw-rank"></div>
+          </div>
+          <p class="note">包租率越高顏色越深；灰色為 0 件。圖示臺灣本島，圖資：Taiwan Atlas / 內政部</p>
+        </article>
+      </section>
+      <article class="card unit-cmp-card">
+        <div class="unit-cmp-head">
+          <h3 id="lzCmpTitle">單位包租比較表</h3>
+          <div class="unit-cmp-tools">
+            <label>排序</label>
+            <select id="lzCmpSort">
+              <option value="" selected>預設階層</option>
+              <option value="n">總件數</option>
+              <option value="lease">包租件</option>
+              <option value="mgmt">代管件</option>
+              <option value="rate">包租率</option>
+              <option value="gap">差異%</option>
+              <option value="yoyRate">同期包租%</option>
+              <option value="lastRate">上月包租%</option>
+              <option value="yr3">簽三年代管件數</option>
+            </select>
+            <div class="seg" id="lzCmpSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+        </div>
+        <p class="note" id="lzCmpNote">依篩選單位對照階層，可展開所屬營業處。包租率＝包租件／所選案件類型；目標%固定 50%。簽三年代管＝代管且租期約三年。</p>
+        <div class="table-scroll unit-detail-scroll" id="lzCmpTable"></div>
+        <div class="rev-mid lz-cmp-intel">
+          <div class="rev-panel" id="lzCmpJudge"></div>
+          <div class="rev-panel" id="lzCmpFocusNote"></div>
+        </div>
+      </article>
+      <article class="card grow-card lz-grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="lzGrowTitle">包租率達成與成長分析</h3>
+            <p class="note" id="lzGrowMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="lzGrowSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="lzGrowStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="lzGrowKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="lzGrowChartTitle">1-12月包租率趨勢</h4>
+                <div class="grow-legend" id="lzGrowLegend">
+                  <button type="button" data-lzgrow-ds="目標"><i class="lg-tgt"></i>目標</button>
+                  <button type="button" data-lzgrow-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-lzgrow-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="lzGrowChart"></canvas></div>
+              <p class="note" id="lzGrowChartNote"></p>
+            </div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="lzGrowCmpTbl"></div>
+            <div class="rev-panel" id="lzGrowJudge"></div>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-panel" id="lzGrowOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <p class="note" id="lzGrowUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="lzGrowUnitTbl"></div>
+          </div>
+        </div>
+        <div id="lzGrowStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="lzCgTitle">縣市包租率概況與成長分析</h3>
+            <p class="note" id="lzCgMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="lzCgSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="lzCgStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="lzCgKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="lzCgChartTitle">1-12月包租率趨勢</h4>
+                <div class="grow-legend" id="lzCgLegend">
+                  <button type="button" data-lzcg-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-lzcg-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="lzCgChart"></canvas></div>
+              <p class="note" id="lzCgChartNote"></p>
+            </div>
+            <div class="rev-panel city-rank" id="lzCgOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="lzCgCmpTbl"></div>
+            <p class="note" id="lzCgUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="lzCgUnitTbl"></div>
+            <div id="lzCgWeekBox" class="city-week-box">
+              <p class="note" id="lzCgWeekTitle">結績週期比較明細</p>
+              <div class="table-scroll city-week-tbl" id="lzCgWeekTbl"></div>
+            </div>
+            <div class="rev-panel" id="lzCgJudge"></div>
+          </div>
+        </div>
+        <div id="lzCgStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card type-card">
+        <div class="unit-cmp-head">
+          <h3 id="lzTypeTitle">包租案件類型分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="lzTypeSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="lzTypeStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="lzTypePeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="lzTypeKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>案件類型占比</h4>
+                <div id="lzTypeDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>再媒合(全)明細</h4>
+                <div id="lzTypeReDist"></div>
+              </div>
+            </div>
+            <div class="rev-panel type-new-panel">
+              <h4>新媒合(全)明細</h4>
+              <div id="lzTypeNewDist"></div>
+            </div>
+            <div class="rev-panel" id="lzTypeJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="lzTypeTable"></div>
+            <div class="rev-panel" id="lzTypeFocusNote"></div>
+          </div>
+        </div>
+        <div id="lzTypeStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card rev-card">
+        <div class="unit-cmp-head">
+          <h3 id="lzRevTitle">包租案件進度分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="lzRevSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="lzRevStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="lzRevPeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="lzRevKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>案件目前分佈</h4>
+                <div id="lzRevDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>優先推進順序（依目前狀態）</h4>
+                <div id="lzRevPrio"></div>
+              </div>
+            </div>
+            <div class="rev-panel" id="lzRevJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="lzRevTable"></div>
+            <div class="rev-panel" id="lzRevFocusNote"></div>
+          </div>
+        </div>
+        <div id="lzRevStaffBox" class="src-staff hidden"></div>
+      </article>
+    </section>
+    <section class="page hidden" id="page-weak">
+      <div class="period-title">政策戶管理總覽</div>
+      <section class="kpi-row kpi-5" id="wkKpiRow"></section>
+      <section class="dash-body">
+        <article class="card trend-card">
+          <div class="trend-head">
+            <h3 id="wkTrendTitle">新媒合 政策戶比率趨勢圖</h3>
+            <div class="seg" id="wkTrendSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+          <p class="note" id="wkTrendNote"></p>
+          <div class="chart-h tall"><canvas id="wkChartTrend"></canvas></div>
+        </article>
+        <div class="rank-slot">
+          <article class="card rank-card">
+            <h3 id="wkRankTitle">單位政策戶比率排行榜</h3>
+            <p class="note" id="wkRankNote">依篩選單位轄下營業處政策戶比率排名</p>
+            <div class="rank-list" id="wkRankList"></div>
+          </article>
+        </div>
+        <article class="card month-card">
+          <div class="unit-cmp-head">
+            <h3 id="wkMonthTitle">新媒合(全) 政策戶比較表</h3>
+          </div>
+          <p class="note" id="wkMonthNote"></p>
+          <div class="month-wrap" id="wkMonthTable"></div>
+        </article>
+        <article class="card tw-card">
+          <h3 id="wkMapTitle">營業據點全台政策戶比率</h3>
+          <div class="tw-layout">
+            <div id="wkMap" class="tw-svg"></div>
+            <div id="wkRank" class="tw-rank"></div>
+          </div>
+          <p class="note">政策戶比率越高顏色越深；灰色為 0 件。圖示臺灣本島，圖資：Taiwan Atlas / 內政部</p>
+        </article>
+      </section>
+      <article class="card unit-cmp-card">
+        <div class="unit-cmp-head">
+          <h3 id="wkCmpTitle">單位政策戶比較表</h3>
+          <div class="unit-cmp-tools">
+            <label>排序</label>
+            <select id="wkCmpSort">
+              <option value="" selected>預設階層</option>
+              <option value="n">總件數</option>
+              <option value="lease">政策戶件</option>
+              <option value="mgmt">一般戶</option>
+              <option value="rate">政策戶比率</option>
+              <option value="gap">差異%</option>
+              <option value="yoyRate">同期政策戶%</option>
+              <option value="lastRate">上月政策戶%</option>
+            </select>
+            <div class="seg" id="wkCmpSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+        </div>
+        <p class="note" id="wkCmpNote">依篩選單位對照階層，可展開所屬營業處。政策戶比率＝（轉租＋代管中第一類＋第二類）／（轉租＋代管）；包租未轉租不列入；未設定歸一般戶；目標%固定 50%。</p>
+        <div class="table-scroll unit-detail-scroll" id="wkCmpTable"></div>
+        <div class="rev-mid lz-cmp-intel">
+          <div class="rev-panel" id="wkCmpJudge"></div>
+          <div class="rev-panel" id="wkCmpFocusNote"></div>
+        </div>
+      </article>
+      <article class="card grow-card lz-grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="wkGrowTitle">政策戶比率達成與成長分析</h3>
+            <p class="note" id="wkGrowMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="wkGrowSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="wkGrowStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="wkGrowKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="wkGrowChartTitle">1-12月政策戶比率趨勢</h4>
+                <div class="grow-legend" id="wkGrowLegend">
+                  <button type="button" data-wkgrow-ds="目標"><i class="lg-tgt"></i>目標</button>
+                  <button type="button" data-wkgrow-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-wkgrow-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="wkGrowChart"></canvas></div>
+              <p class="note" id="wkGrowChartNote"></p>
+            </div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="wkGrowCmpTbl"></div>
+            <div class="rev-panel" id="wkGrowJudge"></div>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-panel" id="wkGrowOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <p class="note" id="wkGrowUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="wkGrowUnitTbl"></div>
+          </div>
+        </div>
+        <div id="wkGrowStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="wkCgTitle">縣市政策戶比率概況與成長分析</h3>
+            <p class="note" id="wkCgMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="wkCgSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="wkCgStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="wkCgKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="wkCgChartTitle">1-12月政策戶比率趨勢</h4>
+                <div class="grow-legend" id="wkCgLegend">
+                  <button type="button" data-wkcg-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-wkcg-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="wkCgChart"></canvas></div>
+              <p class="note" id="wkCgChartNote"></p>
+            </div>
+            <div class="rev-panel city-rank" id="wkCgOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="wkCgCmpTbl"></div>
+            <p class="note" id="wkCgUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="wkCgUnitTbl"></div>
+            <div id="wkCgWeekBox" class="city-week-box">
+              <p class="note" id="wkCgWeekTitle">結績週期比較明細</p>
+              <div class="table-scroll city-week-tbl" id="wkCgWeekTbl"></div>
+            </div>
+            <div class="rev-panel" id="wkCgJudge"></div>
+          </div>
+        </div>
+        <div id="wkCgStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card type-card">
+        <div class="unit-cmp-head">
+          <h3 id="wkTypeTitle">政策戶案件類型分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="wkTypeSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="wkTypeStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="wkTypePeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="wkTypeKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>案件類型占比</h4>
+                <div id="wkTypeDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>再媒合(全)明細</h4>
+                <div id="wkTypeReDist"></div>
+              </div>
+            </div>
+            <div class="rev-panel type-new-panel">
+              <h4>新媒合(全)明細</h4>
+              <div id="wkTypeNewDist"></div>
+            </div>
+            <div class="rev-panel" id="wkTypeJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="wkTypeTable"></div>
+            <div class="rev-panel" id="wkTypeFocusNote"></div>
+          </div>
+        </div>
+        <div id="wkTypeStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card rev-card">
+        <div class="unit-cmp-head">
+          <h3 id="wkRevTitle">政策戶案件進度分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="wkRevSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="wkRevStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="wkRevPeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="wkRevKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>案件目前分佈</h4>
+                <div id="wkRevDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>優先推進順序（依目前狀態）</h4>
+                <div id="wkRevPrio"></div>
+              </div>
+            </div>
+            <div class="rev-panel" id="wkRevJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="wkRevTable"></div>
+            <div class="rev-panel" id="wkRevFocusNote"></div>
+          </div>
+        </div>
+        <div id="wkRevStaffBox" class="src-staff hidden"></div>
+      </article>
+    </section>
+    <section class="page hidden" id="page-new">
+      <div class="period-title">新件管理總覽</div>
+      <section class="kpi-row kpi-5" id="nwKpiRow"></section>
+      <section class="dash-body">
+        <article class="card trend-card">
+          <div class="trend-head">
+            <h3 id="nwTrendTitle">新媒合 新件比率趨勢圖</h3>
+            <div class="seg" id="nwTrendSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+          <p class="note" id="nwTrendNote"></p>
+          <div class="chart-h tall"><canvas id="nwChartTrend"></canvas></div>
+        </article>
+        <div class="rank-slot">
+          <article class="card rank-card">
+            <h3 id="nwRankTitle">單位新件比率排行榜</h3>
+            <p class="note" id="nwRankNote">依篩選單位轄下營業處新件比率排名</p>
+            <div class="rank-list" id="nwRankList"></div>
+          </article>
+        </div>
+        <article class="card month-card">
+          <div class="unit-cmp-head">
+            <h3 id="nwMonthTitle">新媒合(全) 新件比較表</h3>
+          </div>
+          <p class="note" id="nwMonthNote"></p>
+          <div class="month-wrap" id="nwMonthTable"></div>
+        </article>
+        <article class="card tw-card">
+          <h3 id="nwMapTitle">營業據點全台新件比率</h3>
+          <div class="tw-layout">
+            <div id="nwMap" class="tw-svg"></div>
+            <div id="nwRank" class="tw-rank"></div>
+          </div>
+          <p class="note">新件比率越高顏色越深；灰色為 0 件。圖示臺灣本島，圖資：Taiwan Atlas / 內政部</p>
+        </article>
+      </section>
+      <article class="card unit-cmp-card">
+        <div class="unit-cmp-head">
+          <h3 id="nwCmpTitle">單位新件比較表</h3>
+          <div class="unit-cmp-tools">
+            <label>排序</label>
+            <select id="nwCmpSort">
+              <option value="" selected>預設階層</option>
+              <option value="n">總件數</option>
+              <option value="lease">新件</option>
+              <option value="rate">新件比率</option>
+              <option value="gap">差異%</option>
+              <option value="yoyRate">同期新件%</option>
+              <option value="lastRate">上月新件%</option>
+            </select>
+            <div class="seg" id="nwCmpSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+        </div>
+        <p class="note" id="nwCmpNote">依篩選單位對照階層，可展開所屬營業處。新件比率＝轉租與代管中是否帶租約為新件／轉租與代管總簽約件；包租未列入；狀態剔除已停用、暫存；目標%固定 90%。</p>
+        <div class="table-scroll unit-detail-scroll" id="nwCmpTable"></div>
+        <div class="rev-mid lz-cmp-intel">
+          <div class="rev-panel" id="nwCmpJudge"></div>
+          <div class="rev-panel" id="nwCmpFocusNote"></div>
+        </div>
+      </article>
+      <article class="card grow-card lz-grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="nwGrowTitle">新件率達成與成長分析</h3>
+            <p class="note" id="nwGrowMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="nwGrowSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="nwGrowStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="nwGrowKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="nwGrowChartTitle">1-12月新件率趨勢</h4>
+                <div class="grow-legend" id="nwGrowLegend">
+                  <button type="button" data-nwgrow-ds="目標"><i class="lg-tgt"></i>目標</button>
+                  <button type="button" data-nwgrow-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-nwgrow-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="nwGrowChart"></canvas></div>
+              <p class="note" id="nwGrowChartNote"></p>
+            </div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="nwGrowCmpTbl"></div>
+            <div class="rev-panel" id="nwGrowJudge"></div>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-panel" id="nwGrowOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <p class="note" id="nwGrowUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="nwGrowUnitTbl"></div>
+          </div>
+        </div>
+        <div id="nwGrowStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="nwCgTitle">縣市新件率概況與成長分析</h3>
+            <p class="note" id="nwCgMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="nwCgSeg">
+              <button type="button" data-g="day">逐日</button>
+              <button type="button" data-g="week">週別</button>
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="nwCgStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="nwCgKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="nwCgChartTitle">1-12月新件率趨勢</h4>
+                <div class="grow-legend" id="nwCgLegend">
+                  <button type="button" data-nwcg-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-nwcg-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="nwCgChart"></canvas></div>
+              <p class="note" id="nwCgChartNote"></p>
+            </div>
+            <div class="rev-panel city-rank" id="nwCgOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="nwCgCmpTbl"></div>
+            <p class="note" id="nwCgUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="nwCgUnitTbl"></div>
+            <div id="nwCgWeekBox" class="city-week-box">
+              <p class="note" id="nwCgWeekTitle">結績週期比較明細</p>
+              <div class="table-scroll city-week-tbl" id="nwCgWeekTbl"></div>
+            </div>
+            <div class="rev-panel" id="nwCgJudge"></div>
+          </div>
+        </div>
+        <div id="nwCgStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card type-card">
+        <div class="unit-cmp-head">
+          <h3 id="nwTypeTitle">新件案件類型分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="nwTypeSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="nwTypeStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="nwTypePeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="nwTypeKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>案件類型占比</h4>
+                <div id="nwTypeDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>再媒合(全)明細</h4>
+                <div id="nwTypeReDist"></div>
+              </div>
+            </div>
+            <div class="rev-panel type-new-panel">
+              <h4>新媒合(全)明細</h4>
+              <div id="nwTypeNewDist"></div>
+            </div>
+            <div class="rev-panel" id="nwTypeJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="nwTypeTable"></div>
+            <div class="rev-panel" id="nwTypeFocusNote"></div>
+          </div>
+        </div>
+        <div id="nwTypeStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card rev-card">
+        <div class="unit-cmp-head">
+          <h3 id="nwRevTitle">新件案件進度分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="nwRevSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="nwRevStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="nwRevPeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="nwRevKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>案件目前分佈</h4>
+                <div id="nwRevDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>優先推進順序（依目前狀態）</h4>
+                <div id="nwRevPrio"></div>
+              </div>
+            </div>
+            <div class="rev-panel" id="nwRevJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="nwRevTable"></div>
+            <div class="rev-panel" id="nwRevFocusNote"></div>
+          </div>
+        </div>
+        <div id="nwRevStaffBox" class="src-staff hidden"></div>
+      </article>
+    </section>
+    <section class="page hidden" id="page-renew">
+      <div class="period-title">續約管理總覽</div>
+      <section class="kpi-row kpi-5" id="rnKpiRow"></section>
+      <section class="dash-body">
+        <article class="card trend-card">
+          <div class="trend-head">
+            <h3 id="rnTrendTitle">全部案件類型 續約率趨勢圖</h3>
+            <div class="unit-cmp-tools">
+              <div class="seg" id="rnTrendMetric">
+                <button type="button" data-m="month" class="on">當月續約率</button>
+                <button type="button" data-m="lead1">領先1M續約</button>
+                <button type="button" data-m="lead2">領先2M續約率</button>
+              </div>
+              <div class="seg" id="rnTrendSeg">
+                <button type="button" data-g="day">逐日</button>
+                <button type="button" data-g="week">週別</button>
+                <button type="button" data-g="month" class="on">月別</button>
+                <button type="button" data-g="year">年度累計</button>
+              </div>
+            </div>
+          </div>
+          <p class="note" id="rnTrendNote"></p>
+          <div class="chart-h tall"><canvas id="rnChartTrend"></canvas></div>
+        </article>
+        <div class="rank-slot">
+          <article class="card rank-card">
+            <h3 id="rnRankTitle">單位續約率排行榜</h3>
+            <p class="note" id="rnRankNote">依篩選單位轄下代管營業處續約率排名</p>
+            <div class="rank-list" id="rnRankList"></div>
+          </article>
+        </div>
+        <article class="card month-card">
+          <div class="unit-cmp-head">
+            <h3 id="rnMonthTitle">全部案件類型 續約率比較表</h3>
+          </div>
+          <p class="note" id="rnMonthNote"></p>
+          <div class="month-wrap" id="rnMonthTable"></div>
+        </article>
+        <article class="card tw-card">
+          <h3 id="rnMapTitle">營業據點全台續約率</h3>
+          <div class="tw-layout">
+            <div id="rnMap" class="tw-svg"></div>
+            <div id="rnRank" class="tw-rank"></div>
+          </div>
+          <p class="note">續約率越高顏色越深；灰色為 0 件。圖示臺灣本島，圖資：Taiwan Atlas / 內政部。歸屬依代管營業處。</p>
+        </article>
+      </section>
+      <article class="card unit-cmp-card">
+        <div class="unit-cmp-head">
+          <h3 id="rnCmpTitle">單位續約率比較表</h3>
+          <div class="unit-cmp-tools">
+            <label>排序</label>
+            <select id="rnCmpSort">
+              <option value="" selected>預設階層</option>
+              <option value="due">應續約</option>
+              <option value="keep">包租應存續</option>
+              <option value="done">已續約</option>
+              <option value="valid">包租有效件</option>
+              <option value="rate">續約率</option>
+              <option value="gap">差異%</option>
+              <option value="yoyRate">同期續約%</option>
+              <option value="lastRate">上月續約%</option>
+            </select>
+            <div class="seg" id="rnCmpSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+          </div>
+        </div>
+        <p class="note" id="rnCmpNote">依代管營業處對照階層。領先續約率＝（已續約＋包租有效）／（應續約＋包租應存續）。案件類型為全部類別。</p>
+        <div class="table-scroll unit-detail-scroll" id="rnCmpTable"></div>
+        <div class="rev-mid lz-cmp-intel">
+          <div class="rev-panel" id="rnCmpJudge"></div>
+          <div class="rev-panel" id="rnCmpFocusNote"></div>
+        </div>
+      </article>
+      <article class="card grow-card rn-grow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="rnGrowTitle">續約率達成與成長分析</h3>
+            <p class="note" id="rnGrowMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="rnGrowMetric">
+              <button type="button" data-m="month" class="on">當月續約</button>
+              <button type="button" data-m="lead1">領先1M續約</button>
+              <button type="button" data-m="lead2">領先2M續約</button>
+            </div>
+            <div class="seg" id="rnGrowSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="rnGrowStaffBtn">案件明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="rnGrowKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="rnGrowChartTitle">1-12月續約率趨勢</h4>
+                <div class="grow-legend" id="rnGrowLegend">
+                  <button type="button" data-rngrow-ds="目標"><i class="lg-tgt"></i>目標</button>
+                  <button type="button" data-rngrow-ds="同期"><i class="lg-yoy"></i>同期</button>
+                  <button type="button" data-rngrow-ds="實績"><i class="lg-act"></i>實績</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="rnGrowChart"></canvas></div>
+              <p class="note" id="rnGrowChartNote"></p>
+            </div>
+            <div class="rev-panel" id="rnGrowOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="rnGrowCmpTbl"></div>
+            <div class="rev-panel" id="rnGrowJudge"></div>
+            <p class="note" id="rnGrowUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="rnGrowUnitTbl"></div>
+          </div>
+        </div>
+        <div class="rev-panel rn-audit" id="rnGrowAudit"></div>
+        <div id="rnGrowStaffBox" class="src-staff hidden"></div>
+      </article>
+    </section>
+    <section class="page hidden" id="page-ar">
+      <div class="period-title">應收帳款管理總覽</div>
+      <section class="kpi-row kpi-5" id="arKpiRow"></section>
+      <article class="card unit-cmp-card">
+        <div class="unit-cmp-head">
+          <h3>單位應收帳款帳齡明細表</h3>
+          <div class="unit-cmp-tools">
+            <label>合約狀態</label>
+            <select id="arCtFilter">
+              <option value="all">全選</option>
+              <option value="轉租">轉租</option>
+              <option value="代管">代管</option>
+            </select>
+          </div>
+        </div>
+        <p class="note">資料來源：系統催收管理＞催收查詢。依欠租天數分類統計筆數與金額；單位對照代管營業處，可展開所屬營業處。</p>
+        <div class="table-scroll unit-detail-scroll" id="arAgeTable"></div>
+      </article>
+      <article class="card type-card">
+        <div class="unit-cmp-head">
+          <h3>應收帳款狀態分析</h3>
+          <div class="unit-cmp-tools">
+            <button type="button" class="tool-btn" id="arStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="arStPeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="arStKpis"></div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>應收帳款逾期天數</h4>
+                <div id="arAgeDist"></div>
+              </div>
+              <div class="rev-panel">
+                <h4>催收狀態占比</h4>
+                <div id="arStDist"></div>
+              </div>
+            </div>
+            <div class="rev-panel" id="arStJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll unit-detail-scroll" id="arStTable"></div>
+            <div class="rev-panel" id="arStFocusNote"></div>
+          </div>
+        </div>
+        <div id="arStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card">
+        <div class="unit-cmp-head">
+          <h3>欠款大戶（承租人）分析</h3>
+          <p class="note">依催收查詢案件編號彙總欠租筆數與金額；點姓名或數字可帶出業務明細。右側為代管業務欠款占比排名。</p>
+        </div>
+        <div class="ar-debt-layout">
+          <div class="table-scroll" id="arDebtorTable"></div>
+          <div class="rev-panel">
+            <h4>代管業務占比排名</h4>
+            <div id="arAgentRank"></div>
+          </div>
+        </div>
+      </article>
+    </section>
+    <section class="page hidden" id="page-perf">
+      <div class="period-title">業務績效表</div>
+      <article class="card nat-perf-page">
+        <div class="perf-search">
+          <label for="perfNameQ">查詢業務姓名</label>
+          <input id="perfNameQ" type="search" autocomplete="off" placeholder="輸入姓名關鍵字，例如：陳玉" />
+          <div id="perfNameHits" class="perf-hits hidden"></div>
+        </div>
+        <div id="natPerf"></div>
+      </article>
+    </section>
+    <section class="page hidden" id="page-placeholder">
+      <article class="card"><h3 id="phTitle">功能建置中</h3><p class="note">此模組將於後續接上 RPA 資料來源。</p></article>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden"></div>
+  <style>
+    #matchPreview[hidden] { display: none !important; }
+    #matchPreview { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    #matchPreview .box { background: #fff; max-width: 520px; width: 100%; border-radius: 12px; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+  </style>
+  <div id="matchPreview" hidden>
+    <div class="box">
+      <h3 style="margin:0 0 8px">匯入媒合補充資料</h3>
+      <p id="matchPreviewBody" class="note"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="update-btn" id="matchPreviewCancel">取消</button>
+        <button type="button" class="query-btn" id="matchPreviewOk">確認匯入</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/toolbox-auth.js"></script>
+  <script src="loader.js"></script>
+</body>
+</html>

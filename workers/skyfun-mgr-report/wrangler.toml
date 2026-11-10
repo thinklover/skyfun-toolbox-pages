@@ -1,0 +1,26 @@
+name = "skyfun-mgr-report"
+main = "src/worker.js"
+compatibility_date = "2026-07-29"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# 部署前由簡處長建立 KV，把下面的 id 換掉。Cursor 不猜帳號、不執行 wrangler deploy。
+[[kv_namespaces]]
+binding = "MGR_REPORT_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+ALLOWED_ORIGINS = "https://toolbox.skyfunsystem.com,https://skyfun-toolbox-preview.pages.dev,https://thinklover.github.io,http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:5500,http://localhost:5500"
+# 每次排程補抓上限、每日上限、間隔。明細補抓每輪實際最多 20 筆，避免單次超過 Worker 時間上限。
+MATCH_EXTRA_PER_TICK = "20"
+MATCH_EXTRA_DAILY_CAP = "500"
+MATCH_EXTRA_GAP_MS = "300"
+
+# 台北 07:00–23:59（UTC 23:00–15:59）每 2 分鐘推進一次；當日做完或 07:00 前會立刻結束。
+[triggers]
+crons = ["*/2 23,0-15 * * *"]
+
+# Secrets（wrangler secret put，勿寫進此檔）:
+#   SKYFUN_USERNAME
+#   SKYFUN_PASSWORD
+# 選填：SUPABASE_URL、SUPABASE_ANON_KEY（不設則沿用工具箱公開的 anon 設定）

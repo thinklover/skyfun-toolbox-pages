@@ -7637,6 +7637,14 @@
                         </span>
                         <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                     </button>
+                    <button type="button" class="apt-entry adz-hero bz-hero bz-hero--cover" onclick="showPage('biz-mgr-report')">
+                        <span class="apt-entry-icon" aria-hidden="true">▦</span>
+                        <span class="apt-entry-text">
+                            <strong>社宅管報儀表板</strong>
+                            <small>各處業績、包租率、政策戶、新件、續約、應收帳款</small>
+                        </span>
+                        <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                    </button>
                 </div>
                 <p class="bz-sec">常用工具</p>
                 <div class="bz-tools" role="navigation" aria-label="業務主管常用工具">
@@ -11337,6 +11345,14 @@
                 <p class="cv-lead">先看全區，再點北區、中區、南區、高雄看各處還沒使用工具箱的人。</p>
                 <div class="cv-body"></div>
             </div>
+        </div>
+
+        <!-- 業務主管專區：社宅管報儀表板 -->
+        <div id="page-biz-mgr-report" class="hidden">
+            <button type="button" onclick="showPage('biz-supervisor')" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回業務主管專區
+            </button>
+            <iframe src="./mgr-report/index.html" title="社宅管報儀表板" style="width:100%;height:calc(100vh - 4.5rem);border:0;display:block;background:#fff"></iframe>
         </div>
 
         <!-- 業務專區：獎金辦法＋知悉儀表板 -->
@@ -15983,6 +15999,7 @@
             { page: 'business-bonus', title: '業務獎金辦法', category: '業務專區', keywords: '獎金 獎金辦法 高專 星財補 點獎金 激勵 婚育 知悉 儀表板 媒合費 代管費 簽呈 公告 通知 公司 第9 第10 第11 業績月 1150824' },
             { page: 'business-coverage', title: '誠信險', category: '業務主管專區', keywords: '誠信險 投保率 未投保 電訪 處長 分機 新媒合' },
             { page: 'business-toolbox', title: '工具箱綁定', category: '業務主管專區', keywords: '工具箱 綁定率 未綁定 正職 兼職 營業處' },
+            { page: 'biz-mgr-report', title: '社宅管報儀表板', category: '業務主管專區', keywords: '管報 儀表板 業績 包租率 政策戶 新件 續約 應收帳款' },
             { file: './admin/coverage-call-dashboard.html', title: '誠信險電訪紀錄後台', category: '管理工具', keywords: '後台 誠信險 電訪 處長 分機 撥打時間' },
             { file: './admin/biz-system-change-dashboard.html', title: '系統欄位更改通報後台', category: '管理工具', keywords: '後台 admin 系統欄位 更改 通報 業務' },
             { page: 'admin-handover', title: '行政離職交接', category: '行政專區', keywords: '離職 交接 行政 經手 審核 接手 checklist 匯出' },
@@ -16082,6 +16099,7 @@
             'business-bonus': 'page-business-bonus',
             'business-coverage': 'page-business-coverage',
             'business-toolbox': 'page-business-toolbox',
+            'biz-mgr-report': 'page-biz-mgr-report',
             termination: 'page-termination',
             rentmanager: 'page-rentmanager',
             'rentmanager-links': 'page-rentmanager-links',
@@ -16152,7 +16170,7 @@
             'page-newbie-roadmap', 'page-newbie-glossary', 'page-newbie-screening', 'page-newbie-quest', 'page-newbie-subsidy', 'page-newbie-transcript',
             'page-business', 'page-business-land-value-tax',
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-591-listing', 'page-business-deposit-refund',
-            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-business-bonus', 'page-business-coverage', 'page-business-toolbox', 'page-business-handover', 'page-business-system-change', 'page-termination',
+            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-business-bonus', 'page-business-coverage', 'page-business-toolbox', 'page-biz-mgr-report', 'page-business-handover', 'page-business-system-change', 'page-termination',
             'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus', 'page-rentmanager-perf', 'page-rentmanager-line-endorse',
             'page-announcement', 'page-manager-bonus', 'page-administration', 'page-hr', 'page-hr-report', 'page-hr-onboard', 'page-hr-resign', 'page-finance', 'page-gm-office', 'page-meeting-scoreboard', 'page-biz-supervisor', 'page-admin-qa', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
             'page-practice-timeline', 'page-collection-case', 'page-mediation-flow', 'page-equip-dep', 'page-practice-templates', 'page-practice-contacts', 'page-lal-generator', 'page-care-visit-notice'
@@ -16262,6 +16280,7 @@
             'biz-supervisor': true,
             'business-coverage': true,
             'business-toolbox': true,
+            'biz-mgr-report': true,
             'manager-bonus': true
         };
         const FINANCE_HR_PAGES = {
