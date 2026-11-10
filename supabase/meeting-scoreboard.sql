@@ -1,4 +1,5 @@
--- 會議計分中心（總經理室）：人員／專案／加減分紀錄，全公司登入帳號可讀寫共用
+-- 會議計分中心（總經理室）：人員／專案／加減分紀錄。
+-- 可見範圍已改由 meeting-scoreboard-staff-month.sql 強制。不要再整份重跑本檔，否則會恢復全公司可讀寫。
 -- 依賴：toolbox_accounts、admin_qa_user_id(p_token)
 
 create table if not exists public.msb_people (
