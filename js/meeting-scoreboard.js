@@ -35,7 +35,8 @@
     bindPersonId: null,
     accountOptions: [],
     bound: false,
-    peopleSort: { key: '', dir: 'desc' }
+    peopleSortOffice: { key: '', dir: 'desc' },
+    peopleSortBiz: { key: '', dir: 'desc' }
   };
 
   function $(id) { return document.getElementById(id); }
@@ -134,8 +135,11 @@
     if (bi >= 0) return bi;
     return 800;
   }
-  function sortPeopleList(list) {
-    const { key, dir } = state.peopleSort || {};
+  function peopleSortState(side) {
+    return side === 'biz' ? state.peopleSortBiz : state.peopleSortOffice;
+  }
+  function sortPeopleList(list, sortState) {
+    const { key, dir } = sortState || {};
     const mul = dir === 'asc' ? 1 : -1;
     return list.slice().sort((a, b) => {
       if (key === 'dept') {
@@ -185,8 +189,9 @@
     });
   }
   function syncPeopleSortHeaders() {
-    const { key, dir } = state.peopleSort || {};
     document.querySelectorAll('#page-meeting-scoreboard th[data-msb-sort]').forEach((th) => {
+      const side = th.getAttribute('data-msb-sort-side') === 'biz' ? 'biz' : 'office';
+      const { key, dir } = peopleSortState(side) || {};
       const k = th.getAttribute('data-msb-sort');
       const on = k === key;
       th.classList.toggle('is-sorted', on);
@@ -195,13 +200,17 @@
       if (mark) mark.textContent = on ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
     });
   }
-  function togglePeopleSort(key) {
+  function togglePeopleSort(key, side) {
     if (!key) return;
-    if (state.peopleSort.key === key) {
-      state.peopleSort.dir = state.peopleSort.dir === 'desc' ? 'asc' : 'desc';
+    const sideKey = side === 'biz' ? 'biz' : 'office';
+    const cur = peopleSortState(sideKey);
+    if (cur.key === key) {
+      cur.dir = cur.dir === 'desc' ? 'asc' : 'desc';
     } else {
       const numeric = key === 'score' || key === 'bonus';
-      state.peopleSort = { key, dir: numeric ? 'desc' : 'asc' };
+      const next = { key, dir: numeric ? 'desc' : 'asc' };
+      if (sideKey === 'biz') state.peopleSortBiz = next;
+      else state.peopleSortOffice = next;
     }
     renderPeopleTable();
   }
@@ -260,7 +269,7 @@
         personTitle(p).toLowerCase().includes(q)
       );
     }
-    return sortPeopleList(list);
+    return list;
   }
   function peopleRowHtml(p, edit) {
     const dept = personDept(p) || '—';
@@ -293,9 +302,10 @@
     if (!officeBody || !bizBody) return;
     const month = state.scoreMonth || state.month || currentMonth();
     if (note) {
-      const sortHint = state.peopleSort.key
-        ? '表頭可點擊排序（再點切換升／降冪）。'
-        : '點表頭可排序；預設職等 → 北到南。';
+      const anySorted = !!(state.peopleSortOffice.key || state.peopleSortBiz.key);
+      const sortHint = anySorted
+        ? '左右表頭可各自排序（再點切換升／降冪）。'
+        : '左右表頭可各自排序；預設職等 → 北到南。';
       note.textContent = '分數與獎金為 ' + month + ' 手動輸入；＋／－寫入加減分紀錄。' + sortHint;
     }
     if (selfBox) {
@@ -304,8 +314,14 @@
     }
     const list = filteredPeople();
     const edit = state.canEdit;
-    const office = list.filter((p) => !isBizDept(personDept(p)));
-    const biz = list.filter((p) => isBizDept(personDept(p)));
+    const office = sortPeopleList(
+      list.filter((p) => !isBizDept(personDept(p))),
+      peopleSortState('office')
+    );
+    const biz = sortPeopleList(
+      list.filter((p) => isBizDept(personDept(p))),
+      peopleSortState('biz')
+    );
     officeBody.innerHTML = office.length
       ? office.map((p) => peopleRowHtml(p, edit)).join('')
       : '<tr><td colspan="6" class="msb-empty">尚無內勤人員</td></tr>';
@@ -631,7 +647,10 @@
     const onMsbClick = async (e) => {
       const sortTh = e.target.closest('th[data-msb-sort]');
       if (sortTh) {
-        togglePeopleSort(sortTh.getAttribute('data-msb-sort'));
+        togglePeopleSort(
+          sortTh.getAttribute('data-msb-sort'),
+          sortTh.getAttribute('data-msb-sort-side') || 'office'
+        );
         return;
       }
       const viewBtn = e.target.closest('[data-msb-view]');
