@@ -138,7 +138,33 @@
     const { key, dir } = state.peopleSort || {};
     const mul = dir === 'asc' ? 1 : -1;
     return list.slice().sort((a, b) => {
-      if (key === 'score' || key === 'bonus') {
+      if (key === 'dept') {
+        const da = personDept(a);
+        const db = personDept(b);
+        if (!da && !db) { /* fall through */ }
+        else if (!da) return 1;
+        else if (!db) return -1;
+        else {
+          const or = (officeRank(da) - officeRank(db)) * mul;
+          if (or) return or;
+          const cmp = da.localeCompare(db, 'zh-Hant') * mul;
+          if (cmp) return cmp;
+        }
+      } else if (key === 'title') {
+        const tr = (titleRank(a) - titleRank(b)) * mul;
+        if (tr) return tr;
+        const ta = personTitle(a);
+        const tb = personTitle(b);
+        if (ta || tb) {
+          if (!ta) return 1;
+          if (!tb) return -1;
+          const cmp = ta.localeCompare(tb, 'zh-Hant') * mul;
+          if (cmp) return cmp;
+        }
+      } else if (key === 'name') {
+        const cmp = String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant') * mul;
+        if (cmp) return cmp;
+      } else if (key === 'score' || key === 'bonus') {
         const av = key === 'score' ? numOrNull(a.score) : bonusAmount(a.bonus);
         const bv = key === 'score' ? numOrNull(b.score) : bonusAmount(b.bonus);
         const aEmpty = av == null;
@@ -174,7 +200,8 @@
     if (state.peopleSort.key === key) {
       state.peopleSort.dir = state.peopleSort.dir === 'desc' ? 'asc' : 'desc';
     } else {
-      state.peopleSort = { key, dir: 'desc' };
+      const numeric = key === 'score' || key === 'bonus';
+      state.peopleSort = { key, dir: numeric ? 'desc' : 'asc' };
     }
     renderPeopleTable();
   }
@@ -267,8 +294,8 @@
     const month = state.scoreMonth || state.month || currentMonth();
     if (note) {
       const sortHint = state.peopleSort.key
-        ? '可點欄位排序分數／獎金。'
-        : '點「分數」「獎金」欄位可排序；預設職等 → 北到南。';
+        ? '表頭可點擊排序（再點切換升／降冪）。'
+        : '點表頭可排序；預設職等 → 北到南。';
       note.textContent = '分數與獎金為 ' + month + ' 手動輸入；＋／－寫入加減分紀錄。' + sortHint;
     }
     if (selfBox) {
