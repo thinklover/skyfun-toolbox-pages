@@ -219,7 +219,7 @@
 
   function startApp() {
     var s = document.createElement('script');
-    s.src = 'app.js?v=190';
+    s.src = 'app.js?v=20261111-noimport';
     document.body.appendChild(s);
   }
 
