@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261109-center">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
 <link rel="stylesheet" href="./css/fin-report.css?v=20261108-fin62">
-<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261110-msb9">
+<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v2">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -7381,205 +7381,116 @@
         <div id="page-gm-office" class="hidden"></div>
         <div id="page-meeting-scoreboard" class="hidden">
             <div class="msb-app" id="msb-app">
-                <aside class="msb-sidebar" aria-label="會議計分導覽">
-                    <div class="msb-brand">
-                        <span class="msb-brand-mark" aria-hidden="true">▦</span>
-                        <div>
-                            <strong>會議計分中心</strong>
-                            <small>總經理室專區</small>
+                <header class="msb-bar">
+                    <div class="msb-bar-brand">
+                        <strong>會議計分中心</strong>
+                        <span>總經理室</span>
+                    </div>
+                    <nav class="msb-bar-nav" aria-label="會議計分導覽">
+                        <button type="button" class="msb-nav-btn is-on" data-msb-view="dash">總表</button>
+                        <button type="button" class="msb-nav-btn" data-msb-view="records">加減分紀錄</button>
+                        <button type="button" class="msb-nav-btn msb-edit-only" data-msb-view="settings">設定</button>
+                    </nav>
+                    <button type="button" class="msb-btn msb-btn--ghost" onclick="showPage('home')">← 首頁</button>
+                </header>
+
+                <p id="msb-msg" class="msb-msg" role="status"></p>
+                <p id="msb-scope-note" class="msb-scope-note" hidden></p>
+
+                <section class="msb-panel" data-msb-panel="dash">
+                    <div class="msb-head-row">
+                        <div class="msb-board-tabs" role="tablist" aria-label="計分表">
+                            <button type="button" class="is-on" data-msb-board="system">系統會議</button>
+                            <button type="button" data-msb-board="monthly">月會主管</button>
+                        </div>
+                        <div class="msb-head-tools">
+                            <input id="msb-month" type="month" aria-label="統計月份">
+                            <input id="msb-staff-q" type="search" placeholder="搜尋姓名或部別" aria-label="搜尋姓名或部別">
+                            <button type="button" id="msb-export" class="msb-btn msb-btn--ghost">匯出</button>
+                            <button type="button" id="msb-open-add" class="msb-btn msb-btn--primary msb-edit-only">＋ 加減分</button>
                         </div>
                     </div>
-                    <button type="button" class="msb-nav-toggle" id="msb-nav-toggle" aria-expanded="false" aria-controls="msb-side-nav">選單</button>
-                    <nav class="msb-side-nav" id="msb-side-nav">
-                        <button type="button" class="msb-side-link is-on" data-msb-view="dash">
-                            <span aria-hidden="true">▦</span> 分數儀表板
-                        </button>
-                        <button type="button" class="msb-side-link" data-msb-view="records">
-                            <span aria-hidden="true">☷</span> 加減分紀錄
-                        </button>
-                        <button type="button" class="msb-side-link msb-edit-only" data-msb-view="settings">
-                            <span aria-hidden="true">⚙</span> 後台設定
-                        </button>
-                    </nav>
-                    <button type="button" class="msb-back" onclick="showPage('home')">← 返回首頁</button>
-                </aside>
+                    <div id="msb-self" class="msb-self" hidden></div>
+                    <div class="msb-table-wrap">
+                        <table id="msb-people-table" class="msb-table msb-table--people">
+                            <thead>
+                                <tr>
+                                    <th>部別</th>
+                                    <th>姓名</th>
+                                    <th class="num">分數</th>
+                                    <th class="num">獎金</th>
+                                    <th class="act msb-edit-only">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="msb-people-body"></tbody>
+                        </table>
+                    </div>
+                    <p id="msb-score-month-note" class="msb-filter-note"></p>
+                </section>
 
-                <div class="msb-main">
-                    <p id="msb-msg" class="msb-msg" role="status"></p>
+                <section class="msb-panel" data-msb-panel="records" hidden>
+                    <div class="msb-head-row">
+                        <h2 class="msb-page-title">加減分紀錄</h2>
+                        <div class="msb-head-tools">
+                            <div class="msb-board-tabs" role="tablist" aria-label="計分表">
+                                <button type="button" class="is-on" data-msb-board="system">系統會議</button>
+                                <button type="button" data-msb-board="monthly">月會主管</button>
+                            </div>
+                            <button type="button" id="msb-export-records" class="msb-btn msb-btn--ghost">匯出</button>
+                            <button type="button" id="msb-open-add-2" class="msb-btn msb-btn--primary msb-edit-only">＋ 加減分</button>
+                        </div>
+                    </div>
+                    <div class="msb-filters">
+                        <input id="msb-q" type="search" placeholder="搜尋人員／項目／備註" aria-label="搜尋">
+                        <select id="msb-filter-project" aria-label="專案篩選"></select>
+                        <input id="msb-date-from" type="date" aria-label="起始日期">
+                        <input id="msb-date-to" type="date" aria-label="結束日期">
+                        <button type="button" id="msb-filter-clear" class="msb-btn msb-btn--ghost">清除</button>
+                    </div>
+                    <p id="msb-records-count" class="msb-filter-note"></p>
+                    <div class="msb-table-wrap"><table id="msb-all-table" class="msb-table"></table></div>
+                </section>
 
-                    <section class="msb-panel" data-msb-panel="dash">
-                        <div class="msb-topbar msb-topbar--flat">
-                            <div>
-                                <div class="msb-crumb">工作空間／分數儀表板</div>
-                                <h2 class="msb-page-title">分數儀表板</h2>
-                            </div>
-                            <div class="msb-top-actions">
-                                <button type="button" id="msb-export" class="msb-btn msb-btn--ghost">↓ 匯出</button>
-                                <button type="button" id="msb-open-add" class="msb-btn msb-btn--primary msb-edit-only">＋ 新增加減分</button>
-                            </div>
+                <section class="msb-panel" data-msb-panel="settings" hidden>
+                    <div class="msb-head-row">
+                        <h2 class="msb-page-title">設定</h2>
+                        <div class="msb-board-tabs" role="tablist" aria-label="計分表">
+                            <button type="button" class="is-on" data-msb-board="system">系統會議</button>
+                            <button type="button" data-msb-board="monthly">月會主管</button>
                         </div>
-                        <div class="msb-toolbar msb-toolbar--flat">
-                            <div class="msb-board-tabs apt-sub-tabs" role="tablist" aria-label="計分表">
-                                <button type="button" class="apt-sub-tab is-on" data-msb-board="system">系統會議計分表</button>
-                                <button type="button" class="apt-sub-tab" data-msb-board="monthly">月會主管計分表</button>
+                    </div>
+                    <div id="msb-settings-lock" class="msb-settings-lock">
+                        <form id="msb-settings-gate" class="msb-settings-gate" autocomplete="off">
+                            <p>後台設定需密碼（與辦法完整檔同一組）。</p>
+                            <label for="msb-settings-pwd">密碼</label>
+                            <div class="msb-settings-gate-row">
+                                <input id="msb-settings-pwd" type="password" inputmode="numeric" required placeholder="請輸入密碼" autocomplete="current-password">
+                                <button type="submit" class="msb-btn msb-btn--primary">解鎖</button>
                             </div>
-                            <div class="msb-period">
-                                <input id="msb-month" type="month" aria-label="統計月份">
-                                <button type="button" id="msb-all-period" class="msb-btn msb-btn--ghost">全部期間</button>
-                            </div>
-                        </div>
-                        <section id="msb-month-board" class="msb-month-board" aria-label="每月分數與獎金">
-                            <div class="msb-staff-tools" id="msb-staff-tools">
-                                <input id="msb-staff-q" type="search" placeholder="搜尋姓名或部別" aria-label="搜尋姓名或部別">
-                                <div id="msb-dept-chips" class="msb-chips" role="tablist" aria-label="部別篩選"></div>
-                                <select id="msb-staff-sort" aria-label="排序">
-                                    <option value="score">分數由高到低</option>
-                                    <option value="name">姓名</option>
-                                    <option value="dept">部別</option>
-                                    <option value="bonus">獎金由高到低</option>
-                                </select>
-                                <button type="button" id="msb-staff-view" class="msb-btn msb-btn--ghost">大卡檢視</button>
-                                <button type="button" id="msb-open-month" class="msb-btn msb-btn--primary msb-edit-only">輸入分數／獎金</button>
-                                <button type="button" id="msb-open-batch" class="msb-btn msb-btn--ghost msb-edit-only">批次貼上</button>
-                            </div>
-                            <p id="msb-scope-note" class="msb-scope-note" hidden></p>
-                            <div id="msb-self" class="msb-self" hidden></div>
-                            <div id="msb-staff-groups" class="msb-staff-groups"></div>
-                            <div id="msb-staff-cards" class="msb-staff-cards" hidden></div>
-                            <div id="msb-staff-table-wrap" class="msb-table-wrap" hidden>
-                                <table id="msb-staff-table" class="msb-table"></table>
-                            </div>
-                            <p id="msb-score-month-note" class="msb-filter-note"></p>
-                        </section>
-                        <details class="msb-kpi-fold msb-company-only">
-                            <summary>加減分摘要（期間統計）</summary>
-                            <div class="msb-kpis msb-kpis--chips">
-                                <div class="msb-kpi msb-kpi--dark">
-                                    <span class="msb-kpi-label">累計總分</span>
-                                    <strong id="msb-kpi-total" class="msb-kpi-val">0 分</strong>
-                                    <span id="msb-kpi-total-sub" class="msb-kpi-sub">本月累計</span>
+                            <p id="msb-settings-gate-msg" class="msb-msg" role="status"></p>
+                        </form>
+                    </div>
+                    <div id="msb-settings-body" hidden>
+                        <div class="msb-split">
+                            <div class="msb-card">
+                                <h3>人員</h3>
+                                <div class="msb-add-row">
+                                    <input id="msb-new-person" type="text" maxlength="40" placeholder="新增人員姓名">
+                                    <button type="button" id="msb-add-person" class="msb-btn msb-btn--primary">新增</button>
                                 </div>
-                                <div class="msb-kpi msb-kpi--plus">
-                                    <span class="msb-kpi-label">期間加分</span>
-                                    <strong id="msb-kpi-plus" class="msb-kpi-val msb-pos">+0 分</strong>
-                                    <span id="msb-kpi-plus-sub" class="msb-kpi-sub">共 0 筆加分紀錄</span>
-                                </div>
-                                <div class="msb-kpi msb-kpi--minus">
-                                    <span class="msb-kpi-label">期間減分</span>
-                                    <strong id="msb-kpi-minus" class="msb-kpi-val msb-neg">0 分</strong>
-                                    <span id="msb-kpi-minus-sub" class="msb-kpi-sub">共 0 筆減分紀錄</span>
-                                </div>
-                                <div class="msb-kpi">
-                                    <span class="msb-kpi-label">加分人員</span>
-                                    <strong id="msb-kpi-people" class="msb-kpi-val">0 位</strong>
-                                    <span id="msb-kpi-people-sub" class="msb-kpi-sub">0 個專案區塊參與計分</span>
-                                </div>
-                            </div>
-                        </details>
-                        <div class="msb-split msb-split--rank msb-company-only">
-                            <div class="msb-card msb-card--wide">
-                                <h3>人員分數排行</h3>
-                                <div id="msb-person-rank"></div>
+                                <div id="msb-people-list"></div>
                             </div>
                             <div class="msb-card">
-                                <h3>專案分數總覽</h3>
-                                <div id="msb-project-rank"></div>
-                            </div>
-                        </div>
-                        <div class="msb-card msb-company-only">
-                            <div class="msb-card-head">
-                                <h3>人員 × 專案計分表</h3>
-                                <button type="button" id="msb-goto-settings" class="msb-linkish msb-edit-only">管理 ↗</button>
-                            </div>
-                            <div class="msb-table-wrap"><table id="msb-matrix" class="msb-table"></table></div>
-                        </div>
-                        <div class="msb-card msb-company-only">
-                            <div class="msb-card-head">
-                                <h3>最近加減分紀錄</h3>
-                                <button type="button" id="msb-goto-records" class="msb-linkish">查看全部紀錄 →</button>
-                            </div>
-                            <div class="msb-table-wrap"><table id="msb-recent-table" class="msb-table"></table></div>
-                        </div>
-                    </section>
-
-                    <section class="msb-panel" data-msb-panel="records" hidden>
-                        <div class="msb-topbar">
-                            <div>
-                                <div class="msb-crumb">工作空間／加減分紀錄</div>
-                                <h2 class="msb-page-title">加減分紀錄</h2>
-                                <p class="msb-page-sub">搜尋與篩選套用目前計分表的全部期間資料。</p>
-                            </div>
-                            <div class="msb-top-actions">
-                                <button type="button" id="msb-export-records" class="msb-btn msb-btn--ghost">↓ 匯出紀錄</button>
-                                <button type="button" id="msb-open-add-2" class="msb-btn msb-btn--primary msb-edit-only">＋ 新增加減分</button>
-                            </div>
-                        </div>
-                        <div class="msb-toolbar">
-                            <div class="msb-board-tabs" role="tablist" aria-label="計分表">
-                                <button type="button" class="is-on" data-msb-board="system">系統會議計分表</button>
-                                <button type="button" data-msb-board="monthly">月會主管計分表</button>
-                            </div>
-                        </div>
-                        <div class="msb-card">
-                            <div class="msb-filters">
-                                <input id="msb-q" type="search" placeholder="搜尋人員／項目／備註" aria-label="搜尋人員項目備註">
-                                <select id="msb-filter-project" aria-label="專案篩選"></select>
-                                <input id="msb-date-from" type="date" aria-label="起始日期">
-                                <input id="msb-date-to" type="date" aria-label="結束日期">
-                                <button type="button" id="msb-filter-clear" class="msb-btn msb-btn--ghost">清除篩選</button>
-                            </div>
-                            <p id="msb-records-count" class="msb-filter-note"></p>
-                            <div class="msb-table-wrap"><table id="msb-all-table" class="msb-table"></table></div>
-                        </div>
-                    </section>
-
-                    <section class="msb-panel" data-msb-panel="settings" hidden>
-                        <div class="msb-topbar">
-                            <div>
-                                <div class="msb-crumb">工作空間／後台設定</div>
-                                <h2 class="msb-page-title">後台設定</h2>
-                                <p class="msb-page-sub">管理加分人員與專案名稱；依職稱分組顯示。進入需密碼。</p>
-                            </div>
-                        </div>
-                        <div id="msb-settings-lock" class="msb-settings-lock">
-                            <form id="msb-settings-gate" class="msb-settings-gate" autocomplete="off">
-                                <p class="msb-settings-gate-lead">後台設定僅限授權人員。請輸入密碼後繼續（與辦法完整檔／處長密碼同一組）。</p>
-                                <label for="msb-settings-pwd">密碼</label>
-                                <div class="msb-settings-gate-row">
-                                    <input id="msb-settings-pwd" type="password" inputmode="numeric" required placeholder="請輸入密碼" autocomplete="current-password">
-                                    <button type="submit" class="msb-btn msb-btn--primary">解鎖</button>
+                                <h3>專案區塊</h3>
+                                <div class="msb-add-row">
+                                    <input id="msb-new-project" type="text" maxlength="60" placeholder="新專案名稱">
+                                    <button type="button" id="msb-add-project" class="msb-btn msb-btn--primary">新增</button>
                                 </div>
-                                <p id="msb-settings-gate-msg" class="msb-msg" role="status"></p>
-                            </form>
-                        </div>
-                        <div id="msb-settings-body" hidden>
-                            <div class="msb-toolbar">
-                                <div class="msb-board-tabs" role="tablist" aria-label="計分表">
-                                    <button type="button" class="is-on" data-msb-board="system">系統會議計分表</button>
-                                    <button type="button" data-msb-board="monthly">月會主管計分表</button>
-                                </div>
-                            </div>
-                            <div class="msb-split">
-                                <div class="msb-card">
-                                    <h3>加分人員</h3>
-                                    <div class="msb-add-row">
-                                        <input id="msb-new-person" type="text" maxlength="40" placeholder="輸入新增人員姓名">
-                                        <button type="button" id="msb-add-person" class="msb-btn msb-btn--primary">＋ 新增人員</button>
-                                    </div>
-                                    <div id="msb-people-list"></div>
-                                </div>
-                                <div class="msb-card">
-                                    <h3>專案區塊</h3>
-                                    <div class="msb-add-row">
-                                        <input id="msb-new-project" type="text" maxlength="60" placeholder="輸入新專案名稱">
-                                        <button type="button" id="msb-add-project" class="msb-btn msb-btn--primary">＋ 新增專案</button>
-                                    </div>
-                                    <div id="msb-projects-list"></div>
-                                </div>
+                                <div id="msb-projects-list"></div>
                             </div>
                         </div>
-                    </section>
-                </div>
+                    </div>
+                </section>
             </div>
 
             <div class="msb-modal" id="msb-modal" hidden>
@@ -7587,15 +7498,15 @@
                 <div class="msb-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="msb-form-title">
                     <div class="msb-modal-head">
                         <div>
-                            <h3 id="msb-form-title">新增加減分</h3>
-                            <p id="msb-modal-board" class="msb-modal-board">系統會議計分表</p>
+                            <h3 id="msb-form-title">加減分</h3>
+                            <p id="msb-modal-board" class="msb-modal-board">系統會議</p>
                         </div>
                         <button type="button" class="msb-modal-x" data-msb-close="1" aria-label="關閉">×</button>
                     </div>
                     <form id="msb-entry-form" class="msb-form" autocomplete="off">
                         <div class="msb-form-grid">
                             <div class="msb-field">
-                                <label class="msb-req" for="msb-person">加分人員</label>
+                                <label class="msb-req" for="msb-person">人員</label>
                                 <select id="msb-person" required></select>
                             </div>
                             <div class="msb-field">
@@ -7603,24 +7514,24 @@
                                 <select id="msb-project" required></select>
                             </div>
                             <div class="msb-field">
-                                <label class="msb-req" for="msb-date">計分日期</label>
+                                <label class="msb-req" for="msb-date">日期</label>
                                 <input id="msb-date" type="date" required>
                             </div>
                             <div class="msb-field">
-                                <label class="msb-req" for="msb-score">分數（減分請輸入負數）</label>
-                                <input id="msb-score" type="number" step="0.01" required placeholder="例如 6 或 -2">
+                                <label class="msb-req" for="msb-score">分數（減分用負數）</label>
+                                <input id="msb-score" type="number" step="0.01" required placeholder="例 6 或 -2">
                             </div>
                             <div class="msb-field" id="msb-session-wrap" hidden>
                                 <label for="msb-session">月會場次</label>
                                 <input id="msb-session" type="text" maxlength="40" placeholder="例：11 月月會">
                             </div>
                             <div class="msb-field">
-                                <label class="msb-req" for="msb-item">加減分項目</label>
+                                <label class="msb-req" for="msb-item">項目</label>
                                 <input id="msb-item" type="text" maxlength="80" required placeholder="例：會議提案">
                             </div>
                             <div class="msb-field msb-field--full">
-                                <label for="msb-note">當天加減分備註</label>
-                                <textarea id="msb-note" maxlength="500" rows="3" placeholder="選填"></textarea>
+                                <label for="msb-note">備註</label>
+                                <textarea id="msb-note" maxlength="500" rows="2" placeholder="選填"></textarea>
                             </div>
                         </div>
                         <p id="msb-form-msg" class="msb-msg" role="status"></p>
@@ -7637,8 +7548,8 @@
                 <div class="msb-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="msb-month-title">
                     <div class="msb-modal-head">
                         <div>
-                            <h3 id="msb-month-title">輸入分數與獎金</h3>
-                            <p class="msb-modal-board">每人每月一筆，與會議加減分分開。</p>
+                            <h3 id="msb-month-title">分數／獎金</h3>
+                            <p class="msb-modal-board">當月手動分數與獎金（與加減分紀錄分開）</p>
                         </div>
                         <button type="button" class="msb-modal-x" data-msb-month-close="1" aria-label="關閉">×</button>
                     </div>
@@ -7654,11 +7565,11 @@
                             </div>
                             <div class="msb-field">
                                 <label for="msb-month-score">分數</label>
-                                <input id="msb-month-score" type="number" step="0.01" placeholder="尚未評分可留空">
+                                <input id="msb-month-score" type="number" step="0.01" placeholder="可留空">
                             </div>
                             <div class="msb-field">
                                 <label for="msb-month-bonus">獎金</label>
-                                <input id="msb-month-bonus" type="number" min="0" step="1" placeholder="沒發可留空">
+                                <input id="msb-month-bonus" type="number" min="0" step="1" placeholder="可留空">
                             </div>
                             <div class="msb-field">
                                 <label for="msb-month-status">獎金狀態</label>
@@ -7671,37 +7582,13 @@
                             </div>
                             <div class="msb-field msb-field--full">
                                 <label for="msb-month-note">備註</label>
-                                <textarea id="msb-month-note" maxlength="500" rows="3" placeholder="選填"></textarea>
+                                <textarea id="msb-month-note" maxlength="500" rows="2" placeholder="選填"></textarea>
                             </div>
                         </div>
                         <p id="msb-month-msg" class="msb-msg" role="status"></p>
                         <div class="msb-modal-actions">
                             <button type="button" class="msb-btn msb-btn--ghost" data-msb-month-close="1">取消</button>
                             <button type="submit" id="msb-month-save" class="msb-btn msb-btn--primary">儲存</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div class="msb-modal" id="msb-batch-modal" hidden>
-                <div class="msb-modal-backdrop" data-msb-batch-close="1"></div>
-                <div class="msb-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="msb-batch-title">
-                    <div class="msb-modal-head">
-                        <div>
-                            <h3 id="msb-batch-title">批次貼上分數與獎金</h3>
-                            <p class="msb-modal-board">從試算表複製：姓名、分數、獎金、狀態、備註。寫入目前選取的月份。</p>
-                        </div>
-                        <button type="button" class="msb-modal-x" data-msb-batch-close="1" aria-label="關閉">×</button>
-                    </div>
-                    <form id="msb-batch-form" class="msb-form" autocomplete="off">
-                        <label for="msb-batch-text">貼上內容</label>
-                        <textarea id="msb-batch-text" rows="8" placeholder="姓名&#9;分數&#9;獎金&#9;狀態&#9;備註"></textarea>
-                        <p id="msb-batch-preview" class="msb-filter-note"></p>
-                        <p id="msb-batch-msg" class="msb-msg" role="status"></p>
-                        <div class="msb-modal-actions">
-                            <button type="button" class="msb-btn msb-btn--ghost" data-msb-batch-close="1">取消</button>
-                            <button type="button" id="msb-batch-check" class="msb-btn msb-btn--ghost">預覽</button>
-                            <button type="submit" id="msb-batch-save" class="msb-btn msb-btn--primary" disabled>確認寫入</button>
                         </div>
                     </form>
                 </div>
@@ -7725,8 +7612,8 @@
                                 <select id="msb-bind-dept"></select>
                             </div>
                             <div class="msb-field msb-field--full">
-                                <label for="msb-bind-account-q">搜尋在職帳號</label>
-                                <input id="msb-bind-account-q" type="search" placeholder="輸入姓名或帳號關鍵字">
+                                <label for="msb-bind-account-q">搜尋帳號</label>
+                                <input id="msb-bind-account-q" type="search" placeholder="姓名或帳號">
                             </div>
                             <div class="msb-field msb-field--full">
                                 <label for="msb-bind-account">對到帳號</label>
@@ -7744,7 +7631,6 @@
                 </div>
             </div>
         </div>
-
 
         <!-- 專區頁面：業務主管 -->
         <div id="page-biz-supervisor" class="hidden max-w-4xl mx-auto space-y-6">
@@ -14323,7 +14209,7 @@
         <script src="./js/biz-coverage.js?v=20261111-flagx"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
         <script src="./js/fin-report.js?v=20261108-fin62"></script>
-        <script src="./js/meeting-scoreboard.js?v=20261111-msb-dense"></script>
+        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v2"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>
