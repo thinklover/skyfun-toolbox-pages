@@ -210,17 +210,10 @@
       : { rows: [], pending: '待設定' };
 
     if (contracts.building) notices.push('合約資料更新中，目前顯示上一版');
-    if (!extra.imported) notices.push('媒合來源、房屋類型：資料建置中，請先匯入 Excel');
+    if (!extra.imported) notices.push('媒合來源、房屋類型：資料建置中');
     if (!hasTargets || !hasOwners || !hasSettlement) notices.push('目標、預估、結績日、處長對照：待設定');
 
-    var bits = [
-      '合約 ' + tw(contracts.fetchedAt),
-      '人員 ' + tw(staff.fetchedAt),
-      '欠款 ' + tw(arrears.fetchedAt),
-      '續約 ' + tw(renewals.fetchedAt)
-    ];
-    if (extra.importedAt || extra.fetchedAt) bits.push('媒合補充 ' + tw(extra.importedAt || extra.fetchedAt));
-    window.MGR_REPORT_STAMP = bits.join(' · ');
+    window.MGR_REPORT_STAMP = '';
     window.MGR_REPORT_NOTICES = notices.filter(Boolean).join('。');
   }
 
@@ -398,44 +391,18 @@
     }
   }
 
-  function bindImport(user) {
-    var team = String((user && (user.team || user.teamName)) || '').trim();
-    var name = String((user && user.name) || '').trim();
-    var gm = team === '總經理室' || name === '簡為倢' || name === '邱奕棋' || name === '黃怡婷';
-    var btn = $('btnMatchImport');
-    if (!gm || !btn) return;
-    btn.hidden = false;
-    btn.addEventListener('click', function () { $('matchFile').click(); });
-    $('matchFile').addEventListener('change', function () {
-      var file = $('matchFile').files && $('matchFile').files[0];
-      $('matchFile').value = '';
-      if (!file) return;
-      readFile(file).catch(function (err) {
-        window.alert((err && err.message) || '檔案讀不到');
-      });
-    });
-    $('matchPreviewCancel').addEventListener('click', function () {
-      pendingRows = null;
-      $('matchPreview').hidden = true;
-    });
-    $('matchPreviewOk').addEventListener('click', confirmImport);
-  }
-
   async function main() {
     if (window.parent !== window) {
       var back = $('mgrBack');
       if (back) back.hidden = true;
     }
     await waitAuth();
-    var user = window.skyfunAuth && window.skyfunAuth.getUser && window.skyfunAuth.getUser();
     var allowed = window.skyfunAuth && window.skyfunAuth.canEnterBizSupervisor && window.skyfunAuth.canEnterBizSupervisor();
     if (!token() || !allowed) {
       showBlocked('業務主管專區僅限儲備處經理以上使用。');
       return;
     }
-    bindImport(user);
     var notices = [];
-    if ($('updateAt')) $('updateAt').textContent = '資料讀取中…';
     try {
       var pack = {};
       pack.contracts = await loadSafe('/api/mgr-report/contracts', emptyContracts(), '合約', notices);

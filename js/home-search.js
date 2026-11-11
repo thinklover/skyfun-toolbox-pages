@@ -22,7 +22,7 @@
         { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 費用' },
         { page: 'business-system-change', title: '系統欄位更改通報', category: '業務專區', keywords: '系統 欄位 更改 媒合' },
         { page: 'business-bonus', title: '業務獎金辦法', category: '業務專區', keywords: '獎金 高專 星財補 知悉' },
-        { page: 'business-coverage', title: '誠信險', category: '業務主管專區', keywords: '誠信險 投保 電訪 未投保' },
+        { page: 'business-coverage', title: '誠實險', category: '業務主管專區', keywords: '誠實險 誠信險 投保 電訪 未投保' },
         { page: 'business-toolbox', title: '工具箱綁定', category: '業務主管專區', keywords: '工具箱 綁定 未綁定' },
         { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi' },
         { page: 'rentmanager-perf', title: '租管師績效中心', category: '租管師專區', keywords: 'kpi 各地區 週報' },

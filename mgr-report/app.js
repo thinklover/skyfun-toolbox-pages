@@ -9922,7 +9922,6 @@
     const sky = window.SKYFUN_PERF && window.SKYFUN_PERF.fetchedAt;
     const meta = window.CONTRACTS_META || {};
     const stamp = sky || meta.fetchedAt || meta.refreshedAt;
-    if ($('updateAt')) $('updateAt').textContent = window.MGR_REPORT_STAMP || twAt(stamp);
     if ($('dataHint')) $('dataHint').textContent = window.MGR_REPORT_NOTICES || '';
   }
   function renderAll() {

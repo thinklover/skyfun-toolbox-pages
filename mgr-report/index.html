@@ -24,9 +24,6 @@
       <div class="top-actions">
         <a id="mgrBack" href="../index.html" class="update-btn" style="text-decoration:none">← 返回業務主管專區</a>
         <div class="update-wrap">
-          <span class="update-at" id="updateAt"></span>
-          <button type="button" class="update-btn" id="btnMatchImport" hidden>匯入 Excel</button>
-          <input id="matchFile" type="file" accept=".xlsx,.xls,.csv,text/csv" hidden />
           <button type="button" class="update-btn" id="btnUpdate" title="向公司系統重建快照">更新</button>
         </div>
         <button type="button" class="query-btn" id="btnQuery">查詢</button>
@@ -1333,26 +1330,9 @@
     </section>
   </main>
   <div id="toast" class="toast hidden"></div>
-  <style>
-    #matchPreview[hidden] { display: none !important; }
-    #matchPreview { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; display: flex; align-items: center; justify-content: center; padding: 24px; }
-    #matchPreview .box { background: #fff; max-width: 520px; width: 100%; max-height: min(70vh, 520px); overflow: auto; border-radius: 12px; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.2); }
-    #matchPreviewBody { white-space: pre-wrap; font-size: 14px; line-height: 1.55; color: #374151; }
-    #matchPreview .query-btn:disabled { opacity: .4; cursor: not-allowed; }
-  </style>
-  <div id="matchPreview" hidden>
-    <div class="box">
-      <h3 style="margin:0 0 8px">匯入媒合補充資料</h3>
-      <p id="matchPreviewBody" class="note"></p>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-        <button type="button" class="update-btn" id="matchPreviewCancel">取消</button>
-        <button type="button" class="query-btn" id="matchPreviewOk">確認匯入</button>
-      </div>
-    </div>
-  </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js"></script>
   <script src="../js/toolbox-auth.js"></script>
-  <script src="loader.js?v=20261111-lookup"></script>
+  <script src="loader.js?v=20261111-noimport"></script>
 </body>
 </html>
