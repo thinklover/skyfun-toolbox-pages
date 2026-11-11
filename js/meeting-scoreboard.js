@@ -13,6 +13,10 @@
     '彰一處', '投一處', '嘉一處', '南一處', '南二處', '高一處', '高二處'
   ];
   const BACK_OFFICE_DEPTS = ['總經理室', '行政管理部', '財務部', '租賃管理部', '人資部', '資訊部'];
+  const OFFICE_DEPT_ORDER = [
+    '總經理室', '行政管理部', '商辦部', '電服部', '財務部', '整租部',
+    '法務部', '客服部', '租賃管理部', '人資部', '資訊部', '星耀'
+  ];
   /** 桃一／竹一／嘉一算中區；南區僅南一南二；高雄高一高二 */
   const BIZ_ZONES = [
     { id: 'north', label: '北區', re: /^(北[一二三四五]處|基一處|宜一處)$/ },
@@ -177,7 +181,8 @@
     return 800;
   }
   function peopleSortState(side) {
-    const key = side && state.peopleSort[side] ? side : 'office';
+    const key = side || 'office';
+    if (!state.peopleSort[key]) state.peopleSort[key] = { key: '', dir: 'desc' };
     return state.peopleSort[key];
   }
   function bizZoneId(dept) {
@@ -249,7 +254,7 @@
   }
   function togglePeopleSort(key, side) {
     if (!key) return;
-    const sideKey = side && state.peopleSort[side] ? side : 'office';
+    const sideKey = side || 'office';
     const cur = peopleSortState(sideKey);
     if (cur.key === key) {
       cur.dir = cur.dir === 'desc' ? 'asc' : 'desc';
@@ -375,26 +380,65 @@
       ? list.map((p) => peopleRowsHtml(p, edit)).join('')
       : '<tr><td colspan="6" class="msb-empty">尚無人員</td></tr>';
   }
+  function settingsDeptOrder(people) {
+    const names = new Set(people.map((p) => personDept(p) || '未填部別'));
+    const out = [];
+    const push = (d) => { if (names.has(d) && out.indexOf(d) < 0) out.push(d); };
+    OFFICE_DEPT_ORDER.forEach(push);
+    OFFICE_NS.forEach(push);
+    Array.from(names).filter((d) => out.indexOf(d) < 0 && d !== '未填部別')
+      .sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+      .forEach(push);
+    push('未填部別');
+    return out;
+  }
+  function officeDeptList(people) {
+    const names = new Set(people.map((p) => personDept(p) || '未填部別'));
+    const known = OFFICE_DEPT_ORDER.filter((d) => names.has(d));
+    const rest = Array.from(names).filter((d) => d !== '未填部別' && OFFICE_DEPT_ORDER.indexOf(d) < 0)
+      .sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+    const out = known.concat(rest);
+    if (names.has('未填部別')) out.push('未填部別');
+    return out;
+  }
+  function sortHead(label, key, side, extra) {
+    return `<th class="${extra || ''} msb-th-sort" data-msb-sort="${key}" data-msb-sort-side="${esc(side)}" role="columnheader" tabindex="0" title="點擊排序${label}">${label}<span class="msb-sort-mark" aria-hidden="true"></span></th>`;
+  }
+  function peopleTableHtml(side, rows) {
+    const cols = `<colgroup><col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name"><col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act"></colgroup>`;
+    const head = `<tr>${sortHead('部別', 'dept', side, '')}${sortHead('職別', 'title', side, '')}${sortHead('姓名', 'name', side, '')}${sortHead('分數', 'score', side, 'num')}${sortHead('獎金', 'bonus', side, 'num')}<th class="act">操作</th></tr>`;
+    const body = rows.length
+      ? rows.map((p) => peopleRowsHtml(p, state.canEdit)).join('')
+      : '<tr><td colspan="6" class="msb-empty">尚無人員</td></tr>';
+    return `<div class="msb-table-panel"><div class="msb-table-head"><table class="msb-table msb-table--people">${cols}<thead>${head}</thead></table></div><div class="msb-table-wrap msb-table-wrap--zone-sm"><table class="msb-table msb-table--people">${cols}<tbody>${body}</tbody></table></div></div>`;
+  }
   function renderPeopleTable() {
-    const officeBody = $('msb-people-body-office');
+    const officeHost = $('msb-office-zones');
     const note = $('msb-score-month-note');
     const selfBox = $('msb-self');
-    if (!officeBody) return;
+    if (!officeHost) return;
     const month = state.scoreMonth || state.month || currentMonth();
     if (note) {
-      note.textContent = '分數與獎金為 ' + month + ' 手動輸入。點列可展開加減分明細；業務分北／中／南／高雄（桃一、竹一、嘉一屬中區）。';
+      note.textContent = '分數與獎金為 ' + month + ' 手動輸入。點列可展開加減分明細；業務分北／中／南／高雄，內勤依部別分區。';
     }
     if (selfBox) {
       selfBox.hidden = true;
       selfBox.innerHTML = '';
     }
     const list = filteredPeople();
-    const edit = state.canEdit;
-    const office = sortPeopleList(
-      list.filter((p) => !isBizDept(personDept(p))),
-      peopleSortState('office')
-    );
-    fillPeopleBody(officeBody, office, edit);
+    const officePeople = list.filter((p) => !isBizDept(personDept(p)));
+    const depts = officeDeptList(officePeople);
+    officeHost.innerHTML = depts.length ? depts.map((dept) => {
+      const side = 'off-' + dept;
+      const rows = sortPeopleList(
+        officePeople.filter((p) => (personDept(p) || '未填部別') === dept),
+        peopleSortState(side)
+      );
+      return `<div class="msb-zone msb-zone--office" data-msb-zone="office">
+        <div class="msb-zone-head"><h4 class="msb-zone-title">${esc(dept)}</h4><span class="msb-zone-kicker">部別</span><span class="msb-zone-meta">${rows.length} 人</span></div>
+        ${peopleTableHtml(side, rows)}
+      </div>`;
+    }).join('') : '<p class="msb-empty">尚無內勤人員</p>';
     BIZ_ZONES.forEach((z) => {
       const body = $('msb-people-body-biz-' + z.id);
       const zoneList = sortPeopleList(
@@ -441,15 +485,32 @@
   function renderSettings() {
     const peopleBox = $('msb-people-list');
     if (peopleBox) {
-      peopleBox.innerHTML = (state.people || []).length
-        ? '<ul class="msb-plain-list">' + state.people.map((p) => {
-          const title = personTitle(p);
-          const titleBit = title && title !== '其他' ? ' · ' + esc(title) : '';
-          return `<li><span>${esc(p.name)}${personDept(p) ? ' · ' + esc(personDept(p)) : ''}${titleBit}</span>
-            <button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">修改</button>
-            <button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></li>`;
-        }).join('') + '</ul>'
-        : '<p class="msb-empty">尚無人員</p>';
+      const people = state.people || [];
+      if (!people.length) {
+        peopleBox.innerHTML = '<p class="msb-empty">尚無人員</p>';
+      } else {
+        const allDepts = settingsDeptOrder(people);
+        peopleBox.innerHTML = allDepts.map((dept) => {
+          const rows = people.filter((p) => (personDept(p) || '未填部別') === dept)
+            .slice().sort((a, b) => titleRank(a) - titleRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'));
+          return `<section class="msb-detail">
+            <header class="msb-detail-head"><b>${esc(dept)}</b><span>${rows.length} 人</span></header>
+            <div class="msb-detail-table-wrap"><table class="msb-detail-table">
+              <thead><tr><th>職別</th><th>姓名</th><th>部別</th><th></th></tr></thead>
+              <tbody>${rows.map((p) => {
+                const title = personTitle(p);
+                const titleShow = title && title !== '其他' ? title : '—';
+                return `<tr>
+                  <td>${esc(titleShow)}</td>
+                  <td class="msb-detail-name">${esc(p.name)}</td>
+                  <td>${esc(personDept(p) || '—')}</td>
+                  <td class="msb-detail-act"><button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">修改</button><button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></td>
+                </tr>`;
+              }).join('')}</tbody>
+            </table></div>
+          </section>`;
+        }).join('');
+      }
     }
     renderEditors();
   }
