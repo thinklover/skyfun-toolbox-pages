@@ -1,5 +1,5 @@
 -- 會議計分：加減分改由名單決定。簡為倢、邱奕棋、蘇崇瑋在設定頁勾選。
--- 第一次建立時，把目前職稱規則可編輯的在職帳號先放進名單，避免一次全關掉。
+-- 權限預設空白。設定頁搜尋姓名後勾選，才會寫進名單。
 
 create table if not exists public.msb_score_editors (
   account_id uuid primary key references public.toolbox_accounts(id) on delete cascade,
@@ -8,13 +8,6 @@ create table if not exists public.msb_score_editors (
 
 alter table public.msb_score_editors enable row level security;
 revoke all on public.msb_score_editors from public, anon, authenticated;
-
-insert into public.msb_score_editors (account_id)
-select a.id
-from public.toolbox_accounts a
-where a.status = 'active'
-  and public.msb_can_edit(trim(coalesce(a.team, '')), trim(coalesce(a.job_title, '')))
-on conflict (account_id) do nothing;
 
 create or replace function public.msb_actor(
   p_uid uuid,

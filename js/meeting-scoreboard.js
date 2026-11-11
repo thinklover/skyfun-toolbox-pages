@@ -550,10 +550,9 @@
   }
   function editorRows() {
     const q = String(state.editorQuery || '').trim().toLowerCase();
-    return (state.editors || []).filter((a) => {
-      if (!q) return true;
-      return [a.name, a.team, a.title].join(' ').toLowerCase().includes(q);
-    });
+    const all = (state.editors || []).filter((a) => String(a.name || '').replace(/\s+/g, '') !== '許子緯');
+    if (!q) return all.filter((a) => a.on);
+    return all.filter((a) => [a.name, a.team, a.title].join(' ').toLowerCase().includes(q));
   }
   function renderEditors() {
     const box = $('msb-editors');
@@ -561,13 +560,16 @@
     box.hidden = !state.canManage;
     const list = $('msb-editors-list');
     if (!list || !state.canManage) return;
+    const q = String(state.editorQuery || '').trim();
     const rows = editorRows();
-    list.innerHTML = rows.length
-      ? rows.map((a) => `<label class="msb-editor-row">
+    if (!rows.length) {
+      list.innerHTML = '<p class="msb-empty">' + (q ? '沒有符合的帳號' : '目前沒有人有加減分權限。搜尋姓名後勾選，才會開啟。') + '</p>';
+      return;
+    }
+    list.innerHTML = rows.map((a) => `<label class="msb-editor-row">
           <input type="checkbox" data-msb-editor="${esc(a.id)}" ${a.on ? 'checked' : ''}>
           <span><b>${esc(a.name || '未命名')}</b><small>${esc([a.team, a.title].filter(Boolean).join(' · ') || '未填單位')}</small></span>
-        </label>`).join('')
-      : '<p class="msb-empty">沒有符合的帳號</p>';
+        </label>`).join('');
   }
   async function loadEditors() {
     if (!state.canManage) return;
