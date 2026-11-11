@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261109-center">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
 <link rel="stylesheet" href="./css/fin-report.css?v=20261108-fin62">
-<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v18">
+<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v19">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -7409,9 +7409,9 @@
                     </div>
                     <div id="msb-self" class="msb-self" hidden></div>
                     <div class="msb-dual" id="msb-people-dual">
-                        <section class="msb-dual-col" aria-label="內勤單位">
+                        <section class="msb-dual-col msb-dual-col--office" aria-label="內勤單位">
                             <h3 class="msb-dual-title">內勤單位</h3>
-                            <div class="msb-table-panel">
+                            <div class="msb-table-panel" data-msb-panel-side="office">
                                 <div class="msb-table-head">
                                     <table class="msb-table msb-table--people">
                                         <colgroup>
@@ -7430,7 +7430,7 @@
                                         </thead>
                                     </table>
                                 </div>
-                                <div class="msb-table-wrap">
+                                <div class="msb-table-wrap msb-table-wrap--tall">
                                     <table class="msb-table msb-table--people">
                                         <colgroup>
                                             <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
@@ -7441,35 +7441,136 @@
                                 </div>
                             </div>
                         </section>
-                        <section class="msb-dual-col" aria-label="業務單位">
+                        <section class="msb-dual-col msb-dual-col--biz" aria-label="業務單位">
                             <h3 class="msb-dual-title">業務單位</h3>
-                            <div class="msb-table-panel">
-                                <div class="msb-table-head">
-                                    <table class="msb-table msb-table--people">
-                                        <colgroup>
-                                            <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
-                                            <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
-                                        </colgroup>
-                                        <thead>
-                                            <tr>
-                                                <th class="msb-th-sort" data-msb-sort="dept" data-msb-sort-side="biz" role="columnheader" tabindex="0" title="點擊排序部別">部別<span class="msb-sort-mark" aria-hidden="true"></span></th>
-                                                <th class="msb-th-sort" data-msb-sort="title" data-msb-sort-side="biz" role="columnheader" tabindex="0" title="點擊排序職別">職別<span class="msb-sort-mark" aria-hidden="true"></span></th>
-                                                <th class="msb-th-sort" data-msb-sort="name" data-msb-sort-side="biz" role="columnheader" tabindex="0" title="點擊排序姓名">姓名<span class="msb-sort-mark" aria-hidden="true"></span></th>
-                                                <th class="num msb-th-sort" data-msb-sort="score" data-msb-sort-side="biz" role="columnheader" tabindex="0" title="點擊排序分數">分數<span class="msb-sort-mark" aria-hidden="true"></span></th>
-                                                <th class="num msb-th-sort" data-msb-sort="bonus" data-msb-sort-side="biz" role="columnheader" tabindex="0" title="點擊排序獎金">獎金<span class="msb-sort-mark" aria-hidden="true"></span></th>
-                                                <th class="act msb-edit-only">操作</th>
-                                            </tr>
-                                        </thead>
-                                    </table>
+                            <div class="msb-biz-zones" id="msb-biz-zones">
+                                <div class="msb-zone msb-zone--lg" data-msb-zone="north">
+                                    <div class="msb-zone-head"><span class="msb-zone-dot"></span><h4 class="msb-zone-title">北區</h4></div>
+                                    <div class="msb-table-panel">
+                                        <div class="msb-table-head">
+                                            <table class="msb-table msb-table--people">
+                                                <colgroup>
+                                                    <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
+                                                    <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
+                                                </colgroup>
+                                                <thead>
+                                                    <tr>
+                                                        <th class="msb-th-sort" data-msb-sort="dept" data-msb-sort-side="biz-north" role="columnheader" tabindex="0" title="點擊排序部別">部別<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="msb-th-sort" data-msb-sort="title" data-msb-sort-side="biz-north" role="columnheader" tabindex="0" title="點擊排序職別">職別<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="msb-th-sort" data-msb-sort="name" data-msb-sort-side="biz-north" role="columnheader" tabindex="0" title="點擊排序姓名">姓名<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="num msb-th-sort" data-msb-sort="score" data-msb-sort-side="biz-north" role="columnheader" tabindex="0" title="點擊排序分數">分數<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="num msb-th-sort" data-msb-sort="bonus" data-msb-sort-side="biz-north" role="columnheader" tabindex="0" title="點擊排序獎金">獎金<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="act msb-edit-only">操作</th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+                                        </div>
+                                        <div class="msb-table-wrap msb-table-wrap--zone-lg">
+                                            <table class="msb-table msb-table--people">
+                                                <colgroup>
+                                                    <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
+                                                    <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
+                                                </colgroup>
+                                                <tbody id="msb-people-body-biz-north"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="msb-table-wrap">
-                                    <table class="msb-table msb-table--people">
-                                        <colgroup>
-                                            <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
-                                            <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
-                                        </colgroup>
-                                        <tbody id="msb-people-body-biz"></tbody>
-                                    </table>
+                                <div class="msb-zone msb-zone--lg" data-msb-zone="central">
+                                    <div class="msb-zone-head"><span class="msb-zone-dot"></span><h4 class="msb-zone-title">中區</h4></div>
+                                    <div class="msb-table-panel">
+                                        <div class="msb-table-head">
+                                            <table class="msb-table msb-table--people">
+                                                <colgroup>
+                                                    <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
+                                                    <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
+                                                </colgroup>
+                                                <thead>
+                                                    <tr>
+                                                        <th class="msb-th-sort" data-msb-sort="dept" data-msb-sort-side="biz-central" role="columnheader" tabindex="0" title="點擊排序部別">部別<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="msb-th-sort" data-msb-sort="title" data-msb-sort-side="biz-central" role="columnheader" tabindex="0" title="點擊排序職別">職別<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="msb-th-sort" data-msb-sort="name" data-msb-sort-side="biz-central" role="columnheader" tabindex="0" title="點擊排序姓名">姓名<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="num msb-th-sort" data-msb-sort="score" data-msb-sort-side="biz-central" role="columnheader" tabindex="0" title="點擊排序分數">分數<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="num msb-th-sort" data-msb-sort="bonus" data-msb-sort-side="biz-central" role="columnheader" tabindex="0" title="點擊排序獎金">獎金<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="act msb-edit-only">操作</th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+                                        </div>
+                                        <div class="msb-table-wrap msb-table-wrap--zone-lg">
+                                            <table class="msb-table msb-table--people">
+                                                <colgroup>
+                                                    <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
+                                                    <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
+                                                </colgroup>
+                                                <tbody id="msb-people-body-biz-central"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="msb-zone msb-zone--sm" data-msb-zone="south">
+                                    <div class="msb-zone-head"><span class="msb-zone-dot"></span><h4 class="msb-zone-title">南區</h4></div>
+                                    <div class="msb-table-panel">
+                                        <div class="msb-table-head">
+                                            <table class="msb-table msb-table--people">
+                                                <colgroup>
+                                                    <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
+                                                    <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
+                                                </colgroup>
+                                                <thead>
+                                                    <tr>
+                                                        <th class="msb-th-sort" data-msb-sort="dept" data-msb-sort-side="biz-south" role="columnheader" tabindex="0" title="點擊排序部別">部別<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="msb-th-sort" data-msb-sort="title" data-msb-sort-side="biz-south" role="columnheader" tabindex="0" title="點擊排序職別">職別<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="msb-th-sort" data-msb-sort="name" data-msb-sort-side="biz-south" role="columnheader" tabindex="0" title="點擊排序姓名">姓名<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="num msb-th-sort" data-msb-sort="score" data-msb-sort-side="biz-south" role="columnheader" tabindex="0" title="點擊排序分數">分數<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="num msb-th-sort" data-msb-sort="bonus" data-msb-sort-side="biz-south" role="columnheader" tabindex="0" title="點擊排序獎金">獎金<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="act msb-edit-only">操作</th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+                                        </div>
+                                        <div class="msb-table-wrap msb-table-wrap--zone-sm">
+                                            <table class="msb-table msb-table--people">
+                                                <colgroup>
+                                                    <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
+                                                    <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
+                                                </colgroup>
+                                                <tbody id="msb-people-body-biz-south"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="msb-zone msb-zone--sm" data-msb-zone="kh">
+                                    <div class="msb-zone-head"><span class="msb-zone-dot"></span><h4 class="msb-zone-title">高雄</h4></div>
+                                    <div class="msb-table-panel">
+                                        <div class="msb-table-head">
+                                            <table class="msb-table msb-table--people">
+                                                <colgroup>
+                                                    <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
+                                                    <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
+                                                </colgroup>
+                                                <thead>
+                                                    <tr>
+                                                        <th class="msb-th-sort" data-msb-sort="dept" data-msb-sort-side="biz-kh" role="columnheader" tabindex="0" title="點擊排序部別">部別<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="msb-th-sort" data-msb-sort="title" data-msb-sort-side="biz-kh" role="columnheader" tabindex="0" title="點擊排序職別">職別<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="msb-th-sort" data-msb-sort="name" data-msb-sort-side="biz-kh" role="columnheader" tabindex="0" title="點擊排序姓名">姓名<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="num msb-th-sort" data-msb-sort="score" data-msb-sort-side="biz-kh" role="columnheader" tabindex="0" title="點擊排序分數">分數<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="num msb-th-sort" data-msb-sort="bonus" data-msb-sort-side="biz-kh" role="columnheader" tabindex="0" title="點擊排序獎金">獎金<span class="msb-sort-mark" aria-hidden="true"></span></th>
+                                                        <th class="act msb-edit-only">操作</th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+                                        </div>
+                                        <div class="msb-table-wrap msb-table-wrap--zone-sm">
+                                            <table class="msb-table msb-table--people">
+                                                <colgroup>
+                                                    <col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name">
+                                                    <col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act">
+                                                </colgroup>
+                                                <tbody id="msb-people-body-biz-kh"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </section>
@@ -14236,7 +14337,7 @@
         <script src="./js/biz-coverage.js?v=20261111-callwide2"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
         <script src="./js/fin-report.js?v=20261108-fin62"></script>
-        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v18"></script>
+        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v19"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>

@@ -13,6 +13,13 @@
     '彰一處', '投一處', '嘉一處', '南一處', '南二處', '高一處', '高二處'
   ];
   const BACK_OFFICE_DEPTS = ['總經理室', '行政管理部', '財務部', '租賃管理部', '人資部', '資訊部'];
+  /** 桃一／竹一／嘉一算中區；南區僅南一南二；高雄高一高二 */
+  const BIZ_ZONES = [
+    { id: 'north', label: '北區', re: /^(北[一二三四五]處|基一處|宜一處)$/ },
+    { id: 'central', label: '中區', re: /^(桃一處|竹一處|中[一二三四五六]處|彰一處|投一處|嘉一處)$/ },
+    { id: 'south', label: '南區', re: /^(南[一二]處)$/ },
+    { id: 'kh', label: '高雄', re: /^(高[一二]處)$/ }
+  ];
 
   const state = {
     view: 'dash',
@@ -35,8 +42,14 @@
     bindPersonId: null,
     accountOptions: [],
     bound: false,
-    peopleSortOffice: { key: '', dir: 'desc' },
-    peopleSortBiz: { key: '', dir: 'desc' }
+    expandedPersonId: '',
+    peopleSort: {
+      office: { key: '', dir: 'desc' },
+      'biz-north': { key: '', dir: 'desc' },
+      'biz-central': { key: '', dir: 'desc' },
+      'biz-south': { key: '', dir: 'desc' },
+      'biz-kh': { key: '', dir: 'desc' }
+    }
   };
 
   function $(id) { return document.getElementById(id); }
@@ -152,7 +165,13 @@
     return 800;
   }
   function peopleSortState(side) {
-    return side === 'biz' ? state.peopleSortBiz : state.peopleSortOffice;
+    const key = side && state.peopleSort[side] ? side : 'office';
+    return state.peopleSort[key];
+  }
+  function bizZoneId(dept) {
+    const d = String(dept || '').trim();
+    const hit = BIZ_ZONES.find((z) => z.re.test(d));
+    return hit ? hit.id : 'central';
   }
   function sortPeopleList(list, sortState) {
     const { key, dir } = sortState || {};
@@ -206,7 +225,7 @@
   }
   function syncPeopleSortHeaders() {
     document.querySelectorAll('#page-meeting-scoreboard th[data-msb-sort]').forEach((th) => {
-      const side = th.getAttribute('data-msb-sort-side') === 'biz' ? 'biz' : 'office';
+      const side = th.getAttribute('data-msb-sort-side') || 'office';
       const { key, dir } = peopleSortState(side) || {};
       const k = th.getAttribute('data-msb-sort');
       const on = k === key;
@@ -218,17 +237,43 @@
   }
   function togglePeopleSort(key, side) {
     if (!key) return;
-    const sideKey = side === 'biz' ? 'biz' : 'office';
+    const sideKey = side && state.peopleSort[side] ? side : 'office';
     const cur = peopleSortState(sideKey);
     if (cur.key === key) {
       cur.dir = cur.dir === 'desc' ? 'asc' : 'desc';
     } else {
       const numeric = key === 'score' || key === 'bonus';
-      const next = { key, dir: numeric ? 'desc' : 'asc' };
-      if (sideKey === 'biz') state.peopleSortBiz = next;
-      else state.peopleSortOffice = next;
+      state.peopleSort[sideKey] = { key, dir: numeric ? 'desc' : 'asc' };
     }
     renderPeopleTable();
+  }
+  function personEntries(personId) {
+    const id = String(personId || '');
+    const month = state.scoreMonth || state.month || currentMonth();
+    const src = (state.entries && state.entries.length) ? state.entries : (state.recordsEntries || []);
+    return src.filter((e) => {
+      if (String(e.personId) !== id) return false;
+      const d = String(e.scoreDate || '').slice(0, 7);
+      return !month || d === month;
+    }).sort((a, b) => String(b.scoreDate || '').localeCompare(String(a.scoreDate || '')));
+  }
+  function detailRowHtml(p) {
+    const list = personEntries(p.id);
+    const body = list.length
+      ? `<ul class="msb-detail-list">${list.map((e) => {
+          const score = Number(e.score);
+          const cls = score > 0 ? 'pos' : (score < 0 ? 'neg' : '');
+          return `<li>
+            <span class="msb-detail-date">${esc(fmtDate(e.scoreDate))}</span>
+            <span class="msb-detail-item">${esc(e.item || e.projectName || '加減分')}</span>
+            <span class="msb-detail-score ${cls}">${esc(manualScoreText(e.score))}</span>
+            <span class="msb-detail-note">${esc(e.note || '')}</span>
+          </li>`;
+        }).join('')}</ul>`
+      : '<p class="msb-detail-empty">本月尚無加減分明細</p>';
+    return `<tr class="msb-detail-row" data-msb-detail-for="${esc(p.id)}">
+      <td colspan="6"><div class="msb-detail-sheet">${body}</div></td>
+    </tr>`;
   }
   function mountModal(el) {
     if (!el || !document.body) return;
@@ -287,21 +332,23 @@
     }
     return list;
   }
-  function peopleRowHtml(p, edit) {
+  function peopleRowsHtml(p, edit) {
     const dept = personDept(p) || '—';
     const title = personTitle(p);
     const titleShow = title && title !== '其他' ? title : '—';
+    const open = String(state.expandedPersonId) === String(p.id);
     const marks = [
       isMine(p) ? '<span class="msb-you">你</span>' : '',
-      !personDept(p) ? '<span class="msb-chip">未填部別</span>' : ''
+      !personDept(p) ? '<span class="msb-chip">未填部別</span>' : '',
+      open ? '<span class="msb-chip msb-chip--on">明細</span>' : ''
     ].filter(Boolean).join(' ');
     const acts = edit
       ? `<td class="act">
-          <button type="button" class="msb-icon-btn is-plus" data-msb-add="${esc(p.id)}" title="加分">＋</button>
-          <button type="button" class="msb-icon-btn is-minus" data-msb-add="${esc(p.id)}" data-msb-minus="1" title="減分">－</button>
+          <button type="button" class="msb-act-btn is-plus" data-msb-add="${esc(p.id)}">加分</button>
+          <button type="button" class="msb-act-btn is-minus" data-msb-add="${esc(p.id)}" data-msb-minus="1">減分</button>
         </td>`
-      : '';
-    return `<tr>
+      : '<td class="act"></td>';
+    const main = `<tr class="msb-person-row${open ? ' is-open' : ''}" data-msb-expand="${esc(p.id)}" tabindex="0">
       <td>${esc(dept)}</td>
       <td class="msb-title-cell">${esc(titleShow)}</td>
       <td><span class="msb-name">${esc(p.name)}</span> ${marks}</td>
@@ -309,20 +356,22 @@
       <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${bonusCellHtml(p)}</button></td>
       ${acts}
     </tr>`;
+    return open ? main + detailRowHtml(p) : main;
+  }
+  function fillPeopleBody(el, list, edit) {
+    if (!el) return;
+    el.innerHTML = list.length
+      ? list.map((p) => peopleRowsHtml(p, edit)).join('')
+      : '<tr><td colspan="6" class="msb-empty">尚無人員</td></tr>';
   }
   function renderPeopleTable() {
     const officeBody = $('msb-people-body-office');
-    const bizBody = $('msb-people-body-biz');
     const note = $('msb-score-month-note');
     const selfBox = $('msb-self');
-    if (!officeBody || !bizBody) return;
+    if (!officeBody) return;
     const month = state.scoreMonth || state.month || currentMonth();
     if (note) {
-      const anySorted = !!(state.peopleSortOffice.key || state.peopleSortBiz.key);
-      const sortHint = anySorted
-        ? '左右表頭可各自排序（再點切換升／降冪）。'
-        : '左右表頭可各自排序；預設職等 → 北到南。';
-      note.textContent = '分數與獎金為 ' + month + ' 手動輸入；＋／－寫入加減分紀錄。' + sortHint;
+      note.textContent = '分數與獎金為 ' + month + ' 手動輸入。點列可展開加減分明細；業務分北／中／南／高雄（桃一、竹一、嘉一屬中區）。';
     }
     if (selfBox) {
       selfBox.hidden = true;
@@ -334,16 +383,15 @@
       list.filter((p) => !isBizDept(personDept(p))),
       peopleSortState('office')
     );
-    const biz = sortPeopleList(
-      list.filter((p) => isBizDept(personDept(p))),
-      peopleSortState('biz')
-    );
-    officeBody.innerHTML = office.length
-      ? office.map((p) => peopleRowHtml(p, edit)).join('')
-      : '<tr><td colspan="6" class="msb-empty">尚無內勤人員</td></tr>';
-    bizBody.innerHTML = biz.length
-      ? biz.map((p) => peopleRowHtml(p, edit)).join('')
-      : '<tr><td colspan="6" class="msb-empty">尚無業務人員</td></tr>';
+    fillPeopleBody(officeBody, office, edit);
+    BIZ_ZONES.forEach((z) => {
+      const body = $('msb-people-body-biz-' + z.id);
+      const zoneList = sortPeopleList(
+        list.filter((p) => isBizDept(personDept(p)) && bizZoneId(personDept(p)) === z.id),
+        peopleSortState('biz-' + z.id)
+      );
+      fillPeopleBody(body, zoneList, edit);
+    });
     syncPeopleSortHeaders();
   }
   function filteredRecords() {
@@ -692,6 +740,13 @@
       const scorePerson = e.target.closest('[data-msb-score-person]');
       if (scorePerson && state.canEdit) {
         openMonthModal(scorePerson.getAttribute('data-msb-score-person'));
+        return;
+      }
+      const expandRow = e.target.closest('tr[data-msb-expand]');
+      if (expandRow && !e.target.closest('button, a, input, select, textarea, label')) {
+        const pid = expandRow.getAttribute('data-msb-expand') || '';
+        state.expandedPersonId = String(state.expandedPersonId) === String(pid) ? '' : pid;
+        renderPeopleTable();
         return;
       }
       const bindBtn = e.target.closest('[data-msb-bind]');
