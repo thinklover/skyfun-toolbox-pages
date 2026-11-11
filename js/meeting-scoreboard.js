@@ -414,7 +414,7 @@
       title: dept,
       rows: officePeople.filter((p) => (personDept(p) || '未填部別') === dept)
     }));
-    return biz.concat(office);
+    return { biz, office };
   }
   function officeDeptList(people) {
     const names = new Set(people.map((p) => personDept(p) || '未填部別'));
@@ -538,31 +538,35 @@
         peopleBox.innerHTML = '<p class="msb-empty">尚無人員</p>';
       } else {
         const groups = settingsGroups(people);
-        peopleBox.innerHTML = `<div class="msb-org-groups">${groups.map((g) => {
-          const rows = g.rows.slice().sort((a, b) => titleRank(a) - titleRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'));
-          return `<section class="msb-org-group">
-            <header class="msb-org-head">${esc(g.title)}</header>
-            <div class="msb-org-stats">現有 <b>${rows.length}</b> 人</div>
-            <div class="msb-org-table-wrap"><table class="msb-org-table">
-              <thead><tr><th>狀態</th><th>姓名／職稱</th><th>部別</th><th>營業處</th><th></th></tr></thead>
-              <tbody>${rows.map((p) => {
-                const title = personTitle(p);
-                const titleShow = title && title !== '其他' ? title : '';
-                const dept = personDept(p);
-                const biz = isBizDept(dept);
-                const area = biz ? (BIZ_ZONES.find((z) => z.id === bizZoneId(dept)) || {}).label || '—' : (dept || '—');
-                const office = biz ? dept : '—';
-                return `<tr>
-                  <td class="msb-org-st">在職</td>
-                  <td class="msb-org-name"><b>${esc(p.name)}</b>${titleShow ? `<small>${esc(titleShow)}</small>` : ''}</td>
-                  <td>${esc(area)}</td>
-                  <td>${esc(office)}</td>
-                  <td class="msb-org-act"><button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">修改</button><button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></td>
-                </tr>`;
-              }).join('')}</tbody>
-            </table></div>
-          </section>`;
-        }).join('')}</div>`;
+        const block = (title, list) => `<section class="msb-org-block">
+          <h4 class="msb-org-block-title">${title}</h4>
+          ${list.length ? `<div class="msb-org-groups">${list.map((g) => {
+            const rows = g.rows.slice().sort((a, b) => titleRank(a) - titleRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'));
+            return `<section class="msb-org-group">
+              <header class="msb-org-head">${esc(g.title)}</header>
+              <div class="msb-org-stats">現有 <b>${rows.length}</b> 人</div>
+              <div class="msb-org-table-wrap"><table class="msb-org-table">
+                <thead><tr><th>狀態</th><th>姓名／職稱</th><th>部別</th><th>營業處</th><th></th></tr></thead>
+                <tbody>${rows.map((p) => {
+                  const titleText = personTitle(p);
+                  const titleShow = titleText && titleText !== '其他' ? titleText : '';
+                  const dept = personDept(p);
+                  const biz = isBizDept(dept);
+                  const area = biz ? (BIZ_ZONES.find((z) => z.id === bizZoneId(dept)) || {}).label || '—' : (dept || '—');
+                  const office = biz ? dept : '—';
+                  return `<tr>
+                    <td class="msb-org-st">在職</td>
+                    <td class="msb-org-name"><b>${esc(p.name)}</b>${titleShow ? `<small>${esc(titleShow)}</small>` : ''}</td>
+                    <td>${esc(area)}</td>
+                    <td>${esc(office)}</td>
+                    <td class="msb-org-act"><button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">修改</button><button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></td>
+                  </tr>`;
+                }).join('')}</tbody>
+              </table></div>
+            </section>`;
+          }).join('')}</div>` : '<p class="msb-empty">尚無人員</p>'}
+        </section>`;
+        peopleBox.innerHTML = block('業務單位', groups.biz) + block('內勤單位', groups.office);
       }
     }
     renderEditors();
@@ -659,6 +663,15 @@
     renderRecords();
     renderSettings();
   }
+  async function loadYearEntries(year) {
+    try {
+      const all = await fetchList(year + '-01|all');
+      if (state.span !== 'year' || state.year !== year) return;
+      state.entries = (all.entries || []).filter((e) => String(e.scoreDate || '').slice(0, 4) === year);
+      if (state.view !== 'records') state.recordsEntries = state.entries.slice();
+      if (state.expandedPersonId) renderPeopleTable();
+    } catch (_) { /* 年度總表先顯示，明細晚一點補上 */ }
+  }
   async function fetchList(month) {
     const res = await rpc('msb_list', { p_token: token(), p_board: state.board, p_month: month });
     if (!res?.ok) throw new Error(res?.error || '載入失敗');
@@ -671,7 +684,7 @@
       const yearMode = state.span === 'year';
       const year = state.year || currentMonth().slice(0, 4);
       const month = yearMode ? (year + '-01') : (state.month || currentMonth());
-      const dash = await fetchList(yearMode ? (month + '|all') : month);
+      const dash = await fetchList(month);
       state.serverScoped = Object.prototype.hasOwnProperty.call(dash, 'canViewAll');
       const me = window.skyfunAuth?.getUser?.() || {};
       state.canViewAll = state.serverScoped ? !!dash.canViewAll : !!window.skyfunAuth?.canViewAllScores?.(me);
@@ -702,9 +715,8 @@
         });
         state.projects = [...map.values()];
       }
-      state.entries = yearMode
-        ? (dash.entries || []).filter((e) => String(e.scoreDate || '').slice(0, 4) === year)
-        : (dash.entries || []);
+      state.entries = yearMode ? [] : (dash.entries || []);
+      if (yearMode) void loadYearEntries(year);
       if (!state.serverScoped && !state.canViewAll) {
         state.people = [];
         state.projects = [];
@@ -1029,9 +1041,11 @@
       state.year = y;
       await reload();
     });
+    let staffSearchTimer = null;
     $('msb-staff-q')?.addEventListener('input', () => {
       state.q = $('msb-staff-q')?.value || '';
-      renderPeopleTable();
+      clearTimeout(staffSearchTimer);
+      staffSearchTimer = setTimeout(renderPeopleTable, 160);
     });
     let bindSearchTimer = null;
     $('msb-bind-account-q')?.addEventListener('input', () => {

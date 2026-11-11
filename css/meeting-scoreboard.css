@@ -201,6 +201,13 @@
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+3) .msb-zone-head { background: #fbf3e4; }
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+4) .msb-zone-head { background: #f6e8ef; }
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+5) .msb-zone-head { background: #e8eef6; }
+#page-meeting-scoreboard .msb-org-block { margin: 0 0 1.1rem; }
+#page-meeting-scoreboard .msb-org-block-title {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
 #page-meeting-scoreboard .msb-org-groups {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
