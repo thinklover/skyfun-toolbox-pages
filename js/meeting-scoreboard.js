@@ -4,10 +4,15 @@
 (function () {
   'use strict';
 
-  const SETTINGS_GATE_KEY = 'msb-settings-unlocked';
   /** 單一總表（不再分系統會議／月會主管） */
   const TOTAL_BOARD = 'all';
   const WRITE_BOARD = 'system';
+  const OFFICE_NS = [
+    '北一處', '北二處', '北三處', '北四處', '北五處', '基一處', '宜一處',
+    '桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處',
+    '彰一處', '投一處', '嘉一處', '南一處', '南二處', '高一處', '高二處'
+  ];
+  const BACK_OFFICE_DEPTS = ['總經理室', '行政管理部', '財務部', '租賃管理部', '人資部', '資訊部'];
 
   const state = {
     view: 'dash',
@@ -87,30 +92,14 @@
     return esc(manualScoreText(v));
   }
   function personDept(p) { return String(p?.department || '').trim(); }
+  function personTitle(p) { return String(p?.title || p?.jobTitle || '').trim(); }
   function isMine(p) {
     return !!(state.viewerId && p && p.accountId && String(p.accountId) === String(state.viewerId));
-  }
-  function settingsUnlocked() {
-    try { return sessionStorage.getItem(SETTINGS_GATE_KEY) === '1'; } catch (_) { return false; }
-  }
-  function setSettingsUnlocked(on) {
-    try {
-      if (on) sessionStorage.setItem(SETTINGS_GATE_KEY, '1');
-      else sessionStorage.removeItem(SETTINGS_GATE_KEY);
-    } catch (_) { /* ignore */ }
-  }
-  function syncSettingsGate() {
-    const open = settingsUnlocked();
-    if ($('msb-settings-lock')) $('msb-settings-lock').hidden = !!open;
-    if ($('msb-settings-body')) $('msb-settings-body').hidden = !open;
   }
   function applyAccess() {
     document.querySelectorAll('#page-meeting-scoreboard .msb-edit-only').forEach((el) => {
       el.hidden = !state.canEdit;
     });
-  }
-  function syncBoardTabs() {
-    if ($('msb-session-wrap')) $('msb-session-wrap').hidden = true;
   }
   function personBoard(p) {
     const b = String(p?.board || '').trim();
@@ -120,6 +109,48 @@
     const p = (state.people || []).find((x) => String(x.id) === String(personId));
     return p ? personBoard(p) : WRITE_BOARD;
   }
+  function isBizDept(dept) {
+    const d = String(dept || '').trim();
+    if (!d) return false;
+    if (BACK_OFFICE_DEPTS.includes(d)) return false;
+    if (OFFICE_NS.includes(d)) return true;
+    return /處$/.test(d);
+  }
+  function titleRank(p) {
+    const t = personTitle(p);
+    if (/營業區協理|區協理/.test(t)) return 1;
+    if (/營業處經理|處經理/.test(t) && !/儲備/.test(t)) return 2;
+    if (/儲備處經理|儲備營業處經理/.test(t)) return 3;
+    if (/行政專員組長|組長/.test(t)) return 4;
+    if (/經理|部長|協理|副理/.test(t)) return 5;
+    return 9;
+  }
+  function officeRank(dept) {
+    const d = String(dept || '').trim();
+    const i = OFFICE_NS.indexOf(d);
+    if (i >= 0) return i;
+    const bi = BACK_OFFICE_DEPTS.indexOf(d);
+    if (bi >= 0) return bi;
+    return 800;
+  }
+  function sortPeopleList(list) {
+    return list.slice().sort((a, b) => {
+      const tr = titleRank(a) - titleRank(b);
+      if (tr) return tr;
+      const or = officeRank(personDept(a)) - officeRank(personDept(b));
+      if (or) return or;
+      const da = personDept(a) || '未填部別';
+      const db = personDept(b) || '未填部別';
+      if (da !== db) return da.localeCompare(db, 'zh-Hant');
+      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+    });
+  }
+  function defaultProjectId() {
+    const list = state.projects || [];
+    if (!list.length) return '';
+    const hit = list.find((p) => /一般|加減分|會議/.test(String(p.name || ''))) || list[0];
+    return hit ? String(hit.id) : '';
+  }
   function setView(view) {
     state.view = view;
     document.querySelectorAll('#page-meeting-scoreboard [data-msb-view]').forEach((btn) => {
@@ -128,7 +159,6 @@
     document.querySelectorAll('#page-meeting-scoreboard [data-msb-panel]').forEach((panel) => {
       panel.hidden = panel.getAttribute('data-msb-panel') !== view;
     });
-    if (view === 'settings') syncSettingsGate();
   }
   function fillSelects(preferPersonId) {
     const peopleOpts = (state.people || []).map((p) =>
@@ -145,9 +175,9 @@
       if (keep && [...el.options].some((o) => o.value === keep)) el.value = keep;
     });
     if ($('msb-project')) {
-      const keep = $('msb-project').value;
-      $('msb-project').innerHTML = '<option value="">請選擇</option>' + projectOpts;
-      if (keep && [...$('msb-project').options].some((o) => o.value === keep)) $('msb-project').value = keep;
+      const keep = String($('msb-project').value || '').trim();
+      const next = keep || defaultProjectId();
+      $('msb-project').value = next;
     }
     if ($('msb-filter-project')) {
       const keep = $('msb-filter-project').value;
@@ -162,29 +192,40 @@
     if (q) {
       list = list.filter((p) =>
         String(p.name || '').toLowerCase().includes(q) ||
-        personDept(p).toLowerCase().includes(q)
+        personDept(p).toLowerCase().includes(q) ||
+        personTitle(p).toLowerCase().includes(q)
       );
     }
-    list.sort((a, b) => {
-      const da = personDept(a) || '未填部別';
-      const db = personDept(b) || '未填部別';
-      if (da !== db) return da.localeCompare(db, 'zh-Hant');
-      const sa = numOrNull(a.score);
-      const sb = numOrNull(b.score);
-      if (sa != null && sb != null && sa !== sb) return sb - sa;
-      if (sa != null && sb == null) return -1;
-      if (sa == null && sb != null) return 1;
-      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
-    });
-    return list;
+    return sortPeopleList(list);
+  }
+  function peopleRowHtml(p, edit) {
+    const dept = personDept(p) || '—';
+    const marks = [
+      isMine(p) ? '<span class="msb-you">你</span>' : '',
+      !personDept(p) ? '<span class="msb-chip">未填部別</span>' : ''
+    ].filter(Boolean).join(' ');
+    const acts = edit
+      ? `<td class="act">
+          <button type="button" class="msb-icon-btn is-plus" data-msb-add="${esc(p.id)}" title="加分">＋</button>
+          <button type="button" class="msb-icon-btn is-minus" data-msb-add="${esc(p.id)}" data-msb-minus="1" title="減分">－</button>
+        </td>`
+      : '';
+    return `<tr>
+      <td>${esc(dept)}</td>
+      <td><span class="msb-name">${esc(p.name)}</span> ${marks}</td>
+      <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${scoreCellHtml(p.score)}</button></td>
+      <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${bonusCellHtml(p)}</button></td>
+      ${acts}
+    </tr>`;
   }
   function renderPeopleTable() {
-    const body = $('msb-people-body');
+    const officeBody = $('msb-people-body-office');
+    const bizBody = $('msb-people-body-biz');
     const note = $('msb-score-month-note');
     const selfBox = $('msb-self');
-    if (!body) return;
+    if (!officeBody || !bizBody) return;
     const month = state.scoreMonth || state.month || currentMonth();
-    if (note) note.textContent = '分數與獎金為 ' + month + ' 手動輸入；＋／－寫入加減分紀錄。';
+    if (note) note.textContent = '分數與獎金為 ' + month + ' 手動輸入；＋／－寫入加減分紀錄。排序：職等 → 北到南。';
     if (selfBox) {
       if (!state.canViewAll) {
         const mine = (state.people || []).find(isMine);
@@ -198,35 +239,15 @@
       }
     }
     const list = filteredPeople();
-    if (!list.length) {
-      body.innerHTML = '<tr><td colspan="5" class="msb-empty">尚無人員</td></tr>';
-      return;
-    }
     const edit = state.canEdit;
-    body.innerHTML = list.map((p) => {
-      const dept = personDept(p) || '—';
-      const marks = [
-        isMine(p) ? '<span class="msb-you">你</span>' : '',
-        !personDept(p) ? '<span class="msb-chip">未填部別</span>' : '',
-        !p.accountId ? '<span class="msb-chip">未對帳</span>' : ''
-      ].filter(Boolean).join(' ');
-      const bind = edit
-        ? `<button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">補</button>`
-        : '';
-      const acts = edit
-        ? `<td class="act">
-            <button type="button" class="msb-icon-btn is-plus" data-msb-add="${esc(p.id)}" title="加分">＋</button>
-            <button type="button" class="msb-icon-btn is-minus" data-msb-add="${esc(p.id)}" data-msb-minus="1" title="減分">－</button>
-          </td>`
-        : (state.canEdit ? '<td class="act"></td>' : '');
-      return `<tr>
-        <td>${esc(dept)}</td>
-        <td><span class="msb-name">${esc(p.name)}</span> ${marks} ${bind}</td>
-        <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${scoreCellHtml(p.score)}</button></td>
-        <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${bonusCellHtml(p)}</button></td>
-        ${acts}
-      </tr>`;
-    }).join('');
+    const office = list.filter((p) => !isBizDept(personDept(p)));
+    const biz = list.filter((p) => isBizDept(personDept(p)));
+    officeBody.innerHTML = office.length
+      ? office.map((p) => peopleRowHtml(p, edit)).join('')
+      : '<tr><td colspan="5" class="msb-empty">尚無內勤人員</td></tr>';
+    bizBody.innerHTML = biz.length
+      ? biz.map((p) => peopleRowHtml(p, edit)).join('')
+      : '<tr><td colspan="5" class="msb-empty">尚無業務人員</td></tr>';
   }
   function filteredRecords() {
     const q = String(state.filter.q || '').trim().toLowerCase();
@@ -268,7 +289,7 @@
       peopleBox.innerHTML = (state.people || []).length
         ? '<ul class="msb-plain-list">' + state.people.map((p) =>
           `<li><span>${esc(p.name)}${personDept(p) ? ' · ' + esc(personDept(p)) : ''}</span>
-            <button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">補</button>
+            <button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">部別／帳號</button>
             <button type="button" class="msb-link" data-msb-rm-person="${esc(p.id)}">移除</button></li>`
         ).join('') + '</ul>'
         : '<p class="msb-empty">尚無人員</p>';
@@ -283,7 +304,6 @@
   }
   function renderAll() {
     applyAccess();
-    syncBoardTabs();
     fillSelects();
     renderPeopleTable();
     renderRecords();
@@ -369,21 +389,26 @@
     fillSelects(personId || (e && e.personId));
     if (e) {
       if ($('msb-person')) $('msb-person').value = String(e.personId);
-      if ($('msb-project')) $('msb-project').value = String(e.projectId);
+      if ($('msb-project')) $('msb-project').value = String(e.projectId || defaultProjectId());
       if ($('msb-date')) $('msb-date').value = String(e.scoreDate || '').slice(0, 10);
       if ($('msb-score')) $('msb-score').value = String(e.score);
-      if ($('msb-item')) $('msb-item').value = e.item || '';
+      if ($('msb-item')) $('msb-item').value = e.item || '加減分';
       if ($('msb-note')) $('msb-note').value = e.note || '';
-      if ($('msb-session')) $('msb-session').value = e.sessionLabel || '';
+      if ($('msb-session')) $('msb-session').value = '';
       if ($('msb-form-title')) $('msb-form-title').textContent = '編輯加減分';
     } else {
       $('msb-entry-form')?.reset();
       if ($('msb-date')) $('msb-date').value = todayStr();
+      if ($('msb-project')) $('msb-project').value = defaultProjectId();
+      if ($('msb-item')) $('msb-item').value = asMinus ? '減分' : '加分';
+      if ($('msb-session')) $('msb-session').value = '';
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
       if (asMinus && $('msb-score')) $('msb-score').value = '-';
       if ($('msb-form-title')) $('msb-form-title').textContent = asMinus ? '減分' : '加分';
       fillSelects(personId);
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
+      if ($('msb-project')) $('msb-project').value = defaultProjectId();
+      if ($('msb-item')) $('msb-item').value = asMinus ? '減分' : '加分';
     }
     setMsg('', '', 'msb-form-msg');
     if ($('msb-modal')) $('msb-modal').hidden = false;
@@ -539,7 +564,6 @@
       }
       const rmP = e.target.closest('[data-msb-rm-person]');
       if (rmP) {
-        if (!settingsUnlocked()) { setView('settings'); return; }
         if (!window.confirm('確定移除此人員？')) return;
         try {
           const res = await rpc('msb_person_remove', { p_token: token(), p_id: Number(rmP.getAttribute('data-msb-rm-person')) });
@@ -550,7 +574,6 @@
       }
       const rmPr = e.target.closest('[data-msb-rm-project]');
       if (rmPr) {
-        if (!settingsUnlocked()) { setView('settings'); return; }
         if (!window.confirm('確定移除此專案？')) return;
         try {
           const res = await rpc('msb_project_remove', { p_token: token(), p_id: Number(rmPr.getAttribute('data-msb-rm-project')) });
@@ -658,18 +681,21 @@
       if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
       try {
         const entryPersonId = Number($('msb-person')?.value || 0) || null;
+        const projectId = Number($('msb-project')?.value || defaultProjectId() || 0) || null;
+        const item = String($('msb-item')?.value || $('msb-note')?.value || '加減分').trim() || '加減分';
+        if (!projectId) throw new Error('請先到設定新增至少一個專案區塊');
         const res = await rpc('msb_entry_save', {
           p_token: token(),
           p_data: {
             id: state.editId,
             board: writeBoardForPersonId(entryPersonId),
             personId: entryPersonId,
-            projectId: Number($('msb-project')?.value || 0) || null,
+            projectId,
             scoreDate: $('msb-date')?.value || '',
             score: $('msb-score')?.value || '',
-            item: $('msb-item')?.value || '',
+            item,
             note: $('msb-note')?.value || '',
-            sessionLabel: $('msb-session')?.value || ''
+            sessionLabel: ''
           }
         });
         if (!res?.ok) throw new Error(res?.error || '儲存失敗');
@@ -686,7 +712,6 @@
       }
     });
     $('msb-add-person')?.addEventListener('click', async () => {
-      if (!settingsUnlocked()) { setView('settings'); return; }
       const name = ($('msb-new-person')?.value || '').trim();
       try {
         const res = await rpc('msb_person_add', { p_token: token(), p_board: WRITE_BOARD, p_name: name });
@@ -696,7 +721,6 @@
       } catch (err) { setMsg(err.message || String(err), 'err'); }
     });
     $('msb-add-project')?.addEventListener('click', async () => {
-      if (!settingsUnlocked()) { setView('settings'); return; }
       const name = ($('msb-new-project')?.value || '').trim();
       try {
         const res = await rpc('msb_project_add', { p_token: token(), p_board: WRITE_BOARD, p_name: name });
@@ -704,27 +728,6 @@
         if ($('msb-new-project')) $('msb-new-project').value = '';
         await reload();
       } catch (err) { setMsg(err.message || String(err), 'err'); }
-    });
-    $('msb-settings-gate')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const input = $('msb-settings-pwd');
-      const msg = $('msb-settings-gate-msg');
-      const Gate = window.SkyfunPolicyDocGate;
-      if (msg) { msg.textContent = ''; msg.className = 'msb-msg'; }
-      if (!Gate?.checkPassword) {
-        if (msg) { msg.textContent = '密碼模組未載入'; msg.className = 'msb-msg is-err'; }
-        return;
-      }
-      const ok = await Gate.checkPassword(input?.value || '');
-      if (!ok) {
-        if (msg) { msg.textContent = '密碼錯誤'; msg.className = 'msb-msg is-err'; }
-        input?.select();
-        return;
-      }
-      setSettingsUnlocked(true);
-      try { Gate.setUnlocked?.(true); } catch (_) { /* ignore */ }
-      syncSettingsGate();
-      renderAll();
     });
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;

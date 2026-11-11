@@ -8,9 +8,29 @@
   --msb-primary: #0f766e;
   --msb-plus: #047857;
   --msb-minus: #b91c1c;
-  max-width: 1100px;
+  max-width: min(1680px, 98vw);
   margin: 0 auto;
   padding: 0.75rem 1rem 2rem;
+  color: var(--msb-ink);
+}
+#page-meeting-scoreboard .msb-dual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+#page-meeting-scoreboard .msb-dual-col {
+  min-width: 0;
+  background: var(--msb-card);
+  border: 1px solid var(--msb-line);
+  border-radius: 0.9rem;
+  padding: 0.65rem 0.7rem 0.5rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+#page-meeting-scoreboard .msb-dual-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.92rem;
+  font-weight: 900;
   color: var(--msb-ink);
 }
 #page-meeting-scoreboard .msb-app {
@@ -398,6 +418,9 @@
 }
 body.msb-modal-open { overflow: hidden; }
 
+@media (max-width: 1100px) {
+  #page-meeting-scoreboard .msb-dual { grid-template-columns: 1fr; }
+}
 @media (max-width: 720px) {
   #page-meeting-scoreboard { padding: 0.5rem 0.55rem 1.5rem; }
   #page-meeting-scoreboard .msb-form-grid { grid-template-columns: 1fr; }

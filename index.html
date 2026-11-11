@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261109-center">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
 <link rel="stylesheet" href="./css/fin-report.css?v=20261108-fin62">
-<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v3">
+<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v4">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -7408,19 +7408,41 @@
                         </div>
                     </div>
                     <div id="msb-self" class="msb-self" hidden></div>
-                    <div class="msb-table-wrap">
-                        <table id="msb-people-table" class="msb-table msb-table--people">
-                            <thead>
-                                <tr>
-                                    <th>部別</th>
-                                    <th>姓名</th>
-                                    <th class="num">分數</th>
-                                    <th class="num">獎金</th>
-                                    <th class="act msb-edit-only">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="msb-people-body"></tbody>
-                        </table>
+                    <div class="msb-dual" id="msb-people-dual">
+                        <section class="msb-dual-col" aria-label="內勤單位">
+                            <h3 class="msb-dual-title">內勤單位</h3>
+                            <div class="msb-table-wrap">
+                                <table class="msb-table msb-table--people">
+                                    <thead>
+                                        <tr>
+                                            <th>部別</th>
+                                            <th>姓名</th>
+                                            <th class="num">分數</th>
+                                            <th class="num">獎金</th>
+                                            <th class="act msb-edit-only">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="msb-people-body-office"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section class="msb-dual-col" aria-label="業務單位">
+                            <h3 class="msb-dual-title">業務單位</h3>
+                            <div class="msb-table-wrap">
+                                <table class="msb-table msb-table--people">
+                                    <thead>
+                                        <tr>
+                                            <th>部別</th>
+                                            <th>姓名</th>
+                                            <th class="num">分數</th>
+                                            <th class="num">獎金</th>
+                                            <th class="act msb-edit-only">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="msb-people-body-biz"></tbody>
+                                </table>
+                            </div>
+                        </section>
                     </div>
                     <p id="msb-score-month-note" class="msb-filter-note"></p>
                 </section>
@@ -7448,21 +7470,11 @@
                     <div class="msb-head-row">
                         <h2 class="msb-page-title">設定</h2>
                     </div>
-                    <div id="msb-settings-lock" class="msb-settings-lock">
-                        <form id="msb-settings-gate" class="msb-settings-gate" autocomplete="off">
-                            <p>後台設定需密碼（與辦法完整檔同一組）。</p>
-                            <label for="msb-settings-pwd">密碼</label>
-                            <div class="msb-settings-gate-row">
-                                <input id="msb-settings-pwd" type="password" inputmode="numeric" required placeholder="請輸入密碼" autocomplete="current-password">
-                                <button type="submit" class="msb-btn msb-btn--primary">解鎖</button>
-                            </div>
-                            <p id="msb-settings-gate-msg" class="msb-msg" role="status"></p>
-                        </form>
-                    </div>
-                    <div id="msb-settings-body" hidden>
+                    <div id="msb-settings-body">
                         <div class="msb-split">
                             <div class="msb-card">
                                 <h3>人員</h3>
+                                <p class="msb-filter-note">補部別／對帳在此處理。</p>
                                 <div class="msb-add-row">
                                     <input id="msb-new-person" type="text" maxlength="40" placeholder="新增人員姓名">
                                     <button type="button" id="msb-add-person" class="msb-btn msb-btn--primary">新增</button>
@@ -7492,14 +7504,13 @@
                         <button type="button" class="msb-modal-x" data-msb-close="1" aria-label="關閉">×</button>
                     </div>
                     <form id="msb-entry-form" class="msb-form" autocomplete="off">
+                        <input id="msb-project" type="hidden" value="">
+                        <input id="msb-item" type="hidden" value="加減分">
+                        <input id="msb-session" type="hidden" value="">
                         <div class="msb-form-grid">
                             <div class="msb-field">
                                 <label class="msb-req" for="msb-person">人員</label>
                                 <select id="msb-person" required></select>
-                            </div>
-                            <div class="msb-field">
-                                <label class="msb-req" for="msb-project">專案／區塊</label>
-                                <select id="msb-project" required></select>
                             </div>
                             <div class="msb-field">
                                 <label class="msb-req" for="msb-date">日期</label>
@@ -7508,14 +7519,6 @@
                             <div class="msb-field">
                                 <label class="msb-req" for="msb-score">分數（減分用負數）</label>
                                 <input id="msb-score" type="number" step="0.01" required placeholder="例 6 或 -2">
-                            </div>
-                            <div class="msb-field" id="msb-session-wrap" hidden>
-                                <label for="msb-session">月會場次</label>
-                                <input id="msb-session" type="text" maxlength="40" placeholder="例：11 月月會">
-                            </div>
-                            <div class="msb-field">
-                                <label class="msb-req" for="msb-item">項目</label>
-                                <input id="msb-item" type="text" maxlength="80" required placeholder="例：會議提案">
                             </div>
                             <div class="msb-field msb-field--full">
                                 <label for="msb-note">備註</label>
@@ -14197,7 +14200,7 @@
         <script src="./js/biz-coverage.js?v=20261111-callwide2"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
         <script src="./js/fin-report.js?v=20261108-fin62"></script>
-        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v3"></script>
+        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v4"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>
