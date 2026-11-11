@@ -118,14 +118,30 @@
     if (OFFICE_NS.includes(d)) return true;
     return /處$/.test(d);
   }
+  /** 職等：室長 > 特助 > 協理 > 經理 > 副理 > 組長 > 儲備主管（數字越小越高） */
+  function titleRankOne(raw) {
+    const t = String(raw || '').trim();
+    if (!t || t === '其他' || t === '—') return 90;
+    if (/室長/.test(t)) return 1;
+    if (/特助|總助/.test(t)) return 2;
+    if (/協理/.test(t)) return 3;
+    if (/儲備/.test(t)) return 7;
+    if (/經理|部長/.test(t)) return 4;
+    if (/副理/.test(t)) return 5;
+    if (/組長/.test(t)) return 6;
+    return 80;
+  }
   function titleRank(p) {
     const t = personTitle(p);
-    if (/營業區協理|區協理/.test(t)) return 1;
-    if (/營業處經理|處經理/.test(t) && !/儲備/.test(t)) return 2;
-    if (/儲備處經理|儲備營業處經理/.test(t)) return 3;
-    if (/行政專員組長|組長/.test(t)) return 4;
-    if (/經理|部長|協理|副理/.test(t)) return 5;
-    return 9;
+    if (!t) return 90;
+    const parts = t.split(/[／\/、]/).map((x) => x.trim()).filter(Boolean);
+    if (!parts.length) return titleRankOne(t);
+    let best = 90;
+    parts.forEach((part) => {
+      const r = titleRankOne(part);
+      if (r < best) best = r;
+    });
+    return best;
   }
   function officeRank(dept) {
     const d = String(dept || '').trim();
