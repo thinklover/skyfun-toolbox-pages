@@ -17,10 +17,12 @@ var DEFAULT_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdX
 var FULL_ACCESS = { '簡為倢': true, '邱奕棋': true, '黃怡婷': true };
 var BIZ_TITLES = { '儲備處經理': true, '儲備營業處經理': true, '營業處經理': true, '營業區協理': true, '區協理': true };
 
-var PAGES_PER_TICK = 3;
+var PAGES_PER_TICK = 5;
 var CONTRACT_PAGE_SIZE = 1000;
 var PART_SIZE = 5000;
 var LOCK_TTL = 600;
+/** 儀表板只要近年起租案件（含去年同期＋明年已審案件），不必掃全部歷史。 */
+var DEFAULT_CONTRACT_LEASE_YEARS = 3;
 
 /** 匯入 Excel／CSV 的表頭對應。實際匯出欄名不同時只改這一張。loader.js 有同一份。 */
 var MATCH_EXTRA_COLUMNS = {
@@ -357,7 +359,28 @@ async function writeParts(env, version, rows, keyFn) {
   return parts;
 }
 
-async function searchContractsPage(jar, page) {
+function isoToRoc(iso) {
+  var parts = String(iso || '').slice(0, 10).split('-');
+  if (parts.length < 3) return '';
+  return (Number(parts[0]) - 1911) + '/' + parts[1] + '/' + parts[2];
+}
+
+/** 管報儀表板：近 N 個西元年起租日（含當年、去年同期，並預留明年已審案件）。 */
+function leaseRangeForDashboard(env, when) {
+  var years = num(env, 'CONTRACT_LEASE_YEARS', DEFAULT_CONTRACT_LEASE_YEARS);
+  var clock = taipei(when || new Date());
+  var y = Number(String(clock.key).slice(0, 4));
+  if (!Number.isFinite(y) || y < 2000) y = new Date().getFullYear();
+  var startY = y - Math.max(1, years) + 1;
+  return {
+    start: isoToRoc(startY + '-01-01'),
+    end: isoToRoc((y + 1) + '-12-31')
+  };
+}
+
+async function searchContractsPage(jar, page, range) {
+  var body = { page: page, pageSize: CONTRACT_PAGE_SIZE, sortItems: [] };
+  if (range && range.start && range.end) body.leaseStartDateRange = range;
   var res = await skyfunFetch(jar, CONTRAT_SEARCH_URL, {
     method: 'POST',
     headers: {
@@ -365,7 +388,7 @@ async function searchContractsPage(jar, page) {
       'X-Requested-With': 'XMLHttpRequest',
       Referer: SKYFUN_ORIGIN + '/Contrat/Contrat_Index'
     },
-    body: JSON.stringify({ page: page, pageSize: CONTRACT_PAGE_SIZE, sortItems: [] })
+    body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error('合約搜尋失敗（HTTP ' + res.status + '）');
   var data = await res.json().catch(function () { return null; });
@@ -389,6 +412,7 @@ async function publishContracts(env, build) {
     n: build.rowCount,
     parts: build.partIndex,
     source: 'skyfunsystem.com/Contrat/SearchContracts',
+    leaseRange: build.leaseRange || null,
     fieldPresence: build.fieldPresence || null,
     building: false
   };
@@ -405,8 +429,10 @@ async function advanceContracts(env, jar, build) {
   var buf = (await kvGet(env, KEY.buf)) || [];
   var touch = build.touch || {};
   var pages = 0;
+  var range = build.leaseRange || leaseRangeForDashboard(env, new Date());
+  build.leaseRange = range;
   while (pages < PAGES_PER_TICK && build.page <= build.totalPages) {
-    var data = await searchContractsPage(jar, build.page);
+    var data = await searchContractsPage(jar, build.page, range);
     if (!build.totalCount) {
       build.totalCount = Number(data.totalCount) || 0;
       build.totalPages = Math.max(1, Math.ceil(build.totalCount / CONTRACT_PAGE_SIZE));
@@ -436,7 +462,14 @@ async function advanceContracts(env, jar, build) {
     build.phase = 'staff';
     build.fail = 0;
   }
-  logPhase('contracts', { done: done, page: build.page, total: build.totalPages, ms: Date.now() - t0 });
+  logPhase('contracts', {
+    done: done,
+    page: build.page,
+    total: build.totalPages,
+    n: build.totalCount,
+    range: range,
+    ms: Date.now() - t0
+  });
   return build;
 }
 
@@ -649,7 +682,8 @@ async function advanceArrears(env, jar, build) {
       rows: state.rows
     });
     await kvDel(env, KEY.arrearsBuild);
-    build.phase = 'match';
+    // 媒合明細補抓只在有 Excel 匯入時才有意義；儀表板日常更新到欠款即可結束。
+    build.phase = 'done';
     build.fail = 0;
   } else {
     await kvPut(env, KEY.arrearsBuild, state);
@@ -823,7 +857,7 @@ async function stepJob(env, when, force) {
     return { skipped: true, reason: 'done' };
   }
   if (!running || force) {
-    if (!running || (build && build.phase === 'done')) {
+    if (!running || (build && build.phase === 'done') || force) {
       build = {
         date: clock.key,
         phase: 'contracts',
@@ -835,7 +869,8 @@ async function stepJob(env, when, force) {
         rowCount: 0,
         fetchedAt: new Date().toISOString(),
         fail: 0,
-        touch: {}
+        touch: {},
+        leaseRange: leaseRangeForDashboard(env, when)
       };
       await kvDel(env, KEY.buf);
       await kvDel(env, KEY.renewBuild);
@@ -851,8 +886,11 @@ async function stepJob(env, when, force) {
       build.fail = 0;
     } else if (build.phase === 'renewals') await advanceRenewals(env, jar, build);
     else if (build.phase === 'arrears') await advanceArrears(env, jar, build);
-    else if (build.phase === 'match') await advanceMatch(env, jar, build, when);
-    else build.phase = 'done';
+    else if (build.phase === 'match') {
+      // 保留函式供手動／舊排程相容；日常流程改在欠款後直接結束。
+      await advanceMatch(env, jar, build, when);
+      if (build.phase === 'match') build.phase = 'done';
+    } else build.phase = 'done';
   } catch (err) {
     var msg = String(err && err.message || err);
     build.fail = (build.fail || 0) + 1;
