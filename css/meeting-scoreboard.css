@@ -101,38 +101,76 @@
   border-color: #d7e2dc;
   background: #f4f7f5;
 }
-#page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-head {
-  background: #163832;
-  color: #f7f4ee;
+#page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-head,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-head,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-head,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-head {
+  min-height: 2.15rem;
+  padding: 0.35rem 0.75rem;
+  color: #1c1917;
 }
-#page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-kicker { color: #c4b48a; }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-head { background: #e5f3ea; }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-kicker,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-kicker,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-kicker,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-kicker { color: #78716c; letter-spacing: 0.08em; font-size: 0.68rem; }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-title,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-title,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-title,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #1c1917;
+}
+#page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-meta,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-meta,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-meta,
+#page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-meta { color: #57534e; }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="central"] {
   border-color: #d5dee6;
   background: #f4f6f8;
 }
-#page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-head {
-  background: #1b3348;
-  color: #f7f4ee;
-}
-#page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-kicker { color: #d4c4a8; }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-head { background: #e4eef8; }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="south"] {
   border-color: #e6ddcf;
   background: #faf7f3;
 }
-#page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-head {
-  background: #6b4423;
-  color: #f7f4ee;
-}
-#page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-kicker { color: #f0e2c8; }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-head { background: #fbf3e4; }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] {
   border-color: #eadde0;
   background: #faf6f6;
 }
-#page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-head {
-  background: #5c2434;
-  color: #f7f4ee;
+#page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-head { background: #f6e8ef; }
+#page-meeting-scoreboard .msb-period {
+  display: flex;
+  background: #eef2f3;
+  padding: 0.15rem;
+  border-radius: 0.55rem;
 }
-#page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-kicker { color: #f0d5c8; }
+#page-meeting-scoreboard .msb-period button {
+  border: 0;
+  background: transparent;
+  padding: 0.32rem 0.7rem;
+  border-radius: 0.45rem;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--msb-muted);
+  cursor: pointer;
+}
+#page-meeting-scoreboard .msb-period button.is-on {
+  background: #fff;
+  color: var(--msb-ink);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+#page-meeting-scoreboard #msb-year {
+  width: 5.6rem;
+  border: 1px solid var(--msb-line);
+  border-radius: 0.55rem;
+  padding: 0.38rem 0.55rem;
+  font-size: 0.84rem;
+  background: #fff;
+}
 #page-meeting-scoreboard .msb-office-zones .msb-table-panel { flex: 0 0 auto; }
 #page-meeting-scoreboard .msb-office-zones .msb-table-wrap { flex: none; max-height: none; }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="office"] { border-color: #e7e5e4; background: #fff; }

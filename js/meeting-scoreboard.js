@@ -44,6 +44,8 @@
     editorQuery: '',
     viewerId: '',
     scoreMonth: '',
+    span: 'month',
+    year: '',
     serverScoped: false,
     q: '',
     bindPersonId: null,
@@ -266,15 +268,18 @@
   }
   function personEntries(personId) {
     const id = String(personId || '');
+    const yearMode = state.span === 'year';
+    const year = state.year || currentMonth().slice(0, 4);
     const month = state.scoreMonth || state.month || currentMonth();
     const src = (state.entries && state.entries.length) ? state.entries : (state.recordsEntries || []);
     return src.filter((e) => {
       if (String(e.personId) !== id) return false;
-      const d = String(e.scoreDate || '').slice(0, 7);
-      return !month || d === month;
+      const d = String(e.scoreDate || '');
+      if (yearMode) return d.slice(0, 4) === year;
+      return !month || d.slice(0, 7) === month;
     }).sort((a, b) => String(b.scoreDate || '').localeCompare(String(a.scoreDate || '')));
   }
-  function detailRowHtml(p) {
+  function detailRowHtml(p, cols) {
     const list = personEntries(p.id);
     const body = list.length
       ? `<ul class="msb-detail-list">${list.map((e) => {
@@ -287,9 +292,9 @@
             <span class="msb-detail-note">${esc(e.note || '')}</span>
           </li>`;
         }).join('')}</ul>`
-      : '<p class="msb-detail-empty">本月尚無加減分明細</p>';
+      : `<p class="msb-detail-empty">${state.span === 'year' ? '本年度尚無加減分明細' : '本月尚無加減分明細'}</p>`;
     return `<tr class="msb-detail-row" data-msb-detail-for="${esc(p.id)}">
-      <td colspan="6"><div class="msb-detail-sheet">${body}</div></td>
+      <td colspan="${cols || 6}"><div class="msb-detail-sheet">${body}</div></td>
     </tr>`;
   }
   function mountModal(el) {
@@ -350,29 +355,36 @@
     }
     return list;
   }
-  function peopleRowsHtml(p, edit) {
+  function peopleRowsHtml(p, edit, hideDept) {
     const dept = personDept(p) || '—';
     const title = personTitle(p);
     const titleShow = title && title !== '其他' ? title : '—';
     const open = String(state.expandedPersonId) === String(p.id);
+    const yearMode = state.span === 'year';
     const marks = [
       isMine(p) ? '<span class="msb-you">你</span>' : '',
-      !personDept(p) ? '<span class="msb-chip">未填部別</span>' : '',
+      !hideDept && !personDept(p) ? '<span class="msb-chip">未填部別</span>' : '',
       open ? '<span class="msb-chip msb-chip--on">明細</span>' : ''
     ].filter(Boolean).join(' ');
     const acts = `<td class="act">
           <button type="button" class="msb-act-btn is-plus" data-msb-add="${esc(p.id)}">加分</button>
           <button type="button" class="msb-act-btn is-minus" data-msb-add="${esc(p.id)}" data-msb-minus="1">減分</button>
         </td>`;
+    const scoreCell = yearMode
+      ? scoreCellHtml(p.score)
+      : `<button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${scoreCellHtml(p.score)}</button>`;
+    const bonusCell = yearMode
+      ? bonusCellHtml(p)
+      : `<button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${bonusCellHtml(p)}</button>`;
     const main = `<tr class="msb-person-row${open ? ' is-open' : ''}" data-msb-expand="${esc(p.id)}" tabindex="0">
-      <td>${esc(dept)}</td>
+      ${hideDept ? '' : `<td>${esc(dept)}</td>`}
       <td class="msb-title-cell">${esc(titleShow)}</td>
       <td><span class="msb-name">${esc(p.name)}</span> ${marks}</td>
-      <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${scoreCellHtml(p.score)}</button></td>
-      <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${bonusCellHtml(p)}</button></td>
+      <td class="num">${scoreCell}</td>
+      <td class="num">${bonusCell}</td>
       ${acts}
     </tr>`;
-    return open ? main + detailRowHtml(p) : main;
+    return open ? main + detailRowHtml(p, hideDept ? 5 : 6) : main;
   }
   function fillPeopleBody(el, list, edit) {
     if (!el) return;
@@ -416,12 +428,14 @@
   function sortHead(label, key, side, extra) {
     return `<th class="${extra || ''} msb-th-sort" data-msb-sort="${key}" data-msb-sort-side="${esc(side)}" role="columnheader" tabindex="0" title="點擊排序${label}">${label}<span class="msb-sort-mark" aria-hidden="true"></span></th>`;
   }
-  function peopleTableHtml(side, rows) {
-    const cols = `<colgroup><col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name"><col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act"></colgroup>`;
-    const head = `<tr>${sortHead('部別', 'dept', side, '')}${sortHead('職別', 'title', side, '')}${sortHead('姓名', 'name', side, '')}${sortHead('分數', 'score', side, 'num')}${sortHead('獎金', 'bonus', side, 'num')}<th class="act">操作</th></tr>`;
+  function peopleTableHtml(side, rows, hideDept) {
+    const cols = hideDept
+      ? `<colgroup><col class="msb-col-title"><col class="msb-col-name"><col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act"></colgroup>`
+      : `<colgroup><col class="msb-col-dept"><col class="msb-col-title"><col class="msb-col-name"><col class="msb-col-score"><col class="msb-col-bonus"><col class="msb-col-act"></colgroup>`;
+    const head = `<tr>${hideDept ? '' : sortHead('部別', 'dept', side, '')}${sortHead('職別', 'title', side, '')}${sortHead('姓名', 'name', side, '')}${sortHead('分數', 'score', side, 'num')}${sortHead('獎金', 'bonus', side, 'num')}<th class="act">操作</th></tr>`;
     const body = rows.length
-      ? rows.map((p) => peopleRowsHtml(p, state.canEdit)).join('')
-      : '<tr><td colspan="6" class="msb-empty">尚無人員</td></tr>';
+      ? rows.map((p) => peopleRowsHtml(p, state.canEdit, hideDept)).join('')
+      : `<tr><td colspan="${hideDept ? 5 : 6}" class="msb-empty">尚無人員</td></tr>`;
     return `<div class="msb-table-panel"><div class="msb-table-head"><table class="msb-table msb-table--people">${cols}<thead>${head}</thead></table></div><div class="msb-table-wrap msb-table-wrap--zone-sm"><table class="msb-table msb-table--people">${cols}<tbody>${body}</tbody></table></div></div>`;
   }
   function renderPeopleTable() {
@@ -431,7 +445,9 @@
     if (!officeHost) return;
     const month = state.scoreMonth || state.month || currentMonth();
     if (note) {
-      note.textContent = '分數與獎金為 ' + month + ' 手動輸入。點列可展開加減分明細；業務分北／中／南／高雄，內勤依部別分區。';
+      note.textContent = state.span === 'year'
+        ? ('分數與獎金為 ' + (state.year || month.slice(0, 4)) + ' 年各月加總。沒有輸入的月份不計入。點列可展開該年加減分明細。')
+        : ('分數與獎金為 ' + month + ' 手動輸入。點列可展開加減分明細；業務分北／中／南／高雄，內勤依部別分區。');
     }
     if (selfBox) {
       selfBox.hidden = true;
@@ -448,7 +464,7 @@
       );
       return `<div class="msb-zone msb-zone--office" data-msb-zone="office">
         <div class="msb-zone-head"><h4 class="msb-zone-title">${esc(dept)}</h4><span class="msb-zone-kicker">部別</span><span class="msb-zone-meta">${rows.length} 人</span></div>
-        ${peopleTableHtml(side, rows)}
+        ${peopleTableHtml(side, rows, true)}
       </div>`;
     }).join('') : '<p class="msb-empty">尚無內勤人員</p>';
     const edit = state.canEdit;
@@ -631,15 +647,30 @@
     if (!token()) { setMsg('請先登入工具箱', 'err'); return; }
     setMsg('載入中…');
     try {
-      const month = state.month || currentMonth();
-      const dash = await fetchList(month);
+      const yearMode = state.span === 'year';
+      const year = state.year || currentMonth().slice(0, 4);
+      const month = yearMode ? (year + '-01') : (state.month || currentMonth());
+      const dash = await fetchList(yearMode ? (month + '|all') : month);
       state.serverScoped = Object.prototype.hasOwnProperty.call(dash, 'canViewAll');
       const me = window.skyfunAuth?.getUser?.() || {};
       state.canViewAll = state.serverScoped ? !!dash.canViewAll : !!window.skyfunAuth?.canViewAllScores?.(me);
       state.canEdit = state.serverScoped ? !!dash.canEdit : !!window.skyfunAuth?.canEditScores?.(me);
       state.viewerId = dash.viewerId || me.id || '';
-      state.scoreMonth = dash.scoreMonth || month;
+      state.scoreMonth = yearMode ? year : (dash.scoreMonth || month);
       state.people = dash.people || [];
+      if (yearMode) {
+        const yr = await rpc('msb_year_scores', { p_token: token(), p_board: state.board, p_year: year });
+        if (!yr?.ok) throw new Error(yr?.error || '年度分數讀不到');
+        const byId = new Map((yr.people || []).map((row) => [String(row.id), row]));
+        state.people = state.people.map((p) => {
+          const hit = byId.get(String(p.id));
+          return Object.assign({}, p, {
+            score: hit && hit.score != null ? hit.score : null,
+            bonus: hit && hit.bonus != null ? hit.bonus : null,
+            bonusStatus: ''
+          });
+        });
+      }
       /* 專案以 system 為主，同名只留一筆，避免總表加減分對不到 */
       {
         const map = new Map();
@@ -650,7 +681,9 @@
         });
         state.projects = [...map.values()];
       }
-      state.entries = dash.entries || [];
+      state.entries = yearMode
+        ? (dash.entries || []).filter((e) => String(e.scoreDate || '').slice(0, 4) === year)
+        : (dash.entries || []);
       if (!state.serverScoped && !state.canViewAll) {
         state.people = [];
         state.projects = [];
@@ -841,11 +874,27 @@
     a.click();
     URL.revokeObjectURL(a.href);
   }
+  function syncSpanUi() {
+    const span = state.span === 'year' ? 'year' : 'month';
+    document.querySelectorAll('#page-meeting-scoreboard [data-msb-span]').forEach((btn) => {
+      btn.classList.toggle('is-on', btn.getAttribute('data-msb-span') === span);
+    });
+    const monthEl = $('msb-month');
+    const yearEl = $('msb-year');
+    if (monthEl) monthEl.hidden = span === 'year';
+    if (yearEl) {
+      yearEl.hidden = span !== 'year';
+      if (state.year) yearEl.value = state.year;
+    }
+  }
   function bind() {
     if (state.bound) return;
     state.bound = true;
     state.month = currentMonth();
+    state.year = state.month.slice(0, 4);
     if ($('msb-month')) $('msb-month').value = state.month;
+    if ($('msb-year')) $('msb-year').value = state.year;
+    syncSpanUi();
 
     const onMsbClick = async (e) => {
       const sortTh = e.target.closest('th[data-msb-sort]');
@@ -854,6 +903,16 @@
           sortTh.getAttribute('data-msb-sort'),
           sortTh.getAttribute('data-msb-sort-side') || 'office'
         );
+        return;
+      }
+      const spanBtn = e.target.closest('[data-msb-span]');
+      if (spanBtn) {
+        state.span = spanBtn.getAttribute('data-msb-span') === 'year' ? 'year' : 'month';
+        if (state.span === 'year') {
+          state.year = String($('msb-year')?.value || state.month || currentMonth()).slice(0, 4);
+        }
+        syncSpanUi();
+        await reload();
         return;
       }
       const viewBtn = e.target.closest('[data-msb-view]');
@@ -939,6 +998,14 @@
 
     $('msb-month')?.addEventListener('change', async (e) => {
       state.month = e.target.value || currentMonth();
+      state.year = state.month.slice(0, 4);
+      if ($('msb-year')) $('msb-year').value = state.year;
+      await reload();
+    });
+    $('msb-year')?.addEventListener('change', async (e) => {
+      const y = String(e.target.value || '').trim();
+      if (!/^\d{4}$/.test(y)) return;
+      state.year = y;
       await reload();
     });
     $('msb-staff-q')?.addEventListener('input', () => {
