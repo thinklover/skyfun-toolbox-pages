@@ -95,37 +95,41 @@
   white-space: nowrap;
 }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="north"] {
-  border-color: #99f6e4;
-  background: #f0fdfa;
+  border-color: #d7e2dc;
+  background: #f4f7f5;
 }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-head {
-  background: #0f766e;
-  color: #ecfdf5;
+  background: #163832;
+  color: #f7f4ee;
 }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="north"] .msb-zone-kicker { color: #c4b48a; }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="central"] {
-  border-color: #bae6fd;
-  background: #f0f9ff;
+  border-color: #d5dee6;
+  background: #f4f6f8;
 }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-head {
-  background: #0e7490;
-  color: #ecfeff;
+  background: #1b3348;
+  color: #f7f4ee;
 }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="central"] .msb-zone-kicker { color: #d4c4a8; }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="south"] {
-  border-color: #fde68a;
-  background: #fffbeb;
+  border-color: #e6ddcf;
+  background: #faf7f3;
 }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-head {
-  background: #b45309;
-  color: #fffbeb;
+  background: #6b4423;
+  color: #f7f4ee;
 }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="south"] .msb-zone-kicker { color: #f0e2c8; }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] {
-  border-color: #fecdd3;
-  background: #fff1f2;
+  border-color: #eadde0;
+  background: #faf6f6;
 }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-head {
-  background: #9f1239;
-  color: #fff1f2;
+  background: #5c2434;
+  color: #f7f4ee;
 }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-kicker { color: #f0d5c8; }
 #page-meeting-scoreboard .msb-zone .msb-table-panel {
   margin: 0.45rem;
   border-radius: 0.65rem;
@@ -452,8 +456,8 @@
   letter-spacing: 0.02em;
 }
 #page-meeting-scoreboard .msb-act-btn + .msb-act-btn { margin-left: 0.2rem; }
-#page-meeting-scoreboard .msb-act-btn.is-plus { color: var(--msb-plus); border-color: #a7f3d0; background: #ecfdf5; }
-#page-meeting-scoreboard .msb-act-btn.is-minus { color: var(--msb-minus); border-color: #fecaca; background: #fef2f2; }
+#page-meeting-scoreboard .msb-act-btn.is-plus { color: #163832; border-color: #163832; background: #f3f7f4; border-radius: 999px; }
+#page-meeting-scoreboard .msb-act-btn.is-minus { color: #5c2434; border-color: #5c2434; background: #fbf6f6; border-radius: 999px; }
 #page-meeting-scoreboard .msb-icon-btn {
   width: 1.7rem;
   height: 1.7rem;
@@ -508,6 +512,35 @@
   margin: 0 0 0.55rem;
   font-size: 0.92rem;
   font-weight: 900;
+}
+#page-meeting-scoreboard #msb-editors { margin-bottom: 0.75rem; }
+#page-meeting-scoreboard #msb-editor-q {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.35rem 0 0.55rem;
+  border: 1px solid var(--msb-line);
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  font: inherit;
+}
+#page-meeting-scoreboard #msb-editors-list {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 22rem;
+  overflow: auto;
+}
+#page-meeting-scoreboard .msb-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.2rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+#page-meeting-scoreboard .msb-editor-row b { font-weight: 800; }
+#page-meeting-scoreboard .msb-editor-row small {
+  display: block;
+  color: var(--msb-muted);
+  font-weight: 650;
 }
 #page-meeting-scoreboard .msb-add-row {
   display: flex;

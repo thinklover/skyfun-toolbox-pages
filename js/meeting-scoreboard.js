@@ -35,6 +35,9 @@
     filter: { q: '', projectId: '', from: '', to: '' },
     canViewAll: false,
     canEdit: false,
+    canManage: false,
+    editors: [],
+    editorQuery: '',
     viewerId: '',
     scoreMonth: '',
     serverScoped: false,
@@ -111,10 +114,19 @@
   function isMine(p) {
     return !!(state.viewerId && p && p.accountId && String(p.accountId) === String(state.viewerId));
   }
+  function canManageEditors() {
+    const u = window.skyfunAuth?.getUser?.() || {};
+    const team = String(u.team || '').trim();
+    const title = String(u.jobTitle || u.job_title || '').trim();
+    return team === '總經理室' && title !== '工讀生';
+  }
   function applyAccess() {
+    state.canManage = canManageEditors();
     document.querySelectorAll('#page-meeting-scoreboard .msb-edit-only').forEach((el) => {
       el.hidden = !state.canEdit;
     });
+    const settingsBtn = document.querySelector('#page-meeting-scoreboard [data-msb-view="settings"]');
+    if (settingsBtn) settingsBtn.hidden = !(state.canEdit || state.canManage);
   }
   function personBoard(p) {
     const b = String(p?.board || '').trim();
@@ -293,6 +305,7 @@
     document.querySelectorAll('#page-meeting-scoreboard [data-msb-panel]').forEach((panel) => {
       panel.hidden = panel.getAttribute('data-msb-panel') !== view;
     });
+    if (view === 'settings') void loadEditors();
   }
   function fillSelects(preferPersonId) {
     const peopleOpts = (state.people || []).map((p) =>
@@ -342,12 +355,10 @@
       !personDept(p) ? '<span class="msb-chip">未填部別</span>' : '',
       open ? '<span class="msb-chip msb-chip--on">明細</span>' : ''
     ].filter(Boolean).join(' ');
-    const acts = edit
-      ? `<td class="act">
+    const acts = `<td class="act">
           <button type="button" class="msb-act-btn is-plus" data-msb-add="${esc(p.id)}">加分</button>
           <button type="button" class="msb-act-btn is-minus" data-msb-add="${esc(p.id)}" data-msb-minus="1">減分</button>
-        </td>`
-      : '<td class="act"></td>';
+        </td>`;
     const main = `<tr class="msb-person-row${open ? ' is-open' : ''}" data-msb-expand="${esc(p.id)}" tabindex="0">
       <td>${esc(dept)}</td>
       <td class="msb-title-cell">${esc(titleShow)}</td>
@@ -439,6 +450,55 @@
             <button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></li>`;
         }).join('') + '</ul>'
         : '<p class="msb-empty">尚無人員</p>';
+    }
+    renderEditors();
+  }
+  function editorRows() {
+    const q = String(state.editorQuery || '').trim().toLowerCase();
+    return (state.editors || []).filter((a) => {
+      if (!q) return true;
+      return [a.name, a.team, a.title].join(' ').toLowerCase().includes(q);
+    });
+  }
+  function renderEditors() {
+    const box = $('msb-editors');
+    if (!box) return;
+    box.hidden = !state.canManage;
+    const list = $('msb-editors-list');
+    if (!list || !state.canManage) return;
+    const rows = editorRows();
+    list.innerHTML = rows.length
+      ? rows.map((a) => `<label class="msb-editor-row">
+          <input type="checkbox" data-msb-editor="${esc(a.id)}" ${a.on ? 'checked' : ''}>
+          <span><b>${esc(a.name || '未命名')}</b><small>${esc([a.team, a.title].filter(Boolean).join(' · ') || '未填單位')}</small></span>
+        </label>`).join('')
+      : '<p class="msb-empty">沒有符合的帳號</p>';
+  }
+  async function loadEditors() {
+    if (!state.canManage) return;
+    try {
+      const res = await rpc('msb_editors_list', { p_token: token() });
+      if (!res?.ok) throw new Error(res?.error || '權限名單讀不到');
+      state.editors = res.accounts || [];
+    } catch (err) {
+      state.editors = [];
+      setMsg(err.message || String(err), 'err');
+    }
+    renderEditors();
+  }
+  async function toggleEditor(accountId, on, input) {
+    if (!state.canManage || !accountId) return;
+    if (input) input.disabled = true;
+    try {
+      const res = await rpc('msb_editors_set', { p_token: token(), p_account_id: accountId, p_on: !!on });
+      if (!res?.ok) throw new Error(res?.error || '儲存失敗');
+      const row = state.editors.find((a) => String(a.id) === String(accountId));
+      if (row) row.on = !!on;
+    } catch (err) {
+      if (input) input.checked = !on;
+      setMsg(err.message || String(err), 'err');
+    } finally {
+      if (input) input.disabled = false;
     }
   }
   async function removePerson(personId, personName) {
@@ -955,6 +1015,15 @@
         state.busy = false;
         if (btn) { btn.disabled = false; btn.textContent = '儲存'; }
       }
+    });
+    $('msb-editor-q')?.addEventListener('input', (e) => {
+      state.editorQuery = e.target.value || '';
+      renderEditors();
+    });
+    document.addEventListener('change', (e) => {
+      const box = e.target.closest?.('[data-msb-editor]');
+      if (!box) return;
+      toggleEditor(box.getAttribute('data-msb-editor'), box.checked, box);
     });
     $('msb-add-person')?.addEventListener('click', async () => {
       const name = ($('msb-new-person')?.value || '').trim();

@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261111-resubmod">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
 <link rel="stylesheet" href="./css/fin-report.css?v=20261108-fin62">
-<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v21">
+<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v22">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -7389,7 +7389,7 @@
                     <nav class="msb-bar-nav" aria-label="會議計分導覽">
                         <button type="button" class="msb-nav-btn is-on" data-msb-view="dash">總表</button>
                         <button type="button" class="msb-nav-btn" data-msb-view="records">加減分紀錄</button>
-                        <button type="button" class="msb-nav-btn msb-edit-only" data-msb-view="settings">設定</button>
+                        <button type="button" class="msb-nav-btn" data-msb-view="settings" hidden>設定</button>
                     </nav>
                     <button type="button" class="msb-btn msb-btn--ghost" onclick="showPage('home')">← 首頁</button>
                 </header>
@@ -7602,7 +7602,13 @@
                         <h2 class="msb-page-title">設定</h2>
                     </div>
                     <div id="msb-settings-body">
-                        <div class="msb-card">
+                        <div class="msb-card" id="msb-editors" hidden>
+                            <h3>加減分權限</h3>
+                            <p class="msb-filter-note">勾選的人可以加分、減分。沒勾的人按鈕仍會顯示，按了不會動作。</p>
+                            <input id="msb-editor-q" type="search" placeholder="搜尋姓名、單位或職稱" aria-label="搜尋可加減分的人">
+                            <div id="msb-editors-list"></div>
+                        </div>
+                        <div class="msb-card msb-edit-only">
                             <h3>人員</h3>
                             <p class="msb-filter-note">補部別、職別、對帳在此處理。</p>
                             <div class="msb-add-row">
@@ -14341,7 +14347,7 @@
         <script src="./js/biz-coverage.js?v=20261111-beiwu"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
         <script src="./js/fin-report.js?v=20261108-fin62"></script>
-        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v20"></script>
+        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v22"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>
