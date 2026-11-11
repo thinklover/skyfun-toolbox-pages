@@ -134,14 +134,30 @@
 }
 #page-meeting-scoreboard .msb-zone[data-msb-zone="kh"] .msb-zone-kicker { color: #f0d5c8; }
 #page-meeting-scoreboard .msb-office-zones .msb-table-panel { flex: 0 0 auto; }
-#page-meeting-scoreboard .msb-office-zones .msb-table-wrap { flex: none; max-height: 16.5rem; }
-#page-meeting-scoreboard .msb-zone[data-msb-zone="office"] { border-color: #e4e0d8; background: #faf9f7; }
-#page-meeting-scoreboard .msb-zone[data-msb-zone="office"] .msb-zone-kicker { color: #e6d7b8; }
-#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+1) .msb-zone-head { background: #243044; }
-#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+2) .msb-zone-head { background: #3a342c; }
-#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+3) .msb-zone-head { background: #2a3b38; }
-#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+4) .msb-zone-head { background: #3d3140; }
-#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+5) .msb-zone-head { background: #2c3544; }
+#page-meeting-scoreboard .msb-office-zones .msb-table-wrap { flex: none; max-height: none; }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="office"] { border-color: #e7e5e4; background: #fff; }
+#page-meeting-scoreboard .msb-zone[data-msb-zone="office"] .msb-zone-head {
+  min-height: 2.15rem;
+  padding: 0.35rem 0.75rem;
+  color: #1c1917;
+}
+#page-meeting-scoreboard .msb-zone[data-msb-zone="office"] .msb-zone-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #1c1917;
+}
+#page-meeting-scoreboard .msb-zone[data-msb-zone="office"] .msb-zone-kicker {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: #78716c;
+}
+#page-meeting-scoreboard .msb-zone[data-msb-zone="office"] .msb-zone-meta { color: #57534e; }
+#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+1) .msb-zone-head { background: #e5f3ea; }
+#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+2) .msb-zone-head { background: #e4eef8; }
+#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+3) .msb-zone-head { background: #fbf3e4; }
+#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+4) .msb-zone-head { background: #f6e8ef; }
+#page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+5) .msb-zone-head { background: #e8eef6; }
 #page-meeting-scoreboard .msb-detail { margin: 0 0 0.85rem; border: 1px solid #e7e2da; border-radius: 0.75rem; overflow: hidden; background: #fff; }
 #page-meeting-scoreboard .msb-detail-head { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.55rem 0.8rem; background: #243044; color: #f7f4ee; }
 #page-meeting-scoreboard .msb-detail-head b { font-size: 1.05rem; letter-spacing: 0.08em; }
@@ -321,11 +337,11 @@
 }
 #page-meeting-scoreboard .msb-table-wrap {
   overflow: auto;
-  scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
 }
 #page-meeting-scoreboard .msb-table-wrap--zone-lg,
-#page-meeting-scoreboard .msb-table-wrap--zone-sm { max-height: 16.5rem; }
+#page-meeting-scoreboard .msb-table-wrap--zone-sm { max-height: none; }
+#page-meeting-scoreboard .msb-zone .msb-table { min-width: 0; }
 #page-meeting-scoreboard .msb-table {
   width: 100%;
   min-width: 40rem;
@@ -730,7 +746,6 @@ body.msb-modal-open { overflow: hidden; }
 
 @media (max-width: 1200px) {
   #page-meeting-scoreboard .msb-dual { grid-template-columns: 1fr; }
-  #page-meeting-scoreboard .msb-dual-col--office .msb-table-wrap { max-height: min(48vh, 480px); }
 }
 @media (max-width: 720px) {
   #page-meeting-scoreboard { padding: 0.5rem 0.55rem 1.5rem; }
