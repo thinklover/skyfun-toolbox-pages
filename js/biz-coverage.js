@@ -845,15 +845,21 @@
     const escrowNote = prod.cumulativeError
       ? `<p class="cv-note">代管：${esc(prod.cumulativeError)}。下列是目前已撈到的。</p>`
       : '';
-    return `<div class="cv-flags">
-      <section class="cv-flag">
+    const openName = norm(state.openPerson);
+    const openIdle = !!(openName && idle.some((row) => norm(row.person.name) === openName));
+    const openBusy = !!(openName && busy.some((row) => norm(row.person.name) === openName));
+    /* 兩邊都有同一人時優先加寬代管欄（電訪欄較多） */
+    const flagsMod = openBusy ? ' cv-flags--call-open cv-flags--open-busy'
+      : openIdle ? ' cv-flags--call-open cv-flags--open-idle' : '';
+    return `<div class="cv-flags${flagsMod}">
+      <section class="cv-flag${openIdle && !openBusy ? ' cv-flag--call-open' : ''}">
         <h3>連續兩個月未產件又未保<small>${idle.length}</small></h3>
         <p>${esc(label)}產件都是 0（認列產件，不是新媒合），而且沒有投保。只列業務、租管師。人名下的「新案」另算 115/11/1 起新媒合。</p>
         <p class="cv-note">第一排序：營業處北→南；第二排序：代管件數（暫代未產件時間，可切換多／少）。</p>
         ${idle.length ? sortToggleHtml('idle', state.idleSortDir, '代管件數（暫代未產件時間）') : ''}
         ${idle.length ? `<div class="cv-flag-list">${idle.map((row) => line(row, [`近兩月產件 0`])).join('')}</div>` : '<p class="cv-empty">沒有符合的人。</p>'}
       </section>
-      <section class="cv-flag">
+      <section class="cv-flag${openBusy ? ' cv-flag--call-open' : ''}">
         <h3>代管 10 件以上未保<small>${busy.length}</small></h3>
         <p>未投保、累積代管案件 10 件以上。人名下的「新案」另算 115/11/1 起新媒合，與代管件數分開。</p>
         ${escrowNote}
