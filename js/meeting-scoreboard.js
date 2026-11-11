@@ -369,8 +369,7 @@
       open ? '<span class="msb-chip msb-chip--on">明細</span>' : ''
     ].filter(Boolean).join(' ');
     const acts = `<td class="act">
-          <button type="button" class="msb-act-btn is-plus" data-msb-add="${esc(p.id)}">加分</button>
-          <button type="button" class="msb-act-btn is-minus" data-msb-add="${esc(p.id)}" data-msb-minus="1">減分</button>
+          <button type="button" class="msb-act-btn is-plus" data-msb-add="${esc(p.id)}">加減分</button>
         </td>`;
     const scoreCell = yearMode
       ? scoreCellHtml(p.score)
@@ -477,8 +476,7 @@
       ${named ? `<b class="msb-dept-name">${esc(dept)}</b>` : '<span class="msb-dept-label">部門分數</span>'}
       <span class="msb-dept-num${cls}">${n == null ? '—' : esc(manualScoreText(n))}</span>
       <span class="msb-dept-acts">
-        <button type="button" class="msb-act-btn is-plus" data-msb-dept-add="${esc(dept)}">加分</button>
-        <button type="button" class="msb-act-btn is-minus" data-msb-dept-add="${esc(dept)}" data-msb-minus="1">減分</button>
+        <button type="button" class="msb-act-btn is-plus" data-msb-dept-add="${esc(dept)}">加減分</button>
       </span>
     </div>`;
   }
@@ -871,20 +869,20 @@
       $('msb-entry-form')?.reset();
       if ($('msb-date')) $('msb-date').value = todayStr();
       if ($('msb-project')) $('msb-project').value = defaultProjectId();
-      if ($('msb-item')) $('msb-item').value = asMinus ? '減分' : '加分';
+      if ($('msb-item')) $('msb-item').value = '加減分';
       if ($('msb-session')) $('msb-session').value = '';
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
       if (asMinus && $('msb-score')) $('msb-score').value = '-';
       if (state.deptTarget && $('msb-dept-name')) $('msb-dept-name').value = state.deptTarget;
       if ($('msb-form-title')) {
         $('msb-form-title').textContent = state.deptTarget
-          ? ((asMinus ? '部門減分｜' : '部門加分｜') + state.deptTarget)
-          : (asMinus ? '減分' : '加分');
+          ? ('部門加減分｜' + state.deptTarget)
+          : '加減分';
       }
       fillSelects(personId);
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
       if ($('msb-project')) $('msb-project').value = defaultProjectId();
-      if ($('msb-item')) $('msb-item').value = asMinus ? '減分' : '加分';
+      if ($('msb-item')) $('msb-item').value = '加減分';
       setDeptMode(state.deptTarget);
     }
     setMsg('', '', 'msb-form-msg');
