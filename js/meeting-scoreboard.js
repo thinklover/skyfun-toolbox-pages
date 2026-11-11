@@ -293,7 +293,7 @@
           const title = personTitle(p);
           const titleBit = title && title !== '其他' ? ' · ' + esc(title) : '';
           return `<li><span>${esc(p.name)}${personDept(p) ? ' · ' + esc(personDept(p)) : ''}${titleBit}</span>
-            <button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">部別／職別／帳號</button>
+            <button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">修改</button>
             <button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></li>`;
         }).join('') + '</ul>'
         : '<p class="msb-empty">尚無人員</p>';
@@ -501,6 +501,7 @@
     state.bindPersonId = person.id;
     if ($('msb-bind-person-id')) $('msb-bind-person-id').value = String(person.id);
     if ($('msb-bind-person-label')) $('msb-bind-person-label').textContent = person.name || '';
+    if ($('msb-bind-name')) $('msb-bind-name').value = person.name || '';
     fillBindDept(personDept(person));
     {
       const t = personTitle(person);
@@ -632,26 +633,50 @@
     });
     $('msb-bind-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      if (!state.canEdit || state.busy) return;
+      if (!state.canEdit) {
+        setMsg('沒有權限修改', 'err', 'msb-bind-msg');
+        return;
+      }
+      if (state.busy) {
+        setMsg('儲存中，請稍候…', 'err', 'msb-bind-msg');
+        return;
+      }
       const personId = Number($('msb-bind-person-id')?.value || state.bindPersonId || 0);
-      if (!personId) return;
+      if (!personId) {
+        setMsg('找不到人員編號，請關閉後重開', 'err', 'msb-bind-msg');
+        return;
+      }
+      const newName = String($('msb-bind-name')?.value || '').trim();
+      if (!newName) {
+        setMsg('請填姓名', 'err', 'msb-bind-msg');
+        return;
+      }
       state.busy = true;
+      const btn = $('msb-bind-save');
+      if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
       try {
         const accountVal = String($('msb-bind-account')?.value || '').trim();
-        const res = await rpc('msb_person_patch', {
+        const payload = {
           p_token: token(),
           p_id: personId,
+          p_name: newName,
           p_department: $('msb-bind-dept')?.value || '',
-          p_account_id: accountVal || null,
           p_job_title: String($('msb-bind-job-title')?.value || '').trim()
-        });
+        };
+        if (accountVal) payload.p_account_id = accountVal;
+        const res = await rpc('msb_person_patch', payload);
         if (!res?.ok) throw new Error(res?.error || '儲存失敗');
         closeBindModal();
-        setMsg('已更新部別／職別／帳號', 'ok');
+        setMsg('已更新「' + newName + '」', 'ok');
         await reload();
+        if (state.view === 'settings') setView('settings');
+        setMsg('已更新「' + newName + '」', 'ok');
       } catch (err) {
         setMsg(err.message || String(err), 'err', 'msb-bind-msg');
-      } finally { state.busy = false; }
+      } finally {
+        state.busy = false;
+        if (btn) { btn.disabled = false; btn.textContent = '儲存'; }
+      }
     });
     $('msb-month-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
