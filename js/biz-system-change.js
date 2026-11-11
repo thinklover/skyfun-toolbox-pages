@@ -249,6 +249,25 @@
     }
   }
 
+  function fillEditModifier(name, team) {
+    const sel = $('bsc-edit-modifier');
+    if (!sel) return;
+    const opts = ['<option value="">請選擇營業處經理</option>'].concat(
+      state.managers.map((m) => {
+        const label = m.team ? `${m.team}｜${m.name}` : m.name;
+        return `<option value="${esc(modValue(m))}">${esc(label)}</option>`;
+      })
+    );
+    sel.innerHTML = opts.join('');
+    const want = modValue({ name: name || '', team: team || '' });
+    if (want && Array.from(sel.options).some((o) => o.value === want)) {
+      sel.value = want;
+      return;
+    }
+    const byName = state.managers.find((m) => String(m.name || '').trim() === String(name || '').trim());
+    if (byName) sel.value = modValue(byName);
+  }
+
   async function loadManagers() {
     if (!token() || !window.skyfunAuth?.rpc) {
       state.managers = [];
@@ -793,6 +812,9 @@
       hint.textContent = row.adminNote ? ('退回紀錄：' + row.adminNote) : '請依退回原因修改後重新送出';
       hint.classList.remove('is-err');
     }
+    const showModifier = () => fillEditModifier(row.modifierName, row.modifierTeam);
+    if (state.managers.length) showModifier();
+    else loadManagers().then(showModifier);
     renderEditFiles();
     if (modal) {
       modal.hidden = false;
@@ -856,10 +878,19 @@
     const address = String($('bsc-edit-address')?.value || '').trim();
     const matchNo = String($('bsc-edit-match')?.value || '').trim();
     const content = String($('bsc-edit-content')?.value || '').trim();
+    const mod = parseMod($('bsc-edit-modifier')?.value);
     const nodes = Array.from(document.querySelectorAll('#bsc-edit-modal input[name="bsc-edit-nodes"]:checked'))
       .map((el) => el.value)
       .filter((v) => NODE_OPTIONS.includes(v));
     const hint = $('bsc-edit-hint');
+    if (!mod.name) {
+      if (hint) {
+        hint.textContent = '請選擇營業處經理';
+        hint.classList.add('is-err');
+      }
+      $('bsc-edit-modifier')?.focus();
+      return;
+    }
     if (!address || !matchNo || !content || !nodes.length) {
       if (hint) {
         hint.textContent = '請填完整地址、媒合編號、節點與修改內容';
@@ -888,7 +919,9 @@
           matchNo,
           content,
           nodes,
-          attachments
+          attachments,
+          modifierName: mod.name,
+          modifierTeam: mod.team
         }
       });
       if (!res?.ok) throw new Error(res?.error || '重新送出失敗');

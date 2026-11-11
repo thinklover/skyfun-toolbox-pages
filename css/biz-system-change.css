@@ -198,6 +198,7 @@
 #page-business-system-change .bsc-edit-panel {
   max-width: 34rem;
 }
+#page-business-system-change .bsc-xfer-body select,
 #page-business-system-change .bsc-xfer-body input[type="text"] {
   width: 100%;
   border: 1px solid #cbd5e1;
