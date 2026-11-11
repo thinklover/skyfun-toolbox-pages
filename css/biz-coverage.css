@@ -1,4 +1,19 @@
-/* FORCE_DEPLOY_AREA 20261107b */
+/* FORCE_DEPLOY_AREA 20261111-lic */
+:is(#page-business-coverage, #page-business-toolbox) .cv-lic {
+  display: inline-block;
+  margin: 0.15rem 0 0.1rem;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-lic--both { background: #d1fae5; color: #065f46; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-lic--lease { background: #fef3c7; color: #92400e; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-lic--sales { background: #ffe4e6; color: #9f1239; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-lic--none { background: #1c1917; color: #fff7ed; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-lic--wait { background: #f1f5f9; color: #64748b; }
 /* 誠信險投保與工具箱綁定（限定 :is(#page-business-coverage, #page-business-toolbox)） */
 :is(#page-business-coverage, #page-business-toolbox).cv-locked .cv-lead,
 :is(#page-business-coverage, #page-business-toolbox).cv-locked .cv-admin-link { display: none; }

@@ -54,7 +54,10 @@
     rateTrendOpen: false,
     /** 第二排序：代管件數；desc=多→少、asc=少→多（第一排序固定營業處北→南） */
     idleSortDir: 'desc',
-    busySortDir: 'desc'
+    busySortDir: 'desc',
+    licenses: {},
+    licensesLoaded: false,
+    licenseError: ''
   };
 
   const TREND_SERIES = [
@@ -284,11 +287,27 @@
     </div>`;
   }
 
+  function licenseBadge(name) {
+    const row = state.licenses[norm(name)];
+    if (!row) {
+      if (state.licenseError) return '';
+      return '<em class="cv-lic cv-lic--wait">證照讀取中</em>';
+    }
+    const status = row.status || '無資料';
+    const cls = {
+      '雙證都有': 'both',
+      '缺租管人員': 'lease',
+      '缺營業員': 'sales',
+      '缺雙證': 'none'
+    }[status] || 'wait';
+    return `<em class="cv-lic cv-lic--${cls}">${esc(status)}</em>`;
+  }
   function personHit(person, extraBits) {
     const on = norm(state.openPerson) === norm(person.name);
     const sub = personSub(person, extraBits);
+    const badge = person.insured ? '' : licenseBadge(person.name);
     return `<button type="button" class="cv-person-hit${on ? ' is-on' : ''}" data-cv-person="${esc(person.name)}" aria-expanded="${on ? 'true' : 'false'}">
-      <b>${esc(person.name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}
+      <b>${esc(person.name)}</b>${badge}${sub ? `<small>${esc(sub)}</small>` : ''}
     </button>`;
   }
 
@@ -770,6 +789,7 @@
       ${state.error ? `<p class="cv-error">${esc(state.error)}</p>` : ''}
       ${state.hrError ? `<p class="cv-error">人事：${esc(state.hrError)}。比率顯示無資料。</p>` : ''}
       ${mode === 'ins' && state.sheetError ? `<p class="cv-note">名冊：${esc(state.sheetError)}</p>` : ''}
+      ${mode === 'ins' && state.licenseError ? `<p class="cv-note">證照：${esc(state.licenseError)}</p>` : ''}
       <div class="cv-boards">
         ${boardHtml(mode)}
       </div>`;
@@ -1036,7 +1056,43 @@
     if (state.loaded) {
       void loadCases(t);
       void syncRateHistory(t);
+      void loadLicenses(t);
     }
+  }
+  async function loadLicenses(t) {
+    const tokenNow = t || token();
+    if (!tokenNow || !state.loaded) return;
+    const names = state.people.filter((person) => !person.insured).map((person) => person.name);
+    if (!names.length) {
+      state.licenses = {};
+      state.licensesLoaded = true;
+      state.licenseError = '';
+      render();
+      return;
+    }
+    try {
+      const res = await fetch(`${rpaBase()}/api/hr/coverage-licenses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Skyfun-Session': tokenNow
+        },
+        body: JSON.stringify({ names })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || '證照讀不到');
+      const next = {};
+      (data.people || []).forEach((row) => {
+        const key = norm(row.name);
+        if (key) next[key] = { status: row.status || '無資料' };
+      });
+      state.licenses = next;
+      state.licensesLoaded = true;
+      state.licenseError = '';
+    } catch (err) {
+      state.licenseError = '公司系統證照這次讀不到';
+    }
+    render();
   }
 
   async function syncRateHistory(t) {
