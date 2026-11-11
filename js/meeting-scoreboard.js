@@ -392,6 +392,18 @@
     push('未填部別');
     return out;
   }
+  function settingsGroups(people) {
+    const biz = BIZ_ZONES.map((z) => ({
+      title: z.label,
+      rows: people.filter((p) => isBizDept(personDept(p)) && bizZoneId(personDept(p)) === z.id)
+    })).filter((g) => g.rows.length);
+    const officePeople = people.filter((p) => !isBizDept(personDept(p)));
+    const office = settingsDeptOrder(officePeople).map((dept) => ({
+      title: dept,
+      rows: officePeople.filter((p) => (personDept(p) || '未填部別') === dept)
+    }));
+    return biz.concat(office);
+  }
   function officeDeptList(people) {
     const names = new Set(people.map((p) => personDept(p) || '未填部別'));
     const known = OFFICE_DEPT_ORDER.filter((d) => names.has(d));
@@ -490,27 +502,32 @@
       if (!people.length) {
         peopleBox.innerHTML = '<p class="msb-empty">尚無人員</p>';
       } else {
-        const allDepts = settingsDeptOrder(people);
-        peopleBox.innerHTML = allDepts.map((dept) => {
-          const rows = people.filter((p) => (personDept(p) || '未填部別') === dept)
-            .slice().sort((a, b) => titleRank(a) - titleRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'));
-          return `<section class="msb-detail">
-            <header class="msb-detail-head"><b>${esc(dept)}</b><span>${rows.length} 人</span></header>
-            <div class="msb-detail-table-wrap"><table class="msb-detail-table">
-              <thead><tr><th>職別</th><th>姓名</th><th>部別</th><th></th></tr></thead>
+        const groups = settingsGroups(people);
+        peopleBox.innerHTML = `<div class="msb-org-groups">${groups.map((g) => {
+          const rows = g.rows.slice().sort((a, b) => titleRank(a) - titleRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'));
+          return `<section class="msb-org-group">
+            <header class="msb-org-head">${esc(g.title)}</header>
+            <div class="msb-org-stats">現有 <b>${rows.length}</b> 人</div>
+            <div class="msb-org-table-wrap"><table class="msb-org-table">
+              <thead><tr><th>狀態</th><th>姓名／職稱</th><th>部別</th><th>營業處</th><th></th></tr></thead>
               <tbody>${rows.map((p) => {
                 const title = personTitle(p);
-                const titleShow = title && title !== '其他' ? title : '—';
+                const titleShow = title && title !== '其他' ? title : '';
+                const dept = personDept(p);
+                const biz = isBizDept(dept);
+                const area = biz ? (BIZ_ZONES.find((z) => z.id === bizZoneId(dept)) || {}).label || '—' : (dept || '—');
+                const office = biz ? dept : '—';
                 return `<tr>
-                  <td>${esc(titleShow)}</td>
-                  <td class="msb-detail-name">${esc(p.name)}</td>
-                  <td>${esc(personDept(p) || '—')}</td>
-                  <td class="msb-detail-act"><button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">修改</button><button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></td>
+                  <td class="msb-org-st">在職</td>
+                  <td class="msb-org-name"><b>${esc(p.name)}</b>${titleShow ? `<small>${esc(titleShow)}</small>` : ''}</td>
+                  <td>${esc(area)}</td>
+                  <td>${esc(office)}</td>
+                  <td class="msb-org-act"><button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">修改</button><button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></td>
                 </tr>`;
               }).join('')}</tbody>
             </table></div>
           </section>`;
-        }).join('');
+        }).join('')}</div>`;
       }
     }
     renderEditors();

@@ -158,16 +158,60 @@
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+3) .msb-zone-head { background: #fbf3e4; }
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+4) .msb-zone-head { background: #f6e8ef; }
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+5) .msb-zone-head { background: #e8eef6; }
-#page-meeting-scoreboard .msb-detail { margin: 0 0 0.85rem; border: 1px solid #e7e2da; border-radius: 0.75rem; overflow: hidden; background: #fff; }
-#page-meeting-scoreboard .msb-detail-head { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.55rem 0.8rem; background: #243044; color: #f7f4ee; }
-#page-meeting-scoreboard .msb-detail-head b { font-size: 1.05rem; letter-spacing: 0.08em; }
-#page-meeting-scoreboard .msb-detail-head span { margin-left: auto; font-size: 0.78rem; color: #e6d7b8; font-weight: 800; }
-#page-meeting-scoreboard .msb-detail-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-#page-meeting-scoreboard .msb-detail-table th { text-align: left; padding: 0.4rem 0.7rem; background: #f6f4f0; color: #57534e; font-size: 0.75rem; font-weight: 800; }
-#page-meeting-scoreboard .msb-detail-table td { padding: 0.45rem 0.7rem; border-top: 1px solid #f1ece4; }
-#page-meeting-scoreboard .msb-detail-name { font-weight: 900; }
-#page-meeting-scoreboard .msb-detail-act { text-align: right; white-space: nowrap; }
-#page-meeting-scoreboard .msb-detail-act .msb-link + .msb-link { margin-left: 0.65rem; }
+#page-meeting-scoreboard .msb-org-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #e6dcc8;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: #fff;
+}
+#page-meeting-scoreboard .msb-org-group { min-width: 0; border-right: 1px solid #e6dcc8; border-bottom: 1px solid #e6dcc8; }
+#page-meeting-scoreboard .msb-org-group:nth-child(3n) { border-right: 0; }
+#page-meeting-scoreboard .msb-org-head {
+  background: #1c2838;
+  color: #f4ead3;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  padding: 0.55rem 0.4rem;
+  border-bottom: 2px solid #c4a36a;
+}
+#page-meeting-scoreboard .msb-org-stats {
+  background: #faf6ee;
+  text-align: center;
+  padding: 0.4rem 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #57606d;
+  border-bottom: 1px solid #efe6d4;
+}
+#page-meeting-scoreboard .msb-org-stats b { color: #1c2838; }
+#page-meeting-scoreboard .msb-org-table-wrap { overflow-x: auto; }
+#page-meeting-scoreboard .msb-org-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+#page-meeting-scoreboard .msb-org-table th {
+  background: #f4efe4;
+  color: #7a6136;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 0.42rem 0.28rem;
+  text-align: center;
+  white-space: nowrap;
+  border-bottom: 1px solid #ddcfb2;
+}
+#page-meeting-scoreboard .msb-org-table td {
+  padding: 0.4rem 0.28rem;
+  border-bottom: 1px solid #f1ede5;
+  text-align: center;
+  color: #27303d;
+  white-space: nowrap;
+}
+#page-meeting-scoreboard .msb-org-st { color: #9aa1ab; font-size: 0.72rem; }
+#page-meeting-scoreboard .msb-org-name b { display: block; font-weight: 800; letter-spacing: 0.04em; }
+#page-meeting-scoreboard .msb-org-name small { display: block; font-size: 0.68rem; font-weight: 700; color: #8a7450; }
+#page-meeting-scoreboard .msb-org-act .msb-link + .msb-link { margin-left: 0.4rem; }
 #page-meeting-scoreboard .msb-zone .msb-table-panel {
   margin: 0.45rem;
   border-radius: 0.65rem;
@@ -746,6 +790,8 @@ body.msb-modal-open { overflow: hidden; }
 
 @media (max-width: 1200px) {
   #page-meeting-scoreboard .msb-dual { grid-template-columns: 1fr; }
+  #page-meeting-scoreboard .msb-org-groups { grid-template-columns: 1fr; }
+  #page-meeting-scoreboard .msb-org-group { border-right: 0; }
 }
 @media (max-width: 720px) {
   #page-meeting-scoreboard { padding: 0.5rem 0.55rem 1.5rem; }
