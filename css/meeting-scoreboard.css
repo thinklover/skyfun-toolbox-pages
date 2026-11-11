@@ -201,6 +201,49 @@
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+3) .msb-zone-head { background: #fbf3e4; }
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+4) .msb-zone-head { background: #f6e8ef; }
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+5) .msb-zone-head { background: #e8eef6; }
+#page-meeting-scoreboard .msb-dept-slot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.4rem 0.5rem 0;
+}
+#page-meeting-scoreboard .msb-dept-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: #f7f1e4;
+  border: 1px dashed #c9b48a;
+  color: #3f3424;
+}
+#page-meeting-scoreboard .msb-zone--office > .msb-dept-bar {
+  margin: 0.4rem 0.5rem 0;
+  border-radius: 0.55rem;
+}
+#page-meeting-scoreboard .msb-zone--office > .msb-dept-bar .msb-dept-num { margin-left: auto; }
+#page-meeting-scoreboard .msb-dept-kicker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #8a6a35;
+}
+#page-meeting-scoreboard .msb-dept-name,
+#page-meeting-scoreboard .msb-dept-label {
+  font-weight: 800;
+  font-size: 0.86rem;
+}
+#page-meeting-scoreboard .msb-dept-num {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5rem;
+  text-align: right;
+}
+#page-meeting-scoreboard .msb-dept-num.is-pos { color: #163832; }
+#page-meeting-scoreboard .msb-dept-num.is-neg { color: #9b2335; }
+#page-meeting-scoreboard .msb-dept-acts { display: inline-flex; gap: 0.2rem; }
+#page-meeting-scoreboard .msb-year-dual .msb-dept-slot { padding: 0 0 0.55rem; }
 #page-meeting-scoreboard .msb-org-block { margin: 0 0 1.1rem; }
 #page-meeting-scoreboard .msb-org-block-title {
   margin: 0 0 0.45rem;
@@ -789,6 +832,8 @@
 }
 .msb-modal .msb-field,
 #page-meeting-scoreboard .msb-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.msb-modal .msb-field[hidden],
+#page-meeting-scoreboard .msb-field[hidden] { display: none; }
 .msb-modal .msb-field--full,
 #page-meeting-scoreboard .msb-field--full { grid-column: 1 / -1; }
 .msb-modal .msb-field label,

@@ -52,6 +52,8 @@
     accountOptions: [],
     bound: false,
     expandedPersonId: '',
+    deptScores: {},
+    deptTarget: '',
     peopleSort: {
       office: { key: '', dir: 'desc' },
       'biz-north': { key: '', dir: 'desc' },
@@ -438,6 +440,61 @@
       : `<tr><td colspan="${hideDept ? 5 : 6}" class="msb-empty">尚無人員</td></tr>`;
     return `<div class="msb-table-panel"><div class="msb-table-head"><table class="msb-table msb-table--people">${cols}<thead>${head}</thead></table></div><div class="msb-table-wrap msb-table-wrap--zone-sm"><table class="msb-table msb-table--people">${cols}<tbody>${body}</tbody></table></div></div>`;
   }
+  function deptSort(a, b) {
+    const oa = OFFICE_NS.indexOf(a);
+    const ob = OFFICE_NS.indexOf(b);
+    if (oa >= 0 || ob >= 0) {
+      if (oa < 0) return 1;
+      if (ob < 0) return -1;
+      return oa - ob;
+    }
+    const ia = OFFICE_DEPT_ORDER.indexOf(a);
+    const ib = OFFICE_DEPT_ORDER.indexOf(b);
+    const ra = ia >= 0 ? ia : 500;
+    const rb = ib >= 0 ? ib : 500;
+    return ra - rb || a.localeCompare(b, 'zh-Hant');
+  }
+  function deptNamesFor(pred) {
+    const names = [];
+    (state.people || []).forEach((p) => {
+      const d = personDept(p);
+      if (!d) return;
+      if (pred && !pred(d)) return;
+      if (names.indexOf(d) < 0) names.push(d);
+    });
+    Object.keys(state.deptScores || {}).forEach((d) => {
+      if (!d || names.indexOf(d) >= 0) return;
+      if (pred && !pred(d)) return;
+      names.push(d);
+    });
+    return names.sort(deptSort);
+  }
+  function deptBarHtml(dept, named) {
+    const n = numOrNull(state.deptScores[dept]);
+    const cls = n == null ? '' : (n > 0 ? ' is-pos' : (n < 0 ? ' is-neg' : ''));
+    return `<div class="msb-dept-bar">
+      <span class="msb-dept-kicker">部門</span>
+      ${named ? `<b class="msb-dept-name">${esc(dept)}</b>` : '<span class="msb-dept-label">部門分數</span>'}
+      <span class="msb-dept-num${cls}">${n == null ? '—' : esc(manualScoreText(n))}</span>
+      <span class="msb-dept-acts">
+        <button type="button" class="msb-act-btn is-plus" data-msb-dept-add="${esc(dept)}">加分</button>
+        <button type="button" class="msb-act-btn is-minus" data-msb-dept-add="${esc(dept)}" data-msb-minus="1">減分</button>
+      </span>
+    </div>`;
+  }
+  function deptStripHtml(depts) {
+    if (!depts.length) return '';
+    return `<div class="msb-dept-slot">${depts.map((d) => deptBarHtml(d, true)).join('')}</div>`;
+  }
+  function fillBizDeptSlots() {
+    BIZ_ZONES.forEach((z) => {
+      const slot = document.querySelector('#page-meeting-scoreboard [data-msb-dept-slot="' + z.id + '"]');
+      if (!slot) return;
+      const depts = deptNamesFor((d) => isBizDept(d) && bizZoneId(d) === z.id);
+      slot.innerHTML = depts.map((d) => deptBarHtml(d, true)).join('');
+      slot.hidden = !depts.length;
+    });
+  }
   function renderPeopleTable() {
     const officeHost = $('msb-office-zones');
     const note = $('msb-score-month-note');
@@ -446,8 +503,8 @@
     const month = state.scoreMonth || state.month || currentMonth();
     if (note) {
       note.textContent = state.span === 'year'
-        ? ('分數與獎金為 ' + (state.year || month.slice(0, 4)) + ' 年各月加總。沒有輸入的月份不計入。點列可展開該年加減分明細。')
-        : ('分數與獎金為 ' + month + ' 手動輸入。點列可展開加減分明細；業務分北／中／南／高雄，內勤依部別分區。');
+        ? ('分數與獎金為 ' + (state.year || month.slice(0, 4)) + ' 年各月加總。淺色列是部門自己的分數，不算進個人。')
+        : ('分數與獎金為 ' + month + ' 手動輸入。淺色列是部門自己的分數，不算進個人。');
     }
     if (selfBox) {
       selfBox.hidden = true;
@@ -468,8 +525,14 @@
       const bizPeople = sortPeopleList(list.filter((p) => isBizDept(personDept(p))), yearSort('year-biz'));
       const officeBox = $('msb-year-office');
       const bizBox = $('msb-year-biz');
-      if (officeBox) officeBox.innerHTML = peopleTableHtml('year-office', officePeople, false);
-      if (bizBox) bizBox.innerHTML = peopleTableHtml('year-biz', bizPeople, false);
+      if (officeBox) {
+        officeBox.innerHTML = deptStripHtml(deptNamesFor((d) => !isBizDept(d)))
+          + peopleTableHtml('year-office', officePeople, false);
+      }
+      if (bizBox) {
+        bizBox.innerHTML = deptStripHtml(deptNamesFor((d) => isBizDept(d)))
+          + peopleTableHtml('year-biz', bizPeople, false);
+      }
       syncPeopleSortHeaders();
       return;
     }
@@ -483,6 +546,7 @@
       );
       return `<div class="msb-zone msb-zone--office" data-msb-zone="office">
         <div class="msb-zone-head"><h4 class="msb-zone-title">${esc(dept)}</h4><span class="msb-zone-kicker">部別</span><span class="msb-zone-meta">${rows.length} 人</span></div>
+        ${deptBarHtml(dept, false)}
         ${peopleTableHtml(side, rows, true)}
       </div>`;
     }).join('') : '<p class="msb-empty">尚無內勤人員</p>';
@@ -495,6 +559,7 @@
       );
       fillPeopleBody(body, zoneList, edit);
     });
+    fillBizDeptSlots();
     syncPeopleSortHeaders();
   }
   function filteredRecords() {
@@ -677,6 +742,17 @@
     if (!res?.ok) throw new Error(res?.error || '載入失敗');
     return res;
   }
+  async function loadDeptScores(period) {
+    state.deptScores = {};
+    try {
+      const res = await rpc('msb_dept_scores', { p_token: token(), p_period: period });
+      if (!res?.ok) return;
+      (res.rows || []).forEach((r) => {
+        const d = String(r.department || '').trim();
+        if (d) state.deptScores[d] = r.score;
+      });
+    } catch (_) { /* 部門分數晚一點補上，不擋總表 */ }
+  }
   async function reload() {
     if (!token()) { setMsg('請先登入工具箱', 'err'); return; }
     setMsg('載入中…');
@@ -717,6 +793,7 @@
       }
       state.entries = yearMode ? [] : (dash.entries || []);
       if (yearMode) void loadYearEntries(year);
+      await loadDeptScores(yearMode ? year : (state.scoreMonth || month));
       if (!state.serverScoped && !state.canViewAll) {
         state.people = [];
         state.projects = [];
@@ -759,12 +836,27 @@
   let formBaseline = '';
   function markFormClean() { formBaseline = snapshotForm(); state.formDirty = false; }
   function checkDirty() { state.formDirty = snapshotForm() !== formBaseline; return state.formDirty; }
-  function openModal(editId, personId, asMinus) {
+  function setDeptMode(dept) {
+    state.deptTarget = String(dept || '').trim();
+    const on = !!state.deptTarget;
+    const personField = $('msb-person-field');
+    const deptField = $('msb-dept-field');
+    const person = $('msb-person');
+    if (personField) personField.hidden = on;
+    if (deptField) deptField.hidden = !on;
+    if (person) {
+      person.required = !on;
+      person.disabled = on;
+    }
+    if ($('msb-dept-name')) $('msb-dept-name').value = state.deptTarget;
+  }
+  function openModal(editId, personId, asMinus, deptName) {
     const e = editId != null
       ? (state.recordsEntries.find((x) => String(x.id) === String(editId))
         || state.entries.find((x) => String(x.id) === String(editId)))
       : null;
     state.editId = e ? e.id : null;
+    setDeptMode(e ? '' : deptName);
     fillSelects(personId || (e && e.personId));
     if (e) {
       if ($('msb-person')) $('msb-person').value = String(e.personId);
@@ -783,11 +875,17 @@
       if ($('msb-session')) $('msb-session').value = '';
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
       if (asMinus && $('msb-score')) $('msb-score').value = '-';
-      if ($('msb-form-title')) $('msb-form-title').textContent = asMinus ? '減分' : '加分';
+      if (state.deptTarget && $('msb-dept-name')) $('msb-dept-name').value = state.deptTarget;
+      if ($('msb-form-title')) {
+        $('msb-form-title').textContent = state.deptTarget
+          ? ((asMinus ? '部門減分｜' : '部門加分｜') + state.deptTarget)
+          : (asMinus ? '減分' : '加分');
+      }
       fillSelects(personId);
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
       if ($('msb-project')) $('msb-project').value = defaultProjectId();
       if ($('msb-item')) $('msb-item').value = asMinus ? '減分' : '加分';
+      setDeptMode(state.deptTarget);
     }
     setMsg('', '', 'msb-form-msg');
     const modal = $('msb-modal');
@@ -804,6 +902,7 @@
     document.body.classList.remove('msb-modal-open');
     state.editId = null;
     state.formDirty = false;
+    setDeptMode('');
     return true;
   }
   function openMonthModal(personId) {
@@ -957,6 +1056,12 @@
       if (e.target.closest('[data-msb-close]')) { closeModal(false); return; }
       if (e.target.closest('[data-msb-month-close]')) { closeMonthModal(); return; }
       if (e.target.closest('[data-msb-bind-close]')) { closeBindModal(); return; }
+      const deptBtn = e.target.closest('[data-msb-dept-add]');
+      if (deptBtn) {
+        if (!state.canEdit) return;
+        openModal(null, null, deptBtn.hasAttribute('data-msb-minus'), deptBtn.getAttribute('data-msb-dept-add'));
+        return;
+      }
       if (e.target.id === 'msb-open-add' || e.target.id === 'msb-open-add-2') {
         if (!state.canEdit) return;
         openModal(null, null, false);
@@ -1169,6 +1274,24 @@
         const entryPersonId = Number($('msb-person')?.value || 0) || null;
         const projectId = Number($('msb-project')?.value || defaultProjectId() || 0) || null;
         const item = String($('msb-item')?.value || $('msb-note')?.value || '加減分').trim() || '加減分';
+        if (state.deptTarget) {
+          const deptRes = await rpc('msb_dept_entry_save', {
+            p_token: token(),
+            p_data: {
+              department: state.deptTarget,
+              scoreDate: $('msb-date')?.value || '',
+              score: $('msb-score')?.value || '',
+              item: item.indexOf('部門') === 0 ? item : ('部門' + item),
+              note: $('msb-note')?.value || ''
+            }
+          });
+          if (!deptRes?.ok) throw new Error(deptRes?.error || '儲存失敗');
+          markFormClean();
+          closeModal(true);
+          setMsg('已記入部門', 'ok');
+          await reload();
+          return;
+        }
         if (!projectId) throw new Error('尚無可寫入的專案，請稍後再試或通知管理員');
         const res = await rpc('msb_entry_save', {
           p_token: token(),

@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261111-resubmod">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
 <link rel="stylesheet" href="./css/fin-report.css?v=20261108-fin62">
-<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261112-msb-v32">
+<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261112-msb-v33">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -7421,6 +7421,7 @@
                             <div class="msb-biz-zones" id="msb-biz-zones">
                                 <div class="msb-zone msb-zone--lg" data-msb-zone="north">
                                     <div class="msb-zone-head"><h4 class="msb-zone-title">北區</h4><span class="msb-zone-kicker">分區</span><span class="msb-zone-meta">北一至北五・基隆・宜蘭</span></div>
+                                    <div class="msb-dept-slot" data-msb-dept-slot="north"></div>
                                     <div class="msb-table-panel">
                                         <div class="msb-table-head">
                                             <table class="msb-table msb-table--people">
@@ -7453,6 +7454,7 @@
                                 </div>
                                 <div class="msb-zone msb-zone--lg" data-msb-zone="central">
                                     <div class="msb-zone-head"><h4 class="msb-zone-title">中區</h4><span class="msb-zone-kicker">分區</span><span class="msb-zone-meta">桃園・新竹・中部・彰化・南投・嘉義</span></div>
+                                    <div class="msb-dept-slot" data-msb-dept-slot="central"></div>
                                     <div class="msb-table-panel">
                                         <div class="msb-table-head">
                                             <table class="msb-table msb-table--people">
@@ -7485,6 +7487,7 @@
                                 </div>
                                 <div class="msb-zone msb-zone--sm" data-msb-zone="south">
                                     <div class="msb-zone-head"><h4 class="msb-zone-title">南區</h4><span class="msb-zone-kicker">分區</span><span class="msb-zone-meta">南一・南二</span></div>
+                                    <div class="msb-dept-slot" data-msb-dept-slot="south"></div>
                                     <div class="msb-table-panel">
                                         <div class="msb-table-head">
                                             <table class="msb-table msb-table--people">
@@ -7517,6 +7520,7 @@
                                 </div>
                                 <div class="msb-zone msb-zone--sm" data-msb-zone="kh">
                                     <div class="msb-zone-head"><h4 class="msb-zone-title">高雄</h4><span class="msb-zone-kicker">分區</span><span class="msb-zone-meta">高一・高二</span></div>
+                                    <div class="msb-dept-slot" data-msb-dept-slot="kh"></div>
                                     <div class="msb-table-panel">
                                         <div class="msb-table-head">
                                             <table class="msb-table msb-table--people">
@@ -7620,9 +7624,13 @@
                         <input id="msb-item" type="hidden" value="加減分">
                         <input id="msb-session" type="hidden" value="">
                         <div class="msb-form-grid">
-                            <div class="msb-field">
+                            <div class="msb-field" id="msb-person-field">
                                 <label class="msb-req" for="msb-person">人員</label>
                                 <select id="msb-person" required></select>
+                            </div>
+                            <div class="msb-field" id="msb-dept-field" hidden>
+                                <label>部門</label>
+                                <input id="msb-dept-name" type="text" readonly>
                             </div>
                             <div class="msb-field">
                                 <label class="msb-req" for="msb-date">日期</label>
@@ -14332,7 +14340,7 @@
         <script src="./js/biz-coverage.js?v=20261112-escrow"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
         <script src="./js/fin-report.js?v=20261108-fin62"></script>
-        <script src="./js/meeting-scoreboard.js?v=20261112-msb-v32"></script>
+        <script src="./js/meeting-scoreboard.js?v=20261112-msb-v33"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>
