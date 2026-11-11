@@ -85,6 +85,7 @@
   function norm(s) {
     return String(s || '')
       .replace(/\s+/g, '')
+      .replace(/[A-Za-z].*$/, '')
       .replace(/[（(].*$/, '')
       .replace(/廸/g, '迪')
       .replace(/峯/g, '峰')
@@ -1029,7 +1030,7 @@
     render();
     try {
       const [rosterRes, dashRes, callRes] = await Promise.all([
-        fetch(`${rpaBase()}/api/hr/coverage-roster`, { headers: { 'X-Skyfun-Session': t } }),
+        fetch(`${rpaBase()}/api/hr/coverage-roster${force ? '?refresh=1' : ''}`, { headers: { 'X-Skyfun-Session': t } }),
         window.skyfunAuth?.rpc ? window.skyfunAuth.rpc('toolbox_biz_bonus_ack_dash', { p_token: t }) : Promise.resolve(null),
         window.skyfunAuth?.rpc ? window.skyfunAuth.rpc('biz_coverage_call_list', { p_token: t }) : Promise.resolve(null)
       ]);
