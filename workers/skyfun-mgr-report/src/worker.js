@@ -4,6 +4,8 @@
  * 不修改 skyfun-arrears-rpa。登入與 Cookie 寫法參考該 Worker 的 loginSkyfunHttp。
  */
 
+import { LOOKUP_DATA } from './lookup-data.js';
+
 var SKYFUN_ORIGIN = 'https://skyfunsystem.com';
 var LOGIN_URL = SKYFUN_ORIGIN + '/Home/Login';
 var CONTRAT_SEARCH_URL = SKYFUN_ORIGIN + '/Contrat/SearchContracts';
@@ -1051,13 +1053,13 @@ async function handle(request, env) {
     }, request, env);
   }
   if (path === '/api/mgr-report/lookup') {
+    var lookup = LOOKUP_DATA || {};
     return json({
       ok: true,
-      pending: '待設定',
-      owners: {},
-      settlement: {},
-      targets: [],
-      forecast: { rows: [] }
+      owners: lookup.owners || {},
+      settlement: lookup.settlement || {},
+      targets: lookup.targets || [],
+      forecast: lookup.forecast || { rows: [] }
     }, request, env);
   }
   return json({ ok: false, error: '找不到' }, request, env, 404);
@@ -1092,7 +1094,11 @@ async function statusPayload(env) {
       stopped: !!day.stopped,
       reason: day.reason || ''
     },
-    lookup: { pending: '待設定' }
+    lookup: {
+      pending: LOOKUP_DATA && LOOKUP_DATA.targets && LOOKUP_DATA.targets.length ? '' : '待設定',
+      targets: LOOKUP_DATA && LOOKUP_DATA.targets ? LOOKUP_DATA.targets.length : 0,
+      owners: LOOKUP_DATA && LOOKUP_DATA.owners ? Object.keys(LOOKUP_DATA.owners).length : 0
+    }
   };
 }
 

@@ -114,6 +114,34 @@
     }
   }
 
+  async function loadLocalLookup() {
+    try {
+      var res = await fetch('./lookup-data.json?v=20261111');
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function loadLookup(notices) {
+    var empty = { owners: {}, settlement: {}, targets: [], forecast: { rows: [] }, pending: '待設定' };
+    var fromApi = await loadSafe('/api/mgr-report/lookup', null, '目標', notices);
+    var hasApi = !!(fromApi && Array.isArray(fromApi.targets) && fromApi.targets.length);
+    if (hasApi) return fromApi;
+    var local = await loadLocalLookup();
+    if (local && Array.isArray(local.targets) && local.targets.length) {
+      return {
+        ok: true,
+        owners: local.owners || {},
+        settlement: local.settlement || {},
+        targets: local.targets || [],
+        forecast: local.forecast || { rows: [] }
+      };
+    }
+    return fromApi || empty;
+  }
+
   function applyData(pack, notices) {
     var contracts = pack.contracts || emptyContracts();
     var rows = Array.isArray(contracts.rows) ? contracts.rows : [];
@@ -167,17 +195,23 @@
     window.MATCH_ROWS = [];
     window.ID_CLASS = idClass;
     window.NL_CLASS = nlClass;
+    var hasTargets = !!(lookup.targets && lookup.targets.length);
+    var hasOwners = !!(lookup.owners && Object.keys(lookup.owners).length);
+    var hasSettlement = !!(lookup.settlement && Object.keys(lookup.settlement).length);
+    var hasForecast = !!(lookup.forecast && lookup.forecast.rows && lookup.forecast.rows.length);
     window.DASH_LOOKUP = {
       owners: lookup.owners || {},
       settlement: lookup.settlement || {},
       targets: lookup.targets || [],
-      pending: '待設定'
+      pending: hasTargets || hasOwners || hasSettlement ? '' : '待設定'
     };
-    window.DASH_FORECAST = lookup.forecast && lookup.forecast.rows ? lookup.forecast : { rows: [], pending: '待設定' };
+    window.DASH_FORECAST = hasForecast
+      ? lookup.forecast
+      : { rows: [], pending: '待設定' };
 
     if (contracts.building) notices.push('合約資料更新中，目前顯示上一版');
     if (!extra.imported) notices.push('媒合來源、房屋類型：資料建置中，請先匯入 Excel');
-    notices.push('目標、預估、結績日、處長對照：待設定');
+    if (!hasTargets || !hasOwners || !hasSettlement) notices.push('目標、預估、結績日、處長對照：待設定');
 
     var bits = [
       '合約 ' + tw(contracts.fetchedAt),
@@ -409,7 +443,7 @@
       pack.arrears = await loadSafe('/api/mgr-report/arrears', { fetchedAt: null, source: 'ArrearsManagement/Search', srcRecords: 0, rows: [] }, '應收帳款', notices);
       pack.renewals = await loadSafe('/api/mgr-report/renewals', { fetchedAt: null, n: 0, st: {}, rows: [] }, '續約', notices);
       pack.extra = await loadSafe('/api/mgr-report/match-extra', { fetchedAt: null, n: 0, rows: [], imported: false }, '媒合補充', notices);
-      pack.lookup = await loadSafe('/api/mgr-report/lookup', { owners: {}, settlement: {}, targets: [], forecast: { rows: [] }, pending: '待設定' }, '目標', notices);
+      pack.lookup = await loadLookup(notices);
       applyData(pack, notices);
       startApp();
     } catch (err) {
