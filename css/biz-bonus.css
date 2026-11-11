@@ -138,7 +138,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: flex-end;
+  gap: 0.45rem 0.65rem;
+}
+#page-business-bonus .bb-doc-head .bb-preview-actions .bb-check {
+  align-items: flex-start;
+  white-space: normal;
+  max-width: 11rem;
+}
+#page-business-bonus .bb-doc-card.is-acked {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
 }
 #page-business-bonus .bb-sum-title {
   margin: 0 0 0.35rem;
@@ -596,21 +606,8 @@
   padding: 0.7rem 1rem;
   box-shadow: 0 8px 18px rgba(180, 83, 9, 0.08);
 }
-#page-business-bonus .bb-wm {
-  pointer-events: none; position: absolute; inset: 0; overflow: hidden; z-index: 2;
-}
-#page-business-bonus .bb-wm-grid {
-  position: absolute; inset: -20%;
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem 1.5rem;
-  transform: rotate(-28deg); opacity: 0.14;
-}
-#page-business-bonus .bb-wm-grid span {
-  display: block; text-align: center; white-space: nowrap;
-  font-size: clamp(0.7rem, 1.6vw, 0.95rem); font-weight: 800; letter-spacing: 0.04em;
-  color: #0f172a; user-select: none;
-}
 #page-business-bonus .bb-wm-note {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; margin: 0;
+  position: sticky; left: 0; right: 0; bottom: 0; z-index: 3; margin: 0;
   padding: 0.45rem 0.75rem; background: rgba(15, 23, 42, 0.72);
   color: #e2e8f0; font-size: 0.72rem; text-align: center; pointer-events: none;
 }

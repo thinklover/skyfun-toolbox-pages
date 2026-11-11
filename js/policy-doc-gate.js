@@ -398,6 +398,28 @@
     return loadPdfJs.promise;
   }
 
+  function stampWatermark(ctx, w, h, text) {
+    if (!ctx || !w || !h) return;
+    const label = String(text || WM);
+    ctx.save();
+    ctx.globalAlpha = 0.14;
+    ctx.fillStyle = '#0f172a';
+    const fontSize = Math.max(12, Math.min(20, Math.floor(w / 34)));
+    ctx.font = `800 ${fontSize}px "Noto Sans TC","Microsoft JhengHei",sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const stepX = Math.max(160, Math.floor(w / 2.1));
+    const stepY = Math.max(72, Math.floor(h / 5.5));
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate((-28 * Math.PI) / 180);
+    for (let y = -h; y <= h; y += stepY) {
+      for (let x = -w; x <= w; x += stepX) {
+        ctx.fillText(label, x, y);
+      }
+    }
+    ctx.restore();
+  }
+
   async function renderProtectedPdf(host, url) {
     if (!host) return;
     host.innerHTML = '<p class="pdg-pdf-wait">全文載入中…</p>';
@@ -415,7 +437,9 @@
       canvas.height = viewport.height;
       canvas.className = 'pdg-pdf-page';
       host.appendChild(canvas);
-      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      stampWatermark(ctx, canvas.width, canvas.height, WM);
     }
   }
 
@@ -459,6 +483,8 @@
     root.querySelector('#pdg-view').hidden = false;
     const frame = root.querySelector('#pdg-frame');
     const pages = root.querySelector('#pdg-pages');
+    const wmLayer = root.querySelector('.pdg-wm');
+    if (wmLayer) wmLayer.hidden = root.dataset.freeWm === '1';
     const isDoc = /\.docx?($|\?)/i.test(href) || /\.docx?$/i.test(fileNameOf(href));
     if (pages) {
       pages.hidden = true;
@@ -477,6 +503,8 @@
       frame.removeAttribute('srcdoc');
       frame.hidden = true;
       pages.hidden = false;
+      const wmLayer = root.querySelector('.pdg-wm');
+      if (wmLayer) wmLayer.hidden = true;
       renderProtectedPdf(pages, href).catch(() => {
         pages.innerHTML = '<p class="pdg-pdf-wait">全文預覽失敗，請稍後再試。</p>';
       });
@@ -619,6 +647,7 @@
     open: openGate,
     openFreeWatermark,
     renderProtectedPdf,
+    stampWatermark,
     close,
     lock: () => {
       setUnlocked(false);

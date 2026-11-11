@@ -101,16 +101,29 @@
 #notice-ack-root .nack-file {
   margin: 0.5rem 0 0 1.95rem;
 }
+#notice-ack-root .bb-doc-card.is-acked {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+#notice-ack-root .bb-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem 0.65rem;
+}
 #notice-ack-root .nack-check {
   display: inline-flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
-  margin-top: 0.35rem;
+  margin-top: 0;
   cursor: pointer;
   font-size: 0.78rem;
   font-weight: 800;
   color: #92400e;
+  white-space: nowrap;
 }
 #notice-ack-root a.bb-btn--main {
   text-decoration: none;

@@ -7,9 +7,6 @@
   'use strict';
 
   const RING_LEN = 2 * Math.PI * 42;
-  const WM =
-    (window.SkyfunPolicyDocGate && window.SkyfunPolicyDocGate.WM) ||
-    '星鴻內部文件｜僅供內部參考｜禁止外流｜違者須自負法律責任';
   const TEAM_ORDER = [
     '北一處', '北二處', '北三處', '北四處', '北五處', '基一處', '宜一處',
     '桃一處', '竹一處', '中一處', '中二處', '中三處', '中四處', '中五處', '中六處',
@@ -45,7 +42,8 @@
     dashLoading: false,
     previewModal: false,
     previewDocId: '',
-    previewReachedEnd: false
+    previewReachedEnd: false,
+    previewed: {}
   };
 
   function data() {
@@ -240,25 +238,22 @@
     </div>`;
   }
 
-  function wmGridHtml() {
-    return Array.from({ length: 24 }, () => `<span>${esc(WM)}</span>`).join('');
-  }
-
-  function ackFooter(doc) {
+  function ackLabel(doc, opts) {
     if (!doc) return '';
+    const inModal = !!(opts && opts.inModal);
     const at = state.acks[doc.id];
     const busy = !!state.busy[doc.id];
-    const reached = !!state.previewReachedEnd || !!at;
+    const reached = !!at || !!state.previewed[doc.id] || (inModal && state.previewReachedEnd);
     const canTick = state.loaded && !at && !busy && reached;
     let tip = '';
     if (at) tip = `<small>${esc(when(at))}</small>`;
-    else if (!reached) tip = '<small>請先滑到檔案最下方再勾選</small>';
-    return `<div class="bb-preview-ack">
-      <label class="bb-check${canTick || at ? '' : ' is-off'}">
-        <span><input type="checkbox" data-bb-ack="${esc(doc.id)}" ${at ? 'checked' : ''} ${!canTick || at || busy ? 'disabled' : ''}> 已閱畢知悉</span>
-        ${tip}
-      </label>
-    </div>`;
+    else if (!reached) tip = '<small>請先預覽並滑到最下方</small>';
+    const cls = `bb-check${canTick || at ? '' : ' is-off'}`;
+    const box = `<input type="checkbox" data-bb-ack="${esc(doc.id)}" ${at ? 'checked' : ''} ${!canTick || at || busy ? 'disabled' : ''}>`;
+    if (inModal) {
+      return `<div class="bb-preview-ack"><label class="${cls}"><span>${box} 已閱畢知悉</span>${tip}</label></div>`;
+    }
+    return `<label class="${cls}"><span>${box} 已閱畢知悉</span>${tip}</label>`;
   }
 
   function renderPersonalDocs() {
@@ -267,15 +262,15 @@
         .map((d, i) => {
           const at = state.acks[d.id];
           return `
-        <article class="bb-doc-card" id="bb-doc-${esc(d.id)}">
+        <article class="bb-doc-card${at ? ' is-acked' : ''}" id="bb-doc-${esc(d.id)}">
           <header class="bb-doc-head">
             <div>
               <h4>${i + 1}. ${esc(d.title)}</h4>
               <p class="bb-doc-meta">${esc(d.version || '')}${d.moneyHint ? ' · ' + esc(d.moneyHint) : ''}</p>
-              <p class="bb-doc-ackst">${at ? `已勾 · ${esc(when(at))}` : '尚未勾選｜請預覽後滑到底勾選'}</p>
             </div>
             <div class="bb-preview-actions">
               <button type="button" class="bb-btn bb-btn--main" data-bb-preview="${esc(d.id)}">📄 預覽浮水印檔</button>
+              ${ackLabel(d)}
             </div>
           </header>
         </article>`;
@@ -304,10 +299,9 @@
           <div class="bb-modal-scroll" id="bb-preview-scroll">
             <div class="bb-preview-stage">
               <div class="bb-pdf-pages" id="bb-pdf-pages" data-file="${esc(doc.file)}"></div>
-              <div class="bb-wm" aria-hidden="true"><div class="bb-wm-grid">${wmGridHtml()}</div></div>
               <p class="bb-wm-note">預覽含浮水印｜全文｜不可下載、不可列印｜星鴻內部文件｜禁止外流</p>
             </div>
-            ${ackFooter(doc)}
+            ${ackLabel(doc, { inModal: true })}
           </div>
         </div>
       </div>`;
@@ -318,9 +312,10 @@
     if (!sc || state.previewReachedEnd) return;
     if (sc.scrollHeight - sc.scrollTop - sc.clientHeight <= 24) {
       state.previewReachedEnd = true;
+      if (state.previewDocId) state.previewed[state.previewDocId] = true;
       const foot = sc.querySelector('.bb-preview-ack');
       const doc = findDoc(state.previewDocId);
-      if (foot && doc) foot.outerHTML = ackFooter(doc);
+      if (foot && doc) foot.outerHTML = ackLabel(doc, { inModal: true });
     }
   }
 
@@ -340,9 +335,10 @@
       unlockAckIfNeeded();
       if (sc.scrollHeight <= sc.clientHeight + 8) {
         state.previewReachedEnd = true;
+        if (state.previewDocId) state.previewed[state.previewDocId] = true;
         const foot = sc.querySelector('.bb-preview-ack');
         const doc = findDoc(state.previewDocId);
-        if (foot && doc) foot.outerHTML = ackFooter(doc);
+        if (foot && doc) foot.outerHTML = ackLabel(doc, { inModal: true });
       }
     });
   }
@@ -352,7 +348,7 @@
     if (!doc || !doc.file) return;
     state.previewDocId = docId;
     state.previewModal = true;
-    state.previewReachedEnd = !!state.acks[docId];
+    state.previewReachedEnd = !!state.acks[docId] || !!state.previewed[docId];
   }
 
   function closePreview() {

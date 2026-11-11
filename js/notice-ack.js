@@ -59,21 +59,27 @@
           const fileBtn = it.file
             ? `<button type="button" class="bb-btn bb-btn--main" data-nack-wm="${esc(it.file)}" data-nack-wm-title="${esc(it.title)}">📄 預覽浮水印檔</button>`
             : '';
-          const ackLine = at
-            ? `<p class="bb-doc-ackst">已勾 · ${esc(when(at))}</p>`
+          const ackBox = at
+            ? `<label class="nack-check">
+                <input type="checkbox" checked disabled>
+                <span>已閱畢知悉</span>
+                <small>${esc(when(at))}</small>
+              </label>`
             : `<label class="nack-check${canTick ? '' : ' is-off'}">
                 <input type="checkbox" data-nack-id="${esc(it.id)}" ${!canTick || busy ? 'disabled' : ''}>
                 <span>已閱畢知悉</span>
               </label>`;
           return `
-          <article class="bb-doc-card">
+          <article class="bb-doc-card${at ? ' is-acked' : ''}">
             <header class="bb-doc-head">
               <div>
                 <h4>${i + 1}. ${esc(it.title)}</h4>
                 ${meta ? `<p class="bb-doc-meta">${esc(meta)}</p>` : ''}
-                ${ackLine}
               </div>
-              ${fileBtn ? `<div class="bb-preview-actions">${fileBtn}</div>` : ''}
+              <div class="bb-preview-actions">
+                ${fileBtn}
+                ${ackBox}
+              </div>
             </header>
           </article>`;
         }).join('')}
