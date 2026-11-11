@@ -11372,7 +11372,7 @@
             <button type="button" onclick="showPage('biz-supervisor')" class="mb-2 btn btn-sm tone-slate-soft">
                 ← 返回業務主管專區
             </button>
-            <iframe src="./mgr-report/index.html" title="社宅管報儀表板" style="width:100%;height:calc(100vh - 4.5rem);border:0;display:block;background:#fff"></iframe>
+            <iframe id="biz-mgr-report-frame" src="./mgr-report/index.html" title="社宅管報儀表板" style="width:100%;height:calc(100vh - 4.5rem);border:0;display:block;background:#fff"></iframe>
         </div>
 
         <!-- 業務專區：獎金辦法＋知悉儀表板 -->
@@ -16426,6 +16426,22 @@
             }
             if ((pageName === 'meeting-scoreboard' || pageName === 'gm-office') && window.MeetingScoreboard && typeof window.MeetingScoreboard.onShow === 'function') {
                 window.MeetingScoreboard.onShow();
+            }
+            /* 管報 iframe 若曾被導到工具箱首頁，每次進入強制拉回儀表板 */
+            if (pageName === 'biz-mgr-report') {
+                const frame = document.getElementById('biz-mgr-report-frame');
+                if (frame) {
+                    let needReload = true;
+                    try {
+                        const href = String(frame.contentWindow?.location?.href || '');
+                        needReload = !/\/mgr-report\/index\.html/i.test(href);
+                    } catch (_) {
+                        needReload = true;
+                    }
+                    if (needReload || !isSamePage) {
+                        frame.src = './mgr-report/index.html';
+                    }
+                }
             }
 
             if (!isSamePage) {

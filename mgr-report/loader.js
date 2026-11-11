@@ -71,8 +71,25 @@
     });
   }
 
+  function leaveToParent(page) {
+    try {
+      if (window.parent && window.parent !== window && typeof window.parent.showPage === 'function') {
+        window.parent.showPage(page || 'biz-supervisor');
+        return true;
+      }
+    } catch (_) { /* ignore */ }
+    return false;
+  }
+
   function showBlocked(text) {
-    document.body.innerHTML = '<main style="max-width:36rem;margin:4rem auto;padding:1.5rem;font-family:sans-serif;line-height:1.6"><p>' + text + '</p><p><a href="../index.html">返回工具箱</a></p></main>';
+    document.body.innerHTML = '<main style="max-width:36rem;margin:4rem auto;padding:1.5rem;font-family:sans-serif;line-height:1.6"><p>' + text + '</p><p><a id="mgrBlockedBack" href="#">返回業務主管專區</a></p></main>';
+    var a = document.getElementById('mgrBlockedBack');
+    if (a) {
+      a.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        if (!leaveToParent('biz-supervisor')) location.href = '../index.html';
+      });
+    }
   }
 
   function token() {
@@ -391,11 +408,19 @@
     }
   }
 
+  function bindBackLink() {
+    var back = $('mgrBack');
+    if (!back) return;
+    back.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      if (!leaveToParent('biz-supervisor')) location.href = '../index.html';
+    });
+    /* 嵌在工具箱 iframe 時外層已有返回，避免雙重返回鈕 */
+    if (window.parent !== window) back.hidden = true;
+  }
+
   async function main() {
-    if (window.parent !== window) {
-      var back = $('mgrBack');
-      if (back) back.hidden = true;
-    }
+    bindBackLink();
     await waitAuth();
     var allowed = window.skyfunAuth && window.skyfunAuth.canEnterBizSupervisor && window.skyfunAuth.canEnterBizSupervisor();
     if (!token() || !allowed) {
