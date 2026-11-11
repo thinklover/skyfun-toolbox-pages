@@ -284,7 +284,6 @@
   }
   function renderSettings() {
     const peopleBox = $('msb-people-list');
-    const projectBox = $('msb-projects-list');
     if (peopleBox) {
       peopleBox.innerHTML = (state.people || []).length
         ? '<ul class="msb-plain-list">' + state.people.map((p) =>
@@ -293,13 +292,6 @@
             <button type="button" class="msb-link" data-msb-rm-person="${esc(p.id)}">移除</button></li>`
         ).join('') + '</ul>'
         : '<p class="msb-empty">尚無人員</p>';
-    }
-    if (projectBox) {
-      projectBox.innerHTML = (state.projects || []).length
-        ? '<ul class="msb-plain-list">' + state.projects.map((p) =>
-          `<li><span>${esc(p.name)}</span><button type="button" class="msb-link" data-msb-rm-project="${esc(p.id)}">移除</button></li>`
-        ).join('') + '</ul>'
-        : '<p class="msb-empty">尚無專案</p>';
     }
   }
   function renderAll() {
@@ -683,7 +675,7 @@
         const entryPersonId = Number($('msb-person')?.value || 0) || null;
         const projectId = Number($('msb-project')?.value || defaultProjectId() || 0) || null;
         const item = String($('msb-item')?.value || $('msb-note')?.value || '加減分').trim() || '加減分';
-        if (!projectId) throw new Error('請先到設定新增至少一個專案區塊');
+        if (!projectId) throw new Error('尚無可寫入的專案，請稍後再試或通知管理員');
         const res = await rpc('msb_entry_save', {
           p_token: token(),
           p_data: {
@@ -717,15 +709,6 @@
         const res = await rpc('msb_person_add', { p_token: token(), p_board: WRITE_BOARD, p_name: name });
         if (!res?.ok) throw new Error(res?.error || '新增失敗');
         if ($('msb-new-person')) $('msb-new-person').value = '';
-        await reload();
-      } catch (err) { setMsg(err.message || String(err), 'err'); }
-    });
-    $('msb-add-project')?.addEventListener('click', async () => {
-      const name = ($('msb-new-project')?.value || '').trim();
-      try {
-        const res = await rpc('msb_project_add', { p_token: token(), p_board: WRITE_BOARD, p_name: name });
-        if (!res?.ok) throw new Error(res?.error || '新增失敗');
-        if ($('msb-new-project')) $('msb-new-project').value = '';
         await reload();
       } catch (err) { setMsg(err.message || String(err), 'err'); }
     });
