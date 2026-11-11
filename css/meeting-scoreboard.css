@@ -25,6 +25,9 @@
   gap: 1rem;
   align-items: stretch;
 }
+#page-meeting-scoreboard .msb-dual[hidden] {
+  display: none;
+}
 #page-meeting-scoreboard .msb-dual-col {
   min-width: 0;
   display: flex;
