@@ -275,8 +275,9 @@
       person.office
     ];
     const neu = newMatchCount(person.name);
-    if (neu == null) bits.push(state.casesLoaded ? '新媒合無資料' : '新媒合讀取中');
-    else bits.push(`新案 ${neu}`);
+    if (neu != null) bits.push(`新案 ${neu}`);
+    const managed = escrowTotal(person.name);
+    if (managed != null) bits.push(`代管 ${managed} 件`);
     [].concat(extraBits || []).filter(Boolean).forEach((bit) => bits.push(bit));
     return bits.filter(Boolean).join(' · ');
   }
@@ -290,11 +291,8 @@
 
   function licenseBadge(name) {
     const row = state.licenses[norm(name)];
-    if (!row) {
-      if (state.licenseError) return '';
-      return '<em class="cv-lic cv-lic--wait">證照讀取中</em>';
-    }
-    const status = row.status || '無資料';
+    const status = String(row && row.status || '').trim();
+    if (!status || status === '無資料' || status === '證照讀取中') return '';
     const cls = {
       '雙證都有': 'both',
       '缺租管人員': 'lease',
@@ -876,8 +874,8 @@
       <section class="cv-flag${openIdle && !openBusy ? ' cv-flag--call-open' : ''}">
         <h3>連續兩個月未產件又未保<small>${idle.length}</small></h3>
         <p>${esc(label)}產件都是 0（認列產件，不是新媒合），而且沒有投保。只列業務、租管師。人名下的「新案」另算 115/11/1 起新媒合。</p>
-        <p class="cv-note">第一排序：營業處北→南；第二排序：代管件數（暫代未產件時間，可切換多／少）。</p>
-        ${idle.length ? sortToggleHtml('idle', state.idleSortDir, '代管件數（暫代未產件時間）') : ''}
+        <p class="cv-note">第一排序：營業處北→南；第二排序：代管件數（可切換多／少）。</p>
+        ${idle.length ? sortToggleHtml('idle', state.idleSortDir, '代管件數') : ''}
         ${idle.length ? `<div class="cv-flag-list">${idle.map((row) => line(row, [`近兩月產件 0`])).join('')}</div>` : '<p class="cv-empty">沒有符合的人。</p>'}
       </section>
       <section class="cv-flag${openBusy ? ' cv-flag--call-open' : ''}">
