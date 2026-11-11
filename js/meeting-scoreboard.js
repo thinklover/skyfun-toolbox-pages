@@ -454,6 +454,25 @@
       selfBox.innerHTML = '';
     }
     const list = filteredPeople();
+    const yearMode = state.span === 'year';
+    const monthDual = $('msb-people-dual');
+    const yearDual = $('msb-year-dual');
+    if (monthDual) monthDual.hidden = yearMode;
+    if (yearDual) yearDual.hidden = !yearMode;
+    if (yearMode) {
+      const yearSort = (side) => {
+        const cur = peopleSortState(side);
+        return cur.key ? cur : { key: 'dept', dir: 'asc' };
+      };
+      const officePeople = sortPeopleList(list.filter((p) => !isBizDept(personDept(p))), yearSort('year-office'));
+      const bizPeople = sortPeopleList(list.filter((p) => isBizDept(personDept(p))), yearSort('year-biz'));
+      const officeBox = $('msb-year-office');
+      const bizBox = $('msb-year-biz');
+      if (officeBox) officeBox.innerHTML = peopleTableHtml('year-office', officePeople, false);
+      if (bizBox) bizBox.innerHTML = peopleTableHtml('year-biz', bizPeople, false);
+      syncPeopleSortHeaders();
+      return;
+    }
     const officePeople = list.filter((p) => !isBizDept(personDept(p)));
     const depts = officeDeptList(officePeople);
     officeHost.innerHTML = depts.length ? depts.map((dept) => {

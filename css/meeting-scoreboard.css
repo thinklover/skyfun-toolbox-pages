@@ -47,6 +47,8 @@
   flex: 1;
   max-height: none;
 }
+#page-meeting-scoreboard .msb-year-dual .msb-table-panel { flex: 0 0 auto; }
+#page-meeting-scoreboard .msb-year-dual .msb-table-wrap { flex: none; max-height: none; overflow: visible; }
 #page-meeting-scoreboard .msb-dual-title {
   margin: 0 0 0.55rem;
   font-size: 0.98rem;
