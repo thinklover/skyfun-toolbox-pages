@@ -114,11 +114,11 @@
   function isMine(p) {
     return !!(state.viewerId && p && p.accountId && String(p.accountId) === String(state.viewerId));
   }
+  const EDITOR_MANAGERS = ['簡為倢', '邱奕棋', '蘇崇瑋'];
   function canManageEditors() {
     const u = window.skyfunAuth?.getUser?.() || {};
-    const team = String(u.team || '').trim();
-    const title = String(u.jobTitle || u.job_title || '').trim();
-    return team === '總經理室' && title !== '工讀生';
+    const name = String(u.name || '').replace(/\s+/g, '').trim();
+    return EDITOR_MANAGERS.indexOf(name) >= 0;
   }
   function applyAccess() {
     state.canManage = canManageEditors();

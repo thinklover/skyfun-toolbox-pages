@@ -1,4 +1,4 @@
--- 會議計分：加減分改由名單決定。總經理室在設定頁勾選。
+-- 會議計分：加減分改由名單決定。簡為倢、邱奕棋、蘇崇瑋在設定頁勾選。
 -- 第一次建立時，把目前職稱規則可編輯的在職帳號先放進名單，避免一次全關掉。
 
 create table if not exists public.msb_score_editors (
@@ -55,8 +55,7 @@ as $$
     from public.toolbox_accounts a
     where a.id = p_uid
       and a.status = 'active'
-      and trim(coalesce(a.team, '')) = '總經理室'
-      and trim(coalesce(a.job_title, '')) <> '工讀生'
+      and trim(coalesce(a.name, '')) in ('簡為倢', '邱奕棋', '蘇崇瑋')
   );
 $$;
 
@@ -72,7 +71,7 @@ declare
   v_uid uuid := public.msb_require_user(p_token);
 begin
   if not public.msb_can_manage_editors(v_uid) then
-    return json_build_object('ok', false, 'error', '只有總經理室可以設定加減分權限');
+    return json_build_object('ok', false, 'error', '只有簡為倢、邱奕棋、蘇崇瑋可以設定加減分權限');
   end if;
   return json_build_object(
     'ok', true,
@@ -104,7 +103,7 @@ declare
   v_uid uuid := public.msb_require_user(p_token);
 begin
   if not public.msb_can_manage_editors(v_uid) then
-    return json_build_object('ok', false, 'error', '只有總經理室可以設定加減分權限');
+    return json_build_object('ok', false, 'error', '只有簡為倢、邱奕棋、蘇崇瑋可以設定加減分權限');
   end if;
   if p_account_id is null or not exists (
     select 1 from public.toolbox_accounts a where a.id = p_account_id and a.status = 'active'
