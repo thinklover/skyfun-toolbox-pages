@@ -4,15 +4,14 @@
 (function () {
   'use strict';
 
-  const BOARDS = {
-    system: { key: 'system', label: '系統會議' },
-    monthly: { key: 'monthly', label: '月會主管' }
-  };
   const SETTINGS_GATE_KEY = 'msb-settings-unlocked';
+  /** 單一總表（不再分系統會議／月會主管） */
+  const TOTAL_BOARD = 'all';
+  const WRITE_BOARD = 'system';
 
   const state = {
     view: 'dash',
-    board: 'system',
+    board: TOTAL_BOARD,
     month: '',
     people: [],
     projects: [],
@@ -111,11 +110,15 @@
     });
   }
   function syncBoardTabs() {
-    document.querySelectorAll('#page-meeting-scoreboard [data-msb-board]').forEach((btn) => {
-      btn.classList.toggle('is-on', btn.getAttribute('data-msb-board') === state.board);
-    });
-    if ($('msb-modal-board')) $('msb-modal-board').textContent = (BOARDS[state.board] || {}).label || '';
-    if ($('msb-session-wrap')) $('msb-session-wrap').hidden = state.board !== 'monthly';
+    if ($('msb-session-wrap')) $('msb-session-wrap').hidden = true;
+  }
+  function personBoard(p) {
+    const b = String(p?.board || '').trim();
+    return b === 'monthly' || b === 'system' ? b : WRITE_BOARD;
+  }
+  function writeBoardForPersonId(personId) {
+    const p = (state.people || []).find((x) => String(x.id) === String(personId));
+    return p ? personBoard(p) : WRITE_BOARD;
   }
   function setView(view) {
     state.view = view;
@@ -304,7 +307,16 @@
       state.viewerId = dash.viewerId || me.id || '';
       state.scoreMonth = dash.scoreMonth || month;
       state.people = dash.people || [];
-      state.projects = dash.projects || [];
+      /* 專案以 system 為主，同名只留一筆，避免總表加減分對不到 */
+      {
+        const map = new Map();
+        (dash.projects || []).forEach((row) => {
+          const key = String(row.name || '');
+          const prev = map.get(key);
+          if (!prev || row.board === WRITE_BOARD) map.set(key, row);
+        });
+        state.projects = [...map.values()];
+      }
       state.entries = dash.entries || [];
       if (!state.serverScoped && !state.canViewAll) {
         state.people = [];
@@ -473,13 +485,6 @@
         await reload();
         return;
       }
-      const boardBtn = e.target.closest('[data-msb-board]');
-      if (boardBtn) {
-        state.board = boardBtn.getAttribute('data-msb-board') || 'system';
-        syncBoardTabs();
-        await reload();
-        return;
-      }
       if (e.target.closest('[data-msb-close]')) { closeModal(false); return; }
       if (e.target.closest('[data-msb-month-close]')) { closeMonthModal(); return; }
       if (e.target.closest('[data-msb-bind-close]')) { closeBindModal(); return; }
@@ -604,11 +609,12 @@
       const btn = $('msb-month-save');
       if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
       try {
+        const monthPersonId = Number($('msb-month-person')?.value || 0) || null;
         const res = await rpc('msb_month_score_upsert', {
           p_token: token(),
           p_data: {
-            board: state.board,
-            personId: Number($('msb-month-person')?.value || 0) || null,
+            board: writeBoardForPersonId(monthPersonId),
+            personId: monthPersonId,
             periodMonth: $('msb-month-period')?.value || state.month,
             score: $('msb-month-score')?.value || '',
             bonus: $('msb-month-bonus')?.value || '',
@@ -651,12 +657,13 @@
       const btn = $('msb-save');
       if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
       try {
+        const entryPersonId = Number($('msb-person')?.value || 0) || null;
         const res = await rpc('msb_entry_save', {
           p_token: token(),
           p_data: {
             id: state.editId,
-            board: state.board,
-            personId: Number($('msb-person')?.value || 0) || null,
+            board: writeBoardForPersonId(entryPersonId),
+            personId: entryPersonId,
             projectId: Number($('msb-project')?.value || 0) || null,
             scoreDate: $('msb-date')?.value || '',
             score: $('msb-score')?.value || '',
@@ -682,7 +689,7 @@
       if (!settingsUnlocked()) { setView('settings'); return; }
       const name = ($('msb-new-person')?.value || '').trim();
       try {
-        const res = await rpc('msb_person_add', { p_token: token(), p_board: state.board, p_name: name });
+        const res = await rpc('msb_person_add', { p_token: token(), p_board: WRITE_BOARD, p_name: name });
         if (!res?.ok) throw new Error(res?.error || '新增失敗');
         if ($('msb-new-person')) $('msb-new-person').value = '';
         await reload();
@@ -692,7 +699,7 @@
       if (!settingsUnlocked()) { setView('settings'); return; }
       const name = ($('msb-new-project')?.value || '').trim();
       try {
-        const res = await rpc('msb_project_add', { p_token: token(), p_board: state.board, p_name: name });
+        const res = await rpc('msb_project_add', { p_token: token(), p_board: WRITE_BOARD, p_name: name });
         if (!res?.ok) throw new Error(res?.error || '新增失敗');
         if ($('msb-new-project')) $('msb-new-project').value = '';
         await reload();

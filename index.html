@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261109-center">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
 <link rel="stylesheet" href="./css/fin-report.css?v=20261108-fin62">
-<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v2">
+<link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261111-msb-v3">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
 <body data-pages-static="1" class="min-h-screen py-6 md:py-10 toolbox-auth-pending" data-layout="desktop">
@@ -7399,10 +7399,7 @@
 
                 <section class="msb-panel" data-msb-panel="dash">
                     <div class="msb-head-row">
-                        <div class="msb-board-tabs" role="tablist" aria-label="計分表">
-                            <button type="button" class="is-on" data-msb-board="system">系統會議</button>
-                            <button type="button" data-msb-board="monthly">月會主管</button>
-                        </div>
+                        <h2 class="msb-page-title">總表</h2>
                         <div class="msb-head-tools">
                             <input id="msb-month" type="month" aria-label="統計月份">
                             <input id="msb-staff-q" type="search" placeholder="搜尋姓名或部別" aria-label="搜尋姓名或部別">
@@ -7432,10 +7429,6 @@
                     <div class="msb-head-row">
                         <h2 class="msb-page-title">加減分紀錄</h2>
                         <div class="msb-head-tools">
-                            <div class="msb-board-tabs" role="tablist" aria-label="計分表">
-                                <button type="button" class="is-on" data-msb-board="system">系統會議</button>
-                                <button type="button" data-msb-board="monthly">月會主管</button>
-                            </div>
                             <button type="button" id="msb-export-records" class="msb-btn msb-btn--ghost">匯出</button>
                             <button type="button" id="msb-open-add-2" class="msb-btn msb-btn--primary msb-edit-only">＋ 加減分</button>
                         </div>
@@ -7454,10 +7447,6 @@
                 <section class="msb-panel" data-msb-panel="settings" hidden>
                     <div class="msb-head-row">
                         <h2 class="msb-page-title">設定</h2>
-                        <div class="msb-board-tabs" role="tablist" aria-label="計分表">
-                            <button type="button" class="is-on" data-msb-board="system">系統會議</button>
-                            <button type="button" data-msb-board="monthly">月會主管</button>
-                        </div>
                     </div>
                     <div id="msb-settings-lock" class="msb-settings-lock">
                         <form id="msb-settings-gate" class="msb-settings-gate" autocomplete="off">
@@ -7499,7 +7488,6 @@
                     <div class="msb-modal-head">
                         <div>
                             <h3 id="msb-form-title">加減分</h3>
-                            <p id="msb-modal-board" class="msb-modal-board">系統會議</p>
                         </div>
                         <button type="button" class="msb-modal-x" data-msb-close="1" aria-label="關閉">×</button>
                     </div>
@@ -14209,7 +14197,7 @@
         <script src="./js/biz-coverage.js?v=20261111-callwide2"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
         <script src="./js/fin-report.js?v=20261108-fin62"></script>
-        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v2"></script>
+        <script src="./js/meeting-scoreboard.js?v=20261111-msb-v3"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
         <script src="./js/course-exam.js?v=20261101-board"></script>
