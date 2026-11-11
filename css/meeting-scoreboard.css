@@ -216,6 +216,12 @@
 }
 #page-meeting-scoreboard .msb-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 #page-meeting-scoreboard .msb-table .act { text-align: right; white-space: nowrap; width: 5.5rem; }
+#page-meeting-scoreboard .msb-table .msb-title-cell {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
 #page-meeting-scoreboard .msb-table tbody tr:hover { background: #f8fafc; }
 #page-meeting-scoreboard .msb-table .pos { color: var(--msb-plus); font-weight: 800; }
 #page-meeting-scoreboard .msb-table .neg { color: var(--msb-minus); font-weight: 800; }

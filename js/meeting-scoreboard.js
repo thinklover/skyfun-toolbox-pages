@@ -200,6 +200,8 @@
   }
   function peopleRowHtml(p, edit) {
     const dept = personDept(p) || '—';
+    const title = personTitle(p);
+    const titleShow = title && title !== '其他' ? title : '—';
     const marks = [
       isMine(p) ? '<span class="msb-you">你</span>' : '',
       !personDept(p) ? '<span class="msb-chip">未填部別</span>' : ''
@@ -212,6 +214,7 @@
       : '';
     return `<tr>
       <td>${esc(dept)}</td>
+      <td class="msb-title-cell">${esc(titleShow)}</td>
       <td><span class="msb-name">${esc(p.name)}</span> ${marks}</td>
       <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${scoreCellHtml(p.score)}</button></td>
       <td class="num"><button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${bonusCellHtml(p)}</button></td>
@@ -244,10 +247,10 @@
     const biz = list.filter((p) => isBizDept(personDept(p)));
     officeBody.innerHTML = office.length
       ? office.map((p) => peopleRowHtml(p, edit)).join('')
-      : '<tr><td colspan="5" class="msb-empty">尚無內勤人員</td></tr>';
+      : '<tr><td colspan="6" class="msb-empty">尚無內勤人員</td></tr>';
     bizBody.innerHTML = biz.length
       ? biz.map((p) => peopleRowHtml(p, edit)).join('')
-      : '<tr><td colspan="5" class="msb-empty">尚無業務人員</td></tr>';
+      : '<tr><td colspan="6" class="msb-empty">尚無業務人員</td></tr>';
   }
   function filteredRecords() {
     const q = String(state.filter.q || '').trim().toLowerCase();
