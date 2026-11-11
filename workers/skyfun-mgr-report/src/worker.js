@@ -854,7 +854,7 @@ async function stepJob(env, when, force) {
   var clock = taipei(when);
   var build = (await kvGet(env, KEY.build)) || null;
   var running = build && build.phase && build.phase !== 'done';
-  if (!running && clock.hour < 7 && !force) return { skipped: true, reason: 'before-7' };
+  if (!running && clock.hour < 8 && !force) return { skipped: true, reason: 'before-8' };
   if (!running && build && build.date === clock.key && build.phase === 'done' && !force) {
     return { skipped: true, reason: 'done' };
   }

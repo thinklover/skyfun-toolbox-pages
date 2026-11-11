@@ -17,9 +17,9 @@ MATCH_EXTRA_PER_TICK = "20"
 MATCH_EXTRA_DAILY_CAP = "500"
 MATCH_EXTRA_GAP_MS = "300"
 
-# 台北 07:00–23:59（UTC 23:00–15:59）每 2 分鐘推進一次；當日做完或 07:00 前會立刻結束。
+# 台北 08:00 起自動更新一次：UTC 00:00–15:59（台北 08:00–23:59）每 2 分鐘推進；當日做完或 08:00 前會立刻結束。
 [triggers]
-crons = ["*/2 23,0-15 * * *"]
+crons = ["*/2 0-15 * * *"]
 
 # Secrets（wrangler secret put，勿寫進此檔）:
 #   SKYFUN_USERNAME
