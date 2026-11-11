@@ -357,7 +357,8 @@
       const orphanFoot = orphanNames.length
         ? `<p class="cv-empty">名冊有、人事查無 ${orphanNames.length} 人：${esc(orphanNames.join('、'))}</p>`
         : '';
-      detail = `<div class="cv-split">
+      const callOpen = !!(state.openPerson && uninsured.some((row) => norm(row.person.name) === norm(state.openPerson)));
+      detail = `<div class="cv-split${callOpen ? ' cv-split--call-open' : ''}">
         ${nameColumn('ok', '已投保誠實險', insured, '這處尚無已投保', '', false)}
         ${nameColumn('ins', '未投保誠實險', uninsured, '這處都有保', orphanFoot, true)}
       </div>`;

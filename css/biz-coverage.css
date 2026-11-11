@@ -494,10 +494,35 @@
   gap: 0.75rem;
   border-top: 1px solid #f1ece4;
   padding: 0.75rem 0.9rem 0.9rem;
+  align-items: start;
+  transition: grid-template-columns 0.25s ease;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--one {
   grid-template-columns: 1fr;
 }
+/* 展開電訪時：未投保欄變大（參照各區進度展開卡），已投保縮成窄欄 */
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open {
+  grid-template-columns: minmax(10rem, 13.5rem) minmax(0, 1fr);
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-col--ok {
+  max-height: min(70vh, 42rem);
+  overflow: auto;
+  opacity: 0.92;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-col--ins {
+  border: 1px solid #f0d9a8;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18), 0 12px 28px -18px rgba(180, 83, 9, 0.35);
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-table {
+  table-layout: auto;
+  min-width: 56rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-table th:nth-child(1),
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-table td:nth-child(1) { width: auto; min-width: 11rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-table th:nth-child(6),
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-table td:nth-child(6) { width: auto; min-width: 10.5rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-table th:nth-child(7),
+:is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-table td:nth-child(7) { width: auto; min-width: 12rem; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-col {
   min-width: 0;
   padding: 0.65rem 0.75rem 0.45rem;
@@ -1043,7 +1068,9 @@
   :is(#page-business-coverage, #page-business-toolbox) .cv-offices,
   :is(#page-business-coverage, #page-business-toolbox) .cv-flags,
   :is(#page-business-coverage, #page-business-toolbox) .cv-split,
+  :is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open,
   :is(#page-business-coverage, #page-business-toolbox) .cv-board .cv-flags { grid-template-columns: 1fr; }
+  :is(#page-business-coverage, #page-business-toolbox) .cv-split.cv-split--call-open .cv-col--ins { order: -1; }
   :is(#page-business-coverage, #page-business-toolbox) .cv-title { font-size: 1.35rem; }
   :is(#page-business-coverage, #page-business-toolbox) .cv-person { align-items: flex-start; }
   :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-office-hit {
