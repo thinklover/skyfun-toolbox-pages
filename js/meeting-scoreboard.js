@@ -289,10 +289,45 @@
         ? '<ul class="msb-plain-list">' + state.people.map((p) =>
           `<li><span>${esc(p.name)}${personDept(p) ? ' · ' + esc(personDept(p)) : ''}</span>
             <button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">部別／帳號</button>
-            <button type="button" class="msb-link" data-msb-rm-person="${esc(p.id)}">移除</button></li>`
+            <button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></li>`
         ).join('') + '</ul>'
         : '<p class="msb-empty">尚無人員</p>';
     }
+  }
+  async function removePerson(personId, personName) {
+    if (!state.canEdit) {
+      setMsg('沒有權限移除人員', 'err');
+      return;
+    }
+    const label = personName || '這位人員';
+    if (!window.confirm('確定移除「' + label + '」？移除後總表不會再顯示。')) return;
+    setMsg('移除中…');
+    try {
+      const res = await rpc('msb_person_remove', {
+        p_token: token(),
+        p_id: Number(personId)
+      });
+      if (!res?.ok) throw new Error(res?.error || '移除失敗');
+      const rid = String(personId);
+      const rname = String(res.name || personName || '').trim();
+      state.people = (state.people || []).filter((p) => {
+        if (String(p.id) === rid) return false;
+        if (rname && normName(p.name) === normName(rname)) return false;
+        return true;
+      });
+      renderSettings();
+      renderPeopleTable();
+      fillSelects();
+      setMsg('已移除「' + (rname || label) + '」', 'ok');
+      await reload();
+      if (state.view === 'settings') setView('settings');
+      setMsg('已移除「' + (rname || label) + '」', 'ok');
+    } catch (err) {
+      setMsg(err.message || String(err), 'err');
+    }
+  }
+  function normName(s) {
+    return String(s || '').replace(/\s+/g, '').trim();
   }
   function renderAll() {
     applyAccess();
@@ -556,22 +591,13 @@
       }
       const rmP = e.target.closest('[data-msb-rm-person]');
       if (rmP) {
-        if (!window.confirm('確定移除此人員？')) return;
-        try {
-          const res = await rpc('msb_person_remove', { p_token: token(), p_id: Number(rmP.getAttribute('data-msb-rm-person')) });
-          if (!res?.ok) throw new Error(res?.error || '移除失敗');
-          await reload();
-        } catch (err) { setMsg(err.message || String(err), 'err'); }
+        e.preventDefault();
+        e.stopPropagation();
+        await removePerson(
+          rmP.getAttribute('data-msb-rm-person'),
+          rmP.getAttribute('data-msb-rm-name') || ''
+        );
         return;
-      }
-      const rmPr = e.target.closest('[data-msb-rm-project]');
-      if (rmPr) {
-        if (!window.confirm('確定移除此專案？')) return;
-        try {
-          const res = await rpc('msb_project_remove', { p_token: token(), p_id: Number(rmPr.getAttribute('data-msb-rm-project')) });
-          if (!res?.ok) throw new Error(res?.error || '移除失敗');
-          await reload();
-        } catch (err) { setMsg(err.message || String(err), 'err'); }
       }
     });
 

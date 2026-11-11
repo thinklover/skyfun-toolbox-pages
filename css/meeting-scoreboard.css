@@ -273,6 +273,7 @@
   cursor: pointer;
   padding: 0 0.15rem;
 }
+#page-meeting-scoreboard .msb-link--danger { color: #b91c1c; }
 #page-meeting-scoreboard .msb-filter-note,
 #page-meeting-scoreboard .msb-empty {
   margin: 0.45rem 0 0;
