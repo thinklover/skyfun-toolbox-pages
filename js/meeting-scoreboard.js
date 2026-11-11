@@ -518,15 +518,16 @@
   }
   function fillBindDept(selected) {
     const el = $('msb-bind-dept');
+    const list = $('msb-bind-dept-list');
     if (!el) return;
-    const depts = [...new Set((state.people || []).map(personDept).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
-    el.innerHTML = '<option value="">（未填）</option>' + depts.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
-    if (selected) {
-      if (![...el.options].some((o) => o.value === selected)) {
-        el.insertAdjacentHTML('beforeend', `<option value="${esc(selected)}">${esc(selected)}</option>`);
-      }
-      el.value = selected;
+    const fromPeople = (state.people || []).map(personDept).filter(Boolean);
+    const depts = [...new Set([...BACK_OFFICE_DEPTS, ...OFFICE_NS, ...fromPeople])]
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+    if (list) {
+      list.innerHTML = depts.map((d) => `<option value="${esc(d)}"></option>`).join('');
     }
+    el.value = selected || '';
   }
   function fillBindAccounts(selected) {
     const el = $('msb-bind-account');
