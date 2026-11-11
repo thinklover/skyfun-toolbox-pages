@@ -439,6 +439,7 @@
         ${peopleTableHtml(side, rows)}
       </div>`;
     }).join('') : '<p class="msb-empty">尚無內勤人員</p>';
+    const edit = state.canEdit;
     BIZ_ZONES.forEach((z) => {
       const body = $('msb-people-body-biz-' + z.id);
       const zoneList = sortPeopleList(
