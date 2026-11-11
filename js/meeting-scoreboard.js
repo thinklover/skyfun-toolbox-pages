@@ -289,11 +289,13 @@
     const peopleBox = $('msb-people-list');
     if (peopleBox) {
       peopleBox.innerHTML = (state.people || []).length
-        ? '<ul class="msb-plain-list">' + state.people.map((p) =>
-          `<li><span>${esc(p.name)}${personDept(p) ? ' · ' + esc(personDept(p)) : ''}</span>
-            <button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">部別／帳號</button>
-            <button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></li>`
-        ).join('') + '</ul>'
+        ? '<ul class="msb-plain-list">' + state.people.map((p) => {
+          const title = personTitle(p);
+          const titleBit = title && title !== '其他' ? ' · ' + esc(title) : '';
+          return `<li><span>${esc(p.name)}${personDept(p) ? ' · ' + esc(personDept(p)) : ''}${titleBit}</span>
+            <button type="button" class="msb-link" data-msb-bind="${esc(p.id)}">部別／職別／帳號</button>
+            <button type="button" class="msb-link msb-link--danger" data-msb-rm-person="${esc(p.id)}" data-msb-rm-name="${esc(p.name)}">移除</button></li>`;
+        }).join('') + '</ul>'
         : '<p class="msb-empty">尚無人員</p>';
     }
   }
@@ -500,6 +502,10 @@
     if ($('msb-bind-person-id')) $('msb-bind-person-id').value = String(person.id);
     if ($('msb-bind-person-label')) $('msb-bind-person-label').textContent = person.name || '';
     fillBindDept(personDept(person));
+    {
+      const t = personTitle(person);
+      if ($('msb-bind-job-title')) $('msb-bind-job-title').value = t && t !== '其他' ? t : '';
+    }
     if ($('msb-bind-account-q')) $('msb-bind-account-q').value = person.name || '';
     try {
       const res = await rpc('msb_accounts_lookup', { p_token: token(), p_q: person.name || '' });
@@ -636,11 +642,12 @@
           p_token: token(),
           p_id: personId,
           p_department: $('msb-bind-dept')?.value || '',
-          p_account_id: accountVal || null
+          p_account_id: accountVal || null,
+          p_job_title: String($('msb-bind-job-title')?.value || '').trim()
         });
         if (!res?.ok) throw new Error(res?.error || '儲存失敗');
         closeBindModal();
-        setMsg('已更新部別／帳號', 'ok');
+        setMsg('已更新部別／職別／帳號', 'ok');
         await reload();
       } catch (err) {
         setMsg(err.message || String(err), 'err', 'msb-bind-msg');

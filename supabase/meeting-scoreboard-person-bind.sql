@@ -44,11 +44,14 @@ begin
 end;
 $$;
 
+drop function if exists public.msb_person_patch(text, bigint, text, uuid);
+
 create or replace function public.msb_person_patch(
   p_token text,
   p_id bigint,
   p_department text default null,
-  p_account_id uuid default null
+  p_account_id uuid default null,
+  p_job_title text default null
 )
 returns json
 language plpgsql
@@ -59,6 +62,7 @@ declare
   v_uid uuid := public.msb_require_user(p_token);
   v_can_edit boolean;
   v_dept text;
+  v_title text;
   v_account uuid := p_account_id;
   v_team text := '';
   v_row public.msb_people%rowtype;
@@ -79,6 +83,12 @@ begin
     v_dept := left(trim(coalesce(p_department, '')), 40);
   end if;
 
+  if p_job_title is null then
+    v_title := coalesce(v_row.job_title, '');
+  else
+    v_title := left(trim(coalesce(p_job_title, '')), 40);
+  end if;
+
   if v_account is not null then
     select trim(coalesce(a.team, '')) into v_team
     from public.toolbox_accounts a
@@ -95,21 +105,30 @@ begin
 
   update public.msb_people
      set department = coalesce(v_dept, ''),
+         job_title = coalesce(v_title, ''),
          account_id = v_account
    where id = p_id
   returning * into v_row;
+
+  update public.msb_people
+     set department = coalesce(v_dept, ''),
+         job_title = coalesce(v_title, '')
+   where active = true
+     and name = v_row.name
+     and id <> p_id;
 
   return json_build_object(
     'ok', true,
     'id', v_row.id,
     'name', v_row.name,
     'department', coalesce(v_row.department, ''),
+    'title', coalesce(v_row.job_title, ''),
     'accountId', v_row.account_id
   );
 end;
 $$;
 
 revoke all on function public.msb_accounts_lookup(text, text) from public;
-revoke all on function public.msb_person_patch(text, bigint, text, uuid) from public;
+revoke all on function public.msb_person_patch(text, bigint, text, uuid, text) from public;
 grant execute on function public.msb_accounts_lookup(text, text) to anon, authenticated;
-grant execute on function public.msb_person_patch(text, bigint, text, uuid) to anon, authenticated;
+grant execute on function public.msb_person_patch(text, bigint, text, uuid, text) to anon, authenticated;
