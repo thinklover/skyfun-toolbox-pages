@@ -34,7 +34,8 @@
     q: '',
     bindPersonId: null,
     accountOptions: [],
-    bound: false
+    bound: false,
+    peopleSort: { key: '', dir: 'desc' }
   };
 
   function $(id) { return document.getElementById(id); }
@@ -134,7 +135,19 @@
     return 800;
   }
   function sortPeopleList(list) {
+    const { key, dir } = state.peopleSort || {};
+    const mul = dir === 'asc' ? 1 : -1;
     return list.slice().sort((a, b) => {
+      if (key === 'score' || key === 'bonus') {
+        const av = key === 'score' ? numOrNull(a.score) : bonusAmount(a.bonus);
+        const bv = key === 'score' ? numOrNull(b.score) : bonusAmount(b.bonus);
+        const aEmpty = av == null;
+        const bEmpty = bv == null;
+        if (aEmpty && bEmpty) { /* fall through */ }
+        else if (aEmpty) return 1;
+        else if (bEmpty) return -1;
+        else if (av !== bv) return (av - bv) * mul;
+      }
       const tr = titleRank(a) - titleRank(b);
       if (tr) return tr;
       const or = officeRank(personDept(a)) - officeRank(personDept(b));
@@ -144,6 +157,30 @@
       if (da !== db) return da.localeCompare(db, 'zh-Hant');
       return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
     });
+  }
+  function syncPeopleSortHeaders() {
+    const { key, dir } = state.peopleSort || {};
+    document.querySelectorAll('#page-meeting-scoreboard th[data-msb-sort]').forEach((th) => {
+      const k = th.getAttribute('data-msb-sort');
+      const on = k === key;
+      th.classList.toggle('is-sorted', on);
+      th.setAttribute('aria-sort', on ? (dir === 'asc' ? 'ascending' : 'descending') : 'none');
+      const mark = th.querySelector('.msb-sort-mark');
+      if (mark) mark.textContent = on ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
+    });
+  }
+  function togglePeopleSort(key) {
+    if (!key) return;
+    if (state.peopleSort.key === key) {
+      state.peopleSort.dir = state.peopleSort.dir === 'desc' ? 'asc' : 'desc';
+    } else {
+      state.peopleSort = { key, dir: 'desc' };
+    }
+    renderPeopleTable();
+  }
+  function mountModal(el) {
+    if (!el || !document.body) return;
+    if (el.parentElement !== document.body) document.body.appendChild(el);
   }
   function defaultProjectId() {
     const list = state.projects || [];
@@ -188,7 +225,7 @@
   function filteredPeople() {
     const q = String(state.q || '').trim().toLowerCase();
     let list = (state.people || []).slice();
-    if (!state.canViewAll) list = list.filter(isMine);
+    /* 全員分數／獎金公開可見；編輯仍看 canEdit */
     if (q) {
       list = list.filter((p) =>
         String(p.name || '').toLowerCase().includes(q) ||
@@ -228,18 +265,15 @@
     const selfBox = $('msb-self');
     if (!officeBody || !bizBody) return;
     const month = state.scoreMonth || state.month || currentMonth();
-    if (note) note.textContent = '分數與獎金為 ' + month + ' 手動輸入；＋／－寫入加減分紀錄。排序：職等 → 北到南。';
+    if (note) {
+      const sortHint = state.peopleSort.key
+        ? '可點欄位排序分數／獎金。'
+        : '點「分數」「獎金」欄位可排序；預設職等 → 北到南。';
+      note.textContent = '分數與獎金為 ' + month + ' 手動輸入；＋／－寫入加減分紀錄。' + sortHint;
+    }
     if (selfBox) {
-      if (!state.canViewAll) {
-        const mine = (state.people || []).find(isMine);
-        selfBox.hidden = false;
-        selfBox.innerHTML = mine
-          ? `<div class="msb-self-card"><b>${esc(mine.name)}</b><span>分數 ${scoreCellHtml(mine.score)}</span><span>獎金 ${bonusCellHtml(mine)}</span></div>`
-          : '<p class="msb-empty">目前還沒有你的分數資料</p>';
-      } else {
-        selfBox.hidden = true;
-        selfBox.innerHTML = '';
-      }
+      selfBox.hidden = true;
+      selfBox.innerHTML = '';
     }
     const list = filteredPeople();
     const edit = state.canEdit;
@@ -251,6 +285,7 @@
     bizBody.innerHTML = biz.length
       ? biz.map((p) => peopleRowHtml(p, edit)).join('')
       : '<tr><td colspan="6" class="msb-empty">尚無業務人員</td></tr>';
+    syncPeopleSortHeaders();
   }
   function filteredRecords() {
     const q = String(state.filter.q || '').trim().toLowerCase();
@@ -443,7 +478,11 @@
       if ($('msb-item')) $('msb-item').value = asMinus ? '減分' : '加分';
     }
     setMsg('', '', 'msb-form-msg');
-    if ($('msb-modal')) $('msb-modal').hidden = false;
+    const modal = $('msb-modal');
+    if (modal) {
+      mountModal(modal);
+      modal.hidden = false;
+    }
     document.body.classList.add('msb-modal-open');
     markFormClean();
   }
@@ -466,7 +505,11 @@
     if ($('msb-month-status')) $('msb-month-status').value = person ? (person.bonusStatus || '') : '';
     if ($('msb-month-note')) $('msb-month-note').value = person ? (person.monthNote || '') : '';
     setMsg('', '', 'msb-month-msg');
-    if ($('msb-month-modal')) $('msb-month-modal').hidden = false;
+    const modal = $('msb-month-modal');
+    if (modal) {
+      mountModal(modal);
+      modal.hidden = false;
+    }
     document.body.classList.add('msb-modal-open');
   }
   function closeMonthModal() {
@@ -514,7 +557,11 @@
     } catch (_) { state.accountOptions = []; }
     fillBindAccounts(person.accountId || '');
     setMsg('', '', 'msb-bind-msg');
-    if ($('msb-bind-modal')) $('msb-bind-modal').hidden = false;
+    const modal = $('msb-bind-modal');
+    if (modal) {
+      mountModal(modal);
+      modal.hidden = false;
+    }
     document.body.classList.add('msb-modal-open');
   }
   function closeBindModal() {
@@ -540,7 +587,12 @@
     state.month = currentMonth();
     if ($('msb-month')) $('msb-month').value = state.month;
 
-    document.getElementById('page-meeting-scoreboard')?.addEventListener('click', async (e) => {
+    const onMsbClick = async (e) => {
+      const sortTh = e.target.closest('th[data-msb-sort]');
+      if (sortTh) {
+        togglePeopleSort(sortTh.getAttribute('data-msb-sort'));
+        return;
+      }
       const viewBtn = e.target.closest('[data-msb-view]');
       if (viewBtn) {
         setView(viewBtn.getAttribute('data-msb-view'));
@@ -609,6 +661,10 @@
         );
         return;
       }
+    };
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#page-meeting-scoreboard, .msb-modal')) return;
+      onMsbClick(e);
     });
 
     $('msb-month')?.addEventListener('change', async (e) => {

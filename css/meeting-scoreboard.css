@@ -204,6 +204,19 @@
   text-align: left;
   vertical-align: middle;
 }
+#page-meeting-scoreboard .msb-th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+#page-meeting-scoreboard .msb-th-sort:hover,
+#page-meeting-scoreboard .msb-th-sort.is-sorted {
+  color: var(--msb-primary);
+}
+#page-meeting-scoreboard .msb-sort-mark {
+  font-size: 0.72em;
+  font-weight: 900;
+}
 #page-meeting-scoreboard .msb-table thead th {
   position: sticky;
   top: 0;
@@ -350,47 +363,67 @@
 }
 #page-meeting-scoreboard .msb-settings-gate-row input { flex: 1; }
 
-#page-meeting-scoreboard .msb-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: grid;
-  place-items: center;
+#page-meeting-scoreboard .msb-modal,
+.msb-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10050;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
   padding: 1rem;
+  box-sizing: border-box;
 }
-#page-meeting-scoreboard .msb-modal[hidden] { display: none !important; }
-#page-meeting-scoreboard .msb-modal-backdrop {
+#page-meeting-scoreboard .msb-modal[hidden],
+.msb-modal[hidden] { display: none !important; }
+#page-meeting-scoreboard .msb-modal-backdrop,
+.msb-modal .msb-modal-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
 }
-#page-meeting-scoreboard .msb-modal-sheet {
+#page-meeting-scoreboard .msb-modal-sheet,
+.msb-modal .msb-modal-sheet {
   position: relative;
+  z-index: 1;
   width: min(560px, 100%);
-  max-height: 92vh;
+  max-height: min(92vh, 900px);
   overflow: auto;
+  margin: auto;
   background: #fff;
   border-radius: 1rem;
   padding: 1rem 1.1rem 1.1rem;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
 }
+.msb-modal {
+  --msb-ink: #0f172a;
+  --msb-muted: #64748b;
+  --msb-line: #e2e8f0;
+  --msb-primary: #0f766e;
+  color: var(--msb-ink);
+  font-family: inherit;
+}
+.msb-modal .msb-modal-head,
 #page-meeting-scoreboard .msb-modal-head {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
+.msb-modal .msb-modal-head h3,
 #page-meeting-scoreboard .msb-modal-head h3 {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 900;
 }
+.msb-modal .msb-modal-board,
 #page-meeting-scoreboard .msb-modal-board {
   margin: 0.15rem 0 0;
   color: var(--msb-muted);
   font-size: 0.78rem;
   font-weight: 700;
 }
+.msb-modal .msb-modal-x,
 #page-meeting-scoreboard .msb-modal-x {
   border: 0;
   background: #f1f5f9;
@@ -400,15 +433,23 @@
   font-size: 1.2rem;
   cursor: pointer;
 }
+.msb-modal .msb-form-grid,
 #page-meeting-scoreboard .msb-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.65rem;
 }
+.msb-modal .msb-field,
 #page-meeting-scoreboard .msb-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.msb-modal .msb-field--full,
 #page-meeting-scoreboard .msb-field--full { grid-column: 1 / -1; }
+.msb-modal .msb-field label,
 #page-meeting-scoreboard .msb-field label { font-size: 0.78rem; font-weight: 800; color: #334155; }
+.msb-modal .msb-field .msb-req::after,
 #page-meeting-scoreboard .msb-field .msb-req::after { content: ' *'; color: #dc2626; }
+.msb-modal .msb-field input,
+.msb-modal .msb-field select,
+.msb-modal .msb-field textarea,
 #page-meeting-scoreboard .msb-field input,
 #page-meeting-scoreboard .msb-field select,
 #page-meeting-scoreboard .msb-field textarea {
@@ -417,12 +458,36 @@
   padding: 0.45rem 0.55rem;
   font-size: 0.9rem;
 }
+.msb-modal .msb-modal-actions,
 #page-meeting-scoreboard .msb-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.45rem;
   margin-top: 0.85rem;
 }
+.msb-modal .msb-btn {
+  border: 1px solid var(--msb-line);
+  border-radius: 0.55rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  background: #fff;
+  color: var(--msb-ink);
+}
+.msb-modal .msb-btn--ghost { background: #f8fafc; }
+.msb-modal .msb-btn--primary {
+  background: var(--msb-primary);
+  border-color: var(--msb-primary);
+  color: #fff;
+}
+.msb-modal .msb-msg {
+  min-height: 1.2rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.82rem;
+}
+.msb-modal .msb-msg.is-ok { color: #047857; font-weight: 700; }
+.msb-modal .msb-msg.is-err { color: #b91c1c; font-weight: 700; }
 body.msb-modal-open { overflow: hidden; }
 
 @media (max-width: 1100px) {
