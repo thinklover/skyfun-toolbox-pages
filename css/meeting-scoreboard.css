@@ -15,7 +15,7 @@
 }
 #page-meeting-scoreboard .msb-dual {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.85rem;
   align-items: start;
 }
