@@ -537,6 +537,19 @@
     el.innerHTML = '<option value="">（不改帳號）</option>' + opts;
     if (selected && [...el.options].some((o) => o.value === selected)) el.value = selected;
   }
+  function selectedBindAccount() {
+    const id = String($('msb-bind-account')?.value || '').trim();
+    if (!id) return null;
+    return (state.accountOptions || []).find((a) => String(a.id) === id) || null;
+  }
+  /** 對到帳號後，總表顯示姓名跟著帳號走 */
+  function syncBindNameFromAccount(acc) {
+    if (!acc) return;
+    const name = String(acc.name || '').trim();
+    if (!name) return;
+    if ($('msb-bind-name')) $('msb-bind-name').value = name;
+    if ($('msb-bind-person-label')) $('msb-bind-person-label').textContent = name;
+  }
   async function openBindModal(personId) {
     if (!state.canEdit) return;
     const person = (state.people || []).find((p) => String(p.id) === String(personId));
@@ -687,6 +700,9 @@
         fillBindAccounts($('msb-bind-account')?.value || '');
       }, 220);
     });
+    $('msb-bind-account')?.addEventListener('change', () => {
+      syncBindNameFromAccount(selectedBindAccount());
+    });
     $('msb-bind-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       if (!state.canEdit) {
@@ -702,16 +718,18 @@
         setMsg('找不到人員編號，請關閉後重開', 'err', 'msb-bind-msg');
         return;
       }
-      const newName = String($('msb-bind-name')?.value || '').trim();
+      const accountVal = String($('msb-bind-account')?.value || '').trim();
+      const acc = accountVal ? selectedBindAccount() : null;
+      if (acc) syncBindNameFromAccount(acc);
+      const newName = String($('msb-bind-name')?.value || '').trim() || String(acc?.name || '').trim();
       if (!newName) {
-        setMsg('請填姓名', 'err', 'msb-bind-msg');
+        setMsg('請填姓名，或先對到帳號', 'err', 'msb-bind-msg');
         return;
       }
       state.busy = true;
       const btn = $('msb-bind-save');
       if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
       try {
-        const accountVal = String($('msb-bind-account')?.value || '').trim();
         const payload = {
           p_token: token(),
           p_id: personId,
