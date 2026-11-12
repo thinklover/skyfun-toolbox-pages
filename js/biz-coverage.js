@@ -252,7 +252,7 @@
     };
   }
 
-  /** 代管＝累積代管已生效件數（與新媒合分開） */
+  /** 代管＝代管姓名是這個人的已生效案件；同地址包租與轉租算一件 */
   function escrowTotal(name) {
     const prod = state.production;
     if (!prod || !Array.isArray(prod.counts)) return null;
@@ -880,7 +880,7 @@
       </section>
       <section class="cv-flag${openBusy ? ' cv-flag--call-open' : ''}">
         <h3>代管 10 件以上未保<small>${busy.length}</small></h3>
-        <p>未投保、累積代管案件 10 件以上。人名下的「新案」另算 115/11/1 起新媒合，與代管件數分開。</p>
+        <p>未投保，而且代管姓名是這個人的已生效案件達 10 件。同地址的包租與轉租算一件。人名下的「新案」另算 115/11/1 起新媒合，與代管件數分開。</p>
         ${escrowNote}
         ${busy.length ? sortToggleHtml('busy', state.busySortDir, '代管件數') : ''}
         ${busy.length
