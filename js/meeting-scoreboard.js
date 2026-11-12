@@ -407,6 +407,7 @@
   }
   function settingsGroups(people) {
     const biz = BIZ_ZONES.map((z) => ({
+      id: z.id,
       title: z.label,
       rows: people.filter((p) => isBizDept(personDept(p)) && bizZoneId(personDept(p)) === z.id)
     })).filter((g) => g.rows.length);
@@ -601,11 +602,9 @@
         peopleBox.innerHTML = '<p class="msb-empty">尚無人員</p>';
       } else {
         const groups = settingsGroups(people);
-        const block = (title, list) => `<section class="msb-org-block">
-          <h4 class="msb-org-block-title">${title}</h4>
-          ${list.length ? `<div class="msb-org-groups">${list.map((g) => {
-            const rows = g.rows.slice().sort((a, b) => titleRank(a) - titleRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'));
-            return `<section class="msb-org-group">
+        const groupCard = (g) => {
+          const rows = g.rows.slice().sort((a, b) => titleRank(a) - titleRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'));
+          return `<section class="msb-org-group">
               <header class="msb-org-head">${esc(g.title)}</header>
               <div class="msb-org-stats">現有 <b>${rows.length}</b> 人</div>
               <div class="msb-org-table-wrap"><table class="msb-org-table">
@@ -627,9 +626,33 @@
                 }).join('')}</tbody>
               </table></div>
             </section>`;
-          }).join('')}</div>` : '<p class="msb-empty">尚無人員</p>'}
+        };
+        const block = (title, list, stackSouth) => {
+          let cards = '';
+          if (list.length) {
+            if (stackSouth) {
+              const used = new Set();
+              cards = list.map((g) => {
+                if (used.has(g.id)) return '';
+                if (g.id === 'south') {
+                  const kh = list.find((x) => x.id === 'kh');
+                  if (kh) {
+                    used.add('kh');
+                    return `<div class="msb-org-stack">${groupCard(g)}${groupCard(kh)}</div>`;
+                  }
+                }
+                return groupCard(g);
+              }).join('');
+            } else {
+              cards = list.map(groupCard).join('');
+            }
+          }
+          return `<section class="msb-org-block">
+          <h4 class="msb-org-block-title">${title}</h4>
+          ${cards ? `<div class="msb-org-groups">${cards}</div>` : '<p class="msb-empty">尚無人員</p>'}
         </section>`;
-        peopleBox.innerHTML = block('業務單位', groups.biz) + block('內勤單位', groups.office);
+        };
+        peopleBox.innerHTML = block('業務單位', groups.biz, true) + block('內勤單位', groups.office, false);
       }
     }
     renderEditors();

@@ -261,6 +261,15 @@
 }
 #page-meeting-scoreboard .msb-org-group { min-width: 0; border-right: 1px solid #e6dcc8; border-bottom: 1px solid #e6dcc8; }
 #page-meeting-scoreboard .msb-org-group:nth-child(3n) { border-right: 0; }
+#page-meeting-scoreboard .msb-org-stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-bottom: 1px solid #e6dcc8;
+}
+#page-meeting-scoreboard .msb-org-groups > .msb-org-stack { border-right: 0; }
+#page-meeting-scoreboard .msb-org-stack .msb-org-group { border-right: 0; }
+#page-meeting-scoreboard .msb-org-stack .msb-org-group:last-child { border-bottom: 0; }
 #page-meeting-scoreboard .msb-org-head {
   background: #1c2838;
   color: #f4ead3;
