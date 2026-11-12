@@ -627,32 +627,27 @@
               </table></div>
             </section>`;
         };
-        const block = (title, list, stackSouth) => {
-          let cards = '';
-          if (list.length) {
-            if (stackSouth) {
-              const used = new Set();
-              cards = list.map((g) => {
-                if (used.has(g.id)) return '';
-                if (g.id === 'south') {
-                  const kh = list.find((x) => x.id === 'kh');
-                  if (kh) {
-                    used.add('kh');
-                    return `<div class="msb-org-stack">${groupCard(g)}${groupCard(kh)}</div>`;
-                  }
-                }
-                return groupCard(g);
-              }).join('');
-            } else {
-              cards = list.map(groupCard).join('');
+        const block = (title, list, stacks) => {
+          const keyOf = (g) => g.id || g.title;
+          const used = new Set();
+          const cards = list.length ? list.map((g) => {
+            const key = keyOf(g);
+            if (used.has(key)) return '';
+            const pair = (stacks || []).find((item) => item.under === key);
+            const child = pair ? list.find((row) => keyOf(row) === pair.below) : null;
+            if (child) {
+              used.add(pair.below);
+              return `<div class="msb-org-stack">${groupCard(g)}${groupCard(child)}</div>`;
             }
-          }
+            return groupCard(g);
+          }).join('') : '';
           return `<section class="msb-org-block">
           <h4 class="msb-org-block-title">${title}</h4>
           ${cards ? `<div class="msb-org-groups">${cards}</div>` : '<p class="msb-empty">尚無人員</p>'}
         </section>`;
         };
-        peopleBox.innerHTML = block('業務單位', groups.biz, true) + block('內勤單位', groups.office, false);
+        peopleBox.innerHTML = block('業務單位', groups.biz, [{ under: 'south', below: 'kh' }])
+          + block('內勤單位', groups.office, [{ under: '商辦部', below: '星耀' }]);
       }
     }
     renderEditors();
