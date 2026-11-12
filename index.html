@@ -4617,7 +4617,7 @@
 <link rel="stylesheet" href="./css/notice-ack.css?v=20261111-ackwm">
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261111-resubmod">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
-<link rel="stylesheet" href="./css/fin-report.css?v=20261108-fin62">
+<link rel="stylesheet" href="./css/fin-report.css?v=20261112-mine">
 <link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261112-msb-v35">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
@@ -4954,7 +4954,7 @@
 
                 <div class="home-feature-card home-card-biz-sup" role="button" tabindex="0" onclick="showPage('biz-supervisor')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('biz-supervisor');}">
                     <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🧭</span><span class="hc-name">業務主管專區</span><span class="hc-go" aria-hidden="true">→</span></span>
-                    <span class="hc-desc">主管獎金、津貼與考核辦法（需密碼）。</span>
+                    <span class="hc-desc">主管獎金、津貼與考核辦法。</span>
                 </div>
             </div>
         </div>
@@ -5005,7 +5005,7 @@
 
         <!-- 舊簽呈公告：內容已併入業務獎金辦法；保留 id 以免舊連結失效 -->
         <div id="page-announcement" class="hidden" aria-hidden="true"></div>
-        <!-- 專區頁面：主管獎金（密碼鎖） -->
+        <!-- 專區頁面：主管獎金 -->
         <div id="page-manager-bonus" class="hidden max-w-4xl mx-auto space-y-6">
             <button type="button" onclick="showPage('biz-supervisor')" class="mb-4 btn btn-sm tone-slate-soft">
                 ← 返回業務主管專區
@@ -5013,24 +5013,16 @@
 
             <div class="bg-gradient-to-br from-indigo-50 via-white to-slate-50 rounded-[2rem] p-6 border border-indigo-200 shadow-lg space-y-5">
                 <div class="text-center">
-                    <h2 class="text-3xl font-bold text-slate-900 mb-2">🔒 主管獎金專區</h2>
-                    <p class="text-slate-600">主管獎金、津貼、考核與管理辦法，限主管查閱。開啟／下載完整檔需密碼（與全站辦法相同）。</p>
+                    <h2 class="text-3xl font-bold text-slate-900 mb-2">主管獎金專區</h2>
+                    <p class="text-slate-600">主管獎金、津貼、考核與管理辦法。</p>
                 </div>
 
-                <form id="mb-lock" class="rounded-[1.5rem] border border-slate-200 bg-white p-5 space-y-3 max-w-md mx-auto" autocomplete="off">
-                    <label class="block font-bold text-slate-900" for="mb-password">請輸入密碼</label>
-                    <input id="mb-password" type="password" inputmode="numeric" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-lg" placeholder="密碼" required>
-                    <button type="submit" class="btn btn-block btn-center tone-indigo font-bold">🔓 解鎖</button>
-                    <p id="mb-msg" class="text-sm text-rose-600 min-h-[1.25rem]" role="status" aria-live="polite"></p>
-                </form>
-
-                <div id="mb-content" class="hidden space-y-4"></div>
+                <div id="mb-content" class="space-y-4"></div>
             </div>
         </div>
         <script src="./js/policy-doc-gate.js?v=20261111-ackwm"></script>
         <script>
         (function () {
-            const Gate = window.SkyfunPolicyDocGate;
             const GROUPS = [
                 {
                     title: '營業處主管獎金制度',
@@ -5068,49 +5060,14 @@
                         '<div class="rounded-xl border border-slate-200 bg-slate-50 p-4">' +
                         '<div class="font-extrabold">' + label + '</div>' +
                         '<div class="mt-3 flex flex-wrap gap-2">' +
-                        '<a href="' + href + '" class="btn btn-sm tone-slate-mid">📄 預覽／下載</a>' +
+                        '<a href="' + href + '" data-policy-skip class="btn btn-sm tone-slate-mid">📄 預覽／下載</a>' +
                         '</div></div>').join('') +
-                    '</div></div>').join('') +
-                    '<div class="text-center"><button type="button" id="mb-relock" class="btn btn-sm tone-slate-soft">🔒 重新上鎖</button></div>';
+                    '</div></div>').join('');
                 box.classList.remove('hidden');
-                document.getElementById('mb-lock').classList.add('hidden');
-            }
-
-            function lock() {
-                if (Gate) Gate.setUnlocked(false);
-                else try { sessionStorage.removeItem('skyfun-manager-bonus-unlocked'); } catch (e) { /* ignore */ }
-                const box = document.getElementById('mb-content');
-                box.innerHTML = '';
-                box.classList.add('hidden');
-                document.getElementById('mb-lock').classList.remove('hidden');
-                document.getElementById('mb-password').value = '';
             }
 
             function bind() {
-                const form = document.getElementById('mb-lock');
-                if (!form) return;
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const input = document.getElementById('mb-password');
-                    const msg = document.getElementById('mb-msg');
-                    msg.textContent = '';
-                    const ok = Gate ? await Gate.checkPassword(input.value) : false;
-                    if (!ok) {
-                        msg.textContent = '密碼錯誤，請再試一次';
-                        input.select();
-                        return;
-                    }
-                    if (Gate) Gate.setUnlocked(true);
-                    render();
-                });
-                document.getElementById('mb-content').addEventListener('click', (e) => {
-                    if (e.target.closest('#mb-relock')) lock();
-                });
-                window.addEventListener('skyfun-policy-unlock', (ev) => {
-                    if (ev.detail && ev.detail.unlocked) render();
-                    else lock();
-                });
-                if (Gate && Gate.isUnlocked()) render();
+                render();
             }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
@@ -6459,7 +6416,7 @@
                 <header class="bz-head">
                     <div class="bz-kicker">FINANCE</div>
                     <h2 class="bz-title">📒 財會專區</h2>
-                    <p class="bz-sub">點選下方卡片展開填寫；送出後通知會計。</p>
+                    <p class="bz-sub">點選卡片展開，可看你送出的案件與目前進度，也可以繼續填單。</p>
                 </header>
                 <p class="fin-home-lead">1. 填單後預計三個工作天完成。<br>2. 如有退件會通知填單人員；退件意見三天未補會再次通知。<br>3. 北五處未提供六個月繳租證明不需要簽呈；若未走正常兩押一租，仍需提供領款收據，但不需要照會。<br>4. 送出後會 LINE 通知財務部已綁定的會計；附件請至後台下載。</p>
                 <p class="hr-admin-link">
@@ -7800,7 +7757,7 @@
                         <span class="bz-ico" aria-hidden="true">🔒</span>
                         <span class="bz-copy">
                             <span class="bz-name">主管獎金專區</span>
-                            <span class="bz-hint">主管獎金、津貼、考核辦法（需密碼）</span>
+                            <span class="bz-hint">主管獎金、津貼、考核辦法</span>
                         </span>
                         <span class="bz-go" aria-hidden="true">進入</span>
                     </button>
@@ -14339,7 +14296,7 @@
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261112-dropmt"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
-        <script src="./js/fin-report.js?v=20261108-fin62"></script>
+        <script src="./js/fin-report.js?v=20261112-mine"></script>
         <script src="./js/meeting-scoreboard.js?v=20261112-msb-v36"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
@@ -16208,7 +16165,7 @@
             { page: 'rentmanager-line-endorse', title: '租管 LINE 照會流程', category: '租管師專區', keywords: 'LINE 照會 領款收據 送件 主管照會 照會群 租管' },
             { page: 'practice-contacts', title: '租金補貼辦理單位', category: '房客專區', keywords: '窗口 通訊錄 300億 租金補貼 辦理單位 縣市 電話 傳真 臨櫃 pip' },
             { page: 'business-bonus', title: '簽呈與公司公告', category: '業務專區', keywords: '簽呈 公告 通知 公司 高專 激勵 第9 第10 第11 業績月 1150824' },
-            { page: 'manager-bonus', title: '主管獎金專區', category: '業務主管專區', keywords: '主管 獎金 營業處 特定地區 津貼 考核 補貼 請款 協理 儲備處 經理 密碼' },
+            { page: 'manager-bonus', title: '主管獎金專區', category: '業務主管專區', keywords: '主管 獎金 營業處 特定地區 津貼 考核 補貼 請款 協理 儲備處 經理' },
             { page: 'biz-supervisor', title: '業務主管專區', category: '首頁專區', keywords: '業務主管 處長 營業處 主管 督導 獎金 津貼 考核 誠實險 誠信險 投保 工具箱 綁定' },
             { page: 'petition', title: '簽呈簽核', category: '行政專區', keywords: '簽呈 簽核 送簽 簽名 上傳簽呈 承辦單位 第一線人員 主管 審核 經理 協理 會辦單位 總經理室 決行 總經理 退回 重送 LINE 通知 陳情 申訴 客訴' },
             { page: 'administration', title: '行政專區', category: '首頁專區', keywords: '行政 請款 天數 庶務 管理部 簽呈 點數表 成長羅盤 羅盤 行事曆 問答 QA 各式表單 表單 中心系統申請 離職 離職通報 系統資料修正 獎金補發 獎金收回 系統BUG BUG 審件要點 實價登錄 系統代入 後台報表 修繕 到期合約 業務線上表單 領款收據 處長照會 跨區派案 漏件 註銷 註銷物件 註銷物件申請 物件註銷 承接業者 不續約 複審 檢核表 代管複審 包租複審' },

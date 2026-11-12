@@ -166,7 +166,10 @@
     addrLooking: false,
     suppOrigin: null,
     suppCandidates: [],
-    suppLooking: false
+    suppLooking: false,
+    mine: [],
+    mineLoaded: false,
+    mineLoading: false
   };
 
   LL_DOC_KEYS.forEach((k) => { state.files[k] = []; });
@@ -774,23 +777,99 @@
     });
   }
 
+  function mineEl() {
+    let el = $('fin-mine-block');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'fin-mine-block';
+    el.className = 'fin-mine';
+    el.hidden = true;
+    return el;
+  }
+
+  function progressOf(row) {
+    if (row.status === 'rejected') return { cls: 'is-back', text: '已退回' };
+    return { cls: 'is-wait', text: '已送出・財務處理中' };
+  }
+
+  function fmtMineWhen(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleString('zh-TW', {
+      timeZone: 'Asia/Taipei',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
+
+  function renderMine(issue) {
+    const box = mineEl();
+    if (!issue) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    const rows = (state.mine || []).filter((r) => r.issueType === issue);
+    const body = rows.length
+      ? rows.map((r) => {
+        const p = progressOf(r);
+        const title = [r.item, r.address].filter(Boolean).join('・') || '案件';
+        const reason = r.status === 'rejected' && r.rejectReason
+          ? '<div class="fin-mine-reason">退件原因：' + esc(r.rejectReason) + '</div>'
+          : '';
+        return '<article class="fin-mine-row">' +
+          '<div class="fin-mine-top"><span class="fin-mine-when">' + esc(fmtMineWhen(r.createdAt)) + '</span>' +
+          '<span class="fin-mine-st ' + p.cls + '">' + esc(p.text) + '</span></div>' +
+          '<div class="fin-mine-title">' + esc(title) + '</div>' +
+          reason +
+          '</article>';
+      }).join('')
+      : '<p class="fin-mine-empty">' + (token() ? '這個分類還沒有你送出的案件。' : '登入後可看你送出的案件與進度。') + '</p>';
+    box.hidden = false;
+    box.innerHTML = '<h3 class="fin-mine-h">已送出的案件</h3>' + body;
+  }
+
+  async function loadMine() {
+    state.mine = [];
+    if (!token()) {
+      state.mineLoaded = true;
+      return;
+    }
+    try {
+      const res = await rpc('fin_report_mine', { p_token: token() });
+      if (res?.ok && Array.isArray(res.rows)) state.mine = res.rows;
+    } catch (_) {
+      state.mine = [];
+    }
+    state.mineLoaded = true;
+  }
+
   function placeExpandedBlocks() {
     const sharedHold = $('fin-shared-hold');
     const shared = $('fin-shared-block');
     const footerHold = $('fin-footer-hold');
     const footer = $('fin-footer-block');
+    const mine = mineEl();
     const openCard = document.querySelector('#page-finance .fin-issue-card.is-open');
     const openBody = openCard && openCard.querySelector('.fin-issue-body');
     if (!shared || !footer) return;
     if (openBody) {
-      // 標題下方：先共用欄位，再本卡題目，最後送出區；內容只往下長
-      if (shared.parentNode !== openBody || openBody.firstChild !== shared) {
-        openBody.insertBefore(shared, openBody.firstChild);
+      if (mine.parentNode !== openBody || openBody.firstChild !== mine) {
+        openBody.insertBefore(mine, openBody.firstChild);
+      }
+      if (shared.parentNode !== openBody || mine.nextSibling !== shared) {
+        openBody.insertBefore(shared, mine.nextSibling);
       }
       if (footer.parentNode !== openBody || openBody.lastChild !== footer) {
         openBody.appendChild(footer);
       }
     } else {
+      mine.hidden = true;
+      if (sharedHold) sharedHold.appendChild(mine);
       if (sharedHold) sharedHold.appendChild(shared);
       if (footerHold) footerHold.appendChild(footer);
     }
@@ -1098,6 +1177,14 @@
     }
     placeSharedPropertyFields();
     placeExpandedBlocks();
+    renderMine(issue);
+    if (issue && !state.mineLoaded && !state.mineLoading) {
+      state.mineLoading = true;
+      loadMine().finally(() => {
+        state.mineLoading = false;
+        renderMine(checked('fin-issue'));
+      });
+    }
     syncOther();
   }
 
@@ -1963,6 +2050,8 @@
         setLookupStatus('');
         renderFiles();
         fillOffice();
+        state.mineLoaded = false;
+        await loadMine();
         syncPanels();
       } catch (ex) {
         setMsg(ex.message || String(ex), 'err');

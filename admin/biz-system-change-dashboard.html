@@ -13,7 +13,7 @@
     .b-pending { background: #fef3c7; color: #92400e; }
     .b-done { background: #d1fae5; color: #065f46; }
     .b-rejected { background: #fee2e2; color: #b91c1c; }
-    .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.55rem; padding: 0.45rem 0.65rem; cursor: pointer; min-width: 4.8rem; text-align: left; }
+    .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.55rem; padding: 0.45rem 0.55rem; cursor: pointer; min-width: 4.2rem; text-align: left; }
     .stat.is-active { border-color: #7c3aed; box-shadow: 0 0 0 1px #7c3aed inset; }
     .stat b { display: block; font-size: 1.2rem; color: #4c1d95; line-height: 1.15; }
     .stat span { font-size: 0.72rem; color: #64748b; }
@@ -155,7 +155,7 @@
       let statusFilter = '';
       let regionFilter = '';
       const LABEL = { pending: '處理中', done: '已完成', rejected: '已退回' };
-      const LEVEL = { manager: '待處長', admin: '待行政', super: '待管理員' };
+      const LEVEL = { manager: '待處長', admin: '待行政', super: '待管理員', author: '待修改' };
       const CITY_ORDER = ['台北', '新北', '基隆', '宜蘭', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '花蓮', '台東', '澎湖', '金門', '連江', '其他'];
       const CITY_FROM_ADDR = [
         [/臺?北市|台北市/, '台北'],
@@ -281,6 +281,23 @@
         return '<span class="lv lv-' + esc(lv) + '">' + esc(text) + '</span>';
       }
 
+      function stageOf(r) {
+        if (r.status === 'done') return 'done';
+        if (r.status === 'rejected') return 'rejected';
+        const lv = String(r.handlerLevel || 'manager');
+        if (lv === 'admin' || lv === 'super' || lv === 'author') return lv;
+        return 'manager';
+      }
+
+      function stageCounts() {
+        const c = { all: allRows.length, manager: 0, admin: 0, super: 0, author: 0, done: 0, rejected: 0 };
+        allRows.forEach((r) => {
+          const k = stageOf(r);
+          if (c[k] != null) c[k] += 1;
+        });
+        return c;
+      }
+
       function addrKey(r) {
         return String(r.address || '')
           .replace(/\s+/g, '')
@@ -309,7 +326,7 @@
 
       function filtered() {
         let list = allRows.slice();
-        if (statusFilter) list = list.filter((r) => r.status === statusFilter);
+        if (statusFilter) list = list.filter((r) => stageOf(r) === statusFilter);
         if (regionFilter) list = list.filter((r) => cityOf(r) === regionFilter);
         const q = document.getElementById('search').value.trim().toLowerCase();
         if (q) {
@@ -336,12 +353,15 @@
       }
 
       function renderStats(counts) {
-        const c = counts || {};
+        const c = stageCounts();
         const items = [
-          { k: '', label: '全部', n: c.all || 0 },
-          { k: 'pending', label: '處理中', n: c.pending || 0 },
-          { k: 'done', label: '已完成', n: c.done || 0 },
-          { k: 'rejected', label: '已退回', n: c.rejected || 0 }
+          { k: '', label: '全部', n: c.all },
+          { k: 'manager', label: '待處長', n: c.manager },
+          { k: 'admin', label: '待行政', n: c.admin },
+          { k: 'super', label: '待管理員', n: c.super },
+          { k: 'author', label: '待修改', n: c.author },
+          { k: 'done', label: '已完成', n: c.done },
+          { k: 'rejected', label: '已退回', n: c.rejected }
         ];
         document.getElementById('stats').innerHTML = items.map((it) =>
           '<button type="button" class="stat' + (statusFilter === it.k ? ' is-active' : '') + '" data-st="' + it.k + '"><b>' + it.n + '</b><span>' + it.label + '</span></button>'
@@ -351,7 +371,7 @@
       function renderRows() {
         const rawCount = (() => {
           let list = allRows.slice();
-          if (statusFilter) list = list.filter((r) => r.status === statusFilter);
+          if (statusFilter) list = list.filter((r) => stageOf(r) === statusFilter);
           if (regionFilter) list = list.filter((r) => cityOf(r) === regionFilter);
           const q = document.getElementById('search').value.trim().toLowerCase();
           if (q) {
@@ -466,12 +486,7 @@
         const btn = e.target.closest('[data-st]');
         if (!btn) return;
         statusFilter = btn.getAttribute('data-st') || '';
-        renderStats({
-          all: allRows.length,
-          pending: allRows.filter((r) => r.status === 'pending').length,
-          done: allRows.filter((r) => r.status === 'done').length,
-          rejected: allRows.filter((r) => r.status === 'rejected').length
-        });
+        renderStats();
         renderRows();
       });
       document.getElementById('rows').addEventListener('click', async (e) => {

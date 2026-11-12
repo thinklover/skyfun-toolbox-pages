@@ -596,3 +596,66 @@
 #page-finance #fin-supp-top .hr-panel {
   background: #fff;
 }
+#page-finance .fin-mine {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0 0 0.35rem;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  background: #fff;
+}
+#page-finance .fin-mine-h {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #065f46;
+}
+#page-finance .fin-mine-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+#page-finance .fin-mine-row {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid #ecfdf5;
+}
+#page-finance .fin-mine-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+#page-finance .fin-mine-when {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+#page-finance .fin-mine-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+#page-finance .fin-mine-reason {
+  font-size: 0.8rem;
+  color: #9f1239;
+  font-weight: 700;
+}
+#page-finance .fin-mine-st {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+#page-finance .fin-mine-st.is-wait {
+  background: #ecfdf5;
+  color: #047857;
+}
+#page-finance .fin-mine-st.is-back {
+  background: #fff1f2;
+  color: #be123c;
+}
