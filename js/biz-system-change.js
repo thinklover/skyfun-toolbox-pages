@@ -714,7 +714,9 @@
 
   async function markDone(id) {
     if (state.busy || !id) return;
-    if (!confirm('確認系統已改完？按了會標記為已完成，並 LINE 通知填寫人。')) return;
+    if (!confirm(myRoleKey() === 'super'
+      ? '確認系統已改完？按了會標記為已完成，並 LINE 通知填寫人、承辦行政與處經理。'
+      : '確認系統已改完？按了會標記為已完成，並 LINE 通知填寫人。')) return;
     state.busy = true;
     const btn = document.querySelector(`[data-bsc-done="${id}"]`);
     if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
@@ -724,7 +726,13 @@
         p_id: Number(id)
       });
       if (!res?.ok) throw new Error(res?.error || '標記失敗');
-      setMsg(lineNote(res.line, '已標記完成，並已 LINE 通知填寫人', '已標記完成，但填寫人 LINE 未送出'), 'ok');
+      setMsg(lineNote(
+        res.line,
+        myRoleKey() === 'super'
+          ? '已標記完成，並已 LINE 通知填寫人、承辦行政與處經理'
+          : '已標記完成，並已 LINE 通知填寫人',
+        '已標記完成，但 LINE 未送出'
+      ), 'ok');
       await Promise.all([loadInbox(), loadMine()]);
     } catch (e) {
       setMsg(e.message || String(e), 'err');
@@ -747,7 +755,9 @@
     const hint = $('bsc-reject-hint');
     if (reason) reason.value = '';
     if (hint) {
-      hint.textContent = '退件原因會寫入案件紀錄並通知填寫人';
+      hint.textContent = myRoleKey() === 'super'
+        ? '退件原因會寫入案件紀錄，並 LINE 通知填寫人、承辦行政與處經理'
+        : '退件原因會寫入案件紀錄並通知填寫人';
       hint.classList.remove('is-err');
     }
     syncRejectConfirm();
@@ -970,7 +980,13 @@
       });
       if (!res?.ok) throw new Error(res?.error || '退件失敗');
       closeRejectModal();
-        setMsg(lineNote(res.line, '已退回填寫人，並已 LINE 通知', '已退回填寫人並記錄原因，但 LINE 未送出'), 'ok');
+        setMsg(lineNote(
+          res.line,
+          myRoleKey() === 'super'
+            ? '已退回填寫人，並已 LINE 通知填寫人、承辦行政與處經理'
+            : '已退回填寫人，並已 LINE 通知',
+          '已退回填寫人並記錄原因，但 LINE 未送出'
+        ), 'ok');
       await Promise.all([loadInbox(), loadMine()]);
     } catch (e) {
       if (hint) {
