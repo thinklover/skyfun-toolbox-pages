@@ -221,7 +221,7 @@
   }
 
   /** 誠實險／工具箱綁定不列入 */
-  const EXCLUDE_NAMES = new Set(['尤聖權']);
+  const EXCLUDE_NAMES = new Set(['尤聖權', '張孟緹']);
 
   function scopedPeople() {
     const kind = state.kind === '正職' || state.kind === '兼職' ? state.kind : 'all';
