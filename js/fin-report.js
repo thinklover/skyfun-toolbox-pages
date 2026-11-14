@@ -1107,6 +1107,40 @@
     }).join('');
   }
 
+  function clearCardCasePanels() {
+    document.querySelectorAll('#page-finance .fin-card-cases').forEach((el) => {
+      el.hidden = true;
+      el.classList.add('hidden');
+      el.innerHTML = '';
+    });
+  }
+
+  function ensureCardCasesBox(card) {
+    let box = card.querySelector('.fin-card-cases');
+    if (box) return box;
+    box = document.createElement('div');
+    box.className = 'fin-card-cases hidden';
+    box.hidden = true;
+    box.setAttribute('aria-label', '此類型案件列表');
+    const body = card.querySelector('.fin-issue-body');
+    if (body) body.insertAdjacentElement('afterend', box);
+    else card.appendChild(box);
+    return box;
+  }
+
+  function caseListHtml(rows, opts) {
+    const o = opts || {};
+    const back = o.back
+      ? '<button type="button" class="fin-back-types" data-fin-back-types="1">← 回七項分類</button>'
+      : '';
+    const head = o.title
+      ? '<div class="fin-card-cases-head"><h5 class="fin-card-cases-title">' + esc(o.title) + '</h5>' +
+        (o.close ? '<button type="button" class="btn btn-sm tone-slate-soft" data-fin-card-cases-close="1">收合</button>' : '') +
+        '</div>'
+      : '';
+    return head + back + renderCaseList(rows);
+  }
+
   function renderDetail() {
     const wrap = $('fin-detail');
     const title = $('fin-detail-title');
@@ -1114,22 +1148,26 @@
     if (!wrap || !list) return;
     const q = String(state.search || '').trim();
     syncFinSearchClear();
+    clearCardCasePanels();
+
     if (!state.detailKey && !state.detailIssue && !q) {
       wrap.hidden = true;
       wrap.classList.add('hidden');
       return;
     }
-    wrap.hidden = false;
-    wrap.classList.remove('hidden');
 
     if (!token()) {
+      wrap.hidden = false;
+      wrap.classList.remove('hidden');
       if (title) title.textContent = '明細';
       list.innerHTML = '<p class="fin-detail-empty">請先登入工具箱。</p>';
       return;
     }
 
-    /* 點狀態卡 → 先看七項件數 */
+    /* 點狀態卡 → 先看七項件數（仍顯示在上方儀表板） */
     if (state.detailView === 'types' && state.detailKey && !state.detailIssue) {
+      wrap.hidden = false;
+      wrap.classList.remove('hidden');
       const label = FIN_DETAIL_TITLE[state.detailKey] || '案件';
       if (title) title.textContent = label + '｜七項分類';
       const html = renderTypeBreakdown(state.detailKey);
@@ -1144,26 +1182,37 @@
       return;
     }
 
-    /* 某一類型＋狀態（或搜尋）的案件列表 */
+    /* 某一類型的案件：改顯示在該問題卡下方，不上方浮層 */
+    if (state.detailIssue) {
+      wrap.hidden = true;
+      wrap.classList.add('hidden');
+      list.innerHTML = '';
+      const card = Array.from(document.querySelectorAll('#page-finance [data-fin-card]'))
+        .find((el) => el.getAttribute('data-fin-card') === state.detailIssue);
+      if (!card) return;
+      const box = ensureCardCasesBox(card);
+      let detailTitle = issueShort(state.detailIssue) + '｜' + (FIN_DETAIL_TITLE[state.detailKey] || '案件');
+      if (q) detailTitle = detailTitle + '｜搜尋「' + q + '」';
+      const rows = applyFinSearch(rowsByIssue(state.detailIssue, state.detailKey || 'all'));
+      box.innerHTML = caseListHtml(rows, {
+        title: detailTitle,
+        close: true,
+        back: !!state.detailKey
+      });
+      box.hidden = false;
+      box.classList.remove('hidden');
+      return;
+    }
+
+    /* 全域搜尋（未指定類型）仍用上方明細區 */
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
     let detailTitle = FIN_DETAIL_TITLE[state.detailKey] || '明細';
-    if (state.detailIssue) detailTitle = issueShort(state.detailIssue) + '｜' + (FIN_DETAIL_TITLE[state.detailKey] || '案件');
-    if (q && !state.detailKey && !state.detailIssue) detailTitle = '搜尋結果「' + q + '」';
+    if (q && !state.detailKey) detailTitle = '搜尋結果「' + q + '」';
     else if (q) detailTitle = detailTitle + '｜搜尋「' + q + '」';
     if (title) title.textContent = detailTitle;
-
-    let base;
-    if (state.detailIssue) {
-      base = rowsByIssue(state.detailIssue, state.detailKey || 'all');
-    } else if (state.detailKey) {
-      base = rowsByKey(state.detailKey);
-    } else {
-      base = (state.mine || []).slice();
-    }
-    const rows = applyFinSearch(base);
-    const back = state.detailIssue && state.detailKey
-      ? '<button type="button" class="fin-back-types" data-fin-back-types="1">← 回七項分類</button>'
-      : '';
-    list.innerHTML = back + renderCaseList(rows);
+    const base = state.detailKey ? rowsByKey(state.detailKey) : (state.mine || []).slice();
+    list.innerHTML = renderCaseList(applyFinSearch(base));
   }
 
   function renderCardDashboards() {
@@ -1282,11 +1331,21 @@
       if (input) input.value = '';
       renderDash();
     });
-    $('fin-detail-list')?.addEventListener('click', async (e) => {
+    async function onCaseListClick(e) {
+      const closeCard = e.target.closest('[data-fin-card-cases-close]');
+      if (closeCard) {
+        state.detailIssue = '';
+        state.detailKey = '';
+        state.detailView = '';
+        state.openDetailId = '';
+        renderDash();
+        return;
+      }
       const back = e.target.closest('[data-fin-back-types]');
       if (back) {
         state.detailIssue = '';
         state.detailView = 'types';
+        state.openDetailId = '';
         renderDash();
         return;
       }
@@ -1298,6 +1357,10 @@
         if (!state.detailKey) state.detailKey = 'all';
         openIssueCard(issueType);
         renderDash();
+        const card = Array.from(document.querySelectorAll('#page-finance [data-fin-card]'))
+          .find((el) => el.getAttribute('data-fin-card') === issueType);
+        const box = card && card.querySelector('.fin-card-cases');
+        try { (box || card)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
         return;
       }
       const actBtn = e.target.closest('[data-fin-act]');
@@ -1337,26 +1400,40 @@
         setMsg(err.message || String(err), 'err');
         actBtn.disabled = false;
       }
-    });
+    }
+    $('fin-detail-list')?.addEventListener('click', onCaseListClick);
     const page = document.getElementById('page-finance');
     if (page && !state.cardDashBound) {
       state.cardDashBound = true;
       page.addEventListener('click', (e) => {
+        const casesBox = e.target.closest('.fin-card-cases');
+        if (casesBox && page.contains(casesBox)) {
+          onCaseListClick(e);
+          return;
+        }
         const g = e.target.closest('[data-fin-card-status]');
         if (!g || !page.contains(g)) return;
         e.preventDefault();
         e.stopPropagation();
         const issueType = g.getAttribute('data-fin-card-issue') || '';
         const statusKey = g.getAttribute('data-fin-card-status') || 'wait';
+        if (state.detailIssue === issueType && state.detailKey === statusKey && state.detailView === 'cases') {
+          state.detailIssue = '';
+          state.detailKey = '';
+          state.detailView = '';
+          state.openDetailId = '';
+          renderDash();
+          return;
+        }
         state.detailKey = statusKey;
         state.detailIssue = issueType;
         state.detailView = 'cases';
         openIssueCard(issueType);
         renderDash();
-        const wrap = $('fin-detail');
-        if (wrap) {
-          try { wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
-        }
+        const card = Array.from(document.querySelectorAll('#page-finance [data-fin-card]'))
+          .find((el) => el.getAttribute('data-fin-card') === issueType);
+        const box = card && card.querySelector('.fin-card-cases');
+        try { (box || card)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
       });
     }
     const search = $('fin-dash-search');

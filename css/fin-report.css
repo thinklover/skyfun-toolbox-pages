@@ -1234,6 +1234,33 @@
   border-bottom: 1px solid #eef2f7;
   margin-bottom: 0.35rem;
 }
+/* 案件列表：顯示在該問題卡表單下方 */
+#page-finance .fin-card-cases {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0 1.1rem 1rem;
+  padding: 0.75rem 0.85rem 0.9rem;
+  border: 1px solid #cde6f9;
+  border-radius: 0.9rem;
+  background: #f8fbff;
+}
+#page-finance .fin-card-cases.hidden,
+#page-finance .fin-card-cases[hidden] {
+  display: none;
+}
+#page-finance .fin-card-cases-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+#page-finance .fin-card-cases-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0f172a;
+}
 #page-finance .fin-card-gauge {
   display: flex;
   flex-direction: column;
