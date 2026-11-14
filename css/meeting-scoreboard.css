@@ -201,11 +201,129 @@
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+3) .msb-zone-head { background: #fbf3e4; }
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+4) .msb-zone-head { background: #f6e8ef; }
 #page-meeting-scoreboard .msb-office-zones .msb-zone:nth-child(5n+5) .msb-zone-head { background: #e8eef6; }
+/* 已取消部門加減分／部門分數列 */
 #page-meeting-scoreboard .msb-dept-slot {
+  display: none !important;
+}
+#page-meeting-scoreboard .msb-rank-dash {
+  margin: 0 0 1rem;
+  padding: 0.85rem 0.95rem 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, #ffffff 0%, #f7fffc 55%, #f0fdfa 100%);
+  box-shadow: 0 10px 28px -18px rgba(15, 23, 42, 0.22);
+}
+#page-meeting-scoreboard .msb-rank-head {
   display: flex;
   flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.85rem;
+  margin-bottom: 0.7rem;
+}
+#page-meeting-scoreboard .msb-rank-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+#page-meeting-scoreboard .msb-rank-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+}
+#page-meeting-scoreboard .msb-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+#page-meeting-scoreboard .msb-rank-col {
+  min-width: 0;
+  padding: 0.65rem 0.7rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #fff;
+}
+#page-meeting-scoreboard .msb-rank-col h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #0f766e;
+  letter-spacing: 0.04em;
+}
+#page-meeting-scoreboard .msb-rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
   gap: 0.35rem;
-  padding: 0.4rem 0.5rem 0;
+}
+#page-meeting-scoreboard .msb-rank-card {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #eef2f7;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+}
+#page-meeting-scoreboard .msb-rank-card.is-gold { background: #fffbeb; border-color: #fcd34d; }
+#page-meeting-scoreboard .msb-rank-card.is-silver { background: #f8fafc; border-color: #cbd5e1; }
+#page-meeting-scoreboard .msb-rank-card.is-bronze { background: #fff7ed; border-color: #fdba74; }
+#page-meeting-scoreboard .msb-rank-no {
+  width: 1.45rem;
+  height: 1.45rem;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  background: #e2e8f0;
+  color: #334155;
+}
+#page-meeting-scoreboard .msb-rank-card.is-gold .msb-rank-no { background: #f59e0b; color: #fff; }
+#page-meeting-scoreboard .msb-rank-card.is-silver .msb-rank-no { background: #64748b; color: #fff; }
+#page-meeting-scoreboard .msb-rank-card.is-bronze .msb-rank-no { background: #ea580c; color: #fff; }
+#page-meeting-scoreboard .msb-rank-meta { min-width: 0; }
+#page-meeting-scoreboard .msb-rank-name {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#page-meeting-scoreboard .msb-rank-dept {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#page-meeting-scoreboard .msb-rank-score {
+  font-size: 0.95rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #0f766e;
+  white-space: nowrap;
+}
+#page-meeting-scoreboard .msb-rank-score small {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748b;
+}
+#page-meeting-scoreboard .msb-rank-empty {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+@media (max-width: 980px) {
+  #page-meeting-scoreboard .msb-rank-grid { grid-template-columns: 1fr; }
 }
 #page-meeting-scoreboard .msb-dept-bar {
   display: flex;

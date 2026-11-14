@@ -469,35 +469,65 @@
     });
     return names.sort(deptSort);
   }
-  function deptBarHtml(dept, named, opts) {
-    const n = numOrNull(state.deptScores[dept]);
-    const cls = n == null ? '' : (n > 0 ? ' is-pos' : (n < 0 ? ' is-neg' : ''));
-    const showAct = !(opts && opts.hideAct);
-    const acts = showAct
-      ? `<span class="msb-dept-acts">
-        <button type="button" class="msb-act-btn is-plus" data-msb-dept-add="${esc(dept)}">加減分</button>
-      </span>`
-      : '';
-    return `<div class="msb-dept-bar">
-      <span class="msb-dept-kicker">部門</span>
-      ${named ? `<b class="msb-dept-name">${esc(dept)}</b>` : '<span class="msb-dept-label">部門分數</span>'}
-      <span class="msb-dept-num${cls}">${n == null ? '—' : esc(manualScoreText(n))}</span>
-      ${acts}
-    </div>`;
-  }
-  function deptStripHtml(depts, opts) {
-    if (!depts.length) return '';
-    return `<div class="msb-dept-slot">${depts.map((d) => deptBarHtml(d, true, opts)).join('')}</div>`;
-  }
-  function fillBizDeptSlots() {
+  function clearBizDeptSlots() {
     BIZ_ZONES.forEach((z) => {
       const slot = document.querySelector('#page-meeting-scoreboard [data-msb-dept-slot="' + z.id + '"]');
       if (!slot) return;
-      const depts = deptNamesFor((d) => isBizDept(d) && bizZoneId(d) === z.id);
-      /* 業務單位只顯示部門分數，不提供部門加減分 */
-      slot.innerHTML = depts.map((d) => deptBarHtml(d, true, { hideAct: true })).join('');
-      slot.hidden = !depts.length;
+      slot.innerHTML = '';
+      slot.hidden = true;
     });
+  }
+  function rankList(people, limit) {
+    return (people || [])
+      .map((p) => ({ p, score: numOrNull(p.score) }))
+      .filter((x) => x.score != null)
+      .sort((a, b) => b.score - a.score || String(a.p.name || '').localeCompare(String(b.p.name || ''), 'zh-Hant'))
+      .slice(0, limit);
+  }
+  function rankCardsHtml(rows) {
+    if (!rows.length) return '<p class="msb-rank-empty">目前沒有可排名的分數</p>';
+    return '<ol class="msb-rank-list">' + rows.map((row, i) => {
+      const p = row.p;
+      const medal = i === 0 ? 'is-gold' : (i === 1 ? 'is-silver' : (i === 2 ? 'is-bronze' : ''));
+      const dept = personDept(p) || '—';
+      return `<li class="msb-rank-card ${medal}">
+        <span class="msb-rank-no">${i + 1}</span>
+        <div class="msb-rank-meta">
+          <b class="msb-rank-name">${esc(p.name || '—')}</b>
+          <span class="msb-rank-dept">${esc(dept)}${personTitle(p) ? '・' + esc(personTitle(p)) : ''}</span>
+        </div>
+        <span class="msb-rank-score">${esc(manualScoreText(row.score))} <small>分</small></span>
+      </li>`;
+    }).join('') + '</ol>';
+  }
+  function renderRankDash() {
+    const box = $('msb-rank-dash');
+    if (!box) return;
+    const list = filteredPeople();
+    const period = state.span === 'year'
+      ? ((state.year || state.scoreMonth || currentMonth()).toString().slice(0, 4) + ' 年')
+      : ((state.scoreMonth || state.month || currentMonth()) + ' 月');
+    const officeTop = rankList(list.filter((p) => !isBizDept(personDept(p))), 5);
+    const bizTop = rankList(list.filter((p) => isBizDept(personDept(p))), 5);
+    const allTop = rankList(list, 5);
+    box.innerHTML = `<div class="msb-rank-head">
+        <h3 class="msb-rank-title">排名儀表板</h3>
+        <p class="msb-rank-sub">${esc(period)}｜依系統分數由高到低（僅顯示有分數者）</p>
+      </div>
+      <div class="msb-rank-grid">
+        <article class="msb-rank-col">
+          <h4>全體前五</h4>
+          ${rankCardsHtml(allTop)}
+        </article>
+        <article class="msb-rank-col">
+          <h4>內勤前五</h4>
+          ${rankCardsHtml(officeTop)}
+        </article>
+        <article class="msb-rank-col">
+          <h4>業務前五</h4>
+          ${rankCardsHtml(bizTop)}
+        </article>
+      </div>`;
   }
   function renderPeopleTable() {
     const officeHost = $('msb-office-zones');
@@ -507,19 +537,21 @@
     const month = state.scoreMonth || state.month || currentMonth();
     if (note) {
       note.textContent = state.span === 'year'
-        ? ('分數與獎金為 ' + (state.year || month.slice(0, 4)) + ' 年各月加總。淺色列是部門自己的分數，不算進個人。')
-        : ('分數與獎金為 ' + month + ' 手動輸入。淺色列是部門自己的分數，不算進個人。');
+        ? ('分數與獎金為 ' + (state.year || month.slice(0, 4)) + ' 年各月加總。')
+        : ('分數與獎金為 ' + month + ' 手動輸入。');
     }
     if (selfBox) {
       selfBox.hidden = true;
       selfBox.innerHTML = '';
     }
     const list = filteredPeople();
+    renderRankDash();
     const yearMode = state.span === 'year';
     const monthDual = $('msb-people-dual');
     const yearDual = $('msb-year-dual');
     if (monthDual) monthDual.hidden = yearMode;
     if (yearDual) yearDual.hidden = !yearMode;
+    clearBizDeptSlots();
     if (yearMode) {
       const yearSort = (side) => {
         const cur = peopleSortState(side);
@@ -529,14 +561,8 @@
       const bizPeople = sortPeopleList(list.filter((p) => isBizDept(personDept(p))), yearSort('year-biz'));
       const officeBox = $('msb-year-office');
       const bizBox = $('msb-year-biz');
-      if (officeBox) {
-        officeBox.innerHTML = deptStripHtml(deptNamesFor((d) => !isBizDept(d)))
-          + peopleTableHtml('year-office', officePeople, false);
-      }
-      if (bizBox) {
-        bizBox.innerHTML = deptStripHtml(deptNamesFor((d) => isBizDept(d)), { hideAct: true })
-          + peopleTableHtml('year-biz', bizPeople, false);
-      }
+      if (officeBox) officeBox.innerHTML = peopleTableHtml('year-office', officePeople, false);
+      if (bizBox) bizBox.innerHTML = peopleTableHtml('year-biz', bizPeople, false);
       syncPeopleSortHeaders();
       return;
     }
@@ -550,7 +576,6 @@
       );
       return `<div class="msb-zone msb-zone--office" data-msb-zone="office">
         <div class="msb-zone-head"><h4 class="msb-zone-title">${esc(dept)}</h4><span class="msb-zone-kicker">部別</span><span class="msb-zone-meta">${rows.length} 人</span></div>
-        ${deptBarHtml(dept, false)}
         ${peopleTableHtml(side, rows, true)}
       </div>`;
     }).join('') : '<p class="msb-empty">尚無內勤人員</p>';
@@ -563,7 +588,6 @@
       );
       fillPeopleBody(body, zoneList, edit);
     });
-    fillBizDeptSlots();
     syncPeopleSortHeaders();
   }
   function filteredRecords() {
@@ -814,7 +838,8 @@
       }
       state.entries = yearMode ? [] : (dash.entries || []);
       if (yearMode) void loadYearEntries(year);
-      await loadDeptScores(yearMode ? year : (state.scoreMonth || month));
+      /* 已取消部門加減分，不再載入部門分數列 */
+      state.deptScores = {};
       if (!state.serverScoped && !state.canViewAll) {
         state.people = [];
         state.projects = [];
