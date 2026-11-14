@@ -69,16 +69,17 @@
 .apt-entry .adz-top-item b { color: #4338ca; }
 .adz-top-empty { font-size: 0.74rem; color: #94a3b8; }
 
-/* 行政問答卡：點進獨立頁面 */
-.aqa-entry { border-color: #5eead4; background: linear-gradient(135deg, #f0fdfa, #ecfeff); box-shadow: 0 4px 14px rgba(15, 118, 110, 0.08); }
-.aqa-entry:hover { border-color: #14b8a6; box-shadow: 0 6px 18px rgba(15, 118, 110, 0.14); }
-.aqa-entry .apt-entry-text strong { color: #0f766e; }
+/* 行政問答卡：琥珀暖色 */
+.aqa-entry { border-color: #fcd34d; background: linear-gradient(135deg, #fffbeb, #fff7ed); box-shadow: 0 4px 14px rgba(217, 119, 6, 0.1); }
+.aqa-entry:hover { border-color: #f59e0b; box-shadow: 0 6px 18px rgba(217, 119, 6, 0.16); }
+.aqa-entry .apt-entry-text strong { color: #b45309; }
 
-.ait-entry { border-color: #c4b5fd; background: linear-gradient(135deg, #faf5ff, #eef2ff); box-shadow: 0 4px 14px rgba(109, 40, 217, 0.1); }
-.ait-entry:hover { border-color: #a78bfa; box-shadow: 0 6px 18px rgba(109, 40, 217, 0.16); }
-.ait-entry .apt-entry-text strong { color: #5b21b6; }
+/* AI婷婷卡：天空藍 */
+.ait-entry { border-color: #7dd3fc; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.12); }
+.ait-entry:hover { border-color: #38bdf8; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.18); }
+.ait-entry .apt-entry-text strong { color: #0369a1; }
 .ait-admin-link { grid-column: 1 / -1; margin: 0.15rem 0 0; font-size: 0.82rem; font-weight: 700; }
-.ait-admin-link a { color: #6d28d9; text-decoration: none; }
+.ait-admin-link a { color: #0284c7; text-decoration: none; }
 .ait-admin-link a:hover { text-decoration: underline; }
 
 /* 行政問答頁：列表照內容長度全部列出 */
@@ -589,29 +590,29 @@
     background: linear-gradient(135deg, #ffffff 0%, #f1f0ff 45%, #e6edff 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--qa {
-    --hero-ink: #064e3b; --hero-sub: #4f7a6c; --hero-accent: #10a37f; --hero-line: #cdf1e3;
-    --hero-shadow: rgba(16, 163, 127, 0.4); --hero-num: #d97706;
-    background: linear-gradient(135deg, #ffffff 0%, #eafbf4 45%, #e2f5fb 100%);
+    --hero-ink: #92400e; --hero-sub: #a16207; --hero-accent: #d97706; --hero-line: #fde68a;
+    --hero-shadow: rgba(217, 119, 6, 0.42); --hero-num: #b45309;
+    background: linear-gradient(135deg, #ffffff 0%, #fffbeb 42%, #ffedd5 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--ait {
-    --hero-ink: #4c1d95; --hero-sub: #6d5b8f; --hero-accent: #7c3aed; --hero-line: #ddd6fe;
-    --hero-shadow: rgba(124, 58, 237, 0.42); --hero-num: #7c3aed;
-    background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 42%, #ede9fe 100%);
+    --hero-ink: #0c4a6e; --hero-sub: #0369a1; --hero-accent: #0284c7; --hero-line: #bae6fd;
+    --hero-shadow: rgba(2, 132, 199, 0.42); --hero-num: #0284c7;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 42%, #e0f2fe 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero::before {
     content: ''; position: absolute; z-index: -1; width: 20rem; height: 20rem; right: -7rem; top: -9rem; border-radius: 50%;
     background: radial-gradient(circle, var(--hero-glow, rgba(255, 255, 255, 0.9)), rgba(255, 255, 255, 0) 70%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(165, 180, 252, 0.45); }
-:is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(110, 231, 183, 0.4); }
-:is(#page-administration, #page-newbie) .adz-hero--ait::before { --hero-glow: rgba(196, 181, 253, 0.5); }
+:is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(251, 191, 36, 0.45); }
+:is(#page-administration, #page-newbie) .adz-hero--ait::before { --hero-glow: rgba(56, 189, 248, 0.45); }
 :is(#page-administration, #page-newbie) .adz-hero::after {
     content: ''; position: absolute; z-index: -1; inset: 0;
     background-image: radial-gradient(rgba(99, 102, 241, 0.09) 1px, transparent 1px); background-size: 16px 16px;
     -webkit-mask-image: linear-gradient(115deg, transparent 45%, #000 100%); mask-image: linear-gradient(115deg, transparent 45%, #000 100%);
 }
-:is(#page-administration, #page-newbie) .adz-hero--qa::after { background-image: radial-gradient(rgba(16, 163, 127, 0.1) 1px, transparent 1px); }
-:is(#page-administration, #page-newbie) .adz-hero--ait::after { background-image: radial-gradient(rgba(124, 58, 237, 0.12) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--qa::after { background-image: radial-gradient(rgba(217, 119, 6, 0.12) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--ait::after { background-image: radial-gradient(rgba(2, 132, 199, 0.12) 1px, transparent 1px); }
 :is(#page-administration, #page-newbie) .adz-hero:hover {
     transform: translateY(-2px); border-color: var(--hero-line);
     box-shadow: 0 22px 44px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.06);
