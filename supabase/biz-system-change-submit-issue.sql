@@ -105,7 +105,7 @@ begin
   end if;
 
   if v_deposit and v_img < 1 then
-    return json_build_object('ok', false, 'error', '租押金問題請上傳至少一張照片');
+    return json_build_object('ok', false, 'error', '租押金問題需上傳中心系統租金評定試算畫面');
   end if;
 
   v_saved := jsonb_build_object('depositIssue', v_deposit, 'robotIssue', v_robot);

@@ -1084,7 +1084,7 @@
 
   function formIssueBlock() {
     if ($('bsc-deposit')?.checked && !state.files.some((f) => isImageExt(fileExt(f.name, f.type)))) {
-      return '租押金問題請上傳至少一張照片';
+      return '租押金問題需上傳中心系統租金評定試算畫面';
     }
     if ($('bsc-robot')?.checked) {
       if (!$('bsc-tenant')?.value.trim()) return '機器人問題請填房客姓名';
@@ -1103,7 +1103,7 @@
     const hint = $('bsc-file-hint');
     if (hint) {
       hint.textContent = $('bsc-deposit')?.checked
-        ? '租押金問題一定要上傳至少一張照片才能送出。'
+        ? '需上傳中心系統租金評定試算畫面。'
         : '最多 5 個檔案，每個上限 10MB（圖片或 PDF）';
     }
     const btn = $('bsc-submit');
