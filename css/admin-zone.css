@@ -4,6 +4,7 @@
 
 .adz-quick { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
 @media (min-width: 640px) { .adz-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .adz-quick.adz-quick--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .adz-quick > .apt-entry, .adz-quick > .pt-entry { height: 100%; margin: 0; }
 .adz-quick .apt-entry-text small, .adz-quick .pt-entry-text small {
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -24,6 +25,13 @@
 .aqa-entry { border-color: #5eead4; background: linear-gradient(135deg, #f0fdfa, #ecfeff); box-shadow: 0 4px 14px rgba(15, 118, 110, 0.08); }
 .aqa-entry:hover { border-color: #14b8a6; box-shadow: 0 6px 18px rgba(15, 118, 110, 0.14); }
 .aqa-entry .apt-entry-text strong { color: #0f766e; }
+
+.ait-entry { border-color: #c4b5fd; background: linear-gradient(135deg, #faf5ff, #eef2ff); box-shadow: 0 4px 14px rgba(109, 40, 217, 0.1); }
+.ait-entry:hover { border-color: #a78bfa; box-shadow: 0 6px 18px rgba(109, 40, 217, 0.16); }
+.ait-entry .apt-entry-text strong { color: #5b21b6; }
+.ait-admin-link { grid-column: 1 / -1; margin: 0.15rem 0 0; font-size: 0.82rem; font-weight: 700; }
+.ait-admin-link a { color: #6d28d9; text-decoration: none; }
+.ait-admin-link a:hover { text-decoration: underline; }
 
 /* 行政問答頁：列表照內容長度全部列出 */
 #aqa-zone .aqa-zone-head { margin-bottom: 0.45rem; align-items: center; }
@@ -537,18 +545,25 @@
     --hero-shadow: rgba(16, 163, 127, 0.4); --hero-num: #d97706;
     background: linear-gradient(135deg, #ffffff 0%, #eafbf4 45%, #e2f5fb 100%);
 }
+:is(#page-administration, #page-newbie) .adz-hero--ait {
+    --hero-ink: #4c1d95; --hero-sub: #6d5b8f; --hero-accent: #7c3aed; --hero-line: #ddd6fe;
+    --hero-shadow: rgba(124, 58, 237, 0.42); --hero-num: #7c3aed;
+    background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 42%, #ede9fe 100%);
+}
 :is(#page-administration, #page-newbie) .adz-hero::before {
     content: ''; position: absolute; z-index: -1; width: 20rem; height: 20rem; right: -7rem; top: -9rem; border-radius: 50%;
     background: radial-gradient(circle, var(--hero-glow, rgba(255, 255, 255, 0.9)), rgba(255, 255, 255, 0) 70%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(165, 180, 252, 0.45); }
 :is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(110, 231, 183, 0.4); }
+:is(#page-administration, #page-newbie) .adz-hero--ait::before { --hero-glow: rgba(196, 181, 253, 0.5); }
 :is(#page-administration, #page-newbie) .adz-hero::after {
     content: ''; position: absolute; z-index: -1; inset: 0;
     background-image: radial-gradient(rgba(99, 102, 241, 0.09) 1px, transparent 1px); background-size: 16px 16px;
     -webkit-mask-image: linear-gradient(115deg, transparent 45%, #000 100%); mask-image: linear-gradient(115deg, transparent 45%, #000 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--qa::after { background-image: radial-gradient(rgba(16, 163, 127, 0.1) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--ait::after { background-image: radial-gradient(rgba(124, 58, 237, 0.12) 1px, transparent 1px); }
 :is(#page-administration, #page-newbie) .adz-hero:hover {
     transform: translateY(-2px); border-color: var(--hero-line);
     box-shadow: 0 22px 44px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.06);

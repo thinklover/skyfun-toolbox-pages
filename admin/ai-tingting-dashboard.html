@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI婷婷對話紀錄 — 星鴻工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <link rel="stylesheet" href="../css/admin-shell.css?v=20261013-1" />
+  <style>
+    .filters { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: end; }
+    .filters .field { flex: 1 1 10rem; min-width: 0; }
+    .filters label { display: block; font-size: 0.72rem; color: #64748b; margin-bottom: 0.25rem; font-weight: 700; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .chips button {
+      border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 999px;
+      padding: 0.3rem 0.75rem; font-size: 0.75rem; font-weight: 800; cursor: pointer;
+    }
+    .chips button.is-on { background: #6d28d9; border-color: #6d28d9; color: #fff; }
+    .item {
+      border: 1px solid #e2e8f0; border-radius: 0.85rem; padding: 0.85rem 0.95rem;
+      background: #fff; margin-bottom: 0.65rem;
+    }
+    .item-top { display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem; align-items: center; margin-bottom: 0.45rem; }
+    .item-who { font-weight: 900; color: #4c1d95; }
+    .item-meta { font-size: 0.75rem; color: #64748b; font-weight: 700; }
+    .badge { font-size: 0.68rem; font-weight: 800; padding: 0.12rem 0.45rem; border-radius: 999px; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-answered { background: #dcfce7; color: #166534; }
+    .badge-failed { background: #fee2e2; color: #b91c1c; }
+    .badge-zone { background: #ede9fe; color: #6d28d9; }
+    .q-box, .a-box {
+      border-radius: 0.65rem; padding: 0.65rem 0.75rem; white-space: pre-wrap;
+      font-size: 0.88rem; line-height: 1.55; color: #0f172a;
+    }
+    .q-box { background: #f5f3ff; border: 1px solid #ddd6fe; margin-bottom: 0.45rem; }
+    .a-box { background: #f8fafc; border: 1px solid #e2e8f0; }
+    .lbl { font-size: 0.7rem; font-weight: 800; color: #64748b; margin-bottom: 0.25rem; }
+    .empty { color: #64748b; font-size: 0.88rem; padding: 0.75rem 0; }
+    .summary { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.75rem; }
+    .summary .chip {
+      background: #faf5ff; border: 1px solid #ddd6fe; border-radius: 0.65rem;
+      padding: 0.4rem 0.65rem; font-size: 0.78rem; color: #5b21b6; font-weight: 700;
+    }
+    .summary .chip strong { margin-right: 0.2rem; }
+  </style>
+</head>
+<body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
+  <header>
+    <div class="topbar">
+      <h1>AI婷婷對話紀錄</h1>
+      <a class="back" href="../index.html">← 回工具箱</a>
+    </div>
+    <p class="lead">查看大家問過 AI婷婷 的問題與回覆（後台密碼）</p>
+  </header>
+
+  <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
+    <label class="block text-sm text-slate-600 font-bold">後台密碼（Supabase admin_secret）</label>
+    <div class="flex flex-wrap gap-2">
+      <input type="password" id="admin-secret" placeholder="後台密碼" class="flex-1 min-w-[12rem]" autocomplete="current-password" />
+      <button type="button" id="btn-login" class="btn btn-main">連線</button>
+    </div>
+    <p id="login-msg" class="text-sm err hidden"></p>
+  </section>
+
+  <section class="card p-4 space-y-3 hidden" id="main-panel">
+    <div class="filters">
+      <div class="field">
+        <label for="search">搜尋姓名／問題／回覆</label>
+        <input type="search" id="search" placeholder="例如：弱勢戶、黃怡婷" autocomplete="off" />
+      </div>
+      <div class="field" style="flex: 0 0 auto;">
+        <label>狀態</label>
+        <div class="chips" id="status-chips" role="tablist" aria-label="狀態篩選">
+          <button type="button" data-st="" class="is-on">全部</button>
+          <button type="button" data-st="answered">已回覆</button>
+          <button type="button" data-st="pending">回覆中</button>
+          <button type="button" data-st="failed">失敗</button>
+        </div>
+      </div>
+      <div class="field" style="flex: 0 0 auto;">
+        <label>來源</label>
+        <div class="chips" id="zone-chips" role="tablist" aria-label="來源篩選">
+          <button type="button" data-zone="" class="is-on">全部</button>
+          <button type="button" data-zone="admin">行政專區</button>
+          <button type="button" data-zone="supervisor">業務主管</button>
+        </div>
+      </div>
+      <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
+    </div>
+    <div class="summary" id="summary"></div>
+    <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
+    <div id="list"></div>
+  </section>
+
+  <script>
+    (function () {
+      const SECRET_KEY = 'skyfun-ai-tingting-admin';
+      let client = null;
+      let secret = '';
+      let rows = [];
+      let statusFilter = '';
+      let zoneFilter = '';
+
+      function cfg() {
+        const c = window.SKYFUN_SUPABASE || {};
+        return { url: String(c.url || '').trim(), anonKey: String(c.anonKey || c.anon_key || '').trim() };
+      }
+      function sb() {
+        if (client) return client;
+        const { url, anonKey } = cfg();
+        client = window.supabase.createClient(url, anonKey);
+        return client;
+      }
+      async function rpc(name, args) {
+        const { data, error } = await sb().rpc(name, args);
+        if (error) throw new Error(error.message || 'Supabase 錯誤');
+        return data;
+      }
+      function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      }
+      function fmt(iso) {
+        if (!iso) return '—';
+        try {
+          return new Date(iso).toLocaleString('zh-TW', { hour12: false, timeZone: 'Asia/Taipei' });
+        } catch {
+          return String(iso);
+        }
+      }
+      function statusBadge(st) {
+        if (st === 'answered') return '<span class="badge badge-answered">已回覆</span>';
+        if (st === 'failed') return '<span class="badge badge-failed">失敗</span>';
+        return '<span class="badge badge-pending">回覆中</span>';
+      }
+      function zoneLabel(z) {
+        return z === 'supervisor' ? '業務主管' : '行政專區';
+      }
+      function setMsg(t, isErr) {
+        const el = document.getElementById('msg');
+        el.textContent = t || '';
+        el.classList.toggle('err', !!isErr);
+      }
+      function renderSummary() {
+        const total = rows.length;
+        const answered = rows.filter((r) => r.status === 'answered').length;
+        const pending = rows.filter((r) => r.status === 'pending').length;
+        const failed = rows.filter((r) => r.status === 'failed').length;
+        document.getElementById('summary').innerHTML =
+          '<span class="chip"><strong>' + total + '</strong>筆</span>' +
+          '<span class="chip"><strong>' + answered + '</strong>已回覆</span>' +
+          '<span class="chip"><strong>' + pending + '</strong>回覆中</span>' +
+          '<span class="chip"><strong>' + failed + '</strong>失敗</span>';
+      }
+      function renderList() {
+        const q = String(document.getElementById('search').value || '').trim().toLowerCase();
+        const filtered = rows.filter((r) => {
+          if (statusFilter && r.status !== statusFilter) return false;
+          if (zoneFilter && r.zone !== zoneFilter) return false;
+          if (!q) return true;
+          const blob = [r.userName, r.question, r.answer, r.zone, r.status].join(' ').toLowerCase();
+          return blob.indexOf(q) >= 0;
+        });
+        const box = document.getElementById('list');
+        if (!filtered.length) {
+          box.innerHTML = '<p class="empty">目前沒有符合條件的對話。</p>';
+          return;
+        }
+        box.innerHTML = filtered.map((r) => {
+          return '<article class="item">' +
+            '<div class="item-top">' +
+              '<span class="item-who">' + esc(r.userName || '（未填姓名）') + '</span>' +
+              statusBadge(r.status) +
+              '<span class="badge badge-zone">' + esc(zoneLabel(r.zone)) + '</span>' +
+              '<span class="item-meta">' + esc(fmt(r.createdAt)) + '</span>' +
+              (r.answeredAt ? '<span class="item-meta">回覆 ' + esc(fmt(r.answeredAt)) + '</span>' : '') +
+            '</div>' +
+            '<div class="lbl">問題</div><div class="q-box">' + esc(r.question) + '</div>' +
+            '<div class="lbl">AI婷婷回覆</div><div class="a-box">' +
+              esc(r.answer || (r.status === 'pending' ? '（回覆中）' : r.status === 'failed' ? '（失敗）' : '（無內容）')) +
+            '</div>' +
+          '</article>';
+        }).join('');
+      }
+      async function load() {
+        setMsg('載入中…');
+        try {
+          const data = await rpc('ai_tingting_admin_list', {
+            p_secret: secret,
+            p_limit: 300,
+            p_q: null,
+            p_status: null,
+            p_zone: null
+          });
+          if (!data?.ok) throw new Error(data?.error || '載入失敗');
+          rows = Array.isArray(data.rows) ? data.rows : [];
+          renderSummary();
+          renderList();
+          setMsg('共 ' + rows.length + ' 筆');
+        } catch (e) {
+          rows = [];
+          renderSummary();
+          renderList();
+          setMsg(e.message || '載入失敗', true);
+        }
+      }
+      function showMain() {
+        document.getElementById('login-panel').classList.add('hidden');
+        document.getElementById('main-panel').classList.remove('hidden');
+      }
+      document.getElementById('btn-login').addEventListener('click', async () => {
+        const input = document.getElementById('admin-secret');
+        const msg = document.getElementById('login-msg');
+        secret = String(input.value || '').trim();
+        msg.classList.add('hidden');
+        if (!secret) {
+          msg.textContent = '請輸入後台密碼';
+          msg.classList.remove('hidden');
+          return;
+        }
+        try {
+          const data = await rpc('ai_tingting_admin_list', {
+            p_secret: secret,
+            p_limit: 1,
+            p_q: null,
+            p_status: null,
+            p_zone: null
+          });
+          if (!data?.ok) throw new Error(data?.error || '密碼錯誤');
+          try { sessionStorage.setItem(SECRET_KEY, secret); } catch (_) {}
+          showMain();
+          await load();
+        } catch (e) {
+          msg.textContent = e.message || '連線失敗';
+          msg.classList.remove('hidden');
+        }
+      });
+      document.getElementById('btn-refresh').addEventListener('click', () => { void load(); });
+      document.getElementById('search').addEventListener('input', () => renderList());
+      document.getElementById('status-chips').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-st]');
+        if (!btn) return;
+        statusFilter = btn.getAttribute('data-st') || '';
+        document.querySelectorAll('#status-chips [data-st]').forEach((b) => {
+          b.classList.toggle('is-on', b === btn);
+        });
+        renderList();
+      });
+      document.getElementById('zone-chips').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-zone]');
+        if (!btn) return;
+        zoneFilter = btn.getAttribute('data-zone') || '';
+        document.querySelectorAll('#zone-chips [data-zone]').forEach((b) => {
+          b.classList.toggle('is-on', b === btn);
+        });
+        renderList();
+      });
+      try {
+        const saved = sessionStorage.getItem(SECRET_KEY) || '';
+        if (saved) {
+          secret = saved;
+          document.getElementById('admin-secret').value = saved;
+          showMain();
+          void load();
+        }
+      } catch (_) {}
+    })();
+  </script>
+</body>
+</html>

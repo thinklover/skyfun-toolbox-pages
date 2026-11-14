@@ -296,3 +296,22 @@
     max-width: 94%;
   }
 }
+
+/* 業務主管專區入口：紫色強調 */
+#page-biz-supervisor .bz-card.ait-entry-bz {
+  border-color: #c4b5fd;
+  background: linear-gradient(135deg, #faf5ff 0%, #eef2ff 55%, #fff 100%);
+  box-shadow: 0 10px 24px -16px rgba(109, 40, 217, 0.45);
+}
+#page-biz-supervisor .bz-card.ait-entry-bz .bz-name { color: #5b21b6; }
+#page-biz-supervisor .bz-card.ait-entry-bz .bz-go {
+  background: #6d28d9;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-weight: 800;
+}
+#page-biz-supervisor .bz-card.ait-entry-bz:hover {
+  border-color: #a78bfa;
+  transform: translateY(-1px);
+}

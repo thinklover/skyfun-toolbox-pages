@@ -4605,8 +4605,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261109-spotmonth">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261101-board">
-<link rel="stylesheet" href="./css/ai-tingting.css?v=20261114-chat">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261114-ait-hero">
+<link rel="stylesheet" href="./css/ai-tingting.css?v=20261114-ait-hero">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
@@ -4935,7 +4935,7 @@
 
                 <div class="home-feature-card home-card-administration hidden" role="button" tabindex="0" onclick="showPage('administration')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('administration');}">
                     <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🏛️</span><span class="hc-name">行政專區</span><span class="hc-go" aria-hidden="true">→</span></span>
-                    <span class="hc-desc">解約退還與租金試算等行政工具。</span>
+                    <span class="hc-desc">AI婷婷問答、績效中心、簽呈、表單與行政工具。</span>
                 </div>
 
                 <div class="home-feature-card home-card-hr" role="button" tabindex="0" onclick="showPage('hr')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('hr');}">
@@ -5085,11 +5085,11 @@
             <header class="adz-head">
                 <div>
                     <h2 class="adz-title">🏛️ 行政專區</h2>
-                    <p class="adz-sub">績效中心（含成長羅盤）、簽呈、表單、註銷物件、行事曆與行政問答</p>
+                    <p class="adz-sub">績效中心、行政問答、AI婷婷、簽呈、表單、註銷物件與行事曆</p>
                 </div>
             </header>
 
-            <div class="adz-quick">
+            <div class="adz-quick adz-quick--3">
             <button type="button" class="apt-entry adz-hero adz-hero--points" onclick="showPage('admin-points')">
                 <span class="apt-entry-icon" aria-hidden="true">📊</span>
                 <span class="apt-entry-text">
@@ -5114,6 +5114,15 @@
                     <span class="adz-top-label">本業績月 排行榜前三名</span>
                     <span class="adz-top" id="aqa-card-top"></span>
                 </span>
+            </button>
+
+            <button type="button" class="apt-entry ait-entry adz-hero adz-hero--ait" id="adz-ai-tingting-hero" onclick="window.aiTingtingOpen && window.aiTingtingOpen('admin')">
+                <span class="apt-entry-icon" aria-hidden="true">🤖</span>
+                <span class="apt-entry-text">
+                    <strong>AI婷婷 問答</strong>
+                    <small>行政規定、進件、期數、獎金補助；特殊個案仍請找婷婷本人確認</small>
+                </span>
+                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
             </button>
 
             </div>
@@ -5360,15 +5369,7 @@
             <button type="button" class="af-fold adz-go-card" id="adz-petition-card" onclick="showPage('petition')">
                 <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">✍️</i>簽呈簽核</span><span class="af-summary-hint">三方電子簽名 · 總經理決行</span><span class="pt-entry-badge" id="pt-entry-badge" hidden></span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
             </button>
-            <button type="button" class="af-fold adz-go-card ait-entry-card" id="adz-ai-tingting-card" onclick="window.aiTingtingOpen && window.aiTingtingOpen('admin')">
-                <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🤖</i>AI婷婷 問答</span><span class="af-summary-hint">行政規定 · 進件 · 期數 · 獎金補助</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
-            </button>
-            <script>
-                (function () {
-                    const card = document.getElementById('adz-petition-card');
-                    if (card) card.parentElement.classList.add('adz-folds--two');
-                })();
-            </script>
+            <p class="ait-admin-link"><a href="./admin/ai-tingting-dashboard.html" target="_blank" rel="noopener">管理員：AI婷婷對話紀錄後台 →</a></p>
             </div>
 
             <section class="adz-cal" id="admin-calendar" aria-label="行政行事曆"></section>
@@ -5385,7 +5386,10 @@
 
         <!-- AI婷婷 問答（行政／業務主管專區共用） -->
         <div id="page-ai-tingting" class="hidden max-w-3xl mx-auto space-y-3">
-            <button type="button" id="ait-back-btn" class="mb-1 btn btn-sm tone-slate-soft">← 返回行政專區</button>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <button type="button" id="ait-back-btn" class="mb-1 btn btn-sm tone-slate-soft">← 返回行政專區</button>
+                <a class="text-sm font-bold text-violet-700 hover:underline" href="./admin/ai-tingting-dashboard.html" target="_blank" rel="noopener">對話紀錄後台 →</a>
+            </div>
             <section class="ait-zone" id="ait-zone" aria-label="AI婷婷問答">
                 <header class="ait-head">
                     <div class="ait-head-row">
@@ -7825,7 +7829,7 @@
                         <span class="bz-ico" aria-hidden="true">🤖</span>
                         <span class="bz-copy">
                             <span class="bz-name">AI婷婷 問答</span>
-                            <span class="bz-hint">行政規定、進件、期數、獎金補助</span>
+                            <span class="bz-hint">行政規定、進件、期數、獎金補助 · 即問即答</span>
                         </span>
                         <span class="bz-go" aria-hidden="true">進入</span>
                     </button>
