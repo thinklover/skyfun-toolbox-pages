@@ -18,6 +18,15 @@
   const ISSUE_STOP = '止付通知';
   const ISSUE_GEN = '一般宅金流相關(進件、解約)';
   const ISSUE_OFFICE = '商辦部';
+  const ISSUE_META = [
+    { type: ISSUE_PKG, short: '社宅包租金流相關', ico: '💰' },
+    { type: ISSUE_PAY, short: '社宅租金及款項處理', ico: '💳' },
+    { type: ISSUE_COLLECT, short: '社宅催收管理相關問題', ico: '📋' },
+    { type: ISSUE_SUPP, short: '金流明細表調閱申請', ico: '📎' },
+    { type: ISSUE_STOP, short: '止付通知', ico: '🛑' },
+    { type: ISSUE_GEN, short: '一般宅金流相關', ico: '🏠' },
+    { type: ISSUE_OFFICE, short: '商辦部', ico: '🏢' }
+  ];
   const GEN_CANCEL = '解約申請';
   const GEN_KIND_SIMPLE = '單純代租';
   const GEN_KIND_MANAGE = '代租代管';
@@ -175,16 +184,19 @@
     mineLoaded: false,
     mineLoading: false,
     detailKey: '',
+    detailIssue: '',
+    detailView: '', /* '' | 'types' | 'cases' */
     search: '',
-    dashBound: false
+    dashBound: false,
+    cardDashBound: false
   };
 
   const FIN_RING_LEN = 2 * Math.PI * 42;
   const FIN_DETAIL_TITLE = {
-    all: '全部案件明細',
-    wait: '待處理案件明細',
-    doing: '處理中案件明細',
-    done: '已結案／已退件明細'
+    all: '全部案件',
+    wait: '待處理案件',
+    doing: '處理中案件',
+    done: '已結案／已退件'
   };
 
   LL_DOC_KEYS.forEach((k) => { state.files[k] = []; });
@@ -845,6 +857,20 @@
     return rows.filter((r) => finStatusBucket(r.status) === key);
   }
 
+  function rowsByIssue(issueType, statusKey) {
+    let rows = state.mine || [];
+    if (issueType) rows = rows.filter((r) => String(r.issueType || '') === issueType);
+    if (statusKey && statusKey !== 'all') {
+      rows = rows.filter((r) => finStatusBucket(r.status) === statusKey);
+    }
+    return rows;
+  }
+
+  function issueShort(type) {
+    const hit = ISSUE_META.find((m) => m.type === type);
+    return hit ? hit.short : String(type || '其他');
+  }
+
   function matchFinSearch(r, qRaw) {
     const q = String(qRaw || '').trim().toLowerCase();
     if (!q) return true;
@@ -864,13 +890,28 @@
     if (clear) clear.hidden = !String(state.search || '').trim();
   }
 
+  function openIssueCard(issueType) {
+    if (!issueType) return;
+    const card = Array.from(document.querySelectorAll('#page-finance [data-fin-card]'))
+      .find((el) => el.getAttribute('data-fin-card') === issueType);
+    if (!card) return;
+    const input = card.querySelector('input[name="fin-issue"]');
+    const head = card.querySelector('.fin-issue-head');
+    document.querySelectorAll('#page-finance input[name="fin-issue"]').forEach((r) => { r.checked = false; });
+    if (input) input.checked = true;
+    syncPanels();
+    if (head) {
+      try { head.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+    }
+  }
+
   function finGaugeHtml(key, label, count, tone, metaText) {
     const total = Math.max(count, 1);
     const pct = count ? Math.max(0, Math.min(100, Math.round((count / total) * 100))) : 0;
     const dash = ((pct / 100) * FIN_RING_LEN).toFixed(1);
     const cls = [
       tone || '',
-      state.detailKey === key ? 'is-active' : ''
+      state.detailKey === key && !state.detailIssue ? 'is-active' : ''
     ].filter(Boolean).join(' ');
     return '<button type="button" class="fin-gauge ' + cls + '" data-fin-detail="' + esc(key) + '" title="' + esc(label) + '">' +
       '<span class="fin-gauge-ring" aria-hidden="true">' +
@@ -897,51 +938,58 @@
     const logged = !!token();
     box.innerHTML = [
       finGaugeHtml('all', '全部案件', all, all ? 'is-wait' : '',
-        logged ? (all ? '點擊查看明細' : '尚無送出紀錄') : '請先登入'),
+        logged ? (all ? '點擊看七項件數' : '尚無送出紀錄') : '請先登入'),
       finGaugeHtml('wait', '待處理案件', wait, wait ? 'is-wait' : '',
-        logged ? (wait ? '點擊查看待處理' : '目前沒有待處理案件') : '請先登入'),
+        logged ? (wait ? '點擊看七項待處理' : '目前沒有待處理案件') : '請先登入'),
       finGaugeHtml('doing', '處理中案件', doing, doing ? 'is-doing' : '',
-        logged ? (doing ? '點擊查看處理進度' : '目前沒有處理中案件') : '請先登入'),
+        logged ? (doing ? '點擊看七項處理中' : '目前沒有處理中案件') : '請先登入'),
       finGaugeHtml('done', '已結案案件', done, done ? 'is-done' : '',
-        logged ? (done ? '點擊查看已結案／退件' : '尚無已結案案件') : '請先登入')
+        logged ? (done ? '點擊看七項已結案' : '尚無已結案案件') : '請先登入')
     ].join('');
   }
 
-  function renderDetail() {
-    const wrap = $('fin-detail');
-    const title = $('fin-detail-title');
-    const list = $('fin-detail-list');
-    if (!wrap || !list) return;
-    const q = String(state.search || '').trim();
-    syncFinSearchClear();
-    if (!state.detailKey && !q) {
-      wrap.hidden = true;
-      wrap.classList.add('hidden');
-      return;
-    }
-    wrap.hidden = false;
-    wrap.classList.remove('hidden');
-    let detailTitle = FIN_DETAIL_TITLE[state.detailKey] || '明細';
-    if (q && !state.detailKey) detailTitle = '搜尋結果「' + q + '」';
-    else if (q && state.detailKey) detailTitle = detailTitle + '｜搜尋「' + q + '」';
-    if (title) title.textContent = detailTitle;
-    if (!token()) {
-      list.innerHTML = '<p class="fin-detail-empty">請先登入工具箱。</p>';
-      return;
-    }
-    const base = state.detailKey ? rowsByKey(state.detailKey) : (state.mine || []).slice();
-    const rows = applyFinSearch(base);
+  function renderTypeBreakdown(statusKey) {
+    const base = statusKey ? rowsByKey(statusKey) : (state.mine || []).slice();
+    const filtered = applyFinSearch(base);
+    return '<div class="fin-type-grid">' + ISSUE_META.map((m) => {
+      const n = filtered.filter((r) => String(r.issueType || '') === m.type).length;
+      return '<button type="button" class="fin-type-chip' + (n ? '' : ' is-empty') + '" data-fin-type="' + esc(m.type) + '">' +
+        '<span class="fin-type-ico" aria-hidden="true">' + m.ico + '</span>' +
+        '<span class="fin-type-copy"><strong>' + esc(m.short) + '</strong><small>' + n + ' 件</small></span>' +
+        '<span class="fin-type-go" aria-hidden="true">查看 →</span>' +
+      '</button>';
+    }).join('') + '</div>';
+  }
+
+  function canActOn(r) {
+    if (!state.mineAll) return false;
+    const st = String(r.status || 'submitted');
+    return st === 'submitted' || st === 'resubmitted' || st === 'processing';
+  }
+
+  function renderCaseActions(r) {
+    if (!canActOn(r)) return '';
+    const st = String(r.status || 'submitted');
+    const doingBtn = st === 'processing'
+      ? ''
+      : '<button type="button" class="fin-act-btn is-doing" data-fin-act="processing" data-fin-id="' + esc(r.id) + '">處理中</button>';
+    return '<div class="fin-act-bar">' +
+      doingBtn +
+      '<button type="button" class="fin-act-btn is-ok" data-fin-act="closed" data-fin-id="' + esc(r.id) + '">通過</button>' +
+      '<button type="button" class="fin-act-btn is-reject" data-fin-act="reject-toggle" data-fin-id="' + esc(r.id) + '">退件</button>' +
+      '</div>' +
+      '<div class="fin-reject-box" data-fin-reject-box="' + esc(r.id) + '" hidden>' +
+        '<label class="sr-only" for="fin-reject-reason-' + esc(r.id) + '">退件原因</label>' +
+        '<textarea id="fin-reject-reason-' + esc(r.id) + '" class="fin-reject-ta" rows="2" maxlength="1000" placeholder="請填退件原因（必填）"></textarea>' +
+        '<button type="button" class="fin-act-btn is-reject-confirm" data-fin-act="reject" data-fin-id="' + esc(r.id) + '">確認退件</button>' +
+      '</div>';
+  }
+
+  function renderCaseList(rows) {
     if (!rows.length) {
-      list.innerHTML = '<p class="fin-detail-empty">' +
-        (q ? ('找不到符合「' + esc(q) + '」的案件。')
-          : state.detailKey === 'wait' ? '目前沒有待處理案件。'
-          : state.detailKey === 'doing' ? '目前沒有處理中案件。'
-          : state.detailKey === 'done' ? '尚無已結案／退件案件。'
-          : '尚無送出紀錄。') +
-        '</p>';
-      return;
+      return '<p class="fin-detail-empty">目前沒有符合條件的案件。</p>';
     }
-    list.innerHTML = rows.map((r) => {
+    return rows.map((r) => {
       const p = progressOf(r);
       const heading = [r.item, r.address].filter(Boolean).join('・') || '案件';
       const who = state.mineAll && r.userName
@@ -953,18 +1001,132 @@
       const reason = r.status === 'rejected' && r.rejectReason
         ? '<div class="fin-detail-reason">退件原因：' + esc(r.rejectReason) + '</div>'
         : '';
-      return '<article class="fin-detail-row">' +
+      return '<article class="fin-detail-row" data-fin-row="' + esc(r.id) + '">' +
         '<div class="fin-detail-top"><span class="fin-detail-when">' + esc(fmtMineWhen(r.createdAt)) + '</span>' +
         '<span class="fin-mine-st ' + p.cls + '">' + esc(p.text) + '</span></div>' +
         '<div class="fin-detail-title">' + esc(heading) + '</div>' +
         who + type + reason +
+        renderCaseActions(r) +
         '</article>';
     }).join('');
+  }
+
+  function renderDetail() {
+    const wrap = $('fin-detail');
+    const title = $('fin-detail-title');
+    const list = $('fin-detail-list');
+    if (!wrap || !list) return;
+    const q = String(state.search || '').trim();
+    syncFinSearchClear();
+    if (!state.detailKey && !state.detailIssue && !q) {
+      wrap.hidden = true;
+      wrap.classList.add('hidden');
+      return;
+    }
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
+
+    if (!token()) {
+      if (title) title.textContent = '明細';
+      list.innerHTML = '<p class="fin-detail-empty">請先登入工具箱。</p>';
+      return;
+    }
+
+    /* 點狀態卡 → 先看七項件數 */
+    if (state.detailView === 'types' && state.detailKey && !state.detailIssue) {
+      const label = FIN_DETAIL_TITLE[state.detailKey] || '案件';
+      if (title) title.textContent = label + '｜七項分類';
+      const html = renderTypeBreakdown(state.detailKey);
+      const n = applyFinSearch(rowsByKey(state.detailKey)).length;
+      list.innerHTML = (n
+        ? '<p class="fin-detail-hint">點下方項目，會跳到對應卡片並列出案件。</p>'
+        : '<p class="fin-detail-empty">' +
+          (state.detailKey === 'wait' ? '目前沒有待處理案件。'
+            : state.detailKey === 'doing' ? '目前沒有處理中案件。'
+            : state.detailKey === 'done' ? '尚無已結案／退件案件。'
+            : '尚無送出紀錄。') + '</p>') + html;
+      return;
+    }
+
+    /* 某一類型＋狀態（或搜尋）的案件列表 */
+    let detailTitle = FIN_DETAIL_TITLE[state.detailKey] || '明細';
+    if (state.detailIssue) detailTitle = issueShort(state.detailIssue) + '｜' + (FIN_DETAIL_TITLE[state.detailKey] || '案件');
+    if (q && !state.detailKey && !state.detailIssue) detailTitle = '搜尋結果「' + q + '」';
+    else if (q) detailTitle = detailTitle + '｜搜尋「' + q + '」';
+    if (title) title.textContent = detailTitle;
+
+    let base;
+    if (state.detailIssue) {
+      base = rowsByIssue(state.detailIssue, state.detailKey || 'all');
+    } else if (state.detailKey) {
+      base = rowsByKey(state.detailKey);
+    } else {
+      base = (state.mine || []).slice();
+    }
+    const rows = applyFinSearch(base);
+    const back = state.detailIssue && state.detailKey
+      ? '<button type="button" class="fin-back-types" data-fin-back-types="1">← 回七項分類</button>'
+      : '';
+    list.innerHTML = back + renderCaseList(rows);
+  }
+
+  function renderCardDashboards() {
+    document.querySelectorAll('#page-finance [data-fin-card]').forEach((card) => {
+      const issueType = card.getAttribute('data-fin-card') || '';
+      let box = card.querySelector('.fin-card-dash');
+      if (!box) {
+        box = document.createElement('div');
+        box.className = 'fin-card-dash';
+        box.setAttribute('aria-label', '此類型案件儀表板');
+        const head = card.querySelector('.fin-issue-head');
+        if (head) head.insertAdjacentElement('afterend', box);
+        else card.prepend(box);
+      }
+      const wait = rowsByIssue(issueType, 'wait').length;
+      const doing = rowsByIssue(issueType, 'doing').length;
+      const done = rowsByIssue(issueType, 'done').length;
+      const active = (key) => (state.detailIssue === issueType && state.detailKey === key && state.detailView === 'cases') ? ' is-on' : '';
+      box.innerHTML =
+        '<button type="button" class="fin-card-gauge' + active('wait') + '" data-fin-card-status="wait" data-fin-card-issue="' + esc(issueType) + '"><b>' + wait + '</b><span>待處理</span></button>' +
+        '<button type="button" class="fin-card-gauge' + active('doing') + '" data-fin-card-status="doing" data-fin-card-issue="' + esc(issueType) + '"><b>' + doing + '</b><span>處理中</span></button>' +
+        '<button type="button" class="fin-card-gauge' + active('done') + '" data-fin-card-status="done" data-fin-card-issue="' + esc(issueType) + '"><b>' + done + '</b><span>已結案</span></button>';
+    });
   }
 
   function renderDash() {
     renderGauges();
     renderDetail();
+    renderCardDashboards();
+  }
+
+  function patchMineRow(row) {
+    if (!row || row.id == null) return;
+    const mapped = mapFinanceInboxRow(row);
+    const idx = state.mine.findIndex((r) => String(r.id) === String(mapped.id));
+    if (idx >= 0) state.mine[idx] = mapped;
+    else state.mine.unshift(mapped);
+  }
+
+  async function financeSetStatus(id, status) {
+    const res = await rpc('fin_report_finance_set_status', {
+      p_token: token(),
+      p_id: Number(id),
+      p_status: status
+    });
+    if (!res?.ok) throw new Error(res?.error || '更新失敗');
+    if (res.row) patchMineRow(res.row);
+    renderDash();
+  }
+
+  async function financeReject(id, reason) {
+    const res = await rpc('fin_report_finance_reject', {
+      p_token: token(),
+      p_id: Number(id),
+      p_reason: reason
+    });
+    if (!res?.ok) throw new Error(res?.error || '退件失敗');
+    if (res.row) patchMineRow(res.row);
+    renderDash();
   }
 
   async function loadMine() {
@@ -975,7 +1137,6 @@
       renderDash();
       return;
     }
-    // 財務部／黃怡婷／邱奕棋／簡為倢：看全部案件進度；其他人只看自己送出的
     try {
       const all = await rpc('fin_report_list_for_finance', { p_token: token(), p_limit: 200 });
       if (all?.ok && Array.isArray(all.rows)) {
@@ -1005,20 +1166,105 @@
       const btn = e.target.closest('[data-fin-detail]');
       if (!btn) return;
       const key = btn.getAttribute('data-fin-detail') || '';
-      state.detailKey = state.detailKey === key ? '' : key;
+      if (state.detailKey === key && state.detailView === 'types' && !state.detailIssue) {
+        state.detailKey = '';
+        state.detailView = '';
+        state.detailIssue = '';
+      } else {
+        state.detailKey = key;
+        state.detailIssue = '';
+        state.detailView = 'types';
+      }
       renderDash();
     });
     $('fin-detail-close')?.addEventListener('click', () => {
       state.detailKey = '';
+      state.detailIssue = '';
+      state.detailView = '';
       state.search = '';
       const input = $('fin-dash-search');
       if (input) input.value = '';
       renderDash();
     });
+    $('fin-detail-list')?.addEventListener('click', async (e) => {
+      const back = e.target.closest('[data-fin-back-types]');
+      if (back) {
+        state.detailIssue = '';
+        state.detailView = 'types';
+        renderDash();
+        return;
+      }
+      const typeBtn = e.target.closest('[data-fin-type]');
+      if (typeBtn) {
+        const issueType = typeBtn.getAttribute('data-fin-type') || '';
+        state.detailIssue = issueType;
+        state.detailView = 'cases';
+        if (!state.detailKey) state.detailKey = 'all';
+        openIssueCard(issueType);
+        renderDash();
+        return;
+      }
+      const actBtn = e.target.closest('[data-fin-act]');
+      if (!actBtn || !state.mineAll) return;
+      const id = actBtn.getAttribute('data-fin-id');
+      const act = actBtn.getAttribute('data-fin-act');
+      if (!id || !act) return;
+      if (act === 'reject-toggle') {
+        const box = document.querySelector('[data-fin-reject-box="' + id + '"]');
+        if (box) box.hidden = !box.hidden;
+        return;
+      }
+      actBtn.disabled = true;
+      try {
+        if (act === 'processing' || act === 'closed') {
+          await financeSetStatus(id, act);
+          setMsg(act === 'closed' ? '已通過（結案）#' + id : '已改為處理中 #' + id, 'ok');
+        } else if (act === 'reject') {
+          const ta = document.getElementById('fin-reject-reason-' + id);
+          const reason = String(ta && ta.value || '').trim();
+          if (!reason) {
+            setMsg('請先填退件原因', 'err');
+            ta?.focus();
+            actBtn.disabled = false;
+            return;
+          }
+          await financeReject(id, reason);
+          setMsg('已退件 #' + id, 'ok');
+        }
+      } catch (err) {
+        setMsg(err.message || String(err), 'err');
+        actBtn.disabled = false;
+      }
+    });
+    const page = document.getElementById('page-finance');
+    if (page && !state.cardDashBound) {
+      state.cardDashBound = true;
+      page.addEventListener('click', (e) => {
+        const g = e.target.closest('[data-fin-card-status]');
+        if (!g || !page.contains(g)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const issueType = g.getAttribute('data-fin-card-issue') || '';
+        const statusKey = g.getAttribute('data-fin-card-status') || 'wait';
+        state.detailKey = statusKey;
+        state.detailIssue = issueType;
+        state.detailView = 'cases';
+        openIssueCard(issueType);
+        renderDash();
+        const wrap = $('fin-detail');
+        if (wrap) {
+          try { wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+        }
+      });
+    }
     const search = $('fin-dash-search');
     search?.addEventListener('input', () => {
       state.search = String(search.value || '');
-      if (state.search && !state.detailKey) state.detailKey = '';
+      if (state.search && state.detailView === 'types') {
+        /* 搜尋時仍可看七項過濾結果 */
+      } else if (state.search && !state.detailKey && !state.detailIssue) {
+        state.detailView = 'cases';
+      }
       renderDash();
     });
     $('fin-dash-search-clear')?.addEventListener('click', () => {
