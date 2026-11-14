@@ -1137,12 +1137,14 @@
   min-height: 2.6rem;
 }
 #page-finance .fin-card-dash {
-  display: grid;
+  display: none;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.35rem;
   padding: 0 1.1rem 0.85rem;
 }
+/* 展開該問題卡後才顯示迷你儀表板 */
 #page-finance .fin-issue-card.is-open .fin-card-dash {
+  display: grid;
   padding-bottom: 0.55rem;
   border-bottom: 1px solid #eef2f7;
   margin-bottom: 0.35rem;
