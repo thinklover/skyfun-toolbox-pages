@@ -69,15 +69,14 @@
 .apt-entry .adz-top-item b { color: #4338ca; }
 .adz-top-empty { font-size: 0.74rem; color: #94a3b8; }
 
-/* 行政問答卡：琥珀暖色 */
-.aqa-entry { border-color: #fdba74; background: linear-gradient(135deg, #fff7ed, #ffedd5); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.1); }
-.aqa-entry:hover { border-color: #fb923c; box-shadow: 0 6px 18px rgba(234, 88, 12, 0.16); }
-.aqa-entry .apt-entry-text strong { color: #c2410c; }
+/* 行政問答／AI：白底淡暈，標題中性 */
+.aqa-entry { border-color: #fde68a; background: linear-gradient(135deg, #ffffff, #fffbeb); box-shadow: 0 4px 14px rgba(217, 119, 6, 0.08); }
+.aqa-entry:hover { border-color: #fcd34d; box-shadow: 0 6px 18px rgba(217, 119, 6, 0.14); }
+.aqa-entry .apt-entry-text strong { color: #0f172a; }
 
-/* AI婷婷卡：天空藍 */
-.ait-entry { border-color: #7dd3fc; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.12); }
-.ait-entry:hover { border-color: #38bdf8; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.18); }
-.ait-entry .apt-entry-text strong { color: #0369a1; }
+.ait-entry { border-color: #dbeafe; background: linear-gradient(135deg, #ffffff, #eff6ff); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08); }
+.ait-entry:hover { border-color: #bfdbfe; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.14); }
+.ait-entry .apt-entry-text strong { color: #0f172a; }
 .ait-admin-link { grid-column: 1 / -1; margin: 0.15rem 0 0; font-size: 0.82rem; font-weight: 700; }
 .ait-admin-link a { color: #0284c7; text-decoration: none; }
 .ait-admin-link a:hover { text-decoration: underline; }
@@ -598,36 +597,48 @@
     box-shadow: 0 16px 36px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.05);
     transition: transform 0.18s, box-shadow 0.18s;
 }
-/* 行政三主卡配色：翠綠｜琥珀｜天空藍 */
+/* 行政三主卡：白底淡暈＋中性文字，色留給按鈕／標籤（翠綠｜琥珀｜藍） */
+:is(#page-administration, #page-newbie) .adz-hero--points,
+:is(#page-administration, #page-newbie) .adz-hero--qa,
+:is(#page-administration, #page-newbie) .adz-hero--ait {
+    --hero-ink: #0f172a;
+    --hero-sub: #64748b;
+}
 :is(#page-administration, #page-newbie) .adz-hero--points {
-    --hero-ink: #065f46; --hero-sub: #3f7a6c; --hero-accent: #0f766e; --hero-line: #99f6e4;
-    --hero-shadow: rgba(15, 118, 110, 0.4); --hero-num: #0f766e;
-    background: linear-gradient(145deg, #ffffff 0%, #f0fdfa 38%, #ccfbf1 100%);
+    --hero-accent: #0d9488; --hero-line: #ccfbf1;
+    --hero-shadow: rgba(13, 148, 136, 0.28); --hero-num: #0f766e;
+    background: linear-gradient(145deg, #ffffff 0%, #f7fffc 55%, #f0fdfa 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--qa {
-    --hero-ink: #9a3412; --hero-sub: #b45309; --hero-accent: #ea580c; --hero-line: #fdba74;
-    --hero-shadow: rgba(234, 88, 12, 0.38); --hero-num: #c2410c;
-    background: linear-gradient(145deg, #ffffff 0%, #fff7ed 38%, #ffedd5 100%);
+    --hero-accent: #d97706; --hero-line: #fde68a;
+    --hero-shadow: rgba(217, 119, 6, 0.26); --hero-num: #b45309;
+    background: linear-gradient(145deg, #ffffff 0%, #fffdf8 55%, #fffbeb 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--ait {
-    --hero-ink: #0c4a6e; --hero-sub: #0369a1; --hero-accent: #0284c7; --hero-line: #7dd3fc;
-    --hero-shadow: rgba(2, 132, 199, 0.4); --hero-num: #0284c7;
-    background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 38%, #e0f2fe 100%);
+    --hero-accent: #2563eb; --hero-line: #dbeafe;
+    --hero-shadow: rgba(37, 99, 235, 0.26); --hero-num: #1d4ed8;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fbff 55%, #eff6ff 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero::before {
     content: ''; position: absolute; z-index: -1; width: 20rem; height: 20rem; right: -7rem; top: -9rem; border-radius: 50%;
     background: radial-gradient(circle, var(--hero-glow, rgba(255, 255, 255, 0.9)), rgba(255, 255, 255, 0) 70%);
 }
-:is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(45, 212, 191, 0.45); }
-:is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(251, 191, 36, 0.45); }
-:is(#page-administration, #page-newbie) .adz-hero--ait::before { --hero-glow: rgba(56, 189, 248, 0.45); }
+:is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(45, 212, 191, 0.28); }
+:is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(251, 191, 36, 0.28); }
+:is(#page-administration, #page-newbie) .adz-hero--ait::before { --hero-glow: rgba(96, 165, 250, 0.28); }
 :is(#page-administration, #page-newbie) .adz-hero::after {
     content: ''; position: absolute; z-index: -1; inset: 0;
-    background-image: radial-gradient(rgba(99, 102, 241, 0.09) 1px, transparent 1px); background-size: 16px 16px;
+    background-image: radial-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px); background-size: 16px 16px;
     -webkit-mask-image: linear-gradient(115deg, transparent 45%, #000 100%); mask-image: linear-gradient(115deg, transparent 45%, #000 100%);
 }
-:is(#page-administration, #page-newbie) .adz-hero--qa::after { background-image: radial-gradient(rgba(217, 119, 6, 0.12) 1px, transparent 1px); }
-:is(#page-administration, #page-newbie) .adz-hero--ait::after { background-image: radial-gradient(rgba(2, 132, 199, 0.12) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--points::after { background-image: radial-gradient(rgba(13, 148, 136, 0.1) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--qa::after { background-image: radial-gradient(rgba(217, 119, 6, 0.1) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--ait::after { background-image: radial-gradient(rgba(37, 99, 235, 0.1) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--points .apt-entry-arrow,
+:is(#page-administration, #page-newbie) .adz-hero--qa .apt-entry-arrow,
+:is(#page-administration, #page-newbie) .adz-hero--ait .apt-entry-arrow {
+    box-shadow: 0 6px 14px -6px var(--hero-shadow);
+}
 :is(#page-administration, #page-newbie) .adz-hero:hover {
     transform: translateY(-2px); border-color: var(--hero-line);
     box-shadow: 0 22px 44px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.06);
