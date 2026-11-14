@@ -222,7 +222,7 @@
   const FIN_PAYLOAD_ORDER = [
     'address', 'landlord', 'tenant', 'pkgItem', 'payItem', 'collectItem', 'suppItem', 'genItem',
     'officeItem', 'venue', 'depositType', 'pkgDocs', 'receivable', 'receivableOther',
-    'baoLeaseStart', 'baoLeaseEnd', 'zhuanLeaseStart', 'zhuanLeaseEnd', 'leaseStart', 'leaseEnd',
+    'baoLeaseStart', 'baoLeaseEnd', 'zhuanLeaseStart', 'zhuanLeaseEnd',
     'leasePick', 'renewTopup', 'topupAmount', 'rematchType', 'oldTenant', 'newTenant', 'hasRoommate',
     'roommates', 'roommate', 'refundType', 'refundDate', 'refundMethod', 'refundSettle', 'refundGap',
     'refundSubleaseStart', 'hasGap', 'subleaseStart', 'changeTarget', 'landlordReason', 'tenantReason',
@@ -892,9 +892,11 @@
   function finPayloadEntries(p) {
     p = p || {};
     const seen = new Set();
+    /* 明細不顯示租期起迄：已有包租／轉租起迄即可 */
+    const hide = new Set(['leaseStart', 'leaseEnd', 'leasePick']);
     const out = [];
     function push(k) {
-      if (seen.has(k) || !Object.prototype.hasOwnProperty.call(p, k)) return;
+      if (hide.has(k) || seen.has(k) || !Object.prototype.hasOwnProperty.call(p, k)) return;
       seen.add(k);
       let v = p[k];
       if (v == null || v === '') return;
