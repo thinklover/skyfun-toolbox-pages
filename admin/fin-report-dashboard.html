@@ -32,12 +32,14 @@
     .st-closed { background: #f1f5f9; color: #475569; }
     .st-rejected { background: #fee2e2; color: #991b1b; }
     .st-resubmitted { background: #fef9c3; color: #a16207; }
-    .status-filters { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-    .status-filters button {
+    .status-filters, .type-filters { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .status-filters button, .type-filters button {
       border: 1px solid #cbd5e1; background: #fff; color: #334155;
       border-radius: 999px; padding: 0.28rem 0.75rem; font-size: 0.78rem; font-weight: 800; cursor: pointer;
     }
     .status-filters button.is-on { border-color: #059669; background: #ecfdf5; color: #047857; }
+    .type-filters button.is-on { border-color: #0284c7; background: #e0f2fe; color: #0369a1; }
+    .filter-label { margin: 0; font-size: 0.75rem; font-weight: 800; color: #64748b; }
     .act-box { margin-top: 0.4rem; display: grid; gap: 0.35rem; max-width: 16rem; }
     .act-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
     .act-row button {
@@ -107,6 +109,7 @@
         <input type="search" id="search" placeholder="搜尋類型／姓名／處所／填表人／內容" class="max-w-md" autocomplete="off" />
         <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
       </div>
+      <p class="filter-label">狀態</p>
       <div class="status-filters" id="status-filters" role="tablist" aria-label="案件狀態篩選">
         <button type="button" data-fin-filter="all" class="is-on">全部</button>
         <button type="button" data-fin-filter="submitted">待處理</button>
@@ -114,6 +117,17 @@
         <button type="button" data-fin-filter="closed">已結案</button>
         <button type="button" data-fin-filter="rejected">已退件</button>
         <button type="button" data-fin-filter="resubmitted">已補件</button>
+      </div>
+      <p class="filter-label">分類（與前台相同）</p>
+      <div class="type-filters" id="type-filters" role="tablist" aria-label="案件類型分類">
+        <button type="button" data-fin-type="all" class="is-on">全部分類</button>
+        <button type="button" data-fin-type="pkg">社宅包租金流相關</button>
+        <button type="button" data-fin-type="pay">社宅租金及款項處理</button>
+        <button type="button" data-fin-type="collect">社宅催收管理相關問題</button>
+        <button type="button" data-fin-type="cashflow">金流明細表調閱申請</button>
+        <button type="button" data-fin-type="stop">止付通知</button>
+        <button type="button" data-fin-type="gen">一般宅金流相關</button>
+        <button type="button" data-fin-type="office">商辦部</button>
       </div>
       <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
       <div class="overflow-auto border border-slate-200 rounded-xl bg-white">
@@ -145,6 +159,59 @@
       let allRows = [];
       let allLineItems = [];
       let statusFilter = 'all';
+      let typeFilter = 'all';
+
+      const TYPE_META = {
+        pkg: {
+          key: 'pkg',
+          label: '社宅包租金流相關',
+          match: ['社宅包租金流相關(進件、解約或資料異動)']
+        },
+        pay: {
+          key: 'pay',
+          label: '社宅租金及款項處理',
+          match: ['社宅租金及款項處理']
+        },
+        collect: {
+          key: 'collect',
+          label: '社宅催收管理相關問題',
+          match: ['社宅催收管理相關問題']
+        },
+        cashflow: {
+          key: 'cashflow',
+          label: '金流明細表調閱申請',
+          match: ['金流明細表調閱申請', '補件與資料查詢']
+        },
+        stop: {
+          key: 'stop',
+          label: '止付通知',
+          match: ['止付通知']
+        },
+        gen: {
+          key: 'gen',
+          label: '一般宅金流相關',
+          match: ['一般宅金流相關(進件、解約)']
+        },
+        office: {
+          key: 'office',
+          label: '商辦部',
+          match: ['商辦部']
+        }
+      };
+
+      function typeKeyOf(issueType) {
+        const t = String(issueType || '');
+        for (const meta of Object.values(TYPE_META)) {
+          if (meta.match.indexOf(t) >= 0) return meta.key;
+        }
+        return '';
+      }
+
+      function typeLabelOf(issueType) {
+        const key = typeKeyOf(issueType);
+        if (key && TYPE_META[key]) return TYPE_META[key].label;
+        return String(issueType || '—');
+      }
 
       function cfg() {
         const c = window.SKYFUN_SUPABASE || {};
@@ -375,8 +442,12 @@
         return allRows.filter((r) => {
           const st = String(r.status || 'submitted');
           if (statusFilter !== 'all' && st !== statusFilter) return false;
+          if (typeFilter !== 'all' && typeKeyOf(r.issueType) !== typeFilter) return false;
           if (!q) return true;
-          const blob = [r.id, r.status, r.rejectReason, r.issueType, r.userName, r.fullName, r.office, r.lineError, payloadText(r.payload)].join(' ').toLowerCase();
+          const blob = [
+            r.id, r.status, r.rejectReason, r.issueType, typeLabelOf(r.issueType),
+            r.userName, r.fullName, r.office, r.lineError, payloadText(r.payload)
+          ].join(' ').toLowerCase();
           return blob.includes(q);
         });
       }
@@ -414,20 +485,38 @@
       }
       function render() {
         const list = filtered();
-        const counts = { all: allRows.length, submitted: 0, processing: 0, closed: 0, rejected: 0, resubmitted: 0 };
+        const statusCounts = { all: 0, submitted: 0, processing: 0, closed: 0, rejected: 0, resubmitted: 0 };
+        const typeCounts = { all: 0, pkg: 0, pay: 0, collect: 0, cashflow: 0, stop: 0, gen: 0, office: 0 };
         allRows.forEach((r) => {
           const st = String(r.status || 'submitted');
-          if (counts[st] != null) counts[st] += 1;
+          const tk = typeKeyOf(r.issueType);
+          const inType = typeFilter === 'all' || tk === typeFilter;
+          const inStatus = statusFilter === 'all' || st === statusFilter;
+          if (inType) {
+            statusCounts.all += 1;
+            if (statusCounts[st] != null) statusCounts[st] += 1;
+          }
+          if (inStatus) {
+            typeCounts.all += 1;
+            if (tk && typeCounts[tk] != null) typeCounts[tk] += 1;
+          }
         });
         document.querySelectorAll('#status-filters [data-fin-filter]').forEach((btn) => {
           const key = btn.getAttribute('data-fin-filter');
-          const n = counts[key] != null ? counts[key] : 0;
+          const n = statusCounts[key] != null ? statusCounts[key] : 0;
           const label = ({
             all: '全部', submitted: '待處理', processing: '處理中',
             closed: '已結案', rejected: '已退件', resubmitted: '已補件'
           })[key] || key;
           btn.textContent = label + ' ' + n;
           btn.classList.toggle('is-on', statusFilter === key);
+        });
+        document.querySelectorAll('#type-filters [data-fin-type]').forEach((btn) => {
+          const key = btn.getAttribute('data-fin-type');
+          const n = typeCounts[key] != null ? typeCounts[key] : 0;
+          const label = key === 'all' ? '全部分類' : ((TYPE_META[key] && TYPE_META[key].label) || key);
+          btn.textContent = label + ' ' + n;
+          btn.classList.toggle('is-on', typeFilter === key);
         });
         document.getElementById('msg').textContent = list.length ? '共 ' + list.length + ' 筆' : '沒有符合的回報';
         document.getElementById('rows').innerHTML = list.map((r) => {
@@ -436,7 +525,11 @@
             '<td class="whitespace-nowrap">' + esc(fmt(r.createdAt)) + '</td>' +
             '<td class="whitespace-nowrap"><b>#' + esc(r.id) + '</b></td>' +
             '<td>' + statusLabel(st) + '</td>' +
-            '<td class="type">' + esc(r.issueType) + '</td>' +
+            '<td class="type">' + esc(typeLabelOf(r.issueType)) +
+              (String(r.issueType || '') !== typeLabelOf(r.issueType)
+                ? '<div class="muted">' + esc(r.issueType) + '</div>'
+                : '') +
+            '</td>' +
             '<td>' + esc(r.userName || '—') + '</td>' +
             '<td>' + esc(r.fullName || '—') + '<div class="muted">' + esc(r.office || '') + '</div></td>' +
             '<td class="body">' + payloadHtml(r.payload) + '</td>' +
@@ -570,6 +663,12 @@
         const btn = e.target.closest('[data-fin-filter]');
         if (!btn) return;
         statusFilter = btn.getAttribute('data-fin-filter') || 'all';
+        render();
+      });
+      document.getElementById('type-filters').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-fin-type]');
+        if (!btn) return;
+        typeFilter = btn.getAttribute('data-fin-type') || 'all';
         render();
       });
       document.getElementById('rows').addEventListener('click', async (e) => {
