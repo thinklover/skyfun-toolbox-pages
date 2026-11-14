@@ -4615,7 +4615,7 @@
 <link rel="stylesheet" href="./css/biz-bonus.css?v=20261111-ackwm">
 <link rel="stylesheet" href="./css/biz-coverage.css?v=20261112-align">
 <link rel="stylesheet" href="./css/notice-ack.css?v=20261111-ackwm">
-<link rel="stylesheet" href="./css/biz-system-change.css?v=20261111-resubmod">
+<link rel="stylesheet" href="./css/biz-system-change.css?v=20261114-xfer">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
 <link rel="stylesheet" href="./css/fin-report.css?v=20261112-mine">
 <link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261112-msb-v35">
@@ -11613,6 +11613,28 @@
                         <select id="bsc-xfer-admin" required>
                             <option value="">請選擇行政</option>
                         </select>
+                        <div class="bsc-xfer-checks">
+                            <label class="bsc-xfer-check" for="bsc-xfer-deposit"><input id="bsc-xfer-deposit" type="checkbox">租押金問題</label>
+                            <label class="bsc-xfer-check" for="bsc-xfer-robot"><input id="bsc-xfer-robot" type="checkbox">機器人問題</label>
+                        </div>
+                        <label class="bsc-xfer-label" for="bsc-xfer-photos">上傳照片</label>
+                        <input id="bsc-xfer-photos" type="file" accept="image/*" multiple>
+                        <p class="bsc-xfer-note">勾選租押金問題後，一定要上傳至少一張照片才能送出。</p>
+                        <div id="bsc-xfer-photo-list" class="bsc-xfer-photos"></div>
+                        <div id="bsc-xfer-robot-box" class="bsc-xfer-robot" hidden>
+                            <label class="bsc-xfer-label" for="bsc-xfer-address">物件地址 <span class="bsc-req">*</span></label>
+                            <input id="bsc-xfer-address" type="text" maxlength="200" autocomplete="off">
+                            <label class="bsc-xfer-label" for="bsc-xfer-tenant">房客姓名 <span class="bsc-req">*</span></label>
+                            <input id="bsc-xfer-tenant" type="text" maxlength="40" autocomplete="off">
+                            <label class="bsc-xfer-label" for="bsc-xfer-tenant-id">房客身分證字號 <span class="bsc-req">*</span></label>
+                            <input id="bsc-xfer-tenant-id" type="text" maxlength="20" autocomplete="off" spellcheck="false">
+                            <div class="bsc-xfer-mate-head">
+                                <span class="bsc-xfer-label">共住人</span>
+                                <button type="button" class="btn btn-sm tone-slate-soft" id="bsc-xfer-add-mate">新增共住人</button>
+                            </div>
+                            <p class="bsc-xfer-note">有共住人時，姓名和身分證字號都要填。</p>
+                            <div id="bsc-xfer-mates"></div>
+                        </div>
                         <p id="bsc-xfer-hint" class="bsc-xfer-hint"></p>
                     </div>
                     <footer class="bsc-modal-foot">
@@ -14291,7 +14313,7 @@
         <script src="./js/handover-core.js?v=20261107-sop"></script>
         <script src="./js/biz-handover.js?v=20261107-sop"></script>
         <script src="./js/admin-handover.js?v=20261107-sop"></script>
-        <script src="./js/biz-system-change.js?v=20261112-superline"></script>
+        <script src="./js/biz-system-change.js?v=20261114-xfer"></script>
         <script src="./js/biz-bonus-data.js?v=20261105-layout"></script>
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261112-dropmt"></script>

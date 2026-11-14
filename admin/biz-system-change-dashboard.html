@@ -26,6 +26,7 @@
     .act-rej { background: #dc2626; border-color: #dc2626; color: #fff; }
     .act-del { background: #fff; border-color: #fca5a5; color: #b91c1c; }
     .node-tag { display: inline-block; margin: 0 0.2rem 0 0; padding: 0.08rem 0.4rem; border-radius: 999px; background: #ede9fe; color: #5b21b6; font-size: 0.7rem; font-weight: 800; }
+    .xfer-extra { display: grid; gap: 0.15rem; padding: 0.45rem 0.6rem; border-radius: 0.55rem; background: #f5f3ff; color: #3b0764; font-size: 0.82rem; font-weight: 700; }
     .lv { display: inline-block; font-size: 0.68rem; font-weight: 800; padding: 0.08rem 0.4rem; border-radius: 999px; vertical-align: middle; }
     .lv-manager { background: #ede9fe; color: #5b21b6; }
     .lv-admin { background: #ffedd5; color: #9a3412; }
@@ -234,6 +235,21 @@
         }
         return '其他';
       }
+      function transferExtraHtml(r) {
+        const x = r && r.transferExtra ? r.transferExtra : {};
+        if (!x.depositIssue && !x.robotIssue) return '';
+        const tags = [];
+        if (x.depositIssue) tags.push('<span class="node-tag">租押金問題</span>');
+        if (x.robotIssue) tags.push('<span class="node-tag">機器人問題</span>');
+        let body = '';
+        if (x.robotIssue) {
+          const mates = Array.isArray(x.roommates) ? x.roommates : [];
+          body = '<div>物件地址：' + esc(x.address || '') + '</div>' +
+            '<div>房客：' + esc(x.tenantName || '') + '　身分證字號：' + esc(x.tenantId || '') + '</div>' +
+            mates.map((m) => '<div>共住人：' + esc(m.name || '') + '　身分證字號：' + esc(m.idNo || '') + '</div>').join('');
+        }
+        return '<div class="xfer-extra">' + tags.join('') + body + '</div>';
+      }
       function attsHtml(atts) {
         const list = Array.isArray(atts) ? atts : [];
         if (!list.length) return '—';
@@ -415,6 +431,7 @@
               '<span><em>節點</em>' + nodes + '</span>' +
               '<span><em>附件</em>' + attsHtml(r.attachments) + '</span>' +
             '</div>' +
+            transferExtraHtml(r) +
             '<div class="case-body">' + esc(r.content || '（無內容）') + '</div>' +
             history +
             '<div class="case-foot">' +

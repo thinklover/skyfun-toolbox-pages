@@ -39,6 +39,8 @@
     msgType: '',
     pendingPayload: null,
     xferId: null,
+    xferFiles: [],
+    xferMates: [],
     rejectId: null,
     editId: null,
     editRow: null,
@@ -499,6 +501,7 @@
       ${Array.isArray(r.nodes) && r.nodes.length ? `<div class="bsc-node-tags">${r.nodes.map((n) => `<span class="bsc-node-tag">${esc(n)}</span>`).join('')}</div>` : ''}
       <div class="bsc-item-body">${esc(r.content)}</div>
       ${attsHtml(r.attachments)}
+      ${transferExtraHtml(r)}
       ${r.adminNote ? notesHtml(r.adminNote) : ''}
       ${showPending ? actionButtons(r) : ''}
     </article>`;
@@ -1001,10 +1004,102 @@
     }
   }
 
+  function transferExtraHtml(r) {
+    const x = r && r.transferExtra ? r.transferExtra : {};
+    if (!x.depositIssue && !x.robotIssue) return '';
+    const tags = [];
+    if (x.depositIssue) tags.push('<span class="bsc-node-tag">租押金問題</span>');
+    if (x.robotIssue) tags.push('<span class="bsc-node-tag">機器人問題</span>');
+    let body = '';
+    if (x.robotIssue) {
+      const mates = Array.isArray(x.roommates) ? x.roommates : [];
+      body = `<div class="bsc-extra-line">物件地址：${esc(x.address || '')}</div>
+        <div class="bsc-extra-line">房客：${esc(x.tenantName || '')}　身分證字號：${esc(x.tenantId || '')}</div>` +
+        mates.map((m) => `<div class="bsc-extra-line">共住人：${esc(m.name || '')}　身分證字號：${esc(m.idNo || '')}</div>`).join('');
+    }
+    return `<div class="bsc-extra">${tags.join('')}${body}</div>`;
+  }
+
+  function findCase(id) {
+    return searchableRows().find((r) => String(r.id) === String(id)) || null;
+  }
+
+  function readMates() {
+    return Array.from(document.querySelectorAll('#bsc-xfer-mates .bsc-xfer-mate')).map((row) => ({
+      name: String(row.querySelector('[data-mate-name]')?.value || '').trim(),
+      idNo: String(row.querySelector('[data-mate-id]')?.value || '').trim()
+    }));
+  }
+
+  function renderXferPhotos() {
+    const box = $('bsc-xfer-photo-list');
+    if (!box) return;
+    box.innerHTML = state.xferFiles.map((f, i) =>
+      `<span class="bsc-file">${esc(f.name)}<button type="button" data-bsc-xfer-rm="${i}" aria-label="移除">×</button></span>`
+    ).join('');
+  }
+
+  function renderXferMates() {
+    const box = $('bsc-xfer-mates');
+    if (!box) return;
+    box.innerHTML = state.xferMates.map((m, i) =>
+      `<div class="bsc-xfer-mate">
+        <input data-mate-name data-i="${i}" type="text" maxlength="40" placeholder="共住人姓名" value="${esc(m.name)}" autocomplete="off">
+        <input data-mate-id data-i="${i}" type="text" maxlength="20" placeholder="身分證字號" value="${esc(m.idNo)}" autocomplete="off" spellcheck="false">
+        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-mate-rm="${i}">移除</button>
+      </div>`
+    ).join('');
+  }
+
+  function syncRobotBox() {
+    const on = !!$('bsc-xfer-robot')?.checked;
+    const box = $('bsc-xfer-robot-box');
+    if (box) box.hidden = !on;
+  }
+
+  function xferBlockReason() {
+    if (!$('bsc-xfer-admin')?.value) return '請先選擇行政承辦人';
+    if ($('bsc-xfer-deposit')?.checked && !state.xferFiles.length) return '租押金問題請上傳至少一張照片';
+    if ($('bsc-xfer-robot')?.checked) {
+      if (!$('bsc-xfer-address')?.value.trim()) return '機器人問題請填物件地址';
+      if (!$('bsc-xfer-tenant')?.value.trim()) return '機器人問題請填房客姓名';
+      if (!$('bsc-xfer-tenant-id')?.value.trim()) return '機器人問題請填房客身分證字號';
+      if (readMates().some((m) => (m.name && !m.idNo) || (!m.name && m.idNo))) {
+        return '共住人要同時填姓名與身分證字號';
+      }
+    }
+    return '';
+  }
+
   function syncXferConfirm() {
     const confirm = $('bsc-xfer-confirm');
-    const sel = $('bsc-xfer-admin');
-    if (confirm) confirm.disabled = !(sel && sel.value) || state.busy;
+    const hint = $('bsc-xfer-hint');
+    const reason = xferBlockReason();
+    if (confirm) confirm.disabled = !!reason || state.busy;
+    if (hint && !hint.classList.contains('is-err')) {
+      hint.textContent = reason || '選定後會 LINE 通知該行政';
+    }
+  }
+
+  function resetXferExtra() {
+    state.xferFiles = [];
+    state.xferMates = [];
+    const deposit = $('bsc-xfer-deposit');
+    const robot = $('bsc-xfer-robot');
+    const addr = $('bsc-xfer-address');
+    const tenant = $('bsc-xfer-tenant');
+    const tenantId = $('bsc-xfer-tenant-id');
+    const photos = $('bsc-xfer-photos');
+    if (deposit) deposit.checked = false;
+    if (robot) robot.checked = false;
+    if (photos) photos.value = '';
+    const row = findCase(state.xferId);
+    if (addr) addr.value = row?.address || '';
+    if (tenant) tenant.value = '';
+    if (tenantId) tenantId.value = '';
+    renderXferPhotos();
+    renderXferMates();
+    syncRobotBox();
   }
 
   function openXferModal(id) {
@@ -1017,6 +1112,7 @@
       hint.classList.remove('is-err');
     }
     if (sel) sel.value = '';
+    resetXferExtra();
     syncXferConfirm();
     if (modal) {
       // 掛到 body，避免被專區捲動容器影響，固定出現在螢幕正中央
@@ -1079,11 +1175,13 @@
     const adminName = String($('bsc-xfer-admin')?.value || '').trim();
     const hint = $('bsc-xfer-hint');
     if (!id) return;
-    if (!adminName) {
+    const block = xferBlockReason();
+    if (block) {
       if (hint) {
-        hint.textContent = '請先選擇行政承辦人';
+        hint.textContent = block;
         hint.classList.add('is-err');
       }
+      syncXferConfirm();
       return;
     }
     if (state.busy) return;
@@ -1091,11 +1189,26 @@
     const confirmBtn = $('bsc-xfer-confirm');
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = '轉交中…'; }
     try {
+      const photos = await uploadSelected(state.xferFiles);
+      const robot = !!$('bsc-xfer-robot')?.checked;
+      const mates = readMates().filter((m) => m.name || m.idNo);
+      const extra = {
+        depositIssue: !!$('bsc-xfer-deposit')?.checked,
+        robotIssue: robot,
+        photos: photos.map((f) => ({ url: f.url, name: '轉交照片｜' + f.name, kind: 'image' }))
+      };
+      if (robot) {
+        extra.address = $('bsc-xfer-address')?.value.trim() || '';
+        extra.tenantName = $('bsc-xfer-tenant')?.value.trim() || '';
+        extra.tenantId = $('bsc-xfer-tenant-id')?.value.trim() || '';
+        extra.roommates = mates;
+      }
       const res = await window.skyfunAuth.rpc('biz_system_change_transfer', {
         p_token: token(),
         p_id: Number(id),
         p_to: 'admin',
-        p_admin_name: adminName
+        p_admin_name: adminName,
+        p_extra: extra
       });
       if (!res?.ok) throw new Error(res?.error || '轉單失敗');
       closeXferModal();
@@ -1348,7 +1461,85 @@
     $('bsc-policy-modal')?.addEventListener('click', (e) => {
       if (e.target.closest('[data-bsc-policy-close]')) closePolicyModal();
     });
-    $('bsc-xfer-admin')?.addEventListener('change', syncXferConfirm);
+    $('bsc-xfer-admin')?.addEventListener('change', () => {
+      $('bsc-xfer-hint')?.classList.remove('is-err');
+      syncXferConfirm();
+    });
+    $('bsc-xfer-deposit')?.addEventListener('change', () => {
+      $('bsc-xfer-hint')?.classList.remove('is-err');
+      syncXferConfirm();
+    });
+    $('bsc-xfer-robot')?.addEventListener('change', () => {
+      $('bsc-xfer-hint')?.classList.remove('is-err');
+      syncRobotBox();
+      syncXferConfirm();
+    });
+    ['bsc-xfer-address', 'bsc-xfer-tenant', 'bsc-xfer-tenant-id'].forEach((id) => {
+      $(id)?.addEventListener('input', () => {
+        $('bsc-xfer-hint')?.classList.remove('is-err');
+        syncXferConfirm();
+      });
+    });
+    $('bsc-xfer-photos')?.addEventListener('change', (e) => {
+      const picked = Array.from(e.target.files || []);
+      e.target.value = '';
+      $('bsc-xfer-hint')?.classList.remove('is-err');
+      const next = state.xferFiles.slice();
+      for (const f of picked) {
+        if (next.length >= MAX_FILES) {
+          const hint = $('bsc-xfer-hint');
+          if (hint) { hint.textContent = `最多上傳 ${MAX_FILES} 張照片`; hint.classList.add('is-err'); }
+          break;
+        }
+        if (f.size > MAX_SIZE) {
+          const hint = $('bsc-xfer-hint');
+          if (hint) { hint.textContent = `「${f.name}」超過 10MB`; hint.classList.add('is-err'); }
+          continue;
+        }
+        const ext = fileExt(f.name, f.type);
+        if (!isImageExt(ext)) {
+          const hint = $('bsc-xfer-hint');
+          if (hint) { hint.textContent = `「${f.name}」不是照片`; hint.classList.add('is-err'); }
+          continue;
+        }
+        next.push(f);
+      }
+      state.xferFiles = next;
+      renderXferPhotos();
+      syncXferConfirm();
+    });
+    $('bsc-xfer-photo-list')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-bsc-xfer-rm]');
+      if (!btn) return;
+      const i = Number(btn.getAttribute('data-bsc-xfer-rm'));
+      if (!Number.isFinite(i)) return;
+      state.xferFiles.splice(i, 1);
+      $('bsc-xfer-hint')?.classList.remove('is-err');
+      renderXferPhotos();
+      syncXferConfirm();
+    });
+    $('bsc-xfer-add-mate')?.addEventListener('click', () => {
+      state.xferMates = readMates();
+      if (state.xferMates.length >= 8) return;
+      state.xferMates.push({ name: '', idNo: '' });
+      renderXferMates();
+      syncXferConfirm();
+    });
+    $('bsc-xfer-mates')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-bsc-mate-rm]');
+      if (!btn) return;
+      const i = Number(btn.getAttribute('data-bsc-mate-rm'));
+      state.xferMates = readMates();
+      if (Number.isFinite(i)) state.xferMates.splice(i, 1);
+      $('bsc-xfer-hint')?.classList.remove('is-err');
+      renderXferMates();
+      syncXferConfirm();
+    });
+    $('bsc-xfer-mates')?.addEventListener('input', () => {
+      state.xferMates = readMates();
+      $('bsc-xfer-hint')?.classList.remove('is-err');
+      syncXferConfirm();
+    });
     $('bsc-xfer-confirm')?.addEventListener('click', confirmXferAdmin);
     $('bsc-xfer-modal')?.addEventListener('click', (e) => {
       if (e.target.closest('[data-bsc-xfer-close]')) closeXferModal();
