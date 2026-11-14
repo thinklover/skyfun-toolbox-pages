@@ -4605,7 +4605,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261109-spotmonth">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261114-ait-hero">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261114-ait-head">
 <link rel="stylesheet" href="./css/ai-tingting.css?v=20261114-ait-hero">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/notice-ack.css?v=20261111-ackwm">
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261114-issueb">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
-<link rel="stylesheet" href="./css/fin-report.css?v=20261114-fin-cash">
+<link rel="stylesheet" href="./css/fin-report.css?v=20261114-fin-card">
 <link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261112-msb-v35">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
@@ -5084,25 +5084,21 @@
 
             <header class="adz-head">
                 <div>
+                    <p class="adz-kicker">星鴻社宅工具箱</p>
                     <h2 class="adz-title">🏛️ 行政專區</h2>
-                    <p class="adz-sub">績效中心、行政問答、AI婷婷、簽呈、表單、註銷物件與行事曆</p>
+                    <p class="adz-sub">績效中心、行政問答、簽呈、表單、註銷物件與行事曆</p>
                 </div>
+                <button type="button" class="ait-head-cta" id="adz-ai-tingting-head" onclick="window.aiTingtingOpen && window.aiTingtingOpen('admin')" aria-label="開啟 AI婷婷問答">
+                    <span class="ait-head-cta-bot" aria-hidden="true">🤖</span>
+                    <span class="ait-head-cta-copy">
+                        <strong>AI婷婷</strong>
+                        <small>即問即答</small>
+                    </span>
+                    <span class="ait-head-cta-go" aria-hidden="true">進入 →</span>
+                </button>
             </header>
 
-            <div class="adz-quick adz-quick--3">
-            <button type="button" class="apt-entry adz-hero adz-hero--points" onclick="showPage('admin-points')">
-                <span class="apt-entry-icon" aria-hidden="true">📊</span>
-                <span class="apt-entry-text">
-                    <strong>行政績效中心</strong>
-                    <small>點數產出、審件品質、客訴紀律、教育訓練與每月評等，個人績效含🧭成長羅盤</small>
-                </span>
-                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
-                <span class="adz-hero-board">
-                    <span class="adz-top-label">本業績月 點數前三名</span>
-                    <span class="adz-top" id="apt-card-top"></span>
-                </span>
-            </button>
-
+            <div class="adz-quick adz-quick--featured">
             <button type="button" class="apt-entry aqa-entry adz-hero adz-hero--qa" id="aqa-entry" onclick="showPage('admin-qa')">
                 <span class="apt-entry-icon" aria-hidden="true">💬</span>
                 <span class="apt-entry-text">
@@ -5124,7 +5120,21 @@
                 </span>
                 <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
             </button>
+            </div>
 
+            <div class="adz-quick adz-quick--points">
+            <button type="button" class="apt-entry adz-hero adz-hero--points" onclick="showPage('admin-points')">
+                <span class="apt-entry-icon" aria-hidden="true">📊</span>
+                <span class="apt-entry-text">
+                    <strong>行政績效中心</strong>
+                    <small>點數產出、審件品質、客訴紀律、教育訓練與每月評等，個人績效含🧭成長羅盤</small>
+                </span>
+                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                <span class="adz-hero-board">
+                    <span class="adz-top-label">本業績月 點數前三名</span>
+                    <span class="adz-top" id="apt-card-top"></span>
+                </span>
+            </button>
             </div>
 
             <div class="adz-folds">
@@ -7757,10 +7767,20 @@
         <div id="page-biz-supervisor" class="hidden max-w-4xl mx-auto space-y-6">
             <button type="button" onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">← 返回首頁</button>
             <div class="bz-shell">
-                <header class="bz-head">
-                    <div class="bz-kicker">SALES LEAD</div>
-                    <h2 class="bz-title">🧭 業務主管專區</h2>
-                    <p class="bz-sub">主管獎金、誠實險投保率、工具箱綁定與考核辦法。</p>
+                <header class="bz-head bz-head--with-ait">
+                    <div class="bz-head-copy">
+                        <div class="bz-kicker">SALES LEAD</div>
+                        <h2 class="bz-title">🧭 業務主管專區</h2>
+                        <p class="bz-sub">主管獎金、誠實險投保率、工具箱綁定與考核辦法。</p>
+                    </div>
+                    <button type="button" class="ait-head-cta" id="bz-ai-tingting-head" onclick="window.aiTingtingOpen && window.aiTingtingOpen('supervisor')" aria-label="開啟 AI婷婷問答">
+                        <span class="ait-head-cta-bot" aria-hidden="true">🤖</span>
+                        <span class="ait-head-cta-copy">
+                            <strong>AI婷婷</strong>
+                            <small>即問即答</small>
+                        </span>
+                        <span class="ait-head-cta-go" aria-hidden="true">進入 →</span>
+                    </button>
                 </header>
                 <div class="bz-quick">
                     <button type="button" class="apt-entry adz-hero bz-hero bz-hero--cover" onclick="showPage('business-coverage')">
@@ -7803,14 +7823,6 @@
                         <span class="bz-copy">
                             <span class="bz-name">會議計分中心</span>
                             <span class="bz-hint">每月分數、獎金與會議加減分</span>
-                        </span>
-                        <span class="bz-go" aria-hidden="true">進入</span>
-                    </button>
-                    <button type="button" class="bz-card ait-entry-bz" onclick="window.aiTingtingOpen && window.aiTingtingOpen('supervisor')">
-                        <span class="bz-ico" aria-hidden="true">🤖</span>
-                        <span class="bz-copy">
-                            <span class="bz-name">AI婷婷 問答</span>
-                            <span class="bz-hint">行政規定、進件、期數、獎金補助 · 即問即答</span>
                         </span>
                         <span class="bz-go" aria-hidden="true">進入</span>
                     </button>

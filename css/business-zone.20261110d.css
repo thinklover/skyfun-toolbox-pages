@@ -266,6 +266,39 @@
   margin-bottom: 1.15rem;
 }
 
+/* 業務主管專區：標題左、AI婷婷右上角 */
+#page-biz-supervisor .bz-head--with-ait {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem 1rem;
+  text-align: left;
+  padding: 1.05rem 1.15rem;
+  border-radius: 1.25rem;
+  border: 1px solid #ddd6fe;
+  background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 50%, #faf5ff 100%);
+}
+#page-biz-supervisor .bz-head--with-ait .bz-head-copy {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+#page-biz-supervisor .bz-head--with-ait .bz-sub {
+  margin-left: 0;
+  margin-right: 0;
+  max-width: 28rem;
+}
+#page-biz-supervisor .bz-head--with-ait .ait-head-cta {
+  margin-left: auto;
+}
+@media (max-width: 520px) {
+  #page-biz-supervisor .bz-head--with-ait .ait-head-cta {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+}
+
 :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-kicker {
   display: inline-flex;
   align-items: center;
