@@ -239,7 +239,8 @@
     all: '全部案件',
     wait: '待處理案件',
     doing: '處理中案件',
-    done: '已結案／已退件'
+    done: '已結案案件',
+    back: '已退回案件'
   };
 
   LL_DOC_KEYS.forEach((k) => { state.files[k] = []; });
@@ -937,7 +938,8 @@
   function finStatusBucket(st) {
     const s = String(st || 'submitted');
     if (s === 'processing') return 'doing';
-    if (s === 'closed' || s === 'rejected') return 'done';
+    if (s === 'closed') return 'done';
+    if (s === 'rejected') return 'back';
     return 'wait';
   }
 
@@ -1025,16 +1027,19 @@
     const wait = rowsByKey('wait').length;
     const doing = rowsByKey('doing').length;
     const done = rowsByKey('done').length;
+    const back = rowsByKey('back').length;
     const logged = !!token();
     box.innerHTML = [
-      finGaugeHtml('all', '全部案件', all, all ? 'is-wait' : '',
+      finGaugeHtml('all', '全部案件', all, all ? 'is-all' : '',
         logged ? (all ? '點擊看七項件數' : '尚無送出紀錄') : '請先登入'),
       finGaugeHtml('wait', '待處理案件', wait, wait ? 'is-wait' : '',
         logged ? (wait ? '點擊看七項待處理' : '目前沒有待處理案件') : '請先登入'),
       finGaugeHtml('doing', '處理中案件', doing, doing ? 'is-doing' : '',
         logged ? (doing ? '點擊看七項處理中' : '目前沒有處理中案件') : '請先登入'),
       finGaugeHtml('done', '已結案案件', done, done ? 'is-done' : '',
-        logged ? (done ? '點擊看七項已結案' : '尚無已結案案件') : '請先登入')
+        logged ? (done ? '點擊看七項已結案' : '尚無已結案案件') : '請先登入'),
+      finGaugeHtml('back', '已退回案件', back, back ? 'is-back' : '',
+        logged ? (back ? '財務退回，點擊查看' : '目前沒有已退回案件') : '請先登入')
     ].join('');
   }
 
@@ -1182,7 +1187,8 @@
         : '<p class="fin-detail-empty">' +
           (state.detailKey === 'wait' ? '目前沒有待處理案件。'
             : state.detailKey === 'doing' ? '目前沒有處理中案件。'
-            : state.detailKey === 'done' ? '尚無已結案／退件案件。'
+            : state.detailKey === 'done' ? '尚無已結案案件。'
+            : state.detailKey === 'back' ? '目前沒有財務退回案件。'
             : '尚無送出紀錄。') + '</p>') + html;
       return;
     }
@@ -1235,11 +1241,13 @@
       const wait = rowsByIssue(issueType, 'wait').length;
       const doing = rowsByIssue(issueType, 'doing').length;
       const done = rowsByIssue(issueType, 'done').length;
+      const back = rowsByIssue(issueType, 'back').length;
       const active = (key) => (state.detailIssue === issueType && state.detailKey === key && state.detailView === 'cases') ? ' is-on' : '';
       box.innerHTML =
         '<button type="button" class="fin-card-gauge' + active('wait') + '" data-fin-card-status="wait" data-fin-card-issue="' + esc(issueType) + '"><b>' + wait + '</b><span>待處理</span></button>' +
         '<button type="button" class="fin-card-gauge' + active('doing') + '" data-fin-card-status="doing" data-fin-card-issue="' + esc(issueType) + '"><b>' + doing + '</b><span>處理中</span></button>' +
-        '<button type="button" class="fin-card-gauge' + active('done') + '" data-fin-card-status="done" data-fin-card-issue="' + esc(issueType) + '"><b>' + done + '</b><span>已結案</span></button>';
+        '<button type="button" class="fin-card-gauge' + active('done') + '" data-fin-card-status="done" data-fin-card-issue="' + esc(issueType) + '"><b>' + done + '</b><span>已結案</span></button>' +
+        '<button type="button" class="fin-card-gauge' + active('back') + '" data-fin-card-status="back" data-fin-card-issue="' + esc(issueType) + '"><b>' + back + '</b><span>已退回</span></button>';
     });
   }
 
