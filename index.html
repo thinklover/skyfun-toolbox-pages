@@ -4611,7 +4611,7 @@
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
 <link rel="stylesheet" href="./css/handover.css?v=20261107-sop">
-<link rel="stylesheet" href="./css/business-zone.20261110d.css?v=20261115-sup-palette2">
+<link rel="stylesheet" href="./css/business-zone.20261110d.css?v=20261115-sup-pro">
 <link rel="stylesheet" href="./css/policy-doc-gate.css?v=20261110-scroll2">
 <link rel="stylesheet" href="./css/biz-bonus.css?v=20261111-ackwm">
 <link rel="stylesheet" href="./css/biz-coverage.css?v=20261112-align">
@@ -7760,17 +7760,18 @@
         </div>
 
         <!-- 專區頁面：業務主管 -->
-        <div id="page-biz-supervisor" class="hidden max-w-4xl mx-auto space-y-6">
+        <div id="page-biz-supervisor" class="hidden max-w-5xl mx-auto space-y-6">
             <button type="button" onclick="showPage('home')" class="mb-4 btn btn-sm tone-slate-soft">← 返回首頁</button>
-            <div class="bz-shell">
-                <header class="bz-head">
+            <div class="bz-shell bz-shell--supervisor">
+                <header class="bz-head bz-head--sup">
                     <div class="bz-kicker">SALES LEAD</div>
-                    <h2 class="bz-title">🧭 業務主管專區</h2>
-                    <p class="bz-sub">主管獎金、誠實險投保率、工具箱綁定與考核辦法。</p>
+                    <h2 class="bz-title">業務主管專區</h2>
+                    <p class="bz-sub">誠實險、工具箱綁定、管報與主管工具，一次掌握營業處狀態。</p>
                 </header>
+                <p class="bz-sec">核心工作台</p>
                 <div class="bz-quick bz-quick--sup">
                     <button type="button" class="apt-entry adz-hero bz-hero bz-hero--ait-top ait-entry" id="bz-ai-tingting-hero" onclick="window.aiTingtingOpen && window.aiTingtingOpen('supervisor')">
-                        <span class="apt-entry-icon" aria-hidden="true">🤖</span>
+                        <span class="apt-entry-icon" aria-hidden="true">AI</span>
                         <span class="apt-entry-text">
                             <strong>AI婷婷 問答</strong>
                             <small>行政規定、進件、期數、獎金補助；特殊個案仍請找婷婷本人確認</small>
@@ -7779,26 +7780,26 @@
                     </button>
                     <div class="bz-sup-row" role="navigation" aria-label="業務主管快捷">
                     <button type="button" class="apt-entry adz-hero bz-hero bz-hero--sup-cover" onclick="showPage('business-coverage')">
-                        <span class="apt-entry-icon" aria-hidden="true">◎</span>
+                        <span class="apt-entry-icon" aria-hidden="true">保</span>
                         <span class="apt-entry-text">
                             <strong>誠實險</strong>
-                            <small>各營業處投保率。點未投保的人，看 11/1 起的新媒合和處長電訪</small>
+                            <small>各營業處投保率；點未投保名單看新媒合與處長電訪</small>
                         </span>
                         <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                     </button>
                     <button type="button" class="apt-entry adz-hero bz-hero bz-hero--sup-bind" onclick="showPage('business-toolbox')">
-                        <span class="apt-entry-icon" aria-hidden="true">▣</span>
+                        <span class="apt-entry-icon" aria-hidden="true">綁</span>
                         <span class="apt-entry-text">
                             <strong>工具箱綁定</strong>
-                            <small>各營業處綁定率，點開看還沒使用工具箱的人</small>
+                            <small>各營業處綁定率，掌握尚未使用工具箱的同仁</small>
                         </span>
                         <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                     </button>
                     <button type="button" class="apt-entry adz-hero bz-hero bz-hero--sup-mgr" onclick="showPage('biz-mgr-report')">
-                        <span class="apt-entry-icon" aria-hidden="true">▦</span>
+                        <span class="apt-entry-icon" aria-hidden="true">報</span>
                         <span class="apt-entry-text">
                             <strong>社宅管報儀表板</strong>
-                            <small>各處業績、包租率、政策戶、新件、續約、應收帳款</small>
+                            <small>業績、包租率、政策戶、新件、續約與應收帳款</small>
                         </span>
                         <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                     </button>
@@ -7807,7 +7808,7 @@
                 <p class="bz-sec">常用工具</p>
                 <div class="bz-tools" role="navigation" aria-label="業務主管常用工具">
                     <button type="button" class="bz-card" onclick="showPage('manager-bonus')">
-                        <span class="bz-ico" aria-hidden="true">🔒</span>
+                        <span class="bz-ico" aria-hidden="true">獎</span>
                         <span class="bz-copy">
                             <span class="bz-name">主管獎金專區</span>
                             <span class="bz-hint">主管獎金、津貼、考核辦法</span>
@@ -7815,7 +7816,7 @@
                         <span class="bz-go" aria-hidden="true">進入</span>
                     </button>
                     <button type="button" class="bz-card" onclick="showPage('meeting-scoreboard')">
-                        <span class="bz-ico" aria-hidden="true">▦</span>
+                        <span class="bz-ico" aria-hidden="true">分</span>
                         <span class="bz-copy">
                             <span class="bz-name">會議計分中心</span>
                             <span class="bz-hint">每月分數、獎金與會議加減分</span>
