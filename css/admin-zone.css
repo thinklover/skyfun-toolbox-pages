@@ -70,9 +70,9 @@
 .adz-top-empty { font-size: 0.74rem; color: #94a3b8; }
 
 /* 行政問答卡：琥珀暖色 */
-.aqa-entry { border-color: #fcd34d; background: linear-gradient(135deg, #fffbeb, #fff7ed); box-shadow: 0 4px 14px rgba(217, 119, 6, 0.1); }
-.aqa-entry:hover { border-color: #f59e0b; box-shadow: 0 6px 18px rgba(217, 119, 6, 0.16); }
-.aqa-entry .apt-entry-text strong { color: #b45309; }
+.aqa-entry { border-color: #fdba74; background: linear-gradient(135deg, #fff7ed, #ffedd5); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.1); }
+.aqa-entry:hover { border-color: #fb923c; box-shadow: 0 6px 18px rgba(234, 88, 12, 0.16); }
+.aqa-entry .apt-entry-text strong { color: #c2410c; }
 
 /* AI婷婷卡：天空藍 */
 .ait-entry { border-color: #7dd3fc; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.12); }
@@ -598,20 +598,21 @@
     box-shadow: 0 16px 36px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.05);
     transition: transform 0.18s, box-shadow 0.18s;
 }
+/* 行政三主卡配色：翠綠｜琥珀｜天空藍 */
 :is(#page-administration, #page-newbie) .adz-hero--points {
-    --hero-ink: #064e3b; --hero-sub: #3f7a6c; --hero-accent: #0d9488; --hero-line: #99f6e4;
-    --hero-shadow: rgba(13, 148, 136, 0.42); --hero-num: #0f766e;
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 42%, #ccfbf1 100%);
+    --hero-ink: #065f46; --hero-sub: #3f7a6c; --hero-accent: #0f766e; --hero-line: #99f6e4;
+    --hero-shadow: rgba(15, 118, 110, 0.4); --hero-num: #0f766e;
+    background: linear-gradient(145deg, #ffffff 0%, #f0fdfa 38%, #ccfbf1 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--qa {
-    --hero-ink: #92400e; --hero-sub: #a16207; --hero-accent: #d97706; --hero-line: #fde68a;
-    --hero-shadow: rgba(217, 119, 6, 0.42); --hero-num: #b45309;
-    background: linear-gradient(135deg, #ffffff 0%, #fffbeb 42%, #ffedd5 100%);
+    --hero-ink: #9a3412; --hero-sub: #b45309; --hero-accent: #ea580c; --hero-line: #fdba74;
+    --hero-shadow: rgba(234, 88, 12, 0.38); --hero-num: #c2410c;
+    background: linear-gradient(145deg, #ffffff 0%, #fff7ed 38%, #ffedd5 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--ait {
-    --hero-ink: #0c4a6e; --hero-sub: #0369a1; --hero-accent: #0284c7; --hero-line: #bae6fd;
-    --hero-shadow: rgba(2, 132, 199, 0.42); --hero-num: #0284c7;
-    background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 42%, #e0f2fe 100%);
+    --hero-ink: #0c4a6e; --hero-sub: #0369a1; --hero-accent: #0284c7; --hero-line: #7dd3fc;
+    --hero-shadow: rgba(2, 132, 199, 0.4); --hero-num: #0284c7;
+    background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 38%, #e0f2fe 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero::before {
     content: ''; position: absolute; z-index: -1; width: 20rem; height: 20rem; right: -7rem; top: -9rem; border-radius: 50%;
