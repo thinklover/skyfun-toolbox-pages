@@ -4617,7 +4617,7 @@
 <link rel="stylesheet" href="./css/notice-ack.css?v=20261111-ackwm">
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261114-issueb">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
-<link rel="stylesheet" href="./css/fin-report.css?v=20261114-cards">
+<link rel="stylesheet" href="./css/fin-report.css?v=20261114-biz">
 <link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261112-msb-v35">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
@@ -7170,7 +7170,7 @@
                     <span class="hr-label hr-req">這是一筆什麼性質的款項？</span>
                     <div class="hr-radios">
                     <label class="hr-radio"><input type="radio" name="fin-biz-item" value="新合約/續約簽約"> 新合約／續約簽約</label>
-                    <label class="hr-radio"><input type="radio" name="fin-biz-item" value="會議室租借與影印費"> 會議室租借與影印費</label>
+                    <label class="hr-radio"><input type="radio" name="fin-biz-item" value="會議室租借與影印費"> 辦公室繳租、會議室租借與影印費</label>
                     <label class="hr-radio"><input type="radio" name="fin-biz-item" value="郵資費"> 郵資費</label>
                     <label class="hr-radio"><input type="radio" name="fin-biz-item" value="退押"> 退押</label>
                     </div>
@@ -7206,6 +7206,7 @@
                     <div class="hr-field">
                     <span class="hr-label hr-req">收入類型</span>
                     <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-biz-income" value="辦公室繳租"> 辦公室繳租</label>
                     <label class="hr-radio"><input type="radio" name="fin-biz-income" value="會議室租借"> 會議室租借</label>
                     <label class="hr-radio"><input type="radio" name="fin-biz-income" value="影印費"> 影印費</label>
                     </div>
@@ -7246,10 +7247,14 @@
                     <h3 class="hr-panel-title">查帳資訊</h3>
                     <div class="fin-grid-2">
                     <div class="hr-field"><label class="hr-req" for="fin-client-info">客戶資訊</label><input id="fin-client-info" type="text" maxlength="80"></div>
+                    <div class="hr-field" data-fin-when="biz-check-office"><label class="hr-req" for="fin-office-room">辦公室房號</label><input id="fin-office-room" type="text" maxlength="40"></div>
                     <div class="hr-field" data-fin-when="biz-check-simple"><label class="hr-req" for="fin-remit-amount">匯款金額</label><input id="fin-remit-amount" type="text" maxlength="40"></div>
-                    <div class="hr-field" data-fin-when="biz-check-room"><label class="hr-req" for="fin-remit-total">匯款總金額</label><input id="fin-remit-total" type="text" maxlength="40"></div>
+                    <div class="hr-field" data-fin-when="biz-check-amounts"><label class="hr-req" for="fin-remit-total">匯款總金額</label><input id="fin-remit-total" type="text" maxlength="40"></div>
                     <div class="hr-field" data-fin-when="biz-check-room"><label class="hr-req" for="fin-remit-deposit">匯款押金金額</label><input id="fin-remit-deposit" type="text" maxlength="40"></div>
-                    <div class="hr-field" data-fin-when="biz-check-room"><label class="hr-req" for="fin-remit-rent">匯款租金金額</label><input id="fin-remit-rent" type="text" maxlength="40"></div>
+                    <div class="hr-field" data-fin-when="biz-check-amounts"><label class="hr-req" for="fin-remit-rent">匯款租金金額</label><input id="fin-remit-rent" type="text" maxlength="40"></div>
+                    <div class="hr-field" data-fin-when="biz-check-office"><label class="hr-req" for="fin-remit-copy">匯款影印費金額</label><input id="fin-remit-copy" type="text" maxlength="40" placeholder="沒有請打 0"></div>
+                    <div class="hr-field" data-fin-when="biz-meet-schedule"><label class="hr-req" for="fin-meet-date">會議室租借日期</label><input id="fin-meet-date" type="date"></div>
+                    <div class="hr-field" data-fin-when="biz-meet-schedule"><label class="hr-req" for="fin-meet-slot">會議室租借時段</label><input id="fin-meet-slot" type="text" maxlength="80" placeholder="例：09:00–12:00"></div>
                     <div class="hr-field"><label class="hr-req" for="fin-remit-date">匯款日期</label><input id="fin-remit-date" type="date"></div>
                     <div class="hr-field"><label class="hr-req" for="fin-remit-tail">匯款後5碼</label><input id="fin-remit-tail" type="text" maxlength="10"></div>
                     </div>
@@ -7277,11 +7282,24 @@
                     <label class="hr-radio"><input type="radio" name="fin-invoice-item" value="辦公室日租金"> 辦公室日租金</label>
                     </div>
                     </div>
-                    <div class="fin-grid-2">
+                    <div class="hr-field" data-fin-when="biz-invoice-office-room"><label class="hr-req" for="fin-invoice-office-room">辦公室房號</label><input id="fin-invoice-office-room" type="text" maxlength="40"></div>
+                    <div class="fin-grid-2" data-fin-when="biz-meet-inv-schedule">
+                    <div class="hr-field"><label class="hr-req" for="fin-meet-date-inv">會議室租借日期</label><input id="fin-meet-date-inv" type="date"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-meet-slot-inv">會議室租借時段</label><input id="fin-meet-slot-inv" type="text" maxlength="80" placeholder="例：09:00–12:00"></div>
+                    </div>
+                    <div class="hr-field">
+                    <span class="hr-label hr-req">發票開立類型</span>
+                    <div class="hr-radios">
+                    <label class="hr-radio"><input type="radio" name="fin-invoice-type" value="二聯式發票"> 二聯式發票</label>
+                    <label class="hr-radio"><input type="radio" name="fin-invoice-type" value="三聯式發票"> 三聯式發票</label>
+                    </div>
+                    </div>
+                    <div class="fin-grid-2" data-fin-when="biz-invoice-detail">
                     <div class="hr-field" data-fin-when="biz-invoice-client"><label class="hr-req" for="fin-invoice-client">客戶資訊</label><input id="fin-invoice-client" type="text" maxlength="80"></div>
-                    <div class="hr-field"><label class="hr-req" for="fin-invoice-buyer">買受人</label><input id="fin-invoice-buyer" type="text" maxlength="80"></div>
-                    <div class="hr-field"><label class="hr-req" for="fin-invoice-tax">統一編號</label><input id="fin-invoice-tax" type="text" maxlength="20"></div>
+                    <div class="hr-field"><label id="fin-invoice-buyer-label" for="fin-invoice-buyer">買受人</label><input id="fin-invoice-buyer" type="text" maxlength="80"></div>
+                    <div class="hr-field" data-fin-when="biz-invoice-3"><label class="hr-req" for="fin-invoice-tax">統一編號</label><input id="fin-invoice-tax" type="text" maxlength="20"></div>
                     <div class="hr-field"><label class="hr-req" for="fin-invoice-amount">發票金額</label><input id="fin-invoice-amount" type="text" maxlength="40"></div>
+                    <div class="hr-field"><label class="hr-req" for="fin-invoice-product">發票品名</label><input id="fin-invoice-product" type="text" maxlength="80"></div>
                     </div>
                     <div class="hr-field"><label for="fin-biz-invoice-note">備註</label><textarea id="fin-biz-invoice-note" maxlength="500" placeholder="選填"></textarea></div>
                     </div>
@@ -14323,7 +14341,7 @@
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261112-dropmt"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
-        <script src="./js/fin-report.js?v=20261112-mine"></script>
+        <script src="./js/fin-report.js?v=20261114-biz"></script>
         <script src="./js/meeting-scoreboard.js?v=20261112-msb-v36"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>

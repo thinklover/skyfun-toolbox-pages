@@ -31,8 +31,11 @@
   const BIZ_ACT_INV = '僅開立發票';
   const BIZ_REFUND_INV = '退押＋開立日租金發票';
   const BIZ_REFUND_ONLY = '僅退押';
+  const BIZ_INCOME_OFFICE = '辦公室繳租';
   const BIZ_INCOME_ROOM = '會議室租借';
   const BIZ_INCOME_COPY = '影印費';
+  const BIZ_INV_2 = '二聯式發票';
+  const BIZ_INV_3 = '三聯式發票';
 
   const PAY_REMIT = '租金補匯款/重匯款申請';
   const PAY_CANCEL = '取消包租/退款訂金申請';
@@ -901,6 +904,7 @@
     const bizRoomAction = checked('fin-biz-room-action');
     const bizRefundAction = checked('fin-biz-refund-action');
     const bizIncome = checked('fin-biz-income');
+    const invoiceType = checked('fin-invoice-type');
     const signedDone = checked('fin-signed-done');
     const renewTopup = checked('fin-renew-topup');
     const renewGap = checked('fin-gap');
@@ -1050,23 +1054,45 @@
         const roomReady = isB && !!bizIncome;
         const roomCheck = roomReady && (bBoth || bCheck);
         const roomInv = roomReady && (bBoth || bInv);
+        const roomMeet = roomReady && bizIncome === BIZ_INCOME_ROOM;
+        const roomOffice = roomReady && bizIncome === BIZ_INCOME_OFFICE;
+        const roomCopy = roomReady && bizIncome === BIZ_INCOME_COPY;
+        const meetCheck = roomMeet && (bBoth || bCheck);
+        const meetInvOnly = roomMeet && bInv;
+        const officeCheck = roomOffice && (bBoth || bCheck);
+        const officeInvOnly = roomOffice && bInv;
+        const needInv = aBothYes || aInvYes || roomInv || dInv;
         if (rule === 'biz-signed') ok = aBoth || aInv;
         else if (rule === 'biz-signed-to-check') ok = aBoth && signedNo;
         else if (rule === 'biz-signed-block') ok = aInv && signedNo;
         else if (rule === 'biz-check') {
           ok = isC || aCheckPath || aBothYes || roomCheck;
         } else if (rule === 'biz-check-simple') {
-          ok = isC || aCheckPath || aBothYes || (roomCheck && bizIncome === BIZ_INCOME_COPY);
+          ok = isC || aCheckPath || aBothYes || (roomCheck && roomCopy);
+        } else if (rule === 'biz-check-amounts') {
+          ok = (roomCheck && roomMeet) || officeCheck;
         } else if (rule === 'biz-check-room') {
-          ok = roomCheck && bizIncome === BIZ_INCOME_ROOM;
+          ok = roomCheck && roomMeet;
+        } else if (rule === 'biz-check-office') {
+          ok = officeCheck;
+        } else if (rule === 'biz-meet-schedule') {
+          ok = meetCheck;
+        } else if (rule === 'biz-meet-inv-schedule') {
+          ok = meetInvOnly;
         } else if (rule === 'biz-contract-info') {
           ok = aCheckPath || aBothYes;
         } else if (rule === 'biz-invoice') {
-          ok = aBothYes || aInvYes || roomInv || dInv;
+          ok = needInv;
         } else if (rule === 'biz-invoice-item') {
           ok = dInv;
         } else if (rule === 'biz-invoice-client') {
-          ok = roomInv;
+          ok = roomInv && (roomMeet || roomCopy);
+        } else if (rule === 'biz-invoice-office-room') {
+          ok = officeInvOnly;
+        } else if (rule === 'biz-invoice-detail') {
+          ok = needInv && !!invoiceType;
+        } else if (rule === 'biz-invoice-3') {
+          ok = needInv && invoiceType === BIZ_INV_3;
         } else if (rule === 'biz-refund-info') {
           ok = dInv || dOnly;
         }
@@ -1174,6 +1200,14 @@
       const noteRequired = issue === ISSUE_COLLECT;
       noteLab.classList.toggle('hr-req', noteRequired);
       if (noteEl) noteEl.placeholder = noteRequired ? '必填' : '選填';
+    }
+    const buyerLab = $('fin-invoice-buyer-label');
+    const buyerEl = $('fin-invoice-buyer');
+    if (buyerLab) {
+      const inv3 = invoiceType === BIZ_INV_3;
+      buyerLab.textContent = inv3 ? '買受人' : '買受人（選填）';
+      buyerLab.classList.toggle('hr-req', inv3);
+      if (buyerEl) buyerEl.placeholder = inv3 ? '' : '選填';
     }
     placeSharedPropertyFields();
     placeExpandedBlocks();
@@ -1527,10 +1561,14 @@
       payload.bizRefundAction = checked('fin-biz-refund-action');
       payload.signedDone = checked('fin-signed-done');
       payload.clientInfo = val('fin-client-info');
+      payload.officeRoom = val('fin-office-room') || val('fin-invoice-office-room');
       payload.remitAmount = val('fin-remit-amount');
       payload.remitTotal = val('fin-remit-total');
       payload.remitDeposit = val('fin-remit-deposit');
       payload.remitRent = val('fin-remit-rent');
+      payload.remitCopy = val('fin-remit-copy');
+      payload.meetDate = val('fin-meet-date') || val('fin-meet-date-inv');
+      payload.meetSlot = val('fin-meet-slot') || val('fin-meet-slot-inv');
       payload.remitDate = val('fin-remit-date');
       payload.remitTail = val('fin-remit-tail');
       payload.bizCheckNote = val('fin-biz-check-note');
@@ -1541,10 +1579,12 @@
       payload.rentTotal = val('fin-rent-total');
       payload.deposit = val('fin-deposit');
       payload.invoiceItem = checked('fin-invoice-item');
+      payload.invoiceType = checked('fin-invoice-type');
       payload.invoiceClient = val('fin-invoice-client');
       payload.invoiceBuyer = val('fin-invoice-buyer');
       payload.invoiceTaxId = val('fin-invoice-tax');
       payload.invoiceAmount = val('fin-invoice-amount');
+      payload.invoiceProduct = val('fin-invoice-product');
       payload.bizInvoiceNote = val('fin-biz-invoice-note');
       payload.refundClient = val('fin-biz-refund-client');
       payload.refundBank = val('fin-biz-refund-bank');
@@ -1763,8 +1803,14 @@
       const roomReady = isB && !!payload.bizIncome;
       const roomCheck = roomReady && (bBoth || bCheck);
       const roomInv = roomReady && (bBoth || bInv);
-      const roomMeet = roomCheck && payload.bizIncome === BIZ_INCOME_ROOM;
-      const roomCopy = roomCheck && payload.bizIncome === BIZ_INCOME_COPY;
+      const incomeMeet = payload.bizIncome === BIZ_INCOME_ROOM;
+      const incomeOffice = payload.bizIncome === BIZ_INCOME_OFFICE;
+      const incomeCopy = payload.bizIncome === BIZ_INCOME_COPY;
+      const roomMeet = roomCheck && incomeMeet;
+      const roomOffice = roomCheck && incomeOffice;
+      const roomCopy = roomCheck && incomeCopy;
+      const meetInvOnly = isB && incomeMeet && bInv;
+      const officeInvOnly = isB && incomeOffice && bInv;
       const dInv = isD && payload.bizRefundAction === BIZ_REFUND_INV;
       const dOnly = isD && payload.bizRefundAction === BIZ_REFUND_ONLY;
       const needCheck = isC || aCheckPath || aBothYes || roomCheck;
@@ -1792,6 +1838,13 @@
           if (!payload.remitTotal) return '請填匯款總金額';
           if (!payload.remitDeposit) return '請填匯款押金金額';
           if (!payload.remitRent) return '請填匯款租金金額';
+          if (!payload.meetDate) return '請填會議室租借日期';
+          if (!payload.meetSlot) return '請填會議室租借時段';
+        } else if (roomOffice) {
+          if (!payload.officeRoom) return '請填辦公室房號';
+          if (!payload.remitTotal) return '請填匯款總金額';
+          if (!payload.remitRent) return '請填匯款租金金額';
+          if (payload.remitCopy === '') return '請填匯款影印費金額（沒有請打 0）';
         } else if (isC || aCheckPath || aBothYes || roomCopy) {
           if (!payload.remitAmount) return '請填匯款金額';
         }
@@ -1808,10 +1861,19 @@
       }
       if (needInvoice) {
         if (dInv && !payload.invoiceItem) return '請選發票項目';
-        if (roomInv && !payload.invoiceClient) return '請填發票客戶資訊';
-        if (!payload.invoiceBuyer) return '請填買受人';
-        if (!payload.invoiceTaxId) return '請填統一編號';
+        if (meetInvOnly) {
+          if (!payload.meetDate) return '請填會議室租借日期';
+          if (!payload.meetSlot) return '請填會議室租借時段';
+        }
+        if (officeInvOnly && !payload.officeRoom) return '請填辦公室房號';
+        if ((roomInv && (incomeMeet || incomeCopy)) && !payload.invoiceClient) return '請填發票客戶資訊';
+        if (!payload.invoiceType) return '請選發票開立類型';
+        if (payload.invoiceType === BIZ_INV_3) {
+          if (!payload.invoiceBuyer) return '請填買受人';
+          if (!payload.invoiceTaxId) return '請填統一編號';
+        }
         if (!payload.invoiceAmount) return '請填發票金額';
+        if (!payload.invoiceProduct) return '請填發票品名';
       }
       if (needRefund) {
         if (!payload.refundClient) return '請填退押客戶資訊';
