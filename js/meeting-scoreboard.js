@@ -122,7 +122,7 @@
   function isMine(p) {
     return !!(state.viewerId && p && p.accountId && String(p.accountId) === String(state.viewerId));
   }
-  const EDITOR_MANAGERS = ['簡為倢', '邱奕棋', '蘇崇瑋'];
+  const EDITOR_MANAGERS = ['簡為倢', '邱奕棋', '蘇崇瑋', '黃怡婷'];
   function canManageEditors() {
     const u = window.skyfunAuth?.getUser?.() || {};
     const name = String(u.name || '').replace(/\s+/g, '').trim();

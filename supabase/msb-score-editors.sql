@@ -1,4 +1,4 @@
--- 會議計分：加減分改由名單決定。簡為倢、邱奕棋、蘇崇瑋在設定頁勾選。
+-- 會議計分：加減分改由名單決定。簡為倢、邱奕棋、蘇崇瑋、黃怡婷在設定頁勾選。
 -- 權限預設空白。設定頁搜尋姓名後勾選，才會寫進名單。
 
 create table if not exists public.msb_score_editors (
@@ -48,7 +48,7 @@ as $$
     from public.toolbox_accounts a
     where a.id = p_uid
       and a.status = 'active'
-      and trim(coalesce(a.name, '')) in ('簡為倢', '邱奕棋', '蘇崇瑋')
+      and trim(coalesce(a.name, '')) in ('簡為倢', '邱奕棋', '蘇崇瑋', '黃怡婷')
   );
 $$;
 
@@ -64,7 +64,7 @@ declare
   v_uid uuid := public.msb_require_user(p_token);
 begin
   if not public.msb_can_manage_editors(v_uid) then
-    return json_build_object('ok', false, 'error', '只有簡為倢、邱奕棋、蘇崇瑋可以設定加減分權限');
+    return json_build_object('ok', false, 'error', '只有簡為倢、邱奕棋、蘇崇瑋、黃怡婷可以設定加減分權限');
   end if;
   return json_build_object(
     'ok', true,
@@ -96,7 +96,7 @@ declare
   v_uid uuid := public.msb_require_user(p_token);
 begin
   if not public.msb_can_manage_editors(v_uid) then
-    return json_build_object('ok', false, 'error', '只有簡為倢、邱奕棋、蘇崇瑋可以設定加減分權限');
+    return json_build_object('ok', false, 'error', '只有簡為倢、邱奕棋、蘇崇瑋、黃怡婷可以設定加減分權限');
   end if;
   if p_account_id is null or not exists (
     select 1 from public.toolbox_accounts a where a.id = p_account_id and a.status = 'active'
