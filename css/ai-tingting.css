@@ -1,0 +1,215 @@
+/* AI婷婷 問答 */
+#page-ai-tingting .ait-zone {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 1.15rem 1.1rem 1.25rem;
+  box-shadow: 0 10px 28px -20px rgba(15, 23, 42, 0.3);
+}
+
+#page-ai-tingting .ait-head {
+  margin-bottom: 0.85rem;
+}
+
+#page-ai-tingting .ait-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #0f766e;
+}
+
+#page-ai-tingting .ait-title {
+  margin: 0.25rem 0 0.35rem;
+  font-size: clamp(1.25rem, 3vw, 1.55rem);
+  font-weight: 900;
+  color: #0f172a;
+}
+
+#page-ai-tingting .ait-disclaimer {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #64748b;
+  font-weight: 600;
+}
+
+#page-ai-tingting .ait-login-gate {
+  padding: 1.25rem 1rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  text-align: center;
+  color: #475569;
+  font-weight: 700;
+}
+
+#page-ai-tingting .ait-chat {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+#page-ai-tingting .ait-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+#page-ai-tingting .ait-input {
+  width: 100%;
+  min-height: 6.5rem;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #0f172a;
+}
+
+#page-ai-tingting .ait-input:focus {
+  outline: 2px solid #99f6e4;
+  border-color: #14b8a6;
+}
+
+#page-ai-tingting .ait-form-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+#page-ai-tingting .ait-count {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+#page-ai-tingting .ait-count.is-over {
+  color: #dc2626;
+}
+
+#page-ai-tingting .ait-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.15rem;
+  border: 0;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#page-ai-tingting .ait-send:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+#page-ai-tingting .ait-status {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+#page-ai-tingting .ait-status.is-error {
+  color: #b91c1c;
+}
+
+#page-ai-tingting .ait-history-title {
+  margin: 1.1rem 0 0.55rem;
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+#page-ai-tingting .ait-history {
+  display: grid;
+  gap: 0.75rem;
+  max-height: min(52vh, 28rem);
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+#page-ai-tingting .ait-empty {
+  margin: 0;
+  padding: 0.85rem 0.9rem;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+#page-ai-tingting .ait-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.95rem;
+  padding: 0.85rem 0.95rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+#page-ai-tingting .ait-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+#page-ai-tingting .ait-badge {
+  display: inline-flex;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.72rem;
+}
+
+#page-ai-tingting .ait-badge--pending {
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+#page-ai-tingting .ait-badge--answered {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+#page-ai-tingting .ait-badge--failed {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+#page-ai-tingting .ait-item-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  margin-top: 0.35rem;
+}
+
+#page-ai-tingting .ait-item-q,
+#page-ai-tingting .ait-item-a {
+  margin: 0.2rem 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #0f172a;
+}
+
+#page-ai-tingting .ait-item-a {
+  color: #134e4a;
+}
+
+/* 入口卡：行政 / 業務主管 */
+.ait-entry-card .af-summary,
+.bz-card.ait-entry-bz .bz-name {
+  font-weight: 800;
+}

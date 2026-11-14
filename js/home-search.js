@@ -237,6 +237,9 @@
     function adminZoneSearchOk(item) {
         const page = item && item.page;
         const cat = String((item && item.category) || '');
+        if (page === 'ai-tingting') {
+            return !!(window.skyfunAuth?.canEnterAdminZone?.() || window.skyfunAuth?.canEnterBizSupervisor?.());
+        }
         if (!ADMIN_ZONE_SEARCH_PAGES[page] && cat.indexOf('行政專區') < 0) return true;
         return window.skyfunAuth?.canEnterAdminZone?.() === true;
     }
