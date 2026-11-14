@@ -136,56 +136,78 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* 主管卡配色：白底＋淡色暈染，標題深灰、說明中性灰，色塊留給按鈕 */
+#page-biz-supervisor .bz-hero--ait-top,
+#page-biz-supervisor .bz-hero--sup-cover,
+#page-biz-supervisor .bz-hero--sup-bind,
+#page-biz-supervisor .bz-hero--sup-mgr {
+  --hero-ink: #0f172a;
+  --hero-sub: #64748b;
+}
+#page-biz-supervisor .bz-hero--ait-top .apt-entry-text strong,
+#page-biz-supervisor .bz-hero--sup-cover .apt-entry-text strong,
+#page-biz-supervisor .bz-hero--sup-bind .apt-entry-text strong,
+#page-biz-supervisor .bz-hero--sup-mgr .apt-entry-text strong {
+  color: #0f172a;
+}
+#page-biz-supervisor .bz-hero--ait-top .apt-entry-text small,
+#page-biz-supervisor .bz-hero--sup-cover .apt-entry-text small,
+#page-biz-supervisor .bz-hero--sup-bind .apt-entry-text small,
+#page-biz-supervisor .bz-hero--sup-mgr .apt-entry-text small {
+  color: #64748b;
+}
+
 #page-biz-supervisor .bz-hero--ait-top {
-  --hero-ink: #0c4a6e;
-  --hero-sub: #0369a1;
-  --hero-accent: #0284c7;
-  --hero-line: #bae6fd;
-  --hero-shadow: rgba(2, 132, 199, 0.42);
-  --hero-glow: rgba(56, 189, 248, 0.45);
-  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 42%, #e0f2fe 100%);
+  --hero-accent: #2563eb;
+  --hero-line: #dbeafe;
+  --hero-shadow: rgba(37, 99, 235, 0.28);
+  --hero-glow: rgba(96, 165, 250, 0.35);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #eff6ff 100%);
 }
-#page-biz-supervisor .bz-hero--ait-top .apt-entry-text strong { color: #0369a1; }
 #page-biz-supervisor .bz-hero--ait-top .apt-entry-arrow {
-  background: #0284c7;
+  background: #2563eb;
   color: #fff;
+  box-shadow: 0 6px 14px -6px rgba(37, 99, 235, 0.55);
 }
-/* 誠實險｜工具箱｜管報：分色 */
+
 #page-biz-supervisor .bz-hero--sup-cover {
-  --hero-ink: #065f46;
-  --hero-sub: #3f7a6c;
-  --hero-accent: #059669;
-  --hero-line: #a7f3d0;
-  --hero-shadow: rgba(5, 150, 105, 0.4);
-  --hero-glow: rgba(52, 211, 153, 0.45);
-  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 42%, #d1fae5 100%);
+  --hero-accent: #0d9488;
+  --hero-line: #ccfbf1;
+  --hero-shadow: rgba(13, 148, 136, 0.26);
+  --hero-glow: rgba(45, 212, 191, 0.32);
+  background: linear-gradient(135deg, #ffffff 0%, #f7fffc 55%, #f0fdfa 100%);
 }
-#page-biz-supervisor .bz-hero--sup-cover .apt-entry-text strong { color: #047857; }
-#page-biz-supervisor .bz-hero--sup-cover .apt-entry-arrow { background: #059669; color: #fff; }
+#page-biz-supervisor .bz-hero--sup-cover .apt-entry-arrow {
+  background: #0d9488;
+  color: #fff;
+  box-shadow: 0 6px 14px -6px rgba(13, 148, 136, 0.5);
+}
 
 #page-biz-supervisor .bz-hero--sup-bind {
-  --hero-ink: #9a3412;
-  --hero-sub: #c2410c;
-  --hero-accent: #ea580c;
-  --hero-line: #fdba74;
-  --hero-shadow: rgba(234, 88, 12, 0.4);
-  --hero-glow: rgba(251, 146, 60, 0.45);
-  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 42%, #ffedd5 100%);
+  --hero-accent: #d97706;
+  --hero-line: #fde68a;
+  --hero-shadow: rgba(217, 119, 6, 0.26);
+  --hero-glow: rgba(251, 191, 36, 0.32);
+  background: linear-gradient(135deg, #ffffff 0%, #fffdf8 55%, #fffbeb 100%);
 }
-#page-biz-supervisor .bz-hero--sup-bind .apt-entry-text strong { color: #c2410c; }
-#page-biz-supervisor .bz-hero--sup-bind .apt-entry-arrow { background: #ea580c; color: #fff; }
+#page-biz-supervisor .bz-hero--sup-bind .apt-entry-arrow {
+  background: #d97706;
+  color: #fff;
+  box-shadow: 0 6px 14px -6px rgba(217, 119, 6, 0.5);
+}
 
 #page-biz-supervisor .bz-hero--sup-mgr {
-  --hero-ink: #1e3a5f;
-  --hero-sub: #475569;
-  --hero-accent: #475569;
-  --hero-line: #cbd5e1;
-  --hero-shadow: rgba(71, 85, 105, 0.35);
-  --hero-glow: rgba(148, 163, 184, 0.4);
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 42%, #e2e8f0 100%);
+  --hero-accent: #334155;
+  --hero-line: #e2e8f0;
+  --hero-shadow: rgba(51, 65, 85, 0.22);
+  --hero-glow: rgba(148, 163, 184, 0.28);
+  background: linear-gradient(135deg, #ffffff 0%, #fcfcfd 55%, #f1f5f9 100%);
 }
-#page-biz-supervisor .bz-hero--sup-mgr .apt-entry-text strong { color: #1e293b; }
-#page-biz-supervisor .bz-hero--sup-mgr .apt-entry-arrow { background: #475569; color: #fff; }
+#page-biz-supervisor .bz-hero--sup-mgr .apt-entry-arrow {
+  background: #334155;
+  color: #fff;
+  box-shadow: 0 6px 14px -6px rgba(51, 65, 85, 0.45);
+}
 
 :is(#page-business, #page-biz-supervisor) .bz-quick > .bz-hero {
   height: 100%;
