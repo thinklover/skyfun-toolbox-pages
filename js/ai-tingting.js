@@ -1,5 +1,5 @@
 /**
- * AI婷婷 問答（行政／業務主管專區共用）
+ * AI婷婷 問答（聊天介面；行政／業務主管專區共用）
  */
 (function () {
   'use strict';
@@ -18,6 +18,7 @@
   let pendingId = null;
   let askTimes = [];
   let inited = false;
+  let chatItems = [];
 
   function $(id) {
     return document.getElementById(id);
@@ -66,20 +67,19 @@
     el.classList.toggle('hidden', !msg);
   }
 
-  function fmtDate(iso) {
-    if (!iso) return '—';
+  function fmtTime(iso) {
+    if (!iso) return '';
     try {
-      return new Date(iso).toLocaleString('zh-TW', { hour12: false });
+      return new Date(iso).toLocaleString('zh-TW', {
+        hour12: false,
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
     } catch {
       return String(iso);
     }
-  }
-
-  function statusLabel(s) {
-    if (s === 'answered') return '已回覆';
-    if (s === 'failed') return '失敗';
-    if (s === 'pending') return '回覆中';
-    return s || '';
   }
 
   function clearPoll() {
@@ -143,64 +143,103 @@
     }
   }
 
-  function renderHistory(items) {
-    const list = $('ait-history');
-    if (!list) return;
-    list.textContent = '';
-    if (!items || !items.length) {
-      const empty = document.createElement('p');
+  function makeMsg(role, text, meta, opts) {
+    const row = document.createElement('div');
+    row.className = 'ait-msg ait-msg--' + role;
+    if (opts && opts.id) row.dataset.id = opts.id;
+    if (opts && opts.pending) row.dataset.pending = '1';
+
+    const face = document.createElement('span');
+    face.className = 'ait-msg-face';
+    face.setAttribute('aria-hidden', 'true');
+    face.textContent = role === 'user' ? '我' : '🤖';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'ait-bubble';
+
+    if (opts && opts.typing) {
+      const typing = document.createElement('span');
+      typing.className = 'ait-typing';
+      typing.setAttribute('aria-label', '輸入中');
+      for (let i = 0; i < 3; i++) typing.appendChild(document.createElement('i'));
+      bubble.appendChild(typing);
+    } else {
+      const body = document.createElement('div');
+      body.className = 'ait-bubble-text';
+      body.textContent = text || '';
+      bubble.appendChild(body);
+    }
+
+    if (meta) {
+      const m = document.createElement('div');
+      m.className = 'ait-bubble-meta';
+      m.textContent = meta;
+      bubble.appendChild(m);
+    }
+
+    row.appendChild(face);
+    row.appendChild(bubble);
+    return row;
+  }
+
+  function scrollThreadBottom() {
+    const thread = $('ait-thread');
+    if (!thread) return;
+    requestAnimationFrame(function () {
+      thread.scrollTop = thread.scrollHeight;
+    });
+  }
+
+  function renderChat(items, opts) {
+    const thread = $('ait-thread');
+    if (!thread) return;
+    thread.textContent = '';
+    const list = Array.isArray(items) ? items.slice() : [];
+    // 聊天：由舊到新
+    list.sort(function (a, b) {
+      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+    });
+
+    if (!list.length && !(opts && opts.showTyping)) {
+      const empty = document.createElement('div');
       empty.className = 'ait-empty';
-      empty.textContent = '尚無近期問答';
-      list.appendChild(empty);
+      empty.textContent = '跟 AI婷婷打聲招呼吧\n例如：進件期數怎麼算？獎金補助要帶哪些資料？';
+      thread.appendChild(empty);
       return;
     }
-    items.forEach(function (it) {
-      const card = document.createElement('article');
-      card.className = 'ait-item';
-      card.dataset.id = it.id;
 
-      const meta = document.createElement('div');
-      meta.className = 'ait-item-meta';
-      const badge = document.createElement('span');
-      badge.className = 'ait-badge ait-badge--' + (it.status || 'pending');
-      badge.textContent = statusLabel(it.status);
-      const time = document.createElement('time');
-      time.textContent = fmtDate(it.createdAt);
-      meta.appendChild(badge);
-      meta.appendChild(time);
+    list.forEach(function (it) {
+      thread.appendChild(
+        makeMsg('user', it.question || '', fmtTime(it.createdAt), { id: it.id })
+      );
 
-      const qLabel = document.createElement('div');
-      qLabel.className = 'ait-item-label';
-      qLabel.textContent = '你的問題';
-      const qBody = document.createElement('p');
-      qBody.className = 'ait-item-q';
-      qBody.textContent = it.question || '';
-
-      const aLabel = document.createElement('div');
-      aLabel.className = 'ait-item-label';
-      aLabel.textContent = 'AI婷婷';
-      const aBody = document.createElement('p');
-      aBody.className = 'ait-item-a';
       if (it.status === 'answered') {
-        aBody.textContent = it.answer || '（無內容）';
+        thread.appendChild(
+          makeMsg('bot', it.answer || '（無內容）', 'AI婷婷 · ' + fmtTime(it.answeredAt || it.createdAt), {
+            id: it.id + '-a',
+          })
+        );
       } else if (it.status === 'failed') {
-        aBody.textContent = '回覆失敗，請稍後再問或直接問行政。';
-      } else {
-        aBody.textContent = '回覆中…';
+        thread.appendChild(
+          makeMsg('bot', '回覆失敗，請稍後再問或直接問行政。', 'AI婷婷', { id: it.id + '-a' })
+        );
+      } else if (String(it.id) === String(pendingId) || it.status === 'pending') {
+        thread.appendChild(
+          makeMsg('bot', '', 'AI婷婷 回覆中…', { id: it.id + '-a', pending: true, typing: true })
+        );
       }
-
-      card.appendChild(meta);
-      card.appendChild(qLabel);
-      card.appendChild(qBody);
-      card.appendChild(aLabel);
-      card.appendChild(aBody);
-      list.appendChild(card);
     });
+
+    if (opts && opts.showTyping && !pendingId) {
+      thread.appendChild(makeMsg('bot', '', 'AI婷婷 回覆中…', { typing: true, pending: true }));
+    }
+    scrollThreadBottom();
   }
 
   async function refreshHistory() {
     const data = await api({ action: 'list' });
-    renderHistory(data.items || []);
+    chatItems = data.items || [];
+    renderChat(chatItems);
   }
 
   async function pollOnce() {
@@ -219,7 +258,7 @@
       const data = await api({ action: 'get', questionId: pendingId });
       if (data.status === 'answered') {
         clearPoll();
-        setStatus('AI婷婷 已回覆', false);
+        setStatus('', false);
         await refreshHistory();
         return;
       }
@@ -229,7 +268,6 @@
         await refreshHistory();
       }
     } catch (e) {
-      /* 輪詢短暫失敗不中斷 */
       console.warn('[ai-tingting] poll', e);
     }
   }
@@ -245,6 +283,13 @@
     void pollOnce();
   }
 
+  function autoResize() {
+    const input = $('ait-input');
+    if (!input) return;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 128) + 'px';
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
     if (!token()) {
@@ -256,11 +301,11 @@
     const btn = $('ait-send');
     const text = String(input?.value || '').trim();
     if (!text) {
-      setStatus('請輸入問題', true);
+      setStatus('請輸入訊息', true);
       return;
     }
     if (text.length > MAX_LEN) {
-      setStatus('問題請勿超過 ' + MAX_LEN + ' 字', true);
+      setStatus('訊息請勿超過 ' + MAX_LEN + ' 字', true);
       return;
     }
     if (!rateOk()) {
@@ -268,7 +313,7 @@
       return;
     }
     if (pendingId) {
-      setStatus('請先等待目前這題回覆完成', true);
+      setStatus('請先等待目前這則回覆', true);
       return;
     }
 
@@ -276,17 +321,34 @@
     setStatus('送出中…', false);
     try {
       markAsk();
+      // 先樂觀顯示自己的訊息
+      chatItems = chatItems.concat([{
+        id: 'local-' + Date.now(),
+        question: text,
+        answer: '',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      }]);
+      renderChat(chatItems);
+      if (input) {
+        input.value = '';
+        updateCount();
+        autoResize();
+      }
       const data = await api({
         action: 'ask',
         zone: zone(),
         question: text,
       });
-      if (input) input.value = '';
-      updateCount();
       startPoll(data.questionId);
       await refreshHistory();
     } catch (err) {
       setStatus(err?.message || '送出失敗', true);
+      try {
+        await refreshHistory();
+      } catch (_) {
+        /* ignore */
+      }
     } finally {
       if (btn) btn.disabled = false;
     }
@@ -310,7 +372,16 @@
     const input = $('ait-input');
     if (input && !input.dataset.aitBound) {
       input.dataset.aitBound = '1';
-      input.addEventListener('input', updateCount);
+      input.addEventListener('input', function () {
+        updateCount();
+        autoResize();
+      });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (form) form.requestSubmit();
+        }
+      });
     }
   }
 
@@ -318,6 +389,7 @@
     bind();
     syncAuthUi();
     updateCount();
+    autoResize();
     if (!token()) {
       setStatus('請先登入後再使用 AI婷婷', true);
       return;
@@ -326,7 +398,7 @@
     try {
       await refreshHistory();
     } catch (e) {
-      setStatus(e?.message || '無法載入紀錄', true);
+      setStatus(e?.message || '無法載入對話', true);
     }
   }
 
@@ -342,9 +414,7 @@
     inited = true;
     bind();
     document.addEventListener('skyfun-auth-ready', function () {
-      if (lastActivePageNameIsAi()) {
-        void onShow();
-      }
+      if (lastActivePageNameIsAi()) void onShow();
     });
   }
 
