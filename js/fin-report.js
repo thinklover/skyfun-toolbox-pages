@@ -88,7 +88,7 @@
   };
 
   const DOCS_FILE_LABEL = {
-    '信任租': '信任租上傳',
+    '信任租': '信任租或簽呈上傳',
     '六個月繳租證明': '六個月繳租證明上傳',
     '保證人+簽呈': '保證人＋簽呈上傳',
     '緊急連絡人+簽呈': '緊急連絡人＋簽呈上傳',
@@ -1092,6 +1092,9 @@
       const reason = r.status === 'rejected' && r.rejectReason
         ? '<div class="fin-detail-reason">退件原因：' + esc(r.rejectReason) + '</div>'
         : '';
+      const rejectNote = r.status === 'rejected'
+        ? '<div class="fin-detail-type">已退回填寫人；補件重新送出後會回到財務待處理。</div>'
+        : '';
       const detailBtn = '<button type="button" class="fin-act-btn is-detail' + (open ? ' is-on' : '') + '" data-fin-act="toggle-detail" data-fin-id="' + esc(r.id) + '">' +
         (open ? '收合明細' : '案件明細') + '</button>';
       const detailPanel = open
@@ -1101,7 +1104,7 @@
         '<div class="fin-detail-top"><span class="fin-detail-when">' + esc(fmtMineWhen(r.createdAt)) + '</span>' +
         '<span class="fin-mine-st ' + p.cls + '">' + esc(p.text) + '</span></div>' +
         '<div class="fin-detail-title">' + esc(heading) + '</div>' +
-        who + type + reason +
+        who + type + reason + rejectNote +
         '<div class="fin-act-bar fin-act-bar--top">' + detailBtn + '</div>' +
         detailPanel +
         renderCaseActions(r) +
@@ -1274,6 +1277,7 @@
     if (!res?.ok) throw new Error(res?.error || '退件失敗');
     if (res.row) patchMineRow(res.row);
     renderDash();
+    return res;
   }
 
   async function loadMine() {
@@ -1395,8 +1399,15 @@
             actBtn.disabled = false;
             return;
           }
-          await financeReject(id, reason);
-          setMsg('已退件 #' + id, 'ok');
+          const rej = await financeReject(id, reason);
+          const line = rej && rej.line;
+          const lineOk = line && Number(line.recipients || 0) > 0;
+          setMsg(
+            lineOk
+              ? ('已退件 #' + id + '，已通知填寫人')
+              : ('已退件 #' + id + '（填寫人 LINE 未送出，請請對方至補件區重送）'),
+            lineOk ? 'ok' : 'err'
+          );
         }
       } catch (err) {
         setMsg(err.message || String(err), 'err');
@@ -1566,6 +1577,10 @@
       else if (rule === 'docs-sign-pick') ok = showSignPick;
       else if (rule === 'docs-sign-district') {
         ok = showSignPick && PKG_SIGN_TO_DISTRICT.includes(pkgItem);
+      }
+      else if (rule === 'docs-to-district') {
+        ok = showDocs && PKG_SIGN_TO_DISTRICT.includes(pkgItem) &&
+          (docsPath === '信任租' || docsPath === DOCS_PATH_SIGN);
       }
       else if (rule === 'deposit-file') ok = showDepositFile;
       else if (rule === 'docs-file') ok = showDocsFile;
@@ -1933,9 +1948,10 @@
     if (docsLab) docsLab.textContent = DOCS_FILE_LABEL[pkgDocs] || '必檢附資料上傳';
     const docsHint = $('fin-files-sign-hint');
     if (docsHint) {
-      const toDistrict = PKG_SIGN_TO_DISTRICT.includes(pkgItem) && DOCS_WITH_SIGN.includes(pkgDocs);
+      const toDistrict = PKG_SIGN_TO_DISTRICT.includes(pkgItem) &&
+        (pkgDocs === '信任租' || DOCS_WITH_SIGN.includes(pkgDocs));
       docsHint.textContent = toDistrict
-        ? '請依所選項目上傳對應檔案（圖片／PDF／Word／Excel）。簽呈呈至區協理即可。'
+        ? '請依所選項目上傳對應檔案（圖片／PDF／Word／Excel）。信任租或簽呈呈至區協理即可。'
         : '請依所選項目上傳對應檔案（圖片／PDF／Word／Excel）。';
     }
   }
@@ -2182,6 +2198,12 @@
       if (!payload.baoLeaseEnd) return '請填包租到期日';
       if (!payload.zhuanLeaseStart) return '請填轉租開始日期';
       if (!payload.zhuanLeaseEnd) return '請填轉租到期日';
+      if (payload.baoLeaseStart === payload.baoLeaseEnd) {
+        return '包租開始日與到期日不可同一天';
+      }
+      if (payload.zhuanLeaseStart === payload.zhuanLeaseEnd) {
+        return '轉租開始日與到期日不可同一天';
+      }
       if (payload.pkgItem === PKG_REFUND) {
         if (!payload.refundType) return '請選退押類型';
         if (!payload.refundDate) return '請填解約日／到期日';

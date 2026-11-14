@@ -6460,7 +6460,7 @@
                     <h2 class="bz-title">📒 財會專區</h2>
                     <p class="bz-sub">上方儀表板可看案件進度；下方點卡片展開後繼續填單。</p>
                 </header>
-                <p class="fin-home-lead">1. 填單後預計三個工作天完成。<br>2. 如有退件會通知填單人員；退件意見三天未補會再次通知。<br>3. 北五處未提供六個月繳租證明不需要簽呈；若未走正常兩押一租，仍需提供領款收據，但不需要照會。<br>4. 送出後會 LINE 通知財務部已綁定的會計；附件請至後台下載。</p>
+                <p class="fin-home-lead">1. 填單後預計三個工作天完成。<br>2. 財務退件會退回填寫人（並 LINE 通知）；請至「補件與資料查詢」重新送件後，案件會回到財務「待處理」。<br>3. 北五處未提供六個月繳租證明不需要簽呈；若未走正常兩押一租，仍需提供領款收據，但不需要照會。<br>4. 送出後會 LINE 通知財務部已綁定的會計；附件請至後台下載。</p>
                 <p class="hr-admin-link">
                     <a class="hr-admin-btn" href="./admin/fin-report-dashboard.html" target="_blank" rel="noopener">財務部問題回報後台 →</a>
                 </p>
@@ -6647,10 +6647,11 @@
                     <div class="hr-field" data-fin-when="pkg-docs">
                     <span class="hr-label hr-req">包租必檢附資料</span>
                     <div class="hr-radios">
-                    <label class="hr-radio"><input type="radio" name="fin-pkg-docs-path" value="信任租"> 信任租</label>
+                    <label class="hr-radio"><input type="radio" name="fin-pkg-docs-path" value="信任租"> 信任租或簽呈</label>
                     <label class="hr-radio"><input type="radio" name="fin-pkg-docs-path" value="六個月繳租證明"> 六個月繳租證明</label>
                     <label class="hr-radio"><input type="radio" name="fin-pkg-docs-path" value="簽呈"> 無六個月繳租證明，改以簽呈辦理</label>
                     </div>
+                    <p class="hr-hint" data-fin-when="docs-to-district">信任租或簽呈：呈至區協理即可。</p>
                     <div class="hr-panel" data-fin-when="docs-sign-pick">
                     <span class="hr-label hr-req">簽呈類型</span>
                     <div class="hr-radios">
@@ -14376,7 +14377,7 @@
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261112-dropmt"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
-        <script src="./js/fin-report.js?v=20261115-no-lease-range"></script>
+        <script src="./js/fin-report.js?v=20261115-trust-district"></script>
         <script src="./js/meeting-scoreboard.js?v=20261115-msb-huang"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
