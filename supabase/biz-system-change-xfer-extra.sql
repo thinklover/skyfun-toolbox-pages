@@ -186,7 +186,6 @@ begin
        set handler_level = 'admin',
            handler_admin_name = v_admin,
            attachments = coalesce(attachments, '[]'::jsonb) || v_photos,
-           transfer_extra = v_saved,
            admin_note = case
              when trim(coalesce(admin_note, '')) = '' then v_note
              else left(admin_note || E'\n' || v_note, 1000)

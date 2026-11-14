@@ -41,6 +41,7 @@
     xferId: null,
     xferFiles: [],
     xferMates: [],
+    formMates: [],
     rejectId: null,
     editId: null,
     editRow: null,
@@ -1059,16 +1060,54 @@
 
   function xferBlockReason() {
     if (!$('bsc-xfer-admin')?.value) return '請先選擇行政承辦人';
-    if ($('bsc-xfer-deposit')?.checked && !state.xferFiles.length) return '租押金問題請上傳至少一張照片';
-    if ($('bsc-xfer-robot')?.checked) {
-      if (!$('bsc-xfer-address')?.value.trim()) return '機器人問題請填物件地址';
-      if (!$('bsc-xfer-tenant')?.value.trim()) return '機器人問題請填房客姓名';
-      if (!$('bsc-xfer-tenant-id')?.value.trim()) return '機器人問題請填房客身分證字號';
-      if (readMates().some((m) => (m.name && !m.idNo) || (!m.name && m.idNo))) {
+    return '';
+  }
+
+  function readFormMates() {
+    return Array.from(document.querySelectorAll('#bsc-mates .bsc-xfer-mate')).map((row) => ({
+      name: String(row.querySelector('[data-mate-name]')?.value || '').trim(),
+      idNo: String(row.querySelector('[data-mate-id]')?.value || '').trim()
+    }));
+  }
+
+  function renderFormMates() {
+    const box = $('bsc-mates');
+    if (!box) return;
+    box.innerHTML = state.formMates.map((m) =>
+      `<div class="bsc-xfer-mate">
+        <input data-mate-name type="text" maxlength="40" placeholder="共住人姓名" value="${esc(m.name)}" autocomplete="off">
+        <input data-mate-id type="text" maxlength="20" placeholder="身分證字號" value="${esc(m.idNo)}" autocomplete="off" spellcheck="false">
+        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-form-mate-rm>移除</button>
+      </div>`
+    ).join('');
+  }
+
+  function formIssueBlock() {
+    if ($('bsc-deposit')?.checked && !state.files.some((f) => isImageExt(fileExt(f.name, f.type)))) {
+      return '租押金問題請上傳至少一張照片';
+    }
+    if ($('bsc-robot')?.checked) {
+      if (!$('bsc-tenant')?.value.trim()) return '機器人問題請填房客姓名';
+      if (!$('bsc-tenant-id')?.value.trim()) return '機器人問題請填房客身分證字號';
+      if (readFormMates().some((m) => (m.name && !m.idNo) || (!m.name && m.idNo))) {
         return '共住人要同時填姓名與身分證字號';
       }
     }
     return '';
+  }
+
+  function syncFormIssue() {
+    const on = !!$('bsc-robot')?.checked;
+    const box = $('bsc-robot-box');
+    if (box) box.hidden = !on;
+    const hint = $('bsc-file-hint');
+    if (hint) {
+      hint.textContent = $('bsc-deposit')?.checked
+        ? '租押金問題一定要上傳至少一張照片才能送出。'
+        : '最多 5 個檔案，每個上限 10MB（圖片或 PDF）';
+    }
+    const btn = $('bsc-submit');
+    if (btn && !state.busy) btn.disabled = !!formIssueBlock();
   }
 
   function syncXferConfirm() {
@@ -1190,19 +1229,9 @@
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = '轉交中…'; }
     try {
       const photos = await uploadSelected(state.xferFiles);
-      const robot = !!$('bsc-xfer-robot')?.checked;
-      const mates = readMates().filter((m) => m.name || m.idNo);
       const extra = {
-        depositIssue: !!$('bsc-xfer-deposit')?.checked,
-        robotIssue: robot,
         photos: photos.map((f) => ({ url: f.url, name: '轉交照片｜' + f.name, kind: 'image' }))
       };
-      if (robot) {
-        extra.address = $('bsc-xfer-address')?.value.trim() || '';
-        extra.tenantName = $('bsc-xfer-tenant')?.value.trim() || '';
-        extra.tenantId = $('bsc-xfer-tenant-id')?.value.trim() || '';
-        extra.roommates = mates;
-      }
       const res = await window.skyfunAuth.rpc('biz_system_change_transfer', {
         p_token: token(),
         p_id: Number(id),
@@ -1309,6 +1338,9 @@
       renderFiles();
       fillAuthor();
       renderManagers('');
+      state.formMates = [];
+      renderFormMates();
+      syncFormIssue();
       closePolicyModal();
       setMsg(lineNote(res.line, '已送出通報，並已 LINE 通知修改人', '已送出通報，但修改人 LINE 未送出'), 'ok');
       await Promise.all([loadMine(), loadInbox()]);
@@ -1349,6 +1381,18 @@
     if (!matchNo) { setMsg('請填媒合編號', 'err'); form.elements.matchNo.focus(); return; }
     if (!nodes.length) { setMsg('請至少勾選一個需修改節點', 'err'); return; }
     if (!content) { setMsg('請輸入需修改內容', 'err'); form.elements.content.focus(); return; }
+    const issueBlock = formIssueBlock();
+    if (issueBlock) { setMsg(issueBlock, 'err'); return; }
+    const robot = !!$('bsc-robot')?.checked;
+    const issue = {
+      depositIssue: !!$('bsc-deposit')?.checked,
+      robotIssue: robot
+    };
+    if (robot) {
+      issue.tenantName = $('bsc-tenant')?.value.trim() || '';
+      issue.tenantId = $('bsc-tenant-id')?.value.trim() || '';
+      issue.roommates = readFormMates().filter((m) => m.name || m.idNo);
+    }
 
     openPolicyModal({
       address,
@@ -1356,7 +1400,8 @@
       nodes,
       content,
       modifierName: mod.name,
-      modifierTeam: mod.team
+      modifierTeam: mod.team,
+      ...issue
     });
   }
 
@@ -1364,9 +1409,12 @@
     const form = $('bsc-form');
     if (form) form.reset();
     state.files = [];
+    state.formMates = [];
     renderFiles();
+    renderFormMates();
     fillAuthor();
     renderManagers('');
+    syncFormIssue();
     setMsg('');
   }
 
@@ -1392,6 +1440,7 @@
     }
     state.files = next;
     renderFiles();
+    syncFormIssue();
   }
 
   function bind() {
@@ -1409,6 +1458,7 @@
       if (!Number.isFinite(i)) return;
       state.files.splice(i, 1);
       renderFiles();
+      syncFormIssue();
     });
     $('bsc-gauges')?.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-bsc-detail]');
@@ -1465,20 +1515,41 @@
       $('bsc-xfer-hint')?.classList.remove('is-err');
       syncXferConfirm();
     });
-    $('bsc-xfer-deposit')?.addEventListener('change', () => {
-      $('bsc-xfer-hint')?.classList.remove('is-err');
-      syncXferConfirm();
+    $('bsc-deposit')?.addEventListener('change', () => {
+      setMsg('');
+      syncFormIssue();
     });
-    $('bsc-xfer-robot')?.addEventListener('change', () => {
-      $('bsc-xfer-hint')?.classList.remove('is-err');
-      syncRobotBox();
-      syncXferConfirm();
+    $('bsc-robot')?.addEventListener('change', () => {
+      setMsg('');
+      syncFormIssue();
     });
-    ['bsc-xfer-address', 'bsc-xfer-tenant', 'bsc-xfer-tenant-id'].forEach((id) => {
+    ['bsc-tenant', 'bsc-tenant-id'].forEach((id) => {
       $(id)?.addEventListener('input', () => {
-        $('bsc-xfer-hint')?.classList.remove('is-err');
-        syncXferConfirm();
+        setMsg('');
+        syncFormIssue();
       });
+    });
+    $('bsc-add-mate')?.addEventListener('click', () => {
+      state.formMates = readFormMates();
+      if (state.formMates.length >= 8) return;
+      state.formMates.push({ name: '', idNo: '' });
+      renderFormMates();
+      syncFormIssue();
+    });
+    $('bsc-mates')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-bsc-form-mate-rm]');
+      if (!btn) return;
+      const row = btn.closest('.bsc-xfer-mate');
+      const rows = Array.from(document.querySelectorAll('#bsc-mates .bsc-xfer-mate'));
+      const i = rows.indexOf(row);
+      state.formMates = readFormMates();
+      if (i >= 0) state.formMates.splice(i, 1);
+      renderFormMates();
+      syncFormIssue();
+    });
+    $('bsc-mates')?.addEventListener('input', () => {
+      state.formMates = readFormMates();
+      syncFormIssue();
     });
     $('bsc-xfer-photos')?.addEventListener('change', (e) => {
       const picked = Array.from(e.target.files || []);
@@ -1516,28 +1587,6 @@
       state.xferFiles.splice(i, 1);
       $('bsc-xfer-hint')?.classList.remove('is-err');
       renderXferPhotos();
-      syncXferConfirm();
-    });
-    $('bsc-xfer-add-mate')?.addEventListener('click', () => {
-      state.xferMates = readMates();
-      if (state.xferMates.length >= 8) return;
-      state.xferMates.push({ name: '', idNo: '' });
-      renderXferMates();
-      syncXferConfirm();
-    });
-    $('bsc-xfer-mates')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-bsc-mate-rm]');
-      if (!btn) return;
-      const i = Number(btn.getAttribute('data-bsc-mate-rm'));
-      state.xferMates = readMates();
-      if (Number.isFinite(i)) state.xferMates.splice(i, 1);
-      $('bsc-xfer-hint')?.classList.remove('is-err');
-      renderXferMates();
-      syncXferConfirm();
-    });
-    $('bsc-xfer-mates')?.addEventListener('input', () => {
-      state.xferMates = readMates();
-      $('bsc-xfer-hint')?.classList.remove('is-err');
       syncXferConfirm();
     });
     $('bsc-xfer-confirm')?.addEventListener('click', confirmXferAdmin);
