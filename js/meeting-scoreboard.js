@@ -469,28 +469,33 @@
     });
     return names.sort(deptSort);
   }
-  function deptBarHtml(dept, named) {
+  function deptBarHtml(dept, named, opts) {
     const n = numOrNull(state.deptScores[dept]);
     const cls = n == null ? '' : (n > 0 ? ' is-pos' : (n < 0 ? ' is-neg' : ''));
+    const showAct = !(opts && opts.hideAct);
+    const acts = showAct
+      ? `<span class="msb-dept-acts">
+        <button type="button" class="msb-act-btn is-plus" data-msb-dept-add="${esc(dept)}">加減分</button>
+      </span>`
+      : '';
     return `<div class="msb-dept-bar">
       <span class="msb-dept-kicker">部門</span>
       ${named ? `<b class="msb-dept-name">${esc(dept)}</b>` : '<span class="msb-dept-label">部門分數</span>'}
       <span class="msb-dept-num${cls}">${n == null ? '—' : esc(manualScoreText(n))}</span>
-      <span class="msb-dept-acts">
-        <button type="button" class="msb-act-btn is-plus" data-msb-dept-add="${esc(dept)}">加減分</button>
-      </span>
+      ${acts}
     </div>`;
   }
-  function deptStripHtml(depts) {
+  function deptStripHtml(depts, opts) {
     if (!depts.length) return '';
-    return `<div class="msb-dept-slot">${depts.map((d) => deptBarHtml(d, true)).join('')}</div>`;
+    return `<div class="msb-dept-slot">${depts.map((d) => deptBarHtml(d, true, opts)).join('')}</div>`;
   }
   function fillBizDeptSlots() {
     BIZ_ZONES.forEach((z) => {
       const slot = document.querySelector('#page-meeting-scoreboard [data-msb-dept-slot="' + z.id + '"]');
       if (!slot) return;
       const depts = deptNamesFor((d) => isBizDept(d) && bizZoneId(d) === z.id);
-      slot.innerHTML = depts.map((d) => deptBarHtml(d, true)).join('');
+      /* 業務單位只顯示部門分數，不提供部門加減分 */
+      slot.innerHTML = depts.map((d) => deptBarHtml(d, true, { hideAct: true })).join('');
       slot.hidden = !depts.length;
     });
   }
@@ -529,7 +534,7 @@
           + peopleTableHtml('year-office', officePeople, false);
       }
       if (bizBox) {
-        bizBox.innerHTML = deptStripHtml(deptNamesFor((d) => isBizDept(d)))
+        bizBox.innerHTML = deptStripHtml(deptNamesFor((d) => isBizDept(d)), { hideAct: true })
           + peopleTableHtml('year-biz', bizPeople, false);
       }
       syncPeopleSortHeaders();

@@ -106,6 +106,32 @@
   }
 }
 
+/* 業務主管：AI婷婷全寬置頂，下方三卡左至右 */
+#page-biz-supervisor .bz-quick--sup {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 720px) {
+  #page-biz-supervisor .bz-quick--sup {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  #page-biz-supervisor .bz-quick--sup .bz-hero--ait-top {
+    grid-column: 1 / -1;
+  }
+}
+#page-biz-supervisor .bz-hero--ait-top {
+  --hero-ink: #4c1d95;
+  --hero-sub: #6d5b8f;
+  --hero-accent: #7c3aed;
+  --hero-line: #ddd6fe;
+  --hero-shadow: rgba(124, 58, 237, 0.42);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 42%, #ede9fe 100%);
+}
+#page-biz-supervisor .bz-hero--ait-top .apt-entry-text strong { color: #5b21b6; }
+#page-biz-supervisor .bz-hero--ait-top .apt-entry-arrow {
+  background: #7c3aed;
+  color: #fff;
+}
+
 :is(#page-business, #page-biz-supervisor) .bz-quick > .bz-hero {
   height: 100%;
   margin: 0;

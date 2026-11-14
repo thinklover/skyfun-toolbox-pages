@@ -41,6 +41,10 @@
 .adz-quick { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
 @media (min-width: 640px) { .adz-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .adz-quick.adz-quick--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* 1+2：上排績效全寬，下排行政問答｜AI婷婷 */
+.adz-quick.adz-quick--solo {
+    grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem;
+}
 .adz-quick.adz-quick--featured {
     grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem;
 }
