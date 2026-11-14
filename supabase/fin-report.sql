@@ -82,6 +82,7 @@ as $$
         trim(coalesce(a.team, '')) = '財務部'
         or trim(coalesce(a.team, '')) = '行政管理部'
         or trim(coalesce(a.team, '')) = '總經理室'
+        or trim(coalesce(a.name, '')) in ('黃怡婷', '邱奕棋', '簡為倢')
       )
   );
 $$;

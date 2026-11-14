@@ -171,6 +171,7 @@
     suppCandidates: [],
     suppLooking: false,
     mine: [],
+    mineAll: false,
     mineLoaded: false,
     mineLoading: false
   };
@@ -813,6 +814,23 @@
     });
   }
 
+  function mapFinanceInboxRow(r) {
+    const p = (r && r.payload && typeof r.payload === 'object') ? r.payload : {};
+    return {
+      id: r.id,
+      createdAt: r.createdAt,
+      issueType: r.issueType,
+      status: r.status || 'submitted',
+      rejectReason: r.rejectReason || '',
+      handledAt: r.handledAt || null,
+      address: String(p.address || p.clientInfo || '').trim(),
+      item: String(
+        p.pkgItem || p.payItem || p.collectItem || p.suppItem || p.genItem || p.officeItem || ''
+      ).trim(),
+      userName: String(r.userName || r.fullName || '').trim()
+    };
+  }
+
   function renderMine(issue) {
     const box = mineEl();
     if (!issue) {
@@ -821,10 +839,17 @@
       return;
     }
     const rows = (state.mine || []).filter((r) => r.issueType === issue);
+    const heading = state.mineAll ? '案件進度（待處理／處理中／已結案）' : '已送出的案件';
+    const empty = !token()
+      ? '登入後可看你送出的案件與進度。'
+      : (state.mineAll ? '這個分類目前沒有案件。' : '這個分類還沒有你送出的案件。');
     const body = rows.length
       ? rows.map((r) => {
         const p = progressOf(r);
         const title = [r.item, r.address].filter(Boolean).join('・') || '案件';
+        const who = state.mineAll && r.userName
+          ? '<div class="fin-mine-who">填寫人：' + esc(r.userName) + '</div>'
+          : '';
         const reason = r.status === 'rejected' && r.rejectReason
           ? '<div class="fin-mine-reason">退件原因：' + esc(r.rejectReason) + '</div>'
           : '';
@@ -832,19 +857,33 @@
           '<div class="fin-mine-top"><span class="fin-mine-when">' + esc(fmtMineWhen(r.createdAt)) + '</span>' +
           '<span class="fin-mine-st ' + p.cls + '">' + esc(p.text) + '</span></div>' +
           '<div class="fin-mine-title">' + esc(title) + '</div>' +
+          who +
           reason +
           '</article>';
       }).join('')
-      : '<p class="fin-mine-empty">' + (token() ? '這個分類還沒有你送出的案件。' : '登入後可看你送出的案件與進度。') + '</p>';
+      : '<p class="fin-mine-empty">' + empty + '</p>';
     box.hidden = false;
-    box.innerHTML = '<h3 class="fin-mine-h">已送出的案件</h3>' + body;
+    box.innerHTML = '<h3 class="fin-mine-h">' + heading + '</h3>' + body;
   }
 
   async function loadMine() {
     state.mine = [];
+    state.mineAll = false;
     if (!token()) {
       state.mineLoaded = true;
       return;
+    }
+    // 財務部／黃怡婷／邱奕棋／簡為倢：看全部案件進度；其他人只看自己送出的
+    try {
+      const all = await rpc('fin_report_list_for_finance', { p_token: token(), p_limit: 200 });
+      if (all?.ok && Array.isArray(all.rows)) {
+        state.mine = all.rows.map(mapFinanceInboxRow);
+        state.mineAll = true;
+        state.mineLoaded = true;
+        return;
+      }
+    } catch (_) {
+      /* 非財務可視者會被拒，改抓自己的案件 */
     }
     try {
       const res = await rpc('fin_report_mine', { p_token: token() });

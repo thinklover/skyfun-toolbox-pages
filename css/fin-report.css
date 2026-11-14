@@ -698,6 +698,11 @@
   font-weight: 700;
   color: #0f172a;
 }
+#page-finance .fin-mine-who {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
 #page-finance .fin-mine-reason {
   font-size: 0.8rem;
   color: #9f1239;
