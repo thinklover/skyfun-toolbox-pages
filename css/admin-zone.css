@@ -599,9 +599,9 @@
     transition: transform 0.18s, box-shadow 0.18s;
 }
 :is(#page-administration, #page-newbie) .adz-hero--points {
-    --hero-ink: #1e1b4b; --hero-sub: #5b5f86; --hero-accent: #6366f1; --hero-line: #dfe1ff;
-    --hero-shadow: rgba(99, 102, 241, 0.45); --hero-num: #d97706;
-    background: linear-gradient(135deg, #ffffff 0%, #f1f0ff 45%, #e6edff 100%);
+    --hero-ink: #064e3b; --hero-sub: #3f7a6c; --hero-accent: #0d9488; --hero-line: #99f6e4;
+    --hero-shadow: rgba(13, 148, 136, 0.42); --hero-num: #0f766e;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 42%, #ccfbf1 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--qa {
     --hero-ink: #92400e; --hero-sub: #a16207; --hero-accent: #d97706; --hero-line: #fde68a;
@@ -617,7 +617,7 @@
     content: ''; position: absolute; z-index: -1; width: 20rem; height: 20rem; right: -7rem; top: -9rem; border-radius: 50%;
     background: radial-gradient(circle, var(--hero-glow, rgba(255, 255, 255, 0.9)), rgba(255, 255, 255, 0) 70%);
 }
-:is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(165, 180, 252, 0.45); }
+:is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(45, 212, 191, 0.45); }
 :is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(251, 191, 36, 0.45); }
 :is(#page-administration, #page-newbie) .adz-hero--ait::before { --hero-glow: rgba(56, 189, 248, 0.45); }
 :is(#page-administration, #page-newbie) .adz-hero::after {
