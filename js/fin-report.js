@@ -173,7 +173,18 @@
     mine: [],
     mineAll: false,
     mineLoaded: false,
-    mineLoading: false
+    mineLoading: false,
+    detailKey: '',
+    search: '',
+    dashBound: false
+  };
+
+  const FIN_RING_LEN = 2 * Math.PI * 42;
+  const FIN_DETAIL_TITLE = {
+    all: '全部案件明細',
+    wait: '待處理案件明細',
+    doing: '處理中案件明細',
+    done: '已結案／已退件明細'
   };
 
   LL_DOC_KEYS.forEach((k) => { state.files[k] = []; });
@@ -781,16 +792,6 @@
     });
   }
 
-  function mineEl() {
-    let el = $('fin-mine-block');
-    if (el) return el;
-    el = document.createElement('div');
-    el.id = 'fin-mine-block';
-    el.className = 'fin-mine';
-    el.hidden = true;
-    return el;
-  }
-
   function progressOf(row) {
     const st = String(row.status || 'submitted');
     if (st === 'rejected') return { cls: 'is-back', text: '已退回' };
@@ -831,39 +832,139 @@
     };
   }
 
-  function renderMine(issue) {
-    const box = mineEl();
-    if (!issue) {
-      box.hidden = true;
-      box.innerHTML = '';
+  function finStatusBucket(st) {
+    const s = String(st || 'submitted');
+    if (s === 'processing') return 'doing';
+    if (s === 'closed' || s === 'rejected') return 'done';
+    return 'wait';
+  }
+
+  function rowsByKey(key) {
+    const rows = state.mine || [];
+    if (!key || key === 'all') return rows.slice();
+    return rows.filter((r) => finStatusBucket(r.status) === key);
+  }
+
+  function matchFinSearch(r, qRaw) {
+    const q = String(qRaw || '').trim().toLowerCase();
+    if (!q) return true;
+    const tokens = q.split(/\s+/).filter(Boolean);
+    if (!tokens.length) return true;
+    const hay = [r.address, r.item, r.userName, r.issueType, r.status, r.rejectReason]
+      .map((x) => String(x || '')).join(' ').toLowerCase();
+    return tokens.every((t) => hay.includes(t));
+  }
+
+  function applyFinSearch(rows) {
+    return (rows || []).filter((r) => matchFinSearch(r, state.search));
+  }
+
+  function syncFinSearchClear() {
+    const clear = $('fin-dash-search-clear');
+    if (clear) clear.hidden = !String(state.search || '').trim();
+  }
+
+  function finGaugeHtml(key, label, count, tone, metaText) {
+    const total = Math.max(count, 1);
+    const pct = count ? Math.max(0, Math.min(100, Math.round((count / total) * 100))) : 0;
+    const dash = ((pct / 100) * FIN_RING_LEN).toFixed(1);
+    const cls = [
+      tone || '',
+      state.detailKey === key ? 'is-active' : ''
+    ].filter(Boolean).join(' ');
+    return '<button type="button" class="fin-gauge ' + cls + '" data-fin-detail="' + esc(key) + '" title="' + esc(label) + '">' +
+      '<span class="fin-gauge-ring" aria-hidden="true">' +
+        '<svg viewBox="0 0 100 100">' +
+          '<circle class="fin-gauge-track" cx="50" cy="50" r="42"></circle>' +
+          '<circle class="fin-gauge-bar" cx="50" cy="50" r="42" stroke-dasharray="' + dash + ' ' + FIN_RING_LEN.toFixed(1) + '"></circle>' +
+        '</svg>' +
+        '<b><span class="fin-gauge-n">' + count + '</span><small>件</small></b>' +
+      '</span>' +
+      '<span class="fin-gauge-text">' +
+        '<span class="fin-gauge-label">' + esc(label) + '</span>' +
+        '<span class="fin-gauge-meta">' + esc(metaText) + '</span>' +
+      '</span>' +
+    '</button>';
+  }
+
+  function renderGauges() {
+    const box = $('fin-gauges');
+    if (!box) return;
+    const all = (state.mine || []).length;
+    const wait = rowsByKey('wait').length;
+    const doing = rowsByKey('doing').length;
+    const done = rowsByKey('done').length;
+    const logged = !!token();
+    box.innerHTML = [
+      finGaugeHtml('all', '全部案件', all, all ? 'is-wait' : '',
+        logged ? (all ? '點擊查看明細' : '尚無送出紀錄') : '請先登入'),
+      finGaugeHtml('wait', '待處理案件', wait, wait ? 'is-wait' : '',
+        logged ? (wait ? '點擊查看待處理' : '目前沒有待處理案件') : '請先登入'),
+      finGaugeHtml('doing', '處理中案件', doing, doing ? 'is-doing' : '',
+        logged ? (doing ? '點擊查看處理進度' : '目前沒有處理中案件') : '請先登入'),
+      finGaugeHtml('done', '已結案案件', done, done ? 'is-done' : '',
+        logged ? (done ? '點擊查看已結案／退件' : '尚無已結案案件') : '請先登入')
+    ].join('');
+  }
+
+  function renderDetail() {
+    const wrap = $('fin-detail');
+    const title = $('fin-detail-title');
+    const list = $('fin-detail-list');
+    if (!wrap || !list) return;
+    const q = String(state.search || '').trim();
+    syncFinSearchClear();
+    if (!state.detailKey && !q) {
+      wrap.hidden = true;
+      wrap.classList.add('hidden');
       return;
     }
-    const rows = (state.mine || []).filter((r) => r.issueType === issue);
-    const heading = state.mineAll ? '案件進度（待處理／處理中／已結案）' : '已送出的案件';
-    const empty = !token()
-      ? '登入後可看你送出的案件與進度。'
-      : (state.mineAll ? '這個分類目前沒有案件。' : '這個分類還沒有你送出的案件。');
-    const body = rows.length
-      ? rows.map((r) => {
-        const p = progressOf(r);
-        const title = [r.item, r.address].filter(Boolean).join('・') || '案件';
-        const who = state.mineAll && r.userName
-          ? '<div class="fin-mine-who">填寫人：' + esc(r.userName) + '</div>'
-          : '';
-        const reason = r.status === 'rejected' && r.rejectReason
-          ? '<div class="fin-mine-reason">退件原因：' + esc(r.rejectReason) + '</div>'
-          : '';
-        return '<article class="fin-mine-row">' +
-          '<div class="fin-mine-top"><span class="fin-mine-when">' + esc(fmtMineWhen(r.createdAt)) + '</span>' +
-          '<span class="fin-mine-st ' + p.cls + '">' + esc(p.text) + '</span></div>' +
-          '<div class="fin-mine-title">' + esc(title) + '</div>' +
-          who +
-          reason +
-          '</article>';
-      }).join('')
-      : '<p class="fin-mine-empty">' + empty + '</p>';
-    box.hidden = false;
-    box.innerHTML = '<h3 class="fin-mine-h">' + heading + '</h3>' + body;
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
+    let detailTitle = FIN_DETAIL_TITLE[state.detailKey] || '明細';
+    if (q && !state.detailKey) detailTitle = '搜尋結果「' + q + '」';
+    else if (q && state.detailKey) detailTitle = detailTitle + '｜搜尋「' + q + '」';
+    if (title) title.textContent = detailTitle;
+    if (!token()) {
+      list.innerHTML = '<p class="fin-detail-empty">請先登入工具箱。</p>';
+      return;
+    }
+    const base = state.detailKey ? rowsByKey(state.detailKey) : (state.mine || []).slice();
+    const rows = applyFinSearch(base);
+    if (!rows.length) {
+      list.innerHTML = '<p class="fin-detail-empty">' +
+        (q ? ('找不到符合「' + esc(q) + '」的案件。')
+          : state.detailKey === 'wait' ? '目前沒有待處理案件。'
+          : state.detailKey === 'doing' ? '目前沒有處理中案件。'
+          : state.detailKey === 'done' ? '尚無已結案／退件案件。'
+          : '尚無送出紀錄。') +
+        '</p>';
+      return;
+    }
+    list.innerHTML = rows.map((r) => {
+      const p = progressOf(r);
+      const heading = [r.item, r.address].filter(Boolean).join('・') || '案件';
+      const who = state.mineAll && r.userName
+        ? '<div class="fin-detail-who">填寫人：' + esc(r.userName) + '</div>'
+        : '';
+      const type = r.issueType
+        ? '<div class="fin-detail-type">' + esc(r.issueType) + '</div>'
+        : '';
+      const reason = r.status === 'rejected' && r.rejectReason
+        ? '<div class="fin-detail-reason">退件原因：' + esc(r.rejectReason) + '</div>'
+        : '';
+      return '<article class="fin-detail-row">' +
+        '<div class="fin-detail-top"><span class="fin-detail-when">' + esc(fmtMineWhen(r.createdAt)) + '</span>' +
+        '<span class="fin-mine-st ' + p.cls + '">' + esc(p.text) + '</span></div>' +
+        '<div class="fin-detail-title">' + esc(heading) + '</div>' +
+        who + type + reason +
+        '</article>';
+    }).join('');
+  }
+
+  function renderDash() {
+    renderGauges();
+    renderDetail();
   }
 
   async function loadMine() {
@@ -871,6 +972,7 @@
     state.mineAll = false;
     if (!token()) {
       state.mineLoaded = true;
+      renderDash();
       return;
     }
     // 財務部／黃怡婷／邱奕棋／簡為倢：看全部案件進度；其他人只看自己送出的
@@ -880,6 +982,7 @@
         state.mine = all.rows.map(mapFinanceInboxRow);
         state.mineAll = true;
         state.mineLoaded = true;
+        renderDash();
         return;
       }
     } catch (_) {
@@ -892,6 +995,37 @@
       state.mine = [];
     }
     state.mineLoaded = true;
+    renderDash();
+  }
+
+  function bindDash() {
+    if (state.dashBound) return;
+    state.dashBound = true;
+    $('fin-gauges')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-fin-detail]');
+      if (!btn) return;
+      const key = btn.getAttribute('data-fin-detail') || '';
+      state.detailKey = state.detailKey === key ? '' : key;
+      renderDash();
+    });
+    $('fin-detail-close')?.addEventListener('click', () => {
+      state.detailKey = '';
+      state.search = '';
+      const input = $('fin-dash-search');
+      if (input) input.value = '';
+      renderDash();
+    });
+    const search = $('fin-dash-search');
+    search?.addEventListener('input', () => {
+      state.search = String(search.value || '');
+      if (state.search && !state.detailKey) state.detailKey = '';
+      renderDash();
+    });
+    $('fin-dash-search-clear')?.addEventListener('click', () => {
+      state.search = '';
+      if (search) search.value = '';
+      renderDash();
+    });
   }
 
   function placeExpandedBlocks() {
@@ -899,23 +1033,17 @@
     const shared = $('fin-shared-block');
     const footerHold = $('fin-footer-hold');
     const footer = $('fin-footer-block');
-    const mine = mineEl();
     const openCard = document.querySelector('#page-finance .fin-issue-card.is-open');
     const openBody = openCard && openCard.querySelector('.fin-issue-body');
     if (!shared || !footer) return;
     if (openBody) {
-      if (mine.parentNode !== openBody || openBody.firstChild !== mine) {
-        openBody.insertBefore(mine, openBody.firstChild);
-      }
-      if (shared.parentNode !== openBody || mine.nextSibling !== shared) {
-        openBody.insertBefore(shared, mine.nextSibling);
+      if (shared.parentNode !== openBody || openBody.firstChild !== shared) {
+        openBody.insertBefore(shared, openBody.firstChild);
       }
       if (footer.parentNode !== openBody || openBody.lastChild !== footer) {
         openBody.appendChild(footer);
       }
     } else {
-      mine.hidden = true;
-      if (sharedHold) sharedHold.appendChild(mine);
       if (sharedHold) sharedHold.appendChild(shared);
       if (footerHold) footerHold.appendChild(footer);
     }
@@ -1254,14 +1382,6 @@
     }
     placeSharedPropertyFields();
     placeExpandedBlocks();
-    renderMine(issue);
-    if (issue && !state.mineLoaded && !state.mineLoading) {
-      state.mineLoading = true;
-      loadMine().finally(() => {
-        state.mineLoading = false;
-        renderMine(checked('fin-issue'));
-      });
-    }
     syncOther();
   }
 
@@ -2166,14 +2286,22 @@
       }
     });
 
+    bindDash();
     syncPanels();
   }
 
   window.FinReport = {
     onShow() {
       bind();
+      bindDash();
       fillOffice();
       syncPanels();
+      if (!state.mineLoaded && !state.mineLoading) {
+        state.mineLoading = true;
+        loadMine().finally(() => { state.mineLoading = false; });
+      } else {
+        renderDash();
+      }
     }
   };
 })();
