@@ -1104,6 +1104,91 @@
   background: #ecfdf5;
   color: #15803d;
 }
+#page-finance .fin-act-btn.is-detail {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+#page-finance .fin-act-btn.is-detail.is-on {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+#page-finance .fin-act-bar--top {
+  margin-top: 0.35rem;
+  margin-bottom: 0.15rem;
+}
+#page-finance .fin-detail-row.is-expanded {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 20px -16px rgba(37, 99, 235, 0.45);
+}
+#page-finance .fin-case-detail {
+  margin: 0.45rem 0 0.35rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+#page-finance .fin-case-body {
+  display: grid;
+  gap: 0.75rem;
+}
+@media (min-width: 760px) {
+  #page-finance .fin-case-body {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+#page-finance .fin-case-dl {
+  display: grid;
+  gap: 0.28rem;
+}
+#page-finance .fin-case-dl-row {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0.35rem 0.55rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+#page-finance .fin-case-k {
+  color: #64748b;
+  font-weight: 700;
+}
+#page-finance .fin-case-v {
+  color: #0f172a;
+  font-weight: 700;
+  word-break: break-word;
+}
+#page-finance .fin-case-files-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.04em;
+}
+#page-finance .fin-case-atts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+#page-finance .fin-case-att {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#page-finance .fin-case-att:hover {
+  background: #0d9488;
+}
 #page-finance .fin-act-btn.is-reject,
 #page-finance .fin-act-btn.is-reject-confirm {
   border-color: #fda4af;

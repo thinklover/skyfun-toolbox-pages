@@ -186,10 +186,53 @@
     detailKey: '',
     detailIssue: '',
     detailView: '', /* '' | 'types' | 'cases' */
+    openDetailId: '',
     search: '',
     dashBound: false,
     cardDashBound: false
   };
+
+  const FIN_PAYLOAD_LABELS = {
+    address: '物件地址', landlord: '房東', tenant: '房客', note: '備註',
+    pkgItem: '包租金流項目', baoLeaseStart: '包租開始日', baoLeaseEnd: '包租到期日',
+    zhuanLeaseStart: '轉租開始日', zhuanLeaseEnd: '轉租到期日',
+    leaseStart: '租期起', leaseEnd: '租期迄', leasePick: '選擇租期',
+    depositType: '押金類型', renewTopup: '是否補足押金', topupAmount: '補足金額',
+    receivable: '應收款項', receivableOther: '應收其他說明', pkgDocs: '證明文件類型',
+    rematchType: '換約類型', oldTenant: '原房客', newTenant: '新房客',
+    hasRoommate: '有無同住', roommates: '同住人', roommate: '同住人',
+    refundType: '退押類型', hasGap: '是否有空窗', subleaseStart: '轉租起租日',
+    refundDate: '解約／到期日', refundMethod: '退押方式', refundSettle: '費用結清人員',
+    refundGap: '包租是否有空窗', refundSubleaseStart: '新約起租日',
+    changeTarget: '異動對象', landlordReason: '房東異動原因', passbookWhy: '換存摺原因',
+    tenantReason: '房客異動原因', tenantPassbookWhy: '房客換存摺原因',
+    oldParty: '原對象', newParty: '新對象', changeNote: '異動說明',
+    payItem: '租金款項項目', virtualAccount: '虛擬帳號', payerName: '匯款人',
+    txDate: '交易日', wrongAccount: '錯誤帳號', correctAccount: '正確帳號',
+    amount: '金額', reason: '原因', collectItem: '催收項目', adjustItem: '調整項目',
+    feeChange: '費用異動', changedAmount: '異動金額', abnormalNote: '異常說明',
+    suppItem: '補件項目', originAddress: '原案地址', originSerial: '原案序號',
+    missingItems: '退件原因', expectCancelDate: '預計解約日', cancelTogether: '包轉是否同解',
+    stopPayStart: '止付起始日', genItem: '一般宅項目', genLeaseStart: '一般宅租期起',
+    genLeaseEnd: '一般宅租期迄', genKind: '一般宅類型', genCancelDate: '一般宅解約日',
+    genSettle: '結清方式', venue: '館別', officeItem: '商辦項目',
+    bizCase: '案件類型', clientInfo: '客戶資料', invoiceType: '發票開立類型',
+    invoiceAmount: '發票金額', refundAmount: '退款金額'
+  };
+  const FIN_PAYLOAD_ORDER = [
+    'address', 'landlord', 'tenant', 'pkgItem', 'payItem', 'collectItem', 'suppItem', 'genItem',
+    'officeItem', 'venue', 'depositType', 'pkgDocs', 'receivable', 'receivableOther',
+    'baoLeaseStart', 'baoLeaseEnd', 'zhuanLeaseStart', 'zhuanLeaseEnd', 'leaseStart', 'leaseEnd',
+    'leasePick', 'renewTopup', 'topupAmount', 'rematchType', 'oldTenant', 'newTenant', 'hasRoommate',
+    'roommates', 'roommate', 'refundType', 'refundDate', 'refundMethod', 'refundSettle', 'refundGap',
+    'refundSubleaseStart', 'hasGap', 'subleaseStart', 'changeTarget', 'landlordReason', 'tenantReason',
+    'passbookWhy', 'tenantPassbookWhy', 'oldParty', 'newParty', 'changeNote',
+    'virtualAccount', 'payerName', 'txDate', 'wrongAccount', 'correctAccount', 'amount', 'reason',
+    'adjustItem', 'feeChange', 'changedAmount', 'abnormalNote',
+    'originSerial', 'originAddress', 'missingItems', 'expectCancelDate', 'cancelTogether', 'stopPayStart',
+    'genLeaseStart', 'genLeaseEnd', 'genKind', 'genCancelDate', 'genSettle',
+    'bizCase', 'clientInfo', 'invoiceType', 'invoiceAmount', 'refundAmount', 'note'
+  ];
 
   const FIN_RING_LEN = 2 * Math.PI * 42;
   const FIN_DETAIL_TITLE = {
@@ -836,12 +879,57 @@
       status: r.status || 'submitted',
       rejectReason: r.rejectReason || '',
       handledAt: r.handledAt || null,
+      payload: p,
+      files: Array.isArray(r.files) ? r.files : [],
       address: String(p.address || p.clientInfo || '').trim(),
       item: String(
         p.pkgItem || p.payItem || p.collectItem || p.suppItem || p.genItem || p.officeItem || ''
       ).trim(),
       userName: String(r.userName || r.fullName || '').trim()
     };
+  }
+
+  function finPayloadEntries(p) {
+    p = p || {};
+    const seen = new Set();
+    const out = [];
+    function push(k) {
+      if (seen.has(k) || !Object.prototype.hasOwnProperty.call(p, k)) return;
+      seen.add(k);
+      let v = p[k];
+      if (v == null || v === '') return;
+      if (Array.isArray(v)) {
+        if (!v.length) return;
+        v = v.join('、');
+      } else {
+        v = String(v);
+      }
+      out.push({ label: FIN_PAYLOAD_LABELS[k] || k, value: v });
+    }
+    FIN_PAYLOAD_ORDER.forEach(push);
+    Object.keys(p).forEach(push);
+    return out;
+  }
+
+  function renderCasePayloadHtml(r) {
+    const rows = finPayloadEntries(r.payload);
+    const fields = rows.length
+      ? '<div class="fin-case-dl">' + rows.map((row) =>
+          '<div class="fin-case-dl-row"><span class="fin-case-k">' + esc(row.label) + '</span>' +
+          '<span class="fin-case-v">' + esc(row.value) + '</span></div>'
+        ).join('') + '</div>'
+      : '<p class="fin-detail-empty">無欄位資料</p>';
+    const files = Array.isArray(r.files) ? r.files : [];
+    const fileHtml = files.length
+      ? '<div class="fin-case-atts">' + files.map((f) =>
+          '<a class="fin-case-att" href="' + esc(f.url || '') + '" target="_blank" rel="noopener">' +
+          esc(f.name || '附件') + '</a>'
+        ).join('') + '</div>'
+      : '<p class="fin-detail-empty">無附件</p>';
+    return '<div class="fin-case-body">' +
+      '<div class="fin-case-fields">' + fields + '</div>' +
+      '<div class="fin-case-files"><div class="fin-case-files-title">附件</div>' + fileHtml + '</div>' +
+      '</div>';
   }
 
   function finStatusBucket(st) {
@@ -991,6 +1079,7 @@
     }
     return rows.map((r) => {
       const p = progressOf(r);
+      const open = String(state.openDetailId) === String(r.id);
       const heading = [r.item, r.address].filter(Boolean).join('・') || '案件';
       const who = state.mineAll && r.userName
         ? '<div class="fin-detail-who">填寫人：' + esc(r.userName) + '</div>'
@@ -1001,11 +1090,18 @@
       const reason = r.status === 'rejected' && r.rejectReason
         ? '<div class="fin-detail-reason">退件原因：' + esc(r.rejectReason) + '</div>'
         : '';
-      return '<article class="fin-detail-row" data-fin-row="' + esc(r.id) + '">' +
+      const detailBtn = '<button type="button" class="fin-act-btn is-detail' + (open ? ' is-on' : '') + '" data-fin-act="toggle-detail" data-fin-id="' + esc(r.id) + '">' +
+        (open ? '收合明細' : '案件明細') + '</button>';
+      const detailPanel = open
+        ? '<div class="fin-case-detail" data-fin-case-detail="' + esc(r.id) + '">' + renderCasePayloadHtml(r) + '</div>'
+        : '';
+      return '<article class="fin-detail-row' + (open ? ' is-expanded' : '') + '" data-fin-row="' + esc(r.id) + '">' +
         '<div class="fin-detail-top"><span class="fin-detail-when">' + esc(fmtMineWhen(r.createdAt)) + '</span>' +
         '<span class="fin-mine-st ' + p.cls + '">' + esc(p.text) + '</span></div>' +
         '<div class="fin-detail-title">' + esc(heading) + '</div>' +
         who + type + reason +
+        '<div class="fin-act-bar fin-act-bar--top">' + detailBtn + '</div>' +
+        detailPanel +
         renderCaseActions(r) +
         '</article>';
     }).join('');
@@ -1205,10 +1301,16 @@
         return;
       }
       const actBtn = e.target.closest('[data-fin-act]');
-      if (!actBtn || !state.mineAll) return;
+      if (!actBtn) return;
       const id = actBtn.getAttribute('data-fin-id');
       const act = actBtn.getAttribute('data-fin-act');
       if (!id || !act) return;
+      if (act === 'toggle-detail') {
+        state.openDetailId = String(state.openDetailId) === String(id) ? '' : String(id);
+        renderDetail();
+        return;
+      }
+      if (!state.mineAll) return;
       if (act === 'reject-toggle') {
         const box = document.querySelector('[data-fin-reject-box="' + id + '"]');
         if (box) box.hidden = !box.hidden;
