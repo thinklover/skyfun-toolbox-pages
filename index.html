@@ -4605,7 +4605,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261109-spotmonth">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261114-card-colors">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261114-folds-row">
 <link rel="stylesheet" href="./css/ai-tingting.css?v=20261114-ait-hero">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
@@ -5129,7 +5129,7 @@
             </button>
             </div>
 
-            <div class="adz-folds">
+            <div class="adz-folds adz-folds--row3">
             <details class="admin-tools-card admin-tools-card--compact af-fold" id="admin-forms-zone">
                 <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">📋</i>各式表單</span><span class="af-summary-hint">行政 · 系統 · 業務</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
                 <div class="af-grid">
@@ -5363,7 +5363,9 @@
                 <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🗓️</i>行政週會</span><span class="af-summary-hint">週會簡報 · 線上小考</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
                 <div id="admin-meeting-root" class="amt"></div>
             </details>
+            </div>
 
+            <div class="adz-folds adz-folds--two">
             <button type="button" class="af-fold adz-go-card" id="adz-admin-handover-card" onclick="showPage('admin-handover')">
                 <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🤝</i>離職交接</span><span class="af-summary-hint">經手案件 · 進度勾選 · 匯出 CSV</span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
             </button>
@@ -5371,8 +5373,8 @@
             <button type="button" class="af-fold adz-go-card" id="adz-petition-card" onclick="showPage('petition')">
                 <span class="af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">✍️</i>簽呈簽核</span><span class="af-summary-hint">三方電子簽名 · 總經理決行</span><span class="pt-entry-badge" id="pt-entry-badge" hidden></span><span class="af-chevron adz-go" aria-hidden="true"></span></span>
             </button>
-            <p class="ait-admin-link"><a href="./admin/ai-tingting-dashboard.html" target="_blank" rel="noopener">管理員：AI婷婷對話紀錄後台 →</a></p>
             </div>
+            <p class="ait-admin-link"><a href="./admin/ai-tingting-dashboard.html" target="_blank" rel="noopener">管理員：AI婷婷對話紀錄後台 →</a></p>
 
             <section class="adz-cal" id="admin-calendar" aria-label="行政行事曆"></section>
             <section class="adz-org" id="admin-org" aria-label="行政組織總覽"></section>

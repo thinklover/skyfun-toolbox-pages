@@ -109,10 +109,24 @@
 }
 
 .adz-folds { display: grid; grid-template-columns: 1fr; gap: 0.75rem; align-items: stretch; }
+/* 各式表單｜註銷｜週會：左到右三欄 */
+.adz-folds.adz-folds--row3 {
+    grid-template-columns: 1fr;
+    margin-bottom: 1rem;
+}
+@media (min-width: 640px) {
+    .adz-folds.adz-folds--row3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+.adz-folds.adz-folds--row3 > details[open] { grid-column: 1 / -1; }
 @media (min-width: 900px) {
     .adz-folds { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .adz-folds.adz-folds--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .adz-folds > details[open] { grid-column: 1 / -1; }
+}
+@media (min-width: 640px) {
+    .adz-folds.adz-folds--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .adz-folds > .adz-go-card {
     --f-ink: #0f766e; --f-bg: #f0fdfa; --f-line: #99f6e4;
