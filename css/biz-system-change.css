@@ -692,6 +692,10 @@ body > .bsc-modal .bsc-xfer-photos {
   flex-wrap: wrap;
   gap: 0.35rem;
 }
+#page-business-system-change #bsc-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 #page-business-system-change .bsc-issue-checks {
   display: flex;
   flex-wrap: wrap;
