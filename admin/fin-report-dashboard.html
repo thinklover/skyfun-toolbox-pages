@@ -28,9 +28,27 @@
     .muted { color: #64748b; font-size: 0.78rem; }
     .st { display: inline-block; padding: 0.12rem 0.45rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800; }
     .st-submitted { background: #ecfdf5; color: #047857; }
+    .st-processing { background: #eff6ff; color: #1d4ed8; }
+    .st-closed { background: #f1f5f9; color: #475569; }
     .st-rejected { background: #fee2e2; color: #991b1b; }
-    .st-resubmitted { background: #eff6ff; color: #1d4ed8; }
-    .reject-box { margin-top: 0.4rem; display: grid; gap: 0.35rem; max-width: 16rem; }
+    .st-resubmitted { background: #fef9c3; color: #a16207; }
+    .status-filters { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .status-filters button {
+      border: 1px solid #cbd5e1; background: #fff; color: #334155;
+      border-radius: 999px; padding: 0.28rem 0.75rem; font-size: 0.78rem; font-weight: 800; cursor: pointer;
+    }
+    .status-filters button.is-on { border-color: #059669; background: #ecfdf5; color: #047857; }
+    .act-box { margin-top: 0.4rem; display: grid; gap: 0.35rem; max-width: 16rem; }
+    .act-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .act-row button {
+      border: 1px solid #94a3b8; background: #fff; color: #0f172a;
+      border-radius: 0.45rem; padding: 0.28rem 0.65rem; font-weight: 800; font-size: 0.78rem; cursor: pointer;
+    }
+    .act-row button[data-fin-status="processing"] { border-color: #3b82f6; color: #1d4ed8; }
+    .act-row button[data-fin-status="closed"] { border-color: #64748b; color: #334155; }
+    .act-row button:hover { background: #f8fafc; }
+    .act-row button:disabled { opacity: 0.6; cursor: wait; }
+    .reject-box { margin-top: 0.15rem; display: grid; gap: 0.35rem; max-width: 16rem; }
     .reject-box textarea { width: 100%; min-height: 3.2rem; border: 1px solid #fecaca; border-radius: 0.45rem; padding: 0.35rem 0.45rem; font: inherit; font-size: 0.8rem; }
     .reject-box button { border: 1px solid #dc2626; background: #fff; color: #b91c1c; border-radius: 0.45rem; padding: 0.28rem 0.7rem; font-weight: 800; font-size: 0.78rem; cursor: pointer; }
     .reject-box button:hover { background: #fef2f2; }
@@ -89,6 +107,14 @@
         <input type="search" id="search" placeholder="搜尋類型／姓名／處所／填表人／內容" class="max-w-md" autocomplete="off" />
         <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
       </div>
+      <div class="status-filters" id="status-filters" role="tablist" aria-label="案件狀態篩選">
+        <button type="button" data-fin-filter="all" class="is-on">全部</button>
+        <button type="button" data-fin-filter="submitted">待處理</button>
+        <button type="button" data-fin-filter="processing">處理中</button>
+        <button type="button" data-fin-filter="closed">已結案</button>
+        <button type="button" data-fin-filter="rejected">已退件</button>
+        <button type="button" data-fin-filter="resubmitted">已補件</button>
+      </div>
       <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
       <div class="overflow-auto border border-slate-200 rounded-xl bg-white">
         <table>
@@ -118,6 +144,7 @@
       let secret = '';
       let allRows = [];
       let allLineItems = [];
+      let statusFilter = 'all';
 
       function cfg() {
         const c = window.SKYFUN_SUPABASE || {};
@@ -339,36 +366,72 @@
         const s = String(st || 'submitted');
         if (s === 'rejected') return '<span class="st st-rejected">已退件</span>';
         if (s === 'resubmitted') return '<span class="st st-resubmitted">已補件</span>';
+        if (s === 'processing') return '<span class="st st-processing">處理中</span>';
+        if (s === 'closed') return '<span class="st st-closed">已結案</span>';
         return '<span class="st st-submitted">待處理</span>';
       }
       function filtered() {
         const q = document.getElementById('search').value.trim().toLowerCase();
-        if (!q) return allRows.slice();
         return allRows.filter((r) => {
+          const st = String(r.status || 'submitted');
+          if (statusFilter !== 'all' && st !== statusFilter) return false;
+          if (!q) return true;
           const blob = [r.id, r.status, r.rejectReason, r.issueType, r.userName, r.fullName, r.office, r.lineError, payloadText(r.payload)].join(' ').toLowerCase();
           return blob.includes(q);
         });
       }
+      function actionHtml(r) {
+        const st = String(r.status || 'submitted');
+        const line = (r.lineRecipients > 0)
+          ? ('已推 ' + r.lineRecipients + ' 人')
+          : (r.lineError ? esc(r.lineError) : '未推播');
+        let html = '<div class="muted">' + line + '</div>';
+        if (st === 'rejected') {
+          html += '<p class="reject-reason"><b>退件原因</b><br>' + esc(r.rejectReason || '—') + '</p>';
+          return html;
+        }
+        if (st === 'closed') {
+          html += '<p class="muted" style="margin:0.25rem 0 0">結案時間：' + esc(fmt(r.handledAt)) + '</p>';
+          return html;
+        }
+        html += '<div class="act-box"><div class="act-row">';
+        if (st === 'submitted' || st === 'resubmitted') {
+          html += '<button type="button" data-fin-status="processing" data-fin-id="' + esc(r.id) + '">開始處理</button>';
+        }
+        if (st === 'submitted' || st === 'resubmitted' || st === 'processing') {
+          html += '<button type="button" data-fin-status="closed" data-fin-id="' + esc(r.id) + '">結案</button>';
+        }
+        html += '</div>';
+        if (st === 'resubmitted') {
+          html += '<p class="reject-reason muted">原退件：' + esc(r.rejectReason || '—') + '</p>';
+        }
+        html +=
+          '<div class="reject-box">' +
+          '<textarea data-fin-reject-reason="' + esc(r.id) + '" placeholder="財務退件原因（必填）"></textarea>' +
+          '<button type="button" data-fin-reject="' + esc(r.id) + '">退件</button>' +
+          '</div></div>';
+        return html;
+      }
       function render() {
         const list = filtered();
+        const counts = { all: allRows.length, submitted: 0, processing: 0, closed: 0, rejected: 0, resubmitted: 0 };
+        allRows.forEach((r) => {
+          const st = String(r.status || 'submitted');
+          if (counts[st] != null) counts[st] += 1;
+        });
+        document.querySelectorAll('#status-filters [data-fin-filter]').forEach((btn) => {
+          const key = btn.getAttribute('data-fin-filter');
+          const n = counts[key] != null ? counts[key] : 0;
+          const label = ({
+            all: '全部', submitted: '待處理', processing: '處理中',
+            closed: '已結案', rejected: '已退件', resubmitted: '已補件'
+          })[key] || key;
+          btn.textContent = label + ' ' + n;
+          btn.classList.toggle('is-on', statusFilter === key);
+        });
         document.getElementById('msg').textContent = list.length ? '共 ' + list.length + ' 筆' : '沒有符合的回報';
         document.getElementById('rows').innerHTML = list.map((r) => {
-          const line = (r.lineRecipients > 0)
-            ? ('已推 ' + r.lineRecipients + ' 人')
-            : (r.lineError ? esc(r.lineError) : '未推播');
           const st = String(r.status || 'submitted');
-          let action = '<div class="muted">' + line + '</div>';
-          if (st === 'rejected') {
-            action += '<p class="reject-reason"><b>退件原因</b><br>' + esc(r.rejectReason || '—') + '</p>';
-          } else if (st === 'resubmitted') {
-            action += '<p class="reject-reason muted">原退件：' + esc(r.rejectReason || '—') + '</p>';
-          } else {
-            action +=
-              '<div class="reject-box">' +
-              '<textarea data-fin-reject-reason="' + esc(r.id) + '" placeholder="財務退件原因（必填）"></textarea>' +
-              '<button type="button" data-fin-reject="' + esc(r.id) + '">退件</button>' +
-              '</div>';
-          }
           return '<tr>' +
             '<td class="whitespace-nowrap">' + esc(fmt(r.createdAt)) + '</td>' +
             '<td class="whitespace-nowrap"><b>#' + esc(r.id) + '</b></td>' +
@@ -378,7 +441,7 @@
             '<td>' + esc(r.fullName || '—') + '<div class="muted">' + esc(r.office || '') + '</div></td>' +
             '<td class="body">' + payloadHtml(r.payload) + '</td>' +
             '<td>' + filesHtml(r.files) + '</td>' +
-            '<td>' + action + '</td>' +
+            '<td>' + actionHtml(r) + '</td>' +
             '</tr>';
         }).join('');
       }
@@ -503,7 +566,37 @@
         }
       });
       document.getElementById('search').addEventListener('input', render);
+      document.getElementById('status-filters').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-fin-filter]');
+        if (!btn) return;
+        statusFilter = btn.getAttribute('data-fin-filter') || 'all';
+        render();
+      });
       document.getElementById('rows').addEventListener('click', async (e) => {
+        const statusBtn = e.target.closest('[data-fin-status]');
+        if (statusBtn) {
+          const id = statusBtn.getAttribute('data-fin-id');
+          const next = statusBtn.getAttribute('data-fin-status');
+          statusBtn.disabled = true;
+          try {
+            const res = await rpc('fin_report_admin_set_status', {
+              p_secret: secret,
+              p_id: Number(id),
+              p_status: next
+            });
+            if (!res || res.ok === false) throw new Error((res && res.error) || '更新狀態失敗');
+            const idx = allRows.findIndex((r) => String(r.id) === String(id));
+            if (idx >= 0 && res.row) allRows[idx] = res.row;
+            else await load();
+            render();
+            document.getElementById('msg').textContent =
+              (next === 'closed' ? '已結案 #' : '已改為處理中 #') + id;
+          } catch (err) {
+            statusBtn.disabled = false;
+            document.getElementById('msg').textContent = err.message || String(err);
+          }
+          return;
+        }
         const btn = e.target.closest('[data-fin-reject]');
         if (!btn) return;
         const id = btn.getAttribute('data-fin-reject');

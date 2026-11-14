@@ -791,8 +791,12 @@
   }
 
   function progressOf(row) {
-    if (row.status === 'rejected') return { cls: 'is-back', text: '已退回' };
-    return { cls: 'is-wait', text: '已送出・財務處理中' };
+    const st = String(row.status || 'submitted');
+    if (st === 'rejected') return { cls: 'is-back', text: '已退回' };
+    if (st === 'closed') return { cls: 'is-done', text: '已結案' };
+    if (st === 'processing') return { cls: 'is-doing', text: '處理中' };
+    if (st === 'resubmitted') return { cls: 'is-wait', text: '已補件・待處理' };
+    return { cls: 'is-wait', text: '待處理' };
   }
 
   function fmtMineWhen(iso) {

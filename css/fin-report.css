@@ -714,6 +714,14 @@
   background: #ecfdf5;
   color: #047857;
 }
+#page-finance .fin-mine-st.is-doing {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+#page-finance .fin-mine-st.is-done {
+  background: #f1f5f9;
+  color: #475569;
+}
 #page-finance .fin-mine-st.is-back {
   background: #fff1f2;
   color: #be123c;
