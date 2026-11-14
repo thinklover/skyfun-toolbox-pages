@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/notice-ack.css?v=20261111-ackwm">
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261114-issueb">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
-<link rel="stylesheet" href="./css/fin-report.css?v=20261114-fin-dash">
+<link rel="stylesheet" href="./css/fin-report.css?v=20261114-fin-cash">
 <link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261112-msb-v35">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
@@ -6496,42 +6496,6 @@
                             </div>
                             </div>
                             <div class="hr-panel" data-fin-when="issue-supp" id="fin-supp-top">
-                            <div class="hr-field">
-                            <span class="hr-label hr-req">資料項目</span>
-                            <div class="hr-radios">
-                            <label class="hr-radio"><input type="radio" name="fin-supp-item" value="退件補件/資料補正申請"> 退件補件／資料補正申請</label>
-                            <label class="hr-radio"><input type="radio" name="fin-supp-item" value="金流明細表調閱申請"> 金流明細表調閱申請</label>
-                            </div>
-                            </div>
-                            <div class="hr-panel" data-fin-when="supp:退件補件/資料補正申請">
-                            <div class="hr-field">
-                            <label class="hr-req" for="fin-origin-address">退件物件地址</label>
-                            <div class="fin-addr-row">
-                            <input id="fin-origin-address" type="text" maxlength="120" placeholder="輸入地址後按查退件">
-                            <button type="button" id="fin-origin-lookup" class="fin-addr-lookup-btn">查退件</button>
-                            </div>
-                            <p class="hr-hint">須為財務後台已退件的案件；可先輸入路名查出相符地址再選。</p>
-                            <p id="fin-origin-lookup-status" class="hr-hint" aria-live="polite"></p>
-                            </div>
-                            <div class="hr-field" id="fin-origin-pick-wrap" hidden>
-                            <label class="hr-req" for="fin-origin-pick">選擇退件案件</label>
-                            <select id="fin-origin-pick">
-                            <option value="">請選擇退件案件</option>
-                            </select>
-                            </div>
-                            <input id="fin-origin-serial" type="hidden" value="">
-                            <div class="hr-field">
-                            <label for="fin-missing-items">退件原因</label>
-                            <textarea id="fin-missing-items" maxlength="500" readonly placeholder="查退件後自動帶入"></textarea>
-                            <p id="fin-reject-meta" class="fin-reject-meta" hidden></p>
-                            </div>
-                            <div class="hr-field hr-files">
-                            <label class="hr-req" for="fin-files-supp">補件附件上傳</label>
-                            <input id="fin-files-supp" type="file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/*">
-                            <ul class="hr-file-list" data-fin-file-list="supp"></ul>
-                            </div>
-                            </div>
-                            <div class="hr-panel" data-fin-when="supp:金流明細表調閱申請">
                             <div class="fin-grid-2">
                             <div class="hr-field"><label class="hr-req" for="fin-expect-cancel">預計解約日期</label><input id="fin-expect-cancel" type="date"></div>
                             </div>
@@ -6540,7 +6504,6 @@
                             <div class="hr-radios">
                             <label class="hr-radio"><input type="radio" name="fin-cancel-together" value="是"> 是</label>
                             <label class="hr-radio"><input type="radio" name="fin-cancel-together" value="否"> 否</label>
-                            </div>
                             </div>
                             </div>
                             </div>
@@ -7069,18 +7032,18 @@
                     </div>
                     </div>
                     </div>
-                    <div class="fin-issue-card" data-fin-card="補件與資料查詢">
+                    <div class="fin-issue-card" data-fin-card="金流明細表調閱申請">
                     <label class="fin-issue-head" for="fin-issue-supp">
-                    <input id="fin-issue-supp" type="radio" name="fin-issue" value="補件與資料查詢">
+                    <input id="fin-issue-supp" type="radio" name="fin-issue" value="金流明細表調閱申請">
                     <span class="fin-issue-ico" aria-hidden="true">📎</span>
                     <span class="fin-issue-copy">
-                    <strong class="fin-issue-name">補件與資料查詢</strong>
-                    <small class="fin-issue-hint">退件補件、明細調閱</small>
+                    <strong class="fin-issue-name">金流明細表調閱申請</strong>
+                    <small class="fin-issue-hint">預計解約與明細調閱</small>
                     </span>
                     <span class="fin-issue-go" aria-hidden="true">進入</span>
                     </label>
-                    <div class="fin-issue-body" data-fin-panel="補件與資料查詢">
-                    <h3 class="hr-panel-title">補件與資料查詢</h3>
+                    <div class="fin-issue-body" data-fin-panel="金流明細表調閱申請">
+                    <h3 class="hr-panel-title">金流明細表調閱申請</h3>
                     </div>
                     </div>
                     <div class="fin-issue-card" data-fin-card="止付通知">
@@ -14406,7 +14369,7 @@
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261112-dropmt"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
-        <script src="./js/fin-report.js?v=20261114-fin-dash"></script>
+        <script src="./js/fin-report.js?v=20261114-fin-cash"></script>
         <script src="./js/meeting-scoreboard.js?v=20261112-msb-v36"></script>
         <script src="./js/course-exam-data.js?v=20261029-merge"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>

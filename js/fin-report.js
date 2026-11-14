@@ -14,7 +14,7 @@
   const ISSUE_PKG = '社宅包租金流相關(進件、解約或資料異動)';
   const ISSUE_PAY = '社宅租金及款項處理';
   const ISSUE_COLLECT = '社宅催收管理相關問題';
-  const ISSUE_SUPP = '補件與資料查詢';
+  const ISSUE_SUPP = '金流明細表調閱申請';
   const ISSUE_STOP = '止付通知';
   const ISSUE_GEN = '一般宅金流相關(進件、解約)';
   const ISSUE_OFFICE = '商辦部';
@@ -1068,7 +1068,6 @@
     const pkgItem = checked('fin-pkg-item');
     const payItem = checked('fin-pay-item');
     const collectItem = checked('fin-collect-item');
-    const suppItem = checked('fin-supp-item');
     const genItem = checked('fin-gen-item');
     const officeItem = checked('fin-biz-item');
     const bizAction = checked('fin-biz-action');
@@ -1130,7 +1129,6 @@
       else if (rule === 'pay-overpay') ok = issue === ISSUE_PAY && PAY_OVERPAY_DOCS.includes(payItem);
       else if (rule.startsWith('collect:')) ok = issue === ISSUE_COLLECT && collectItem === rule.slice(8);
       else if (rule === 'issue-supp') ok = issue === ISSUE_SUPP;
-      else if (rule.startsWith('supp:')) ok = issue === ISSUE_SUPP && suppItem === rule.slice(5);
       else if (rule.startsWith('gen:')) ok = issue === ISSUE_GEN && genItem === rule.slice(4);
       else if (rule.startsWith('biz:')) ok = issue === ISSUE_OFFICE && officeItem === rule.slice(4);
       else if (rule === 'pkg-lease') ok = issue === ISSUE_PKG;
@@ -1385,21 +1383,15 @@
     syncOther();
   }
 
-  function isSuppReject() {
-    return checked('fin-issue') === ISSUE_SUPP &&
-      checked('fin-supp-item') === '退件補件/資料補正申請';
-  }
-
   function hideCompanyAddrFields() {
     const issue = checked('fin-issue');
-    return isSuppReject() || issue === ISSUE_OFFICE || issue === ISSUE_GEN;
+    return issue === ISSUE_OFFICE || issue === ISSUE_GEN;
   }
 
   function placeSharedPropertyFields() {
-    const isReject = isSuppReject();
     const isOffice = checked('fin-issue') === ISSUE_OFFICE;
     const isGen = checked('fin-issue') === ISSUE_GEN;
-    const hideAddr = isReject || isOffice;
+    const hideAddr = isOffice;
     const hideLookup = hideAddr || isGen;
     const officeBlock = $('fin-office-block');
     const addrBlock = $('fin-address-block');
@@ -1440,11 +1432,7 @@
         names.hidden = true;
       } else {
         names.hidden = false;
-        if (isReject) {
-          const panel = document.querySelector('#page-finance [data-fin-when="supp:退件補件/資料補正申請"]');
-          const reasonField = $('fin-missing-items')?.closest('.hr-field');
-          if (panel && reasonField) panel.insertBefore(names, reasonField);
-        } else if (addrBlock && addrBlock.parentNode) {
+        if (addrBlock && addrBlock.parentNode) {
           addrBlock.parentNode.insertBefore(names, addrBlock.nextSibling);
         }
       }
@@ -1687,19 +1675,9 @@
       payload.pkgChangeStart = val('fin-pkg-change-start');
       payload.abnormalNote = val('fin-abnormal-note');
     } else if (issue === ISSUE_SUPP) {
-      payload.suppItem = checked('fin-supp-item');
-      payload.originAddress = val('fin-origin-address');
-      payload.originSerial = val('fin-origin-serial') || (state.suppOrigin ? String(state.suppOrigin.id || '') : '');
-      payload.missingItems = val('fin-missing-items');
+      payload.suppItem = '金流明細表調閱申請';
       payload.expectCancelDate = val('fin-expect-cancel');
       payload.cancelTogether = checked('fin-cancel-together');
-      if (state.suppOrigin && String(state.suppOrigin.id) === String(payload.originSerial)) {
-        payload.originRejectReason = state.suppOrigin.rejectReason || '';
-        payload.originIssueType = state.suppOrigin.issueType || '';
-        if (!payload.address && state.suppOrigin.address) payload.address = state.suppOrigin.address;
-      } else if (!payload.address && payload.originAddress) {
-        payload.address = payload.originAddress;
-      }
     } else if (issue === ISSUE_STOP) {
       payload.stopPayStart = val('fin-stop-start');
     } else if (issue === ISSUE_GEN) {
@@ -1762,11 +1740,10 @@
   }
 
   function validate(issue, payload, fileCount) {
-    const suppReject = issue === ISSUE_SUPP && payload.suppItem === '退件補件/資料補正申請';
-    if (!suppReject && !payload.address && issue !== ISSUE_OFFICE) return '請填物件地址';
+    if (!payload.address && issue !== ISSUE_OFFICE) return '請填物件地址';
     if (!payload.landlord && issue !== ISSUE_OFFICE) return '請填房東姓名';
     if (!payload.tenant && issue !== ISSUE_OFFICE) return '請填房客姓名';
-    if (issue !== ISSUE_OFFICE && issue !== ISSUE_GEN && !suppReject) {
+    if (issue !== ISSUE_OFFICE && issue !== ISSUE_GEN) {
       const leaseWrap = $('fin-lease-pick-wrap');
       if (leaseWrap && !leaseWrap.hidden && state.leaseOptions.length && !payload.leasePick) {
         return '請選擇租期';
@@ -1909,18 +1886,8 @@
       }
     }
     if (issue === ISSUE_SUPP) {
-      if (!payload.suppItem) return '請選資料項目';
-      if (payload.suppItem === '退件補件/資料補正申請') {
-        if (!payload.originAddress) return '請填退件物件地址';
-        if (!state.suppOrigin || !payload.originSerial || String(state.suppOrigin.id) !== String(payload.originSerial)) {
-          return '請先按「查退件」並選擇已被財務退件的案件';
-        }
-        if ((fileCount.supp || 0) < 1) return '請上傳補件附件';
-      }
-      if (payload.suppItem === '金流明細表調閱申請') {
-        if (!payload.expectCancelDate) return '請填預計解約日期';
-        if (!payload.cancelTogether) return '請選包租與轉租是否一起解約';
-      }
+      if (!payload.expectCancelDate) return '請填預計解約日期';
+      if (!payload.cancelTogether) return '請選包租與轉租是否一起解約';
     }
     if (issue === ISSUE_STOP && !payload.stopPayStart) return '請填包租契約停止付款起始日';
     if (issue === ISSUE_STOP && fileCount.stop < 1) return '請上傳止付通知簽呈';
@@ -2086,32 +2053,13 @@
         clearLeasePick();
         setLookupStatus('');
       }
-      if (e.target.id === 'fin-origin-pick') {
-        selectSuppCandidate(e.target.value);
-        return;
-      }
-      if (e.target.matches('input[name="fin-supp-item"]')) {
-        clearSuppOrigin();
-        setOriginLookupStatus('');
-      }
       if (e.target.matches('input[type="radio"], #fin-office, input[type="checkbox"]')) syncPanels();
     });
     $('fin-addr-lookup')?.addEventListener('click', () => { void lookupCompanyByAddress(); });
-    $('fin-origin-lookup')?.addEventListener('click', () => { void lookupRejectedOrigin(); });
     $('fin-address')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         void lookupCompanyByAddress();
-      }
-    });
-    $('fin-origin-address')?.addEventListener('input', () => {
-      clearSuppOrigin();
-      setOriginLookupStatus('');
-    });
-    $('fin-origin-address')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        void lookupRejectedOrigin();
       }
     });
     page.addEventListener('click', (e) => {
@@ -2142,7 +2090,6 @@
     bindFileInput('fin-files-fee', 'fee');
     bindFileInput('fin-files-collect', 'collect');
     bindFileInput('fin-files-stop', 'stop');
-    bindFileInput('fin-files-supp', 'supp');
     bindFileInput('fin-files-gen-lease-auth', 'genLeaseAuth');
     bindFileInput('fin-files-gen-lease-contract', 'genLeaseContract');
     bindFileInput('fin-files-gen-manage-auth', 'genManageAuth');
@@ -2245,7 +2192,6 @@
           { key: 'fee', label: '費用佐證' },
           { key: 'collect', label: '催收資料' },
           { key: 'stop', label: '止付簽呈' },
-          { key: 'supp', label: '補件附件' },
           { key: 'genLeaseAuth', label: '委託租賃' },
           { key: 'genLeaseContract', label: '租賃契約' },
           { key: 'genManageAuth', label: '委託管理' },
