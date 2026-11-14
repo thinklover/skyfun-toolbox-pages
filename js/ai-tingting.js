@@ -101,30 +101,78 @@
     askTimes.push(Date.now());
   }
 
+  function sleep(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  function friendlyNetErr(err) {
+    const m = String((err && err.message) || err || '');
+    if (/Failed to fetch|NetworkError|Load failed/i.test(m) || (err && err.name === 'TypeError')) {
+      return '連線失敗，請稍後再試（伺服器忙碌時重整即可）';
+    }
+    return m || '連線失敗';
+  }
+
+  function isNetErr(err) {
+    const m = String((err && err.message) || err || '');
+    return /Failed to fetch|NetworkError|Load failed/i.test(m) || (err && err.name === 'TypeError');
+  }
+
   async function api(body) {
     const { url, anonKey } = cfg();
     if (!url || !anonKey) throw new Error('尚未設定 Supabase');
     const t = token();
     if (!t && body.action !== 'answer') throw new Error('請先登入');
-    const res = await fetch(url + FN_PATH, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: anonKey,
-        Authorization: 'Bearer ' + t,
-      },
-      body: JSON.stringify(body),
-    });
-    let data = null;
-    try {
-      data = await res.json();
-    } catch (_) {
-      data = null;
+    const payload = Object.assign({}, body);
+    if (t) payload.token = t;
+
+    let lastErr = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(url + FN_PATH, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: anonKey,
+            // 與其他 Edge Function 相同：gateway 用 anon JWT；工具箱 session 放 body.token
+            Authorization: 'Bearer ' + anonKey,
+          },
+          body: JSON.stringify(payload),
+        });
+        let data = null;
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = null;
+        }
+        if (res.status === 502 || res.status === 503) {
+          lastErr = new Error((data && data.error) || ('請求失敗（' + res.status + '）'));
+          if (attempt < 2) {
+            await sleep(400 * (attempt + 1));
+            continue;
+          }
+          throw new Error('連線失敗，請稍後再試（伺服器忙碌時重整即可）');
+        }
+        if (!res.ok || !data?.ok) {
+          throw new Error((data && data.error) || ('請求失敗（' + res.status + '）'));
+        }
+        return data;
+      } catch (err) {
+        // 業務錯誤（已有 HTTP 回應）直接拋出，不重試、不改寫訊息
+        if (err instanceof Error && !isNetErr(err) && !/請求失敗（50[23]）/.test(err.message || '')) {
+          throw err;
+        }
+        lastErr = err;
+        if (attempt < 2 && (isNetErr(err) || /請求失敗（50[23]）/.test(String((err && err.message) || '')))) {
+          await sleep(400 * (attempt + 1));
+          continue;
+        }
+        throw new Error(friendlyNetErr(err));
+      }
     }
-    if (!res.ok || !data?.ok) {
-      throw new Error((data && data.error) || ('請求失敗（' + res.status + '）'));
-    }
-    return data;
+    throw new Error(friendlyNetErr(lastErr));
   }
 
   function syncAuthUi() {

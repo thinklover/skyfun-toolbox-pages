@@ -41,6 +41,13 @@ function bearer(req: Request) {
   return m ? m[1].trim() : "";
 }
 
+/** 工具箱 session：優先 body.token（與其他函式一致），其次 Authorization Bearer */
+function sessionToken(req: Request, body: Record<string, unknown>) {
+  const fromBody = String(body.token || "").trim();
+  if (fromBody) return fromBody;
+  return bearer(req);
+}
+
 async function resolveUser(token: string) {
   if (!token) return null;
   const { data, error } = await sb.rpc("admin_qa_user_id", { p_token: token });
@@ -72,7 +79,7 @@ function functionPublicUrl(req: Request) {
 }
 
 async function handleAsk(req: Request, body: Record<string, unknown>) {
-  const token = bearer(req);
+  const token = sessionToken(req, body);
   const user = await resolveUser(token);
   if (!user) return fail("請先登入", 401);
 
@@ -159,7 +166,7 @@ async function handleAsk(req: Request, body: Record<string, unknown>) {
 }
 
 async function handleGet(req: Request, body: Record<string, unknown>) {
-  const token = bearer(req);
+  const token = sessionToken(req, body);
   const user = await resolveUser(token);
   if (!user) return fail("請先登入", 401);
 
@@ -187,8 +194,8 @@ async function handleGet(req: Request, body: Record<string, unknown>) {
   });
 }
 
-async function handleList(req: Request) {
-  const token = bearer(req);
+async function handleList(req: Request, body: Record<string, unknown> = {}) {
+  const token = sessionToken(req, body);
   const user = await resolveUser(token);
   if (!user) return fail("請先登入", 401);
 
@@ -255,7 +262,7 @@ Deno.serve(async (req) => {
   try {
     if (action === "ask") return await handleAsk(req, body);
     if (action === "get") return await handleGet(req, body);
-    if (action === "list") return await handleList(req);
+    if (action === "list") return await handleList(req, body);
     if (action === "answer") return await handleAnswer(req, body);
     return fail("未知 action（ask / get / list / answer）");
   } catch (e) {
