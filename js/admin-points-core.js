@@ -62,7 +62,7 @@
     ...TRAINING_PROJECTS.map((key) => trainingNode(key, { project: true }))
   ];
   /** 有教學影片＋線上考試的課程 */
-  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p5', 'lvr'];
+  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p5', 'lvr', 'weekly'];
   /** 已開放模擬系統實作的課程；其他課程的模擬環境還在建置，實作一律顯示準備中 */
   const PRACTICE_COURSES = ['obj', 'tenant', 'pre'];
   /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */

@@ -57,7 +57,16 @@ window.AdminTrainingContent = {
     sections: [],
     links: []
   },
-  weekly: { summary: '', sections: [], links: [] },
+  weekly: {
+    summary: '先看完週報教學影片（系統會記錄觀看進度），再點上方「線上考試」考試（20 題，全部答對才通過）；答錯的題目會標示影片時間點。週報每週一繳交上週日～六產出編號給公會的案件；下載 Excel 後要調整欄位、帶租租金、是否已送件、製表日期，再依各縣市規定送公會。',
+    videos: [{ title: '週報教學影片', length: '約 4 分鐘', course: 'weekly' }],
+    sections: [
+      { title: '系統操作', items: ['公司系統 → 秘書專區 → 週報管理', '業者編號選要做的縣市；期數選四期／四一期／五期', '週報起日固定選上週「禮拜日」', '查詢後下載 Excel'] },
+      { title: '下載後四件事', items: ['調整欄位（避免字體重疊）', '把「簽約租金」複製貼到「帶租租金」', '「是否已送件」：系統預設為是（Y）；若尚未送到公會改成否（N）', '「製表日期」改成送給公會當天（週一）的日期'] },
+      { title: '送公會', items: ['各縣市規定不同：傳檔、寄信或 LINE 群組', '有的只要 Excel；有的還要蓋服務人員章＋大章後的 PDF', '蓋章完掃描，連同檔案一起給公會'] }
+    ],
+    links: []
+  },
   term: { summary: '', sections: [], links: [] },
   repair: { summary: '', sections: [], links: [] },
   bonus: { summary: '', sections: [], links: [] },
