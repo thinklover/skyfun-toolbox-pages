@@ -1017,7 +1017,8 @@
   font-weight: 600;
 }
 #page-biz-supervisor .bz-tools .bz-go {
-  color: #0f766e;
+  background: #0f766e;
+  color: #fff;
   font-weight: 800;
 }
 @media (max-width: 700px) {

@@ -280,6 +280,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
+  justify-items: center;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge {
   display: flex;
@@ -291,10 +292,11 @@
   background: #f8fafc;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide {
-  justify-content: flex-start;
+  justify-content: center;
   gap: 1.1rem;
-  padding: 0.75rem 1rem;
-  max-width: 28rem;
+  padding: 0.75rem 1.25rem;
+  width: 100%;
+  max-width: 32rem;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-ring { flex: none; width: 5.5rem; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide .cv-gauge-ring { width: 5.25rem; }
@@ -907,15 +909,15 @@
   appearance: none;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  width: auto;
-  max-width: 100%;
-  margin: 0;
+  align-items: center;
+  width: 100%;
+  max-width: 32rem;
+  margin: 0 auto;
   padding: 0.15rem;
   border: 1.5px solid transparent;
   border-radius: 1rem;
   background: transparent;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
   font: inherit;
   color: inherit;
@@ -932,6 +934,7 @@
   font-size: 0.72rem;
   font-weight: 800;
   color: #1d4ed8;
+  text-align: center;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-trend-close {
   appearance: none;
@@ -1148,7 +1151,8 @@
   :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-rings { justify-content: space-around; }
   :is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide {
     flex-direction: row;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
     max-width: none;
   }
 }
