@@ -2113,6 +2113,40 @@
     const year = yc?.get(s.key);
     const knows = s.count || s.reviews || year;
     const trainBox = trainBoxHtml(s.key, pf.name);
+    /* 有線上考試／教學影片的課（含週報等 general）走儀表板，才會掛載 CourseExam 播片 */
+    if (window.CourseExam?.has(s.key)) {
+      const openDash = state.dashOpen || 'video';
+      const status = s.general
+        ? `<div class="apt-train-status is-single">${trainBox}</div>`
+        : `<div class="apt-train-status">
+          ${trainBox}
+          <div class="${knows ? 'is-ok' : 'is-no'}">
+            <span>實務</span>
+            <b>${knows ? '✔ 已會' : '還沒做過'}</b>
+            <small>本月 ${s.count} 件${s.rank ? `（第 ${s.rank}／${s.doers} 名）` : ''}${yc ? ` · ${sinceText()} ${year || 0} 件` : ''}</small>
+          </div>
+          <div>
+            <span>審核速度</span>
+            <b>${s.reviews ? fmt(s.avg) : NIL}</b>
+            <small>${s.reviews ? (s.speedRank ? `同節點第 <i class="apt-tag ${speedTone(s.speedScore)}">${s.speedRank}／${s.speedN}</i> 名（${Core.rankBand(s.speedRank, s.speedN)}）` : '') : '本月沒有審核紀錄'}</small>
+          </div>
+        </div>`;
+      const panel = (id, body) => `<section class="apt-dash-panel${openDash === id ? ' is-open' : ''}" data-dash-panel="${id}">
+            <div class="apt-dash-inner"><div class="apt-dash-body">${body}</div></div>
+          </section>`;
+      if (!state.dashOpen) state.dashOpen = 'video';
+      return trainingGrid(pf, s.key, `
+      <div class="apt-train-page">
+        <h4 class="apt-train-title">${esc(s.label)}　教育訓練<button type="button" class="apt-fold-btn apt-train-close" data-train-close title="收起這門課">收起 ▴</button></h4>
+        ${status}
+        <div class="apt-dash">
+          ${trainDashHtml(s.key, pf.name)}
+          ${panel('video', trainingMaterial(s.key))}
+          ${panel('exam', `<div id="course-exam-root" data-course="${s.key}" data-name="${esc(pf.name)}"></div>`)}
+          ${window.SimPractice ? panel('practice', `<div id="sim-practice-root" data-course="${s.key}" data-name="${esc(pf.name)}"></div>`) : ''}
+        </div>
+      </div>`);
+    }
     if (s.general) {
       return trainingGrid(pf, s.key, `
       <div class="apt-train-page">
@@ -2143,22 +2177,6 @@
             <small>${s.reviews ? (s.speedRank ? `同節點第 <i class="apt-tag ${speedTone(s.speedScore)}">${s.speedRank}／${s.speedN}</i> 名（${Core.rankBand(s.speedRank, s.speedN)}）` : '') : '本月沒有審核紀錄'}</small>
           </div>
         </div>`;
-    if (window.CourseExam?.has(s.key)) {
-      const panel = (id, body) => `<section class="apt-dash-panel${state.dashOpen === id ? ' is-open' : ''}" data-dash-panel="${id}">
-            <div class="apt-dash-inner"><div class="apt-dash-body">${body}</div></div>
-          </section>`;
-      return trainingGrid(pf, s.key, `
-      <div class="apt-train-page">
-        <h4 class="apt-train-title">${esc(s.label)}　教育訓練<button type="button" class="apt-fold-btn apt-train-close" data-train-close title="收起這門課">收起 ▴</button></h4>
-        ${status}
-        <div class="apt-dash">
-          ${trainDashHtml(s.key, pf.name)}
-          ${panel('video', trainingMaterial(s.key))}
-          ${panel('exam', `<div id="course-exam-root" data-course="${s.key}" data-name="${esc(pf.name)}"></div>`)}
-          ${window.SimPractice ? panel('practice', `<div id="sim-practice-root" data-course="${s.key}" data-name="${esc(pf.name)}"></div>`) : ''}
-        </div>
-      </div>`);
-    }
     return trainingGrid(pf, s.key, `
       <div class="apt-train-page">
         <h4 class="apt-train-title">${esc(s.label)}　教育訓練<button type="button" class="apt-fold-btn apt-train-close" data-train-close title="收起這門課">收起 ▴</button></h4>

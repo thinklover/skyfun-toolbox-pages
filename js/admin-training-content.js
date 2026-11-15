@@ -68,13 +68,9 @@ window.AdminTrainingContent = {
     links: []
   },
   term: { summary: '', sections: [], links: [] },
-  repair: { summary: '', sections: [], links: [] },
-  bonus: { summary: '', sections: [], links: [] },
-  hr: { summary: '', sections: [], links: [] },
-  guild: { summary: '', sections: [], links: [] },
-  subsidy: {
+  repair: {
     summary: '先看完補助審核教學影片（系統會記錄觀看進度），再點上方「線上考試」考試（20 題，全部答對才通過）；答錯的題目會標示影片時間點。補助分修繕、保險、公證費三類；先到秘書專區「補助審核」從「未送件」收件後再審。',
-    videos: [{ title: '補助審核教學影片', length: '約 32 分鐘', course: 'subsidy' }],
+    videos: [{ title: '補助審核教學影片', length: '約 32 分鐘', course: 'repair' }],
     sections: [
       { title: '收件與狀態', items: ['公司系統 → 秘書專區 → 補助審核', '紙本回來後到「未送件」勾選收件 → 批次更新 → 狀態變「審核中」', '審核中可核准或退件，意見寫在意見欄'] },
       { title: '修繕重點', items: ['偵煙器／滅火器新添購：發票可在起租日前後兩個月內', '申請期限從收據／發票日起算 3 個月內（不是從起租日）', '申請日不能早於起租日', '實際金額只加總「有申請的項目」，不理發票其他品項總計', '申請金額看修繕餘額；修繕項目選項要選對', '中區（台中／彰化／南投）照片近似安全檢核表；北南區修繕前要空景、中／後要有日期地址'] },
