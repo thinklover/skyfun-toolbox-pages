@@ -280,7 +280,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
-  justify-items: center;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge {
   display: flex;
@@ -293,13 +292,16 @@
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide {
   justify-content: center;
-  gap: 1.1rem;
-  padding: 0.75rem 1.25rem;
+  gap: 1.35rem;
+  padding: 1.1rem 1.5rem;
   width: 100%;
-  max-width: 32rem;
+  max-width: none;
+  box-sizing: border-box;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-ring { flex: none; width: 5.5rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide .cv-gauge-ring { width: 5.25rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide .cv-gauge-ring { width: 6.5rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide .cv-gauge-label { font-size: 1.15rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide .cv-gauge-meta { font-size: 0.95rem; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-ring .apc-donut { width: 100%; display: block; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-text { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-label { font-size: 1rem; font-weight: 900; color: #0f172a; }
@@ -911,8 +913,8 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 32rem;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 0.15rem;
   border: 1.5px solid transparent;
   border-radius: 1rem;
@@ -922,6 +924,7 @@
   font: inherit;
   color: inherit;
   transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-hit:hover,
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-hit.is-on {
