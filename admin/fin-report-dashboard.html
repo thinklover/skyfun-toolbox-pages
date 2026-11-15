@@ -56,6 +56,8 @@
     .reject-box button:hover { background: #fef2f2; }
     .reject-box button:disabled { opacity: 0.6; cursor: wait; }
     .reject-reason { margin: 0.25rem 0 0; color: #7f1d1d; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; }
+    .act-row button[data-fin-delete] { border-color: #b91c1c; color: #991b1b; background: #fff; }
+    .act-row button[data-fin-delete]:hover { background: #fef2f2; }
   </style>
 </head>
 <body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
@@ -64,7 +66,7 @@
       <h1>財務部問題回報後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">查看財務回報單、退件與下載附件。下方可勾選誰要收新單 LINE 推播（須先綁定工具箱 LINE）。</p>
+    <p class="lead">查看財務回報單、退件、刪除案件與下載附件。下方可勾選誰要收新單 LINE 推播（須先綁定工具箱 LINE）。</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
@@ -142,7 +144,7 @@
               <th>姓名／處所</th>
               <th>內容</th>
               <th>附件</th>
-              <th>LINE／退件</th>
+              <th>LINE／退件／刪除</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -457,12 +459,15 @@
           ? ('已推 ' + r.lineRecipients + ' 人')
           : (r.lineError ? esc(r.lineError) : '未推播');
         let html = '<div class="muted">' + line + '</div>';
+        const delBtn = '<div class="act-row" style="margin-top:0.35rem"><button type="button" data-fin-delete="' + esc(r.id) + '">刪除案件</button></div>';
         if (st === 'rejected') {
           html += '<p class="reject-reason"><b>退件原因</b><br>' + esc(r.rejectReason || '—') + '</p>';
+          html += delBtn;
           return html;
         }
         if (st === 'closed') {
           html += '<p class="muted" style="margin:0.25rem 0 0">結案時間：' + esc(fmt(r.handledAt)) + '</p>';
+          html += delBtn;
           return html;
         }
         html += '<div class="act-box"><div class="act-row">';
@@ -472,6 +477,7 @@
         if (st === 'submitted' || st === 'resubmitted' || st === 'processing') {
           html += '<button type="button" data-fin-status="closed" data-fin-id="' + esc(r.id) + '">結案</button>';
         }
+        html += '<button type="button" data-fin-delete="' + esc(r.id) + '">刪除案件</button>';
         html += '</div>';
         if (st === 'resubmitted') {
           html += '<p class="reject-reason muted">原退件：' + esc(r.rejectReason || '—') + '</p>';
@@ -672,6 +678,26 @@
         render();
       });
       document.getElementById('rows').addEventListener('click', async (e) => {
+        const delBtn = e.target.closest('[data-fin-delete]');
+        if (delBtn) {
+          const id = delBtn.getAttribute('data-fin-delete');
+          if (!confirm('確定刪除案件 #' + id + '？\n附件一併刪除，無法復原。')) return;
+          delBtn.disabled = true;
+          try {
+            const res = await rpc('fin_report_admin_delete', {
+              p_secret: secret,
+              p_id: Number(id)
+            });
+            if (!res || res.ok === false) throw new Error((res && res.error) || '刪除失敗');
+            allRows = allRows.filter((r) => String(r.id) !== String(id));
+            render();
+            document.getElementById('msg').textContent = '已刪除案件 #' + id;
+          } catch (err) {
+            delBtn.disabled = false;
+            document.getElementById('msg').textContent = err.message || String(err);
+          }
+          return;
+        }
         const statusBtn = e.target.closest('[data-fin-status]');
         if (statusBtn) {
           const id = statusBtn.getAttribute('data-fin-id');
