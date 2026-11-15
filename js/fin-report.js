@@ -1030,7 +1030,7 @@
     const back = rowsByKey('back').length;
     const logged = !!token();
     box.innerHTML = [
-      finGaugeHtml('all', '全部案件', all, all ? 'is-all' : '',
+      finGaugeHtml('all', '全部案件', all, 'is-all',
         logged ? (all ? '點擊看七項件數' : '尚無送出紀錄') : '請先登入'),
       finGaugeHtml('wait', '待處理案件', wait, wait ? 'is-wait' : '',
         logged ? (wait ? '點擊看七項待處理' : '目前沒有待處理案件') : '請先登入'),
