@@ -951,7 +951,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: #64748b;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 #page-biz-supervisor .bz-hero .apt-entry-arrow {
   padding: 0.34rem 0.85rem;

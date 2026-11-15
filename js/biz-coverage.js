@@ -834,7 +834,7 @@
     const arrow = dir === 'asc' ? '少→多' : '多→少';
     return `<div class="cv-sort-bar">
       <button type="button" class="cv-sort-btn" data-cv-sort="${which}" aria-pressed="${dir === 'asc' ? 'true' : 'false'}">
-        排序：營業處（北→南） → ${esc(secondaryLabel)} · <b>${arrow}</b><small>點一下切換件數</small>
+        排序：營業處（北→南） → ${esc(secondaryLabel)} · <b>${arrow}</b><small>點一下切換多／少</small>
       </button>
     </div>`;
   }
