@@ -906,6 +906,7 @@
         let page = overlayDoc.addPage([PAGE_W, PAGE_H]);
         const single = onePageEnough(senders, receivers, ccs);
 
+        // 單人：姓名地址直接填在第一頁表格欄位；多人：內文先寫在信函紙，最後另加「剪下貼上」空白附頁
         if (single) {
             if (senders[0]?.name) drawText(page, senders[0].name, NAME_COORDINATE.s_x_y_begin[0], NAME_COORDINATE.s_x_y_begin[1], 10);
             if (senders[0]?.addr) drawText(page, senders[0].addr, ADDR_COORDINATE.s_x_y_begin[0], ADDR_COORDINATE.s_x_y_begin[1], 10);
@@ -913,14 +914,18 @@
             if (receivers[0]?.addr) drawText(page, receivers[0].addr, ADDR_COORDINATE.r_x_y_begin[0], ADDR_COORDINATE.r_x_y_begin[1], 10);
             if (ccs[0]?.name) drawText(page, ccs[0].name, NAME_COORDINATE.c_x_y_begin[0], NAME_COORDINATE.c_x_y_begin[1], 10);
             if (ccs[0]?.addr) drawText(page, ccs[0].addr, ADDR_COORDINATE.c_x_y_begin[0], ADDR_COORDINATE.c_x_y_begin[1], 10);
-        } else {
-            drawInfoBox(page, drawText, drawLine, drawRect, font, senders, receivers, ccs);
-            page = overlayDoc.addPage([PAGE_W, PAGE_H]);
         }
 
         writeMainArticle(overlayDoc, page, drawText, mainText);
 
-        return overlayDoc.save();
+        const blankPageIndexes = [];
+        if (!single) {
+            page = overlayDoc.addPage([PAGE_W, PAGE_H]);
+            blankPageIndexes.push(overlayDoc.getPageCount() - 1);
+            drawInfoBox(page, drawText, drawLine, drawRect, font, senders, receivers, ccs);
+        }
+
+        return { bytes: await overlayDoc.save(), blankPageIndexes };
     }
 
     function drawInfoBox(page, drawText, drawLine, drawRect, font, senders, receivers, ccs) {
@@ -932,24 +937,44 @@
 
         let y = DETAIL_START[1];
         drawText(page, '一、寄件人', TITLE_START[0], TITLE_START[1], 10);
-        y = fillPartyBlock(page, drawText, senders, DETAIL_START[0], y);
+        y = fillPartyBlock(page, drawText, font, senders, DETAIL_START[0], y);
 
         y -= TITLE_Y_INTERVAL;
         drawText(page, '二、收件人', TITLE_START[0], y, 10);
-        y = fillPartyBlock(page, drawText, receivers, DETAIL_START[0], y);
+        y = fillPartyBlock(page, drawText, font, receivers, DETAIL_START[0], y);
 
         y -= TITLE_Y_INTERVAL;
         drawText(page, '三、', TITLE_START[0], y, 10);
         drawText(page, '副 本', TITLE_START[0] + CC_RECEIVER_FIX[0], y + CC_RECEIVER_FIX[1], 10);
         drawText(page, '收件人', TITLE_START[0] + CC_RECEIVER_FIX[0], y - CC_RECEIVER_FIX[1], 10);
-        y = fillPartyBlock(page, drawText, ccs, DETAIL_START[0], y);
+        y = fillPartyBlock(page, drawText, font, ccs, DETAIL_START[0], y);
 
         drawLine(page, BOX_UPPERLEFT[0], BOX_UPPERLEFT[1], BOX_UPPERLEFT[0], y);
         drawLine(page, BOX_UPPERLEFT[0], y, BOX_UPPERRIGHT[0], y);
         drawLine(page, BOX_UPPERRIGHT[0], BOX_UPPERRIGHT[1], BOX_UPPERRIGHT[0], y);
     }
 
-    function fillPartyBlock(page, drawText, list, x, yStart) {
+    const DETAIL_MAX_WIDTH = BOX_UPPERRIGHT[0] - DETAIL_START[0] - 0.12 * PDF_INCH;
+
+    function wrapDetailLines(font, label, text, size) {
+        const full = label + String(text || '');
+        if (!font || !full) return [full || label];
+        const lines = [];
+        let cur = '';
+        for (const ch of full) {
+            const next = cur + ch;
+            if (cur && font.widthOfTextAtSize(next, size) > DETAIL_MAX_WIDTH) {
+                lines.push(cur);
+                cur = ch;
+            } else {
+                cur = next;
+            }
+        }
+        if (cur) lines.push(cur);
+        return lines.length ? lines : [label];
+    }
+
+    function fillPartyBlock(page, drawText, font, list, x, yStart) {
         const max = Math.max(list.length, 1);
         let y = yStart;
         if (list.length === 0) {
@@ -960,10 +985,15 @@
         }
         for (let i = 0; i < max; i++) {
             const p = list[i] || { name: '', addr: '' };
-            drawText(page, '姓名：' + (p.name || ''), x, y, 10);
-            y -= DETAIL_Y_INTERVAL;
-            drawText(page, '詳細地址：' + (p.addr || ''), x, y, 10);
-            y -= DETAIL_Y_INTERVAL;
+            const nameLabel = list.length > 1 ? ('姓名（' + (i + 1) + '）：') : '姓名：';
+            for (const line of wrapDetailLines(font, nameLabel, p.name || '', 10)) {
+                drawText(page, line, x, y, 10);
+                y -= DETAIL_Y_INTERVAL;
+            }
+            for (const line of wrapDetailLines(font, '詳細地址：', p.addr || '', 10)) {
+                drawText(page, line, x, y, 10);
+                y -= DETAIL_Y_INTERVAL;
+            }
         }
         return y;
     }
@@ -1006,17 +1036,24 @@
         }
     }
 
-    async function mergeWithTemplate(PDFLib, overlayBytes, templateBytes) {
+    async function mergeWithTemplate(PDFLib, overlayBytes, templateBytes, blankPageIndexes) {
         const { PDFDocument } = PDFLib;
         const templateDoc = await PDFDocument.load(templateBytes);
         const overlayDoc = await PDFDocument.load(overlayBytes);
         const outDoc = await PDFDocument.create();
         const pageCount = overlayDoc.getPageCount();
+        const blankSet = new Set(Array.isArray(blankPageIndexes) ? blankPageIndexes : []);
 
         for (let i = 0; i < pageCount; i++) {
-            const [tplPage] = await outDoc.copyPages(templateDoc, [0]);
             const [ovlPage] = await outDoc.copyPages(overlayDoc, [i]);
             const embedded = await outDoc.embedPage(ovlPage);
+            // 多人「剪下貼上」附頁必須用空白底，不可再套存證信函表格（否則標題／地址會雙重重疊）
+            if (blankSet.has(i)) {
+                const blank = outDoc.addPage([PAGE_W, PAGE_H]);
+                blank.drawPage(embedded);
+                continue;
+            }
+            const [tplPage] = await outDoc.copyPages(templateDoc, [0]);
             tplPage.drawPage(embedded);
             outDoc.addPage(tplPage);
         }
@@ -1133,8 +1170,8 @@
             const [fontBytes, templateBytes] = await Promise.all([getFontBytes(), getTemplateBytes()]);
             if (status) status.textContent = isPreview ? '預覽排版中…' : '排版產生中…';
 
-            const overlayBytes = await buildOverlayPdf(PDFLib, fontBytes, senders, receivers, ccs, finalContent);
-            const finalBytes = await mergeWithTemplate(PDFLib, overlayBytes, templateBytes);
+            const overlay = await buildOverlayPdf(PDFLib, fontBytes, senders, receivers, ccs, finalContent);
+            const finalBytes = await mergeWithTemplate(PDFLib, overlay.bytes, templateBytes, overlay.blankPageIndexes);
 
             if (isPreview) {
                 ensureLalPreviewUi();
