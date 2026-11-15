@@ -868,6 +868,11 @@
 }
 #page-finance .fin-gauges > .fin-gauge.is-all {
   grid-column: 1 / -1;
+  justify-content: center;
+  text-align: center;
+}
+#page-finance .fin-gauges > .fin-gauge.is-all .fin-gauge-text {
+  align-items: center;
 }
 @media (min-width: 900px) {
   #page-finance .fin-gauges {
