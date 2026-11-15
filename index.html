@@ -4606,7 +4606,7 @@
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261109-spotmonth">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261115-palette2">
-<link rel="stylesheet" href="./css/ai-tingting.css?v=20261114-ait-hero">
+<link rel="stylesheet" href="./css/ai-tingting.css?v=20261115-sidebar">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
@@ -5389,34 +5389,43 @@
         </div>
 
         <!-- AI婷婷 問答（行政／業務主管專區共用） -->
-        <div id="page-ai-tingting" class="hidden max-w-3xl mx-auto space-y-3">
+        <div id="page-ai-tingting" class="hidden max-w-6xl mx-auto space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <button type="button" id="ait-back-btn" class="mb-1 btn btn-sm tone-slate-soft">← 返回行政專區</button>
                 <a class="text-sm font-bold text-violet-700 hover:underline" href="./admin/ai-tingting-dashboard.html" target="_blank" rel="noopener">對話紀錄後台 →</a>
             </div>
             <section class="ait-zone" id="ait-zone" aria-label="AI婷婷問答">
-                <header class="ait-head">
-                    <div class="ait-head-row">
-                        <span class="ait-avatar" aria-hidden="true">🤖</span>
-                        <div>
-                            <h2 class="ait-title">AI婷婷</h2>
-                            <p class="ait-sub">行政知識庫助理 · 線上</p>
+                <aside class="ait-side" id="ait-side" aria-label="對話歷史">
+                    <button type="button" class="ait-new-chat" id="ait-new-chat">＋ 新聊天</button>
+                    <label class="sr-only" for="ait-search">搜尋對話</label>
+                    <input type="search" id="ait-search" class="ait-search" placeholder="搜尋對話…" autocomplete="off">
+                    <div class="ait-hist-list" id="ait-hist-list" role="list"></div>
+                </aside>
+                <div class="ait-panel">
+                    <header class="ait-head">
+                        <div class="ait-head-row">
+                            <button type="button" class="ait-side-toggle" id="ait-side-toggle" aria-label="開關歷史側欄" aria-expanded="false">☰</button>
+                            <span class="ait-avatar" aria-hidden="true">🤖</span>
+                            <div>
+                                <h2 class="ait-title">AI婷婷</h2>
+                                <p class="ait-sub">行政知識庫助理 · 線上</p>
+                            </div>
                         </div>
+                        <p class="ait-disclaimer">AI婷婷 是 AI，依行政知識庫回答；特殊個案請找婷婷本人或行政確認。</p>
+                    </header>
+                    <div id="ait-login-gate" class="ait-login-gate hidden">請先登入工具箱後再使用 AI婷婷。</div>
+                    <div id="ait-main" class="ait-main">
+                        <div id="ait-thread" class="ait-thread" aria-live="polite"></div>
+                        <p id="ait-status" class="ait-status hidden" role="status"></p>
+                        <form id="ait-form" class="ait-composer">
+                            <label class="sr-only" for="ait-input">訊息</label>
+                            <textarea id="ait-input" class="ait-input" maxlength="500" rows="1" placeholder="傳訊息給 AI婷婷…" required></textarea>
+                            <div class="ait-composer-bar">
+                                <span id="ait-count" class="ait-count">0 / 500</span>
+                                <button type="submit" id="ait-send" class="ait-send" aria-label="送出">送出</button>
+                            </div>
+                        </form>
                     </div>
-                    <p class="ait-disclaimer">AI婷婷 是 AI，依行政知識庫回答；特殊個案請找婷婷本人或行政確認。</p>
-                </header>
-                <div id="ait-login-gate" class="ait-login-gate hidden">請先登入工具箱後再使用 AI婷婷。</div>
-                <div id="ait-main" class="ait-main">
-                    <div id="ait-thread" class="ait-thread" aria-live="polite"></div>
-                    <p id="ait-status" class="ait-status hidden" role="status"></p>
-                    <form id="ait-form" class="ait-composer">
-                        <label class="sr-only" for="ait-input">訊息</label>
-                        <textarea id="ait-input" class="ait-input" maxlength="500" rows="1" placeholder="傳訊息給 AI婷婷…" required></textarea>
-                        <div class="ait-composer-bar">
-                            <span id="ait-count" class="ait-count">0 / 500</span>
-                            <button type="submit" id="ait-send" class="ait-send" aria-label="送出">送出</button>
-                        </div>
-                    </form>
                 </div>
             </section>
         </div>
@@ -14362,7 +14371,7 @@
         <script src="./js/rentmgr-perf.js?v=20261028-abn-auth"></script>
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
-        <script src="./js/ai-tingting.js?v=20261114-chat"></script>
+        <script src="./js/ai-tingting.js?v=20261115-sidebar"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
         <script src="./js/admin-points-core.js?v=20261115-repair"></script>
         <script src="./js/admin-points-charts.js?v=20261109-zoom"></script>

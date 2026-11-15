@@ -1,5 +1,5 @@
 /**
- * AI婷婷 問答（聊天介面；行政／業務主管專區共用）
+ * AI婷婷 問答（ChatGPT 式側欄歷史；本機多對話；行政／業務主管共用）
  */
 (function () {
   'use strict';
@@ -12,13 +12,17 @@
   const FN_PATH = '/functions/v1/ai-tingting';
   const ZONE_KEY = 'ai-tingting-zone';
   const BACK_KEY = 'ai-tingting-back';
+  const STORE_PREFIX = 'skyfun-ait-chats-v1:';
 
   let pollTimer = null;
   let pollStartedAt = 0;
   let pendingId = null;
+  let pendingSessionId = null;
   let askTimes = [];
   let inited = false;
-  let chatItems = [];
+  let store = { activeId: '', sessions: [] };
+  let searchQ = '';
+  let migratedOnce = false;
 
   function $(id) {
     return document.getElementById(id);
@@ -46,6 +50,12 @@
     } catch (_) {
       return null;
     }
+  }
+
+  function userKey() {
+    const u = user();
+    const id = String((u && (u.account || u.username || u.name || u.id)) || 'guest').trim();
+    return STORE_PREFIX + id;
   }
 
   function zone() {
@@ -82,18 +92,82 @@
     }
   }
 
+  function uid() {
+    return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function titleFromText(text) {
+    const t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '新聊天';
+    return t.length > 28 ? t.slice(0, 28) + '…' : t;
+  }
+
+  function loadStore() {
+    try {
+      const raw = localStorage.getItem(userKey());
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && Array.isArray(parsed.sessions)) {
+        store = {
+          activeId: String(parsed.activeId || ''),
+          sessions: parsed.sessions.map(function (s) {
+            return {
+              id: String(s.id || uid()),
+              title: String(s.title || '新聊天'),
+              updatedAt: String(s.updatedAt || new Date().toISOString()),
+              items: Array.isArray(s.items) ? s.items : [],
+            };
+          }),
+        };
+      } else {
+        store = { activeId: '', sessions: [] };
+      }
+    } catch (_) {
+      store = { activeId: '', sessions: [] };
+    }
+    if (!store.sessions.length) {
+      const s = { id: uid(), title: '新聊天', updatedAt: new Date().toISOString(), items: [] };
+      store.sessions = [s];
+      store.activeId = s.id;
+      saveStore();
+    } else if (!store.activeId || !store.sessions.some(function (s) { return s.id === store.activeId; })) {
+      store.activeId = store.sessions[0].id;
+      saveStore();
+    }
+  }
+
+  function saveStore() {
+    try {
+      localStorage.setItem(userKey(), JSON.stringify(store));
+    } catch (_) {
+      /* ignore quota */
+    }
+  }
+
+  function activeSession() {
+    return store.sessions.find(function (s) { return s.id === store.activeId; }) || null;
+  }
+
+  function touchSession(session, patch) {
+    if (!session) return;
+    Object.assign(session, patch || {});
+    session.updatedAt = new Date().toISOString();
+    store.sessions = [session].concat(store.sessions.filter(function (s) { return s.id !== session.id; }));
+    saveStore();
+  }
+
   function clearPoll() {
     if (pollTimer) {
       clearInterval(pollTimer);
       pollTimer = null;
     }
     pendingId = null;
+    pendingSessionId = null;
     pollStartedAt = 0;
   }
 
   function rateOk() {
     const now = Date.now();
-    askTimes = askTimes.filter((t) => now - t < RATE_WINDOW_MS);
+    askTimes = askTimes.filter(function (t) { return now - t < RATE_WINDOW_MS; });
     return askTimes.length < RATE_LIMIT;
   }
 
@@ -121,8 +195,8 @@
   }
 
   async function api(body) {
-    const { url, anonKey } = cfg();
-    if (!url || !anonKey) throw new Error('尚未設定 Supabase');
+    const conf = cfg();
+    if (!conf.url || !conf.anonKey) throw new Error('尚未設定 Supabase');
     const t = token();
     if (!t && body.action !== 'answer') throw new Error('請先登入');
     const payload = Object.assign({}, body);
@@ -131,13 +205,12 @@
     let lastErr = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const res = await fetch(url + FN_PATH, {
+        const res = await fetch(conf.url + FN_PATH, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            apikey: anonKey,
-            // 與其他 Edge Function 相同：gateway 用 anon JWT；工具箱 session 放 body.token
-            Authorization: 'Bearer ' + anonKey,
+            apikey: conf.anonKey,
+            Authorization: 'Bearer ' + conf.anonKey,
           },
           body: JSON.stringify(payload),
         });
@@ -160,7 +233,6 @@
         }
         return data;
       } catch (err) {
-        // 業務錯誤（已有 HTTP 回應）直接拋出，不重試、不改寫訊息
         if (err instanceof Error && !isNetErr(err) && !/請求失敗（50[23]）/.test(err.message || '')) {
           throw err;
         }
@@ -243,7 +315,6 @@
     if (!thread) return;
     thread.textContent = '';
     const list = Array.isArray(items) ? items.slice() : [];
-    // 聊天：由舊到新
     list.sort(function (a, b) {
       return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
     });
@@ -284,45 +355,181 @@
     scrollThreadBottom();
   }
 
-  async function refreshHistory() {
-    const data = await api({ action: 'list' });
-    chatItems = data.items || [];
-    renderChat(chatItems);
+  function renderActiveThread() {
+    const s = activeSession();
+    renderChat(s ? s.items : []);
+  }
+
+  function renderHistList() {
+    const box = $('ait-hist-list');
+    if (!box) return;
+    const q = String(searchQ || '').trim().toLowerCase();
+    const list = store.sessions.filter(function (s) {
+      if (!q) return true;
+      const blob = [s.title].concat((s.items || []).map(function (it) {
+        return String(it.question || '') + ' ' + String(it.answer || '');
+      })).join(' ').toLowerCase();
+      return blob.indexOf(q) >= 0;
+    });
+    box.textContent = '';
+    if (!list.length) {
+      const empty = document.createElement('p');
+      empty.className = 'ait-hist-empty';
+      empty.textContent = q ? '找不到符合的對話' : '尚無歷史對話';
+      box.appendChild(empty);
+      return;
+    }
+    list.forEach(function (s) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ait-hist-item' + (s.id === store.activeId ? ' is-on' : '');
+      btn.setAttribute('role', 'listitem');
+      btn.dataset.sessionId = s.id;
+      const title = document.createElement('span');
+      title.className = 'ait-hist-title';
+      title.textContent = s.title || '新聊天';
+      const meta = document.createElement('span');
+      meta.className = 'ait-hist-meta';
+      meta.textContent = fmtTime(s.updatedAt) || '';
+      btn.appendChild(title);
+      btn.appendChild(meta);
+      box.appendChild(btn);
+    });
+  }
+
+  function newChat() {
+    const blank = store.sessions.find(function (s) {
+      return !(s.items && s.items.length) && s.title === '新聊天';
+    });
+    if (blank) {
+      store.activeId = blank.id;
+      touchSession(blank);
+    } else {
+      const s = { id: uid(), title: '新聊天', updatedAt: new Date().toISOString(), items: [] };
+      store.sessions.unshift(s);
+      store.activeId = s.id;
+      saveStore();
+    }
+    setStatus('', false);
+    renderHistList();
+    renderActiveThread();
+    const input = $('ait-input');
+    if (input) {
+      input.focus();
+      updateCount();
+      autoResize();
+    }
+    closeSideOnMobile();
+  }
+
+  function selectSession(id) {
+    if (!id || !store.sessions.some(function (s) { return s.id === id; })) return;
+    store.activeId = id;
+    saveStore();
+    setStatus('', false);
+    renderHistList();
+    renderActiveThread();
+    closeSideOnMobile();
+  }
+
+  function closeSideOnMobile() {
+    const zoneEl = $('ait-zone');
+    const toggle = $('ait-side-toggle');
+    if (zoneEl) zoneEl.classList.remove('is-side-open');
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function upsertItemInSession(sessionId, item) {
+    const session = store.sessions.find(function (s) { return s.id === sessionId; });
+    if (!session) return null;
+    const idx = (session.items || []).findIndex(function (it) { return String(it.id) === String(item.id); });
+    if (idx >= 0) session.items[idx] = Object.assign({}, session.items[idx], item);
+    else session.items = (session.items || []).concat([item]);
+    if ((!session.title || session.title === '新聊天') && item.question) {
+      session.title = titleFromText(item.question);
+    }
+    touchSession(session);
+    return session;
+  }
+
+  async function migrateFromServerIfEmpty() {
+    if (migratedOnce) return;
+    migratedOnce = true;
+    const hasLocalMsgs = store.sessions.some(function (s) { return s.items && s.items.length; });
+    if (hasLocalMsgs) return;
+    try {
+      const data = await api({ action: 'list' });
+      const items = Array.isArray(data.items) ? data.items.slice() : [];
+      if (!items.length) return;
+      items.sort(function (a, b) {
+        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+      });
+      const session = activeSession() || store.sessions[0];
+      session.items = items.map(function (it) {
+        return {
+          id: it.id,
+          question: it.question || '',
+          answer: it.answer || '',
+          status: it.status || 'answered',
+          createdAt: it.createdAt,
+          answeredAt: it.answeredAt,
+        };
+      });
+      session.title = titleFromText(session.items[0] && session.items[0].question) || '先前對話';
+      touchSession(session);
+    } catch (_) {
+      /* 首次遷移失敗就略過，仍用空白新聊天 */
+    }
   }
 
   async function pollOnce() {
     if (!pendingId) return;
     if (Date.now() - pollStartedAt > POLL_MAX_MS) {
+      const sid = pendingSessionId;
+      const qid = pendingId;
       clearPoll();
       setStatus('目前忙線，請稍後再問或直接問行政', true);
-      try {
-        await refreshHistory();
-      } catch (_) {
-        /* ignore */
+      if (sid && qid) {
+        upsertItemInSession(sid, { id: qid, status: 'failed' });
+        if (store.activeId === sid) renderActiveThread();
+        renderHistList();
       }
       return;
     }
     try {
       const data = await api({ action: 'get', questionId: pendingId });
+      const sid = pendingSessionId;
+      const qid = pendingId;
       if (data.status === 'answered') {
         clearPoll();
         setStatus('', false);
-        await refreshHistory();
+        upsertItemInSession(sid, {
+          id: qid,
+          question: data.question || undefined,
+          answer: data.answer || '',
+          status: 'answered',
+          answeredAt: data.answeredAt || new Date().toISOString(),
+        });
+        if (store.activeId === sid) renderActiveThread();
+        renderHistList();
         return;
       }
       if (data.status === 'failed') {
         clearPoll();
         setStatus('回覆失敗，請稍後再問或直接問行政', true);
-        await refreshHistory();
+        upsertItemInSession(sid, { id: qid, status: 'failed' });
+        if (store.activeId === sid) renderActiveThread();
+        renderHistList();
       }
     } catch (e) {
       console.warn('[ai-tingting] poll', e);
     }
   }
 
-  function startPoll(questionId) {
+  function startPoll(questionId, sessionId) {
     clearPoll();
     pendingId = questionId;
+    pendingSessionId = sessionId;
     pollStartedAt = Date.now();
     setStatus('AI婷婷 回覆中，約 1～2 分鐘', false);
     pollTimer = setInterval(function () {
@@ -365,19 +572,29 @@
       return;
     }
 
+    let session = activeSession();
+    if (!session) {
+      newChat();
+      session = activeSession();
+    }
+    const sessionId = session.id;
+    const localId = 'local-' + Date.now();
+
     if (btn) btn.disabled = true;
     setStatus('送出中…', false);
     try {
       markAsk();
-      // 先樂觀顯示自己的訊息
-      chatItems = chatItems.concat([{
-        id: 'local-' + Date.now(),
+      upsertItemInSession(sessionId, {
+        id: localId,
         question: text,
         answer: '',
         status: 'pending',
         createdAt: new Date().toISOString(),
-      }]);
-      renderChat(chatItems);
+      });
+      store.activeId = sessionId;
+      saveStore();
+      renderHistList();
+      renderActiveThread();
       if (input) {
         input.value = '';
         updateCount();
@@ -388,15 +605,23 @@
         zone: zone(),
         question: text,
       });
-      startPoll(data.questionId);
-      await refreshHistory();
+      const qid = data.questionId;
+      const sess = store.sessions.find(function (s) { return s.id === sessionId; });
+      if (sess) {
+        sess.items = (sess.items || []).map(function (it) {
+          if (String(it.id) !== String(localId)) return it;
+          return Object.assign({}, it, { id: qid, status: 'pending' });
+        });
+        touchSession(sess);
+      }
+      startPoll(qid, sessionId);
+      renderHistList();
+      if (store.activeId === sessionId) renderActiveThread();
     } catch (err) {
       setStatus(err?.message || '送出失敗', true);
-      try {
-        await refreshHistory();
-      } catch (_) {
-        /* ignore */
-      }
+      upsertItemInSession(sessionId, { id: localId, status: 'failed' });
+      if (store.activeId === sessionId) renderActiveThread();
+      renderHistList();
     } finally {
       if (btn) btn.disabled = false;
     }
@@ -431,6 +656,40 @@
         }
       });
     }
+    const neu = $('ait-new-chat');
+    if (neu && !neu.dataset.aitBound) {
+      neu.dataset.aitBound = '1';
+      neu.addEventListener('click', function () {
+        newChat();
+      });
+    }
+    const search = $('ait-search');
+    if (search && !search.dataset.aitBound) {
+      search.dataset.aitBound = '1';
+      search.addEventListener('input', function () {
+        searchQ = String(search.value || '');
+        renderHistList();
+      });
+    }
+    const hist = $('ait-hist-list');
+    if (hist && !hist.dataset.aitBound) {
+      hist.dataset.aitBound = '1';
+      hist.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-session-id]');
+        if (!btn) return;
+        selectSession(btn.getAttribute('data-session-id'));
+      });
+    }
+    const toggle = $('ait-side-toggle');
+    if (toggle && !toggle.dataset.aitBound) {
+      toggle.dataset.aitBound = '1';
+      toggle.addEventListener('click', function () {
+        const zoneEl = $('ait-zone');
+        if (!zoneEl) return;
+        const open = zoneEl.classList.toggle('is-side-open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    }
   }
 
   async function onShow() {
@@ -443,11 +702,10 @@
       return;
     }
     setStatus('', false);
-    try {
-      await refreshHistory();
-    } catch (e) {
-      setStatus(e?.message || '無法載入對話', true);
-    }
+    loadStore();
+    await migrateFromServerIfEmpty();
+    renderHistList();
+    renderActiveThread();
   }
 
   function openFrom(zoneName) {
