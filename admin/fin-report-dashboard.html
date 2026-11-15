@@ -689,6 +689,15 @@
               p_id: Number(id)
             });
             if (!res || res.ok === false) throw new Error((res && res.error) || '刪除失敗');
+            const paths = Array.isArray(res.paths) ? res.paths.filter(Boolean) : [];
+            if (paths.length) {
+              try {
+                const { error: rmErr } = await sb().storage.from('fin-report').remove(paths);
+                if (rmErr) console.warn('fin-report storage remove', rmErr);
+              } catch (rmEx) {
+                console.warn('fin-report storage remove', rmEx);
+              }
+            }
             allRows = allRows.filter((r) => String(r.id) !== String(id));
             render();
             document.getElementById('msg').textContent = '已刪除案件 #' + id;
