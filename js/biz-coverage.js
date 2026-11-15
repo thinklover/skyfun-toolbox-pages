@@ -747,8 +747,7 @@
       <div class="cv-sub-bar">
         <span class="cv-sub-note"><b>${esc(title)}</b> · ${companyLabel} <b>${ringPct(companyDone, all.total) == null ? '無資料' : `${ringPct(companyDone, all.total)}%`}</b>（${companyDone}／${all.total}） · 點上方區域卡片可展開營業處</span>
       </div>
-      <section class="cv-zone">
-        <h4 class="cv-sec-title">${esc(companyLabel)}<small>全區總覽 · 點下方卡片可看五區${mode === 'ins' ? '投保' : '綁定'}變化圖</small></h4>
+      <section class="cv-zone cv-zone--overview">
         <div class="cv-gauges">
           <button type="button" class="cv-gauge-hit${state.rateTrendOpen ? ' is-on' : ''}" data-cv-trend-toggle aria-expanded="${state.rateTrendOpen ? 'true' : 'false'}">
             ${gaugeHtml(companyDone, all.total, tone, companyLabel, '全區', 'cv-gauge--wide')}
@@ -783,7 +782,7 @@
     ).join('');
     return `<div class="cv-toolbar">
         <div class="cv-pills" role="tablist">${filters}</div>
-        <button type="button" class="cv-refresh" data-cv-refresh>重新整理</button>
+        <button type="button" class="cv-refresh" data-cv-refresh${state.loading ? ' disabled' : ''}>${state.loading ? '比對中…' : '重新整理'}</button>
       </div>
       ${state.error ? `<p class="cv-error">${esc(state.error)}</p>` : ''}
       ${state.hrError ? `<p class="cv-error">人事：${esc(state.hrError)}。比率顯示無資料。</p>` : ''}

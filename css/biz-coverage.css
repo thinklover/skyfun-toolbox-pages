@@ -273,10 +273,13 @@
   font-weight: 600;
   color: #94a3b8;
 }
+:is(#page-business-coverage, #page-business-toolbox) .cv-zone--overview {
+  margin-top: 0.35rem;
+}
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauges {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge {
   display: flex;
@@ -287,8 +290,14 @@
   border-radius: 0.95rem;
   background: #f8fafc;
 }
-:is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide { justify-content: center; gap: 1.4rem; }
-:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-ring { flex: none; width: 6.5rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide {
+  justify-content: flex-start;
+  gap: 1.1rem;
+  padding: 0.75rem 1rem;
+  max-width: 28rem;
+}
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge-ring { flex: none; width: 5.5rem; }
+:is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide .cv-gauge-ring { width: 5.25rem; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-ring .apc-donut { width: 100%; display: block; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-text { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-label { font-size: 1rem; font-weight: 900; color: #0f172a; }
@@ -896,10 +905,13 @@
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-hit {
   appearance: none;
-  display: block;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: auto;
+  max-width: 100%;
   margin: 0;
-  padding: 0;
+  padding: 0.15rem;
   border: 1.5px solid transparent;
   border-radius: 1rem;
   background: transparent;
@@ -916,8 +928,8 @@
 }
 :is(#page-business-coverage, #page-business-toolbox) .cv-gauge-hit-hint {
   display: block;
-  margin: 0.35rem 0.15rem 0.15rem;
-  font-size: 0.74rem;
+  margin: 0.2rem 0.35rem 0.1rem;
+  font-size: 0.72rem;
   font-weight: 800;
   color: #1d4ed8;
 }
@@ -1134,5 +1146,9 @@
     align-items: stretch;
   }
   :is(#page-business-coverage, #page-business-toolbox) .cv-office.is-open .cv-rings { justify-content: space-around; }
-  :is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide { flex-direction: column; text-align: center; }
+  :is(#page-business-coverage, #page-business-toolbox) .cv-gauge--wide {
+    flex-direction: row;
+    text-align: left;
+    max-width: none;
+  }
 }
