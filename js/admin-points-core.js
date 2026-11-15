@@ -43,7 +43,7 @@
     { key: 'lvr', label: '實價登錄' }
   ];
   /** 行政教育訓練五週課表；不是技能節點的項目（general）只有訓練、沒有實務件數 */
-  const TRAINING_EXTRA = { guide: '執行要點', contract: '製作合約', weekly: '週報', repair: '修繕', bonus: '媒合費獎金管理', hr: '人員到職與離職資料輸入', guild: '送公會資料準備', roster: '清冊' };
+  const TRAINING_EXTRA = { guide: '執行要點', contract: '製作合約', weekly: '週報', repair: '修繕', bonus: '媒合費獎金管理', hr: '人員到職與離職資料輸入', guild: '送公會資料準備', roster: '清冊', subsidy: '補助審核' };
   const TRAINING_WEEKS = [
     ['guide', 'obj', 'tenant'],
     ['pre', 'rev', 'contract'],
@@ -52,7 +52,7 @@
     ['bonus', 'hr', 'guild']
   ];
   /** 專案課程排在五週之後，每科各自 100 分，不併入訓練總分 */
-  const TRAINING_PROJECTS = ['lvr', 'roster'];
+  const TRAINING_PROJECTS = ['lvr', 'roster', 'subsidy'];
   const trainingNode = (key, extra) => {
     const sk = SKILL_NODES.find((n) => n.key === key);
     return sk ? { ...sk, ...extra } : { key, label: TRAINING_EXTRA[key], general: true, ...extra };
@@ -62,7 +62,7 @@
     ...TRAINING_PROJECTS.map((key) => trainingNode(key, { project: true }))
   ];
   /** 有教學影片＋線上考試的課程 */
-  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p5', 'lvr', 'weekly'];
+  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p5', 'lvr', 'weekly', 'subsidy'];
   /** 已開放模擬系統實作的課程；其他課程的模擬環境還在建置，實作一律顯示準備中 */
   const PRACTICE_COURSES = ['obj', 'tenant', 'pre'];
   /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */
