@@ -50,7 +50,12 @@ window.AdminTrainingContent = {
     ]
   },
   contract: { summary: '', sections: [], links: [] },
-  p4: { summary: '', sections: [], links: [] },
+  p4: {
+    summary: '先看完四期／增辦四期產編教學影片（系統會記錄觀看進度），再點上方「線上考試」考試（20 題，全部答對才通過）；答錯的題目會標示影片時間點。',
+    videos: [{ title: '四期／增辦四期產編教學影片', length: '約 9 分鐘', course: 'p4' }],
+    sections: [],
+    links: []
+  },
   p5: {
     summary: '先看完五期系統續約產編教學影片（系統會記錄觀看進度），再點上方「線上考試」考試（20 題，全部答對才通過）；答錯的題目會標示影片時間點。',
     videos: [{ title: '五期系統續約產編教學影片', length: '約 11 分鐘', course: 'p5' }],
