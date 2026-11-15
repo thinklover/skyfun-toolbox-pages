@@ -2,7 +2,8 @@
 #page-ai-tingting .ait-zone {
   display: grid;
   grid-template-columns: minmax(13.5rem, 16.5rem) minmax(0, 1fr);
-  min-height: min(78vh, 44rem);
+  height: min(78vh, 44rem);
+  max-height: min(78vh, 44rem);
   background: #fff;
   border: 1px solid #d1fae5;
   border-radius: 1.35rem;
@@ -116,6 +117,8 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  height: 100%;
+  overflow: hidden;
   background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 28%, #f8fafc 100%);
 }
 
@@ -200,7 +203,11 @@
 
 #page-ai-tingting .ait-thread {
   flex: 1 1 auto;
-  overflow: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 1rem 0.95rem 0.85rem;
   display: flex;
   flex-direction: column;
@@ -403,7 +410,8 @@
 @media (max-width: 860px) {
   #page-ai-tingting .ait-zone {
     grid-template-columns: 1fr;
-    min-height: min(82vh, 40rem);
+    height: min(82vh, 40rem);
+    max-height: min(82vh, 40rem);
     position: relative;
   }
   #page-ai-tingting .ait-side-toggle { display: inline-flex; align-items: center; justify-content: center; }

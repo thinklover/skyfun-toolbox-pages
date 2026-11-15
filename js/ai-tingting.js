@@ -704,8 +704,8 @@
     setStatus('', false);
     loadStore();
     await migrateFromServerIfEmpty();
-    renderHistList();
-    renderActiveThread();
+    /* 每次進入都開空白新聊天；歷史仍在側欄可點回去 */
+    newChat();
   }
 
   function openFrom(zoneName) {
