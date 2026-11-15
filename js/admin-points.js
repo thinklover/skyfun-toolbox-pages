@@ -2005,7 +2005,11 @@
   }
 
   function trainStepText(key, name, step) {
-    if (step.pending) return '實作：模擬系統準備中';
+    if (step.pending) {
+      if (step.key === 'exam') return '考試：考題準備中';
+      if (step.key === 'practice') return '實作：模擬系統準備中';
+      return `${step.label}：準備中`;
+    }
     if (step.key === 'practice') {
       const p = window.SimPractice?.statusOf(key, name);
       return `${step.label} ${step.ok ? '✅' : p?.loaded ? `${p.passes}／${p.target} 題` : '⬜'}`;
@@ -6178,7 +6182,15 @@
     if (state.tab === 'person' && window.CourseExam) {
       window.CourseExam.loadOverview();
       const cx = $('course-exam-root');
-      if (cx) window.CourseExam.mount({ course: cx.dataset.course, self: cx.dataset.name === myName(), name: cx.dataset.name });
+      const vr = $('course-video-root');
+      const courseEl = cx || vr;
+      if (courseEl) {
+        window.CourseExam.mount({
+          course: courseEl.dataset.course,
+          self: (courseEl.dataset.name || state.person) === myName(),
+          name: courseEl.dataset.name || state.person || ''
+        });
+      }
     }
     if (state.tab === 'person' && window.SimPractice) {
       window.SimPractice.loadOverview();

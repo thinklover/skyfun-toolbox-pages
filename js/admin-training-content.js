@@ -68,6 +68,19 @@ window.AdminTrainingContent = {
     links: []
   },
   term: { summary: '', sections: [], links: [] },
+  bonus: { summary: '', sections: [], links: [] },
+  hr: {
+    summary: '先看完「人員到職與離職資料輸入」教學影片（系統會記錄觀看進度）。線上考試題目準備中，目前看完影片即可完成此項進度。',
+    videos: [{ title: '人員到職與離職資料輸入教學影片', length: '約 5 分鐘', course: 'hr' }],
+    sections: [],
+    links: []
+  },
+  guild: {
+    summary: '先看完「送公會資料準備」教學影片（系統會記錄觀看進度）。線上考試題目準備中，目前看完影片即可完成此項進度。',
+    videos: [{ title: '送公會資料準備教學影片', length: '約 3 分鐘', course: 'guild' }],
+    sections: [],
+    links: []
+  },
   repair: {
     summary: '先看完補助審核教學影片（系統會記錄觀看進度），再點上方「線上考試」考試（20 題，全部答對才通過）；答錯的題目會標示影片時間點。補助分修繕、保險、公證費三類；先到秘書專區「補助審核」從「未送件」收件後再審。',
     videos: [{ title: '補助審核教學影片', length: '約 32 分鐘', course: 'repair' }],

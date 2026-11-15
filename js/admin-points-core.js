@@ -62,8 +62,10 @@
     ...TRAINING_WEEKS.flatMap((keys, i) => keys.map((key) => trainingNode(key, { week: i + 1 }))),
     ...TRAINING_PROJECTS.map((key) => trainingNode(key, { project: true }))
   ];
-  /** 有教學影片＋線上考試的課程 */
-  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p5', 'lvr', 'weekly', 'repair'];
+  /** 有教學影片的課程（含僅影片、考題尚未上架者） */
+  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p5', 'lvr', 'weekly', 'repair', 'guild', 'hr'];
+  /** 已開放線上考試的課程；未列入者看完影片即可，考試步驟顯示準備中 */
+  const EXAM_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p5', 'lvr', 'weekly', 'repair'];
   /** 已開放模擬系統實作的課程；其他課程的模擬環境還在建置，實作一律顯示準備中 */
   const PRACTICE_COURSES = ['obj', 'tenant', 'pre'];
   /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */
@@ -84,12 +86,13 @@
     }
     if (!VIDEO_COURSES.includes(key)) return { ready: false, done: false, progress: 0, steps: [] };
     const practiceReady = PRACTICE_COURSES.includes(key);
+    const examReady = EXAM_COURSES.includes(key);
     const steps = [
       { key: 'video', label: '看完影片', ok: !!s.videoDone },
-      { key: 'exam', label: '考試滿分', ok: !!s.examPassed },
+      { key: 'exam', label: '考試滿分', ok: !!s.examPassed, pending: !examReady },
       { key: 'practice', label: '實作', ok: practiceReady && !!s.practiceDone, pending: !practiceReady }
     ];
-    // 模擬實作尚未開放的課程（pending）不列入通過條件，看完影片＋考試滿分就算通過
+    // 考試／實作尚未開放（pending）不列入通過條件
     const scored = steps.filter((x) => !x.pending);
     const n = scored.filter((x) => x.ok).length;
     return { ready: true, done: scored.length > 0 && n === scored.length, progress: scored.length ? n / scored.length : 0, steps };
@@ -2124,6 +2127,7 @@
     TRAINING_WEEKS,
     TRAINING_PROJECTS,
     VIDEO_COURSES,
+    EXAM_COURSES,
     PRACTICE_COURSES,
     TRAINING_TESTERS,
     isOnDuty,

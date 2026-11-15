@@ -234,7 +234,14 @@
       return;
     }
     const pr = progress[view.course] && !progress[view.course].error ? progress[view.course] : null;
-    const total = Number(pr?.total) || d.questions.length;
+    const total = Number(pr?.total) || (d.questions || []).length;
+    if (!total) {
+      el.innerHTML = `<div class="gx-card"><div class="gx-rules">
+          <p><b>${esc(d.title)}線上考試</b></p>
+          <p class="gx-muted">考題準備中，請先看完教材影片；題目上架後即可在此考試。</p>
+        </div></div>`;
+      return;
+    }
     const done = !!pr?.passed;
     const ex = exams[view.course];
     const resume = ex && ex.deadline > Date.now();
