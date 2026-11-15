@@ -1375,7 +1375,8 @@
       if (state.year?.key !== key) return;
       state.year = { key, error: String(err.message || err) };
     }
-    if (state.tab === 'person') render();
+    // 教育訓練詳情開啟時不要整頁重畫，避免影片被拆掉又重掛
+    if (state.tab === 'person' && !state.trainNode) render();
   }
 
   function yearRows(name) {
@@ -2867,7 +2868,9 @@
     const lk = { key, busy: true, guild: g.guild, takeup: null, tenant: null, quality: null };
     state.lkpi = lk;
     const paint = () => {
-      if (state.lkpi === lk && (isWeeklyTab() || state.tab === 'person')) render();
+      if (state.lkpi !== lk) return;
+      if (state.tab === 'person' && state.trainNode) return;
+      if (isWeeklyTab() || state.tab === 'person') render();
     };
     /* 良率不要等房客縣市；房客縣市要重抓整月審核紀錄，會把兩張公會圓環一直停在讀取中 */
     const qualityPromise = (
@@ -3161,6 +3164,7 @@
     if (res?.ok) gy.rows = res.rows || [];
     else gy.error = res?.error || '公會月報讀取失敗';
     gy.sysErr = sys.find((d) => d?.error)?.error || '';
+    if (state.tab === 'person' && state.trainNode) return;
     if (state.guildOpen && (isWeeklyTab() || state.tab === 'person')) render();
   }
 
@@ -3398,6 +3402,8 @@
 
   /** 營業處／個人的公會良率資料分批讀到時，只在看得到的頁面重畫 */
   function guildRerender() {
+    // 看教育訓練影片時整頁重畫會拆掉 <video>，造成黑屏與卡頓；訓練詳情開啟時略過
+    if (state.tab === 'person' && state.trainNode) return;
     if (state.guildOpen || state.tab === 'person' || (state.tab === 'duration' && String(state.durView).startsWith('quality'))) render();
   }
 
