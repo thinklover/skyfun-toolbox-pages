@@ -1333,8 +1333,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
-  padding: 0.4rem 0.25rem;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.55rem 0.25rem;
+  min-height: 3.35rem;
   border: 1px solid #e2e8f0;
   border-radius: 0.65rem;
   background: #f8fafc;
@@ -1342,13 +1344,13 @@
   font: inherit;
 }
 #page-finance .fin-card-gauge b {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: #0f172a;
   line-height: 1.1;
 }
 #page-finance .fin-card-gauge span {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 800;
   color: #64748b;
 }
