@@ -44,6 +44,18 @@
       padding: 0.4rem 0.65rem; font-size: 0.78rem; color: #5b21b6; font-weight: 700;
     }
     .summary .chip strong { margin-right: 0.2rem; }
+    .kb-gate-modal {
+      position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center;
+      background: rgba(15, 23, 42, 0.45); padding: 1rem;
+    }
+    .kb-gate-modal.hidden { display: none; }
+    .kb-gate-card {
+      width: min(22rem, 100%); background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18); padding: 1.1rem 1.15rem 1rem;
+    }
+    .kb-gate-card h2 { margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 900; color: #312e81; }
+    .kb-gate-card p.hint { margin: 0 0 0.75rem; font-size: 0.78rem; color: #64748b; line-height: 1.5; }
+    .kb-gate-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.75rem; }
   </style>
 </head>
 <body class="p-4 md:p-6 max-w-[96rem] mx-auto space-y-4">
@@ -51,9 +63,24 @@
     <div class="topbar">
       <h1>AI婷婷對話紀錄</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
+      <button type="button" id="btn-kb-admin" class="btn btn-ghost hidden">知識庫後台</button>
     </div>
     <p class="lead">查看大家問過 AI婷婷 的問題與回覆（後台密碼）</p>
   </header>
+
+  <div id="kb-gate-modal" class="kb-gate-modal hidden" role="dialog" aria-modal="true" aria-labelledby="kb-gate-title">
+    <div class="kb-gate-card">
+      <h2 id="kb-gate-title">知識庫後台門禁</h2>
+      <p class="hint">請輸入知識庫後台專用密碼（與對話紀錄後台密碼不同）</p>
+      <label class="block text-sm text-slate-600 font-bold" for="kb-gate-password">密碼</label>
+      <input type="password" id="kb-gate-password" class="w-full" autocomplete="off" maxlength="128" />
+      <p id="kb-gate-msg" class="text-sm err hidden" style="margin-top:0.5rem"></p>
+      <div class="kb-gate-actions">
+        <button type="button" id="kb-gate-submit" class="btn btn-main">確認開啟</button>
+        <button type="button" id="kb-gate-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
     <label class="block text-sm text-slate-600 font-bold">後台密碼（Supabase admin_secret）</label>
@@ -265,6 +292,174 @@
           void load();
         }
       } catch (_) {}
+
+      /* —— 知識庫後台門禁（獨立於對話紀錄後台密碼） —— */
+      const KB_ALLOWED_NAMES = ['簡為倢', '黃怡婷', '邱奕棋'];
+      const KB_ADMIN_URL = 'https://tingting-admin.dahwork123.workers.dev';
+      const KB_GATE_API = 'https://skyfun-tingting-kb-gate.dahwork123.workers.dev/api/tingting-kb-gate';
+      const KB_GATE_OK_KEY = 'skyfun-tingting-kb-gate-ok';
+      const KB_GATE_LOCK_KEY = 'skyfun-tingting-kb-gate-lock';
+      const AUTH_STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
+      const KB_MAX_FAILS = 5;
+      const KB_LOCK_MS = 10 * 60 * 1000;
+
+      function toolboxSession() {
+        try {
+          return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+        } catch {
+          return null;
+        }
+      }
+      function toolboxName() {
+        const s = toolboxSession();
+        return String(s?.user?.name || s?.supabaseUser?.name || '').trim();
+      }
+      function toolboxToken() {
+        const s = toolboxSession();
+        return String(s?.supabaseToken || s?.token || '').trim();
+      }
+      function kbAllowed() {
+        return KB_ALLOWED_NAMES.includes(toolboxName());
+      }
+      function kbGatePassed() {
+        try {
+          return sessionStorage.getItem(KB_GATE_OK_KEY) === '1';
+        } catch {
+          return false;
+        }
+      }
+      function setKbGatePassed() {
+        try { sessionStorage.setItem(KB_GATE_OK_KEY, '1'); } catch (_) {}
+      }
+      function readKbLock() {
+        try {
+          const raw = sessionStorage.getItem(KB_GATE_LOCK_KEY);
+          if (!raw) return { fails: 0, until: 0 };
+          const o = JSON.parse(raw);
+          const until = Number(o?.until || 0);
+          const fails = Number(o?.fails || 0);
+          if (until && Date.now() >= until) {
+            sessionStorage.removeItem(KB_GATE_LOCK_KEY);
+            return { fails: 0, until: 0 };
+          }
+          return { fails, until };
+        } catch {
+          return { fails: 0, until: 0 };
+        }
+      }
+      function writeKbLock(fails, until) {
+        try {
+          sessionStorage.setItem(KB_GATE_LOCK_KEY, JSON.stringify({ fails, until }));
+        } catch (_) {}
+      }
+      function openKbAdmin() {
+        window.open(KB_ADMIN_URL, '_blank', 'noopener,noreferrer');
+      }
+      function showKbModal(show) {
+        const modal = document.getElementById('kb-gate-modal');
+        const msg = document.getElementById('kb-gate-msg');
+        const input = document.getElementById('kb-gate-password');
+        if (!modal) return;
+        modal.classList.toggle('hidden', !show);
+        if (show) {
+          msg.classList.add('hidden');
+          msg.textContent = '';
+          input.value = '';
+          setTimeout(() => input.focus(), 30);
+        }
+      }
+      function setKbMsg(text) {
+        const msg = document.getElementById('kb-gate-msg');
+        if (!text) {
+          msg.classList.add('hidden');
+          msg.textContent = '';
+          return;
+        }
+        msg.textContent = text;
+        msg.classList.remove('hidden');
+      }
+      async function submitKbGate() {
+        const lock = readKbLock();
+        if (lock.until && Date.now() < lock.until) {
+          const mins = Math.max(1, Math.ceil((lock.until - Date.now()) / 60000));
+          setKbMsg('嘗試次數過多，請 ' + mins + ' 分鐘後再試');
+          return;
+        }
+        const password = String(document.getElementById('kb-gate-password').value || '');
+        if (!password) {
+          setKbMsg('請輸入密碼');
+          return;
+        }
+        const token = toolboxToken();
+        if (!token) {
+          setKbMsg('請先回工具箱登入');
+          return;
+        }
+        const btn = document.getElementById('kb-gate-submit');
+        btn.disabled = true;
+        setKbMsg('');
+        try {
+          const res = await fetch(KB_GATE_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Skyfun-Session': token },
+            body: JSON.stringify({ token, password })
+          });
+          let data = null;
+          try { data = await res.json(); } catch (_) { data = null; }
+          if (res.status === 403) {
+            setKbMsg('沒有權限');
+            return;
+          }
+          if (res.status === 429 || data?.lockedUntil) {
+            const until = Number(data?.lockedUntil || Date.now() + KB_LOCK_MS);
+            writeKbLock(KB_MAX_FAILS, until);
+            setKbMsg(data?.error || '密碼錯誤');
+            return;
+          }
+          if (!res.ok || !data?.ok) {
+            const fails = (readKbLock().fails || 0) + 1;
+            if (fails >= KB_MAX_FAILS) {
+              writeKbLock(fails, Date.now() + KB_LOCK_MS);
+            } else {
+              writeKbLock(fails, 0);
+            }
+            setKbMsg(data?.error || '密碼錯誤');
+            return;
+          }
+          writeKbLock(0, 0);
+          setKbGatePassed();
+          showKbModal(false);
+          openKbAdmin();
+        } catch (e) {
+          setKbMsg(e.message || '連線失敗');
+        } finally {
+          btn.disabled = false;
+        }
+      }
+      function initKbGateButton() {
+        const btn = document.getElementById('btn-kb-admin');
+        if (!btn || !kbAllowed()) return;
+        btn.classList.remove('hidden');
+        btn.addEventListener('click', () => {
+          if (kbGatePassed()) {
+            openKbAdmin();
+            return;
+          }
+          showKbModal(true);
+        });
+        document.getElementById('kb-gate-cancel').addEventListener('click', () => showKbModal(false));
+        document.getElementById('kb-gate-submit').addEventListener('click', () => { void submitKbGate(); });
+        document.getElementById('kb-gate-password').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            void submitKbGate();
+          }
+        });
+        document.getElementById('kb-gate-modal').addEventListener('click', (e) => {
+          if (e.target === e.currentTarget) showKbModal(false);
+        });
+      }
+      initKbGateButton();
     })();
   </script>
 </body>

@@ -1,0 +1,13 @@
+name = "skyfun-tingting-kb-gate"
+main = "src/index.js"
+compatibility_date = "2026-10-14"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://toolbox.skyfunsystem.com,https://skyfun-toolbox-preview.pages.dev,https://dahwork123-hash.github.io,https://thinklover.github.io,http://127.0.0.1:8080,http://localhost:8080"
+SUPABASE_URL = "https://xpbownhiedurytlyqszu.supabase.co"
+# 公開的 anon key（前端 supabase-config.js 也有），只用來呼叫 toolbox_me 驗證登入
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYm93bmhpZWR1cnl0bHlxc3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNzM1NTYsImV4cCI6MjEwMTg0OTU1Nn0.UsrQ042IYFNwPn31LfkpYGAZP6Gg4blf2O0JSMUvk5Q"
+
+# Secrets（wrangler secret put，勿寫進此檔）:
+#   TINGTING_KB_GATE_PASSWORD
