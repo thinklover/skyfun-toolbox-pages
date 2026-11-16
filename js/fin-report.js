@@ -176,6 +176,9 @@
     leaseOptions: [],
     addrOptions: [],
     addrLooking: false,
+    companySnapshot: null,
+    companyCompare: null,
+    cmpBusy: false,
     suppOrigin: null,
     suppCandidates: [],
     suppLooking: false,
@@ -194,9 +197,11 @@
 
   const FIN_PAYLOAD_LABELS = {
     address: '物件地址', landlord: '房東', tenant: '房客', note: '備註',
+    rent: '租金', managementFee: '管理費', deposit: '押金金額', caseType: '案件類型',
+    systemDataPendingFix: '系統資料待更正',
     pkgItem: '包租金流項目', baoLeaseStart: '包租開始日', baoLeaseEnd: '包租到期日',
     zhuanLeaseStart: '轉租開始日', zhuanLeaseEnd: '轉租到期日',
-    leaseStart: '租期起', leaseEnd: '租期迄', leasePick: '選擇租期',
+    leaseStart: '租期起', leaseEnd: '租期迄', leasePick: '公司案件參考',
     depositType: '押金類型', renewTopup: '是否補足押金', topupAmount: '補足金額',
     receivable: '應收款項', receivableOther: '應收其他說明', pkgDocs: '證明文件類型',
     rematchType: '換約類型', oldTenant: '原房客', newTenant: '新房客',
@@ -220,7 +225,8 @@
     invoiceAmount: '發票金額', refundAmount: '退款金額'
   };
   const FIN_PAYLOAD_ORDER = [
-    'address', 'landlord', 'tenant', 'pkgItem', 'payItem', 'collectItem', 'suppItem', 'genItem',
+    'address', 'landlord', 'tenant', 'rent', 'managementFee', 'deposit', 'caseType',
+    'systemDataPendingFix', 'pkgItem', 'payItem', 'collectItem', 'suppItem', 'genItem',
     'officeItem', 'venue', 'depositType', 'pkgDocs', 'receivable', 'receivableOther',
     'baoLeaseStart', 'baoLeaseEnd', 'zhuanLeaseStart', 'zhuanLeaseEnd',
     'leasePick', 'renewTopup', 'topupAmount', 'rematchType', 'oldTenant', 'newTenant', 'hasRoommate',
@@ -637,40 +643,140 @@
     wrap.hidden = false;
   }
 
-  function applyLeaseOption(opt) {
-    if (!opt) return;
-    const ll = opt.landlord;
-    const tn = opt.tenant;
-    if (ll?.name) {
-      const el = $('fin-landlord');
-      if (el) el.value = ll.name;
+  const CMP = () => window.FinCompanyCompare || null;
+
+  function cmpKeysForIssue(issue) {
+    if (issue === ISSUE_PKG) {
+      return ['landlord', 'tenant', 'baoLeaseStart', 'baoLeaseEnd', 'zhuanLeaseStart', 'zhuanLeaseEnd', 'rent', 'managementFee', 'deposit', 'caseType'];
     }
-    if (tn?.name) {
-      const el = $('fin-tenant');
-      if (el) el.value = tn.name;
-    }
-    const baoStart = $('fin-bao-lease-start');
-    const baoEnd = $('fin-bao-lease-end');
-    const zhStart = $('fin-zhuan-lease-start');
-    const zhEnd = $('fin-zhuan-lease-end');
-    if (baoStart) baoStart.value = rocToIso(ll?.leaseStart || '') || '';
-    if (baoEnd) baoEnd.value = rocToIso(ll?.leaseEnd || '') || '';
-    if (zhStart) zhStart.value = rocToIso(tn?.leaseStart || '') || '';
-    if (zhEnd) zhEnd.value = rocToIso(tn?.leaseEnd || '') || '';
-    if (ll?.address) {
-      const addr = $('fin-address');
-      if (addr && ll.address) addr.value = ll.address;
-    } else if (tn?.address) {
-      const addr = $('fin-address');
-      if (addr && tn.address) addr.value = tn.address;
-    }
+    return ['landlord', 'tenant'];
   }
 
-  async function loadLeasesForAddress(address) {
+  function needsCompanyCompare(issue) {
+    return issue && issue !== ISSUE_OFFICE;
+  }
+
+  function readCmpOverrides() {
+    const out = {};
+    document.querySelectorAll('#page-finance [data-fin-cmp-flag]').forEach((box) => {
+      const key = box.getAttribute('data-fin-cmp-flag');
+      const noteEl = document.querySelector('#page-finance [data-fin-cmp-note="' + key + '"]');
+      out[key] = { checked: !!box.checked, note: String(noteEl?.value || '').trim() };
+    });
+    return out;
+  }
+
+  function collectUserCmpFields() {
+    return {
+      landlord: val('fin-landlord'),
+      tenant: val('fin-tenant'),
+      baoLeaseStart: val('fin-bao-lease-start'),
+      baoLeaseEnd: val('fin-bao-lease-end'),
+      zhuanLeaseStart: val('fin-zhuan-lease-start'),
+      zhuanLeaseEnd: val('fin-zhuan-lease-end'),
+      rent: val('fin-cmp-rent'),
+      managementFee: val('fin-cmp-mgmt'),
+      deposit: val('fin-cmp-deposit'),
+      caseType: val('fin-cmp-case-type')
+    };
+  }
+
+  function setCmpStatus(msg, isErr) {
+    const el = $('fin-cmp-status');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.color = isErr ? '#b91c1c' : '';
+  }
+
+  function clearCmpResultUi() {
+    document.querySelectorAll('#page-finance [data-fin-cmp-result]').forEach((el) => {
+      el.hidden = true;
+      el.textContent = '';
+      el.className = 'fin-cmp-result';
+    });
+    document.querySelectorAll('#page-finance [data-fin-cmp-override]').forEach((el) => { el.hidden = true; });
+    document.querySelectorAll('#page-finance [data-fin-cmp-note]').forEach((el) => { el.hidden = true; });
+  }
+
+  function resetCompanyCompare(reason) {
+    state.companyCompare = null;
+    clearCmpResultUi();
+    if (reason) setCmpStatus(reason, true);
+    else setCmpStatus('請先手動填完欄位，再按比對；全部相符（或已勾選系統有誤並說明）才能送出。');
+    syncSubmitEnabled();
+  }
+
+  function renderCmpFieldUi(fields, overrides) {
+    const ov = overrides || {};
+    Object.keys(fields || {}).forEach((key) => {
+      const f = fields[key];
+      const res = document.querySelector('#page-finance [data-fin-cmp-result="' + key + '"]');
+      const ovLab = document.querySelector('#page-finance [data-fin-cmp-override="' + key + '"]');
+      const note = document.querySelector('#page-finance [data-fin-cmp-note="' + key + '"]');
+      if (!res) return;
+      if (f.ok) {
+        res.hidden = false;
+        res.className = 'fin-cmp-result is-ok';
+        res.textContent = '✓ 相符';
+        if (ovLab) ovLab.hidden = true;
+        if (note) note.hidden = true;
+        return;
+      }
+      res.hidden = false;
+      res.className = 'fin-cmp-result is-bad';
+      res.textContent = f.companyMissing
+        ? '✗ 不符｜公司系統查無此欄位資料'
+        : ('✗ 不符｜公司系統為：' + f.companyDisplay);
+      if (ovLab) ovLab.hidden = false;
+      const checked = !!(ov[key] && ov[key].checked);
+      if (note) note.hidden = !checked;
+    });
+  }
+
+  function syncOverrideNotesVisibility() {
+    document.querySelectorAll('#page-finance [data-fin-cmp-flag]').forEach((box) => {
+      const key = box.getAttribute('data-fin-cmp-flag');
+      const note = document.querySelector('#page-finance [data-fin-cmp-note="' + key + '"]');
+      if (note) note.hidden = !box.checked;
+    });
+  }
+
+  function evaluateCompareGate() {
+    if (!state.companyCompare) return { ok: false, reason: '請先按「比對」核對公司系統' };
+    const cmp = CMP();
+    if (!cmp) return { ok: false, reason: '比對模組尚未載入' };
+    const overrides = readCmpOverrides();
+    const sum = cmp.summarize(state.companyCompare.fields, overrides);
+    if (!sum.allOk) return { ok: false, reason: '尚有欄位與公司系統不符，請修正或勾選「公司系統資料有誤」並填說明' };
+    return {
+      ok: true,
+      fullyMatched: !!sum.fullyMatched,
+      systemDataPendingFix: !!sum.systemDataPendingFix,
+      overrides
+    };
+  }
+
+  function syncSubmitEnabled() {
+    const btn = $('fin-submit');
+    if (!btn) return;
+    const issue = checked('fin-issue');
+    if (!needsCompanyCompare(issue)) {
+      btn.disabled = !!state.busy;
+      return;
+    }
+    const gate = evaluateCompareGate();
+    btn.disabled = !!state.busy || !gate.ok;
+  }
+
+  function applyLeaseOption(opt) {
+    /* 不再自動帶入房東／房客／租期；僅保留公司案件快照供比對 */
+    if (!opt) return;
+    resetCompanyCompare('已改選公司案件參考，請重新比對');
+  }
+
+  async function fetchCompanySnapshot(address) {
     const addr = String(address || '').trim();
-    if (!addr) return;
-    clearLeasePick();
-    setLookupStatus('載入租期中…');
+    if (!addr) throw new Error('請先填物件地址');
     const q = new URLSearchParams({ address: addr, kind: 'both' });
     const r = await fetch(RPA_BASE + '/termination/candidates?' + q.toString(), {
       headers: rpaHeaders(),
@@ -678,22 +784,131 @@
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok || data.ok === false) {
-      throw new Error(data.message || data.error || '租期查詢失敗（HTTP ' + r.status + '）');
+      throw new Error(data.message || data.error || '公司系統查詢失敗（HTTP ' + r.status + '）');
     }
-    const options = buildLeaseOptions(data);
+    const landlords = Array.isArray(data.landlords) ? data.landlords : [];
+    const tenants = Array.isArray(data.tenants) ? data.tenants : [];
+    if (!landlords.length && !tenants.length) {
+      throw new Error('公司系統查無此案件，請確認地址或案件編號');
+    }
+    return {
+      address: addr,
+      landlords,
+      tenants,
+      fetchedAt: new Date().toISOString(),
+      rawMessage: data.message || ''
+    };
+  }
+
+  async function loadLeasesForAddress(address) {
+    const addr = String(address || '').trim();
+    if (!addr) return;
+    clearLeasePick();
+    setLookupStatus('載入公司案件參考中…');
+    resetCompanyCompare();
+    const snap = await fetchCompanySnapshot(addr);
+    state.companySnapshot = snap;
+    const options = buildLeaseOptions(snap);
     if (!options.length) {
       clearLeasePick();
-      setLookupStatus('此地址查無有效租期，請改以人工填寫。', true);
+      setLookupStatus('此地址公司系統有案件，請手動填寫後按「比對」。');
       return;
     }
     renderLeasePick(options);
-    setLookupStatus(data.message || ('找到 ' + options.length + ' 筆租期，請選擇'));
-    if (options.length === 1) {
-      const sel = $('fin-lease-pick');
-      if (sel) sel.value = options[0].id;
-      applyLeaseOption(options[0]);
-      setLookupStatus('已自動帶入唯一租期與房東客姓名');
+    setLookupStatus((snap.rawMessage || ('找到 ' + options.length + ' 筆案件參考')) + '（不會自動帶入，請手動填寫後比對）');
+  }
+
+  async function runCompanyCompare() {
+    const cmp = CMP();
+    if (!cmp) {
+      setCmpStatus('比對模組尚未載入，請重新整理頁面', true);
+      return;
     }
+    if (state.cmpBusy) return;
+    const issue = checked('fin-issue');
+    if (!needsCompanyCompare(issue)) {
+      setCmpStatus('此表單類型不需比對公司系統');
+      syncSubmitEnabled();
+      return;
+    }
+    const address = val('fin-address');
+    if (!address) {
+      setCmpStatus('請先填物件地址', true);
+      return;
+    }
+    if (!token()) {
+      setCmpStatus('請先登入工具箱再比對', true);
+      return;
+    }
+    state.cmpBusy = true;
+    const btn = $('fin-cmp-btn');
+    if (btn) btn.disabled = true;
+    setCmpStatus('比對中…');
+    try {
+      const snap = await fetchCompanySnapshot(address);
+      state.companySnapshot = snap;
+      const options = buildLeaseOptions(snap);
+      renderLeasePick(options);
+      const keys = cmpKeysForIssue(issue);
+      const user = collectUserCmpFields();
+      const result = cmp.compareFields(user, snap, keys);
+      const me = sessionUser();
+      const overrides = readCmpOverrides();
+      const sum = cmp.summarize(result.fields, overrides);
+      state.companyCompare = {
+        comparedAt: new Date().toISOString(),
+        comparedBy: String(me.name || me.username || '').trim(),
+        address,
+        companyCase: {
+          landlords: snap.landlords,
+          tenants: snap.tenants,
+          matchedLandlord: result.matchedLandlord,
+          matchedTenant: result.matchedTenant
+        },
+        companyValues: result.companyMap,
+        fields: result.fields,
+        fullyMatched: sum.fullyMatched,
+        systemDataPendingFix: sum.systemDataPendingFix,
+        allOk: sum.allOk
+      };
+      renderCmpFieldUi(result.fields, overrides);
+      if (!Object.keys(result.fields).length) {
+        setCmpStatus('沒有可比對欄位', true);
+      } else if (sum.fullyMatched) {
+        setCmpStatus('全部相符，可以送出');
+      } else if (sum.allOk && sum.systemDataPendingFix) {
+        setCmpStatus('已勾選系統有誤並填說明，可以送出（列表會標示「系統資料待更正」）');
+      } else {
+        setCmpStatus('尚有欄位不符；請修正輸入，或勾選「公司系統資料有誤」並填說明', true);
+      }
+      syncSubmitEnabled();
+    } catch (ex) {
+      state.companyCompare = null;
+      clearCmpResultUi();
+      setCmpStatus(ex.message || String(ex), true);
+      syncSubmitEnabled();
+    } finally {
+      state.cmpBusy = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function refreshCompareAfterOverrideChange() {
+    if (!state.companyCompare || !CMP()) {
+      syncSubmitEnabled();
+      return;
+    }
+    syncOverrideNotesVisibility();
+    const overrides = readCmpOverrides();
+    const sum = CMP().summarize(state.companyCompare.fields, overrides);
+    state.companyCompare.fullyMatched = sum.fullyMatched;
+    state.companyCompare.systemDataPendingFix = sum.systemDataPendingFix;
+    state.companyCompare.allOk = sum.allOk;
+    renderCmpFieldUi(state.companyCompare.fields, overrides);
+    if (sum.fullyMatched) setCmpStatus('全部相符，可以送出');
+    else if (sum.allOk) setCmpStatus('已勾選系統有誤並填說明，可以送出（列表會標示「系統資料待更正」）');
+    else setCmpStatus('尚有欄位不符；請修正輸入，或勾選「公司系統資料有誤」並填說明', true);
+    syncSubmitEnabled();
   }
 
   async function lookupCompanyByAddress() {
@@ -893,17 +1108,20 @@
   function finPayloadEntries(p) {
     p = p || {};
     const seen = new Set();
-    /* 明細不顯示租期起迄：已有包租／轉租起迄即可 */
-    const hide = new Set(['leaseStart', 'leaseEnd', 'leasePick']);
+    /* 明細不顯示租期起迄：已有包租／轉租起迄即可；比對物件另渲染 */
+    const hide = new Set(['leaseStart', 'leaseEnd', 'leasePick', 'companyCompare']);
     const out = [];
     function push(k) {
       if (hide.has(k) || seen.has(k) || !Object.prototype.hasOwnProperty.call(p, k)) return;
       seen.add(k);
       let v = p[k];
       if (v == null || v === '') return;
+      if (typeof v === 'boolean') v = v ? '是' : '否';
       if (Array.isArray(v)) {
         if (!v.length) return;
         v = v.join('、');
+      } else if (typeof v === 'object') {
+        return;
       } else {
         v = String(v);
       }
@@ -914,6 +1132,38 @@
     return out;
   }
 
+  function renderCompanyCompareHtml(cmp) {
+    if (!cmp || typeof cmp !== 'object') return '';
+    const fields = cmp.fields && typeof cmp.fields === 'object' ? cmp.fields : {};
+    const keys = Object.keys(fields);
+    if (!keys.length) return '';
+    const rows = keys.map((key) => {
+      const f = fields[key] || {};
+      const label = FIN_PAYLOAD_LABELS[key] || key;
+      const flag = f.override
+        ? '<span class="fin-cmp-tag is-fix">系統有誤</span>'
+        : (f.ok ? '<span class="fin-cmp-tag is-ok">相符</span>' : '<span class="fin-cmp-tag is-bad">不符</span>');
+      const note = f.override && f.overrideNote
+        ? '<div class="fin-cmp-dual-note">說明：' + esc(f.overrideNote) + '</div>'
+        : '';
+      return '<div class="fin-cmp-dual-row">' +
+        '<div class="fin-cmp-dual-head"><span class="fin-case-k">' + esc(label) + '</span>' + flag + '</div>' +
+        '<div class="fin-cmp-dual-vals">' +
+        '<div><em>申請人</em> ' + esc(f.user || '—') + '</div>' +
+        '<div><em>公司系統</em> ' + esc(f.companyDisplay || f.company || '（無資料）') + '</div>' +
+        '</div>' + note + '</div>';
+    }).join('');
+    const meta = [
+      cmp.comparedAt ? ('比對時間：' + (() => { try { return new Date(cmp.comparedAt).toLocaleString('zh-TW', { hour12: false }); } catch (_) { return cmp.comparedAt; } })()) : '',
+      cmp.comparedBy ? ('操作人：' + cmp.comparedBy) : '',
+      cmp.systemDataPendingFix ? '標記：系統資料待更正' : ''
+    ].filter(Boolean).join('｜');
+    return '<div class="fin-cmp-dual">' +
+      '<div class="fin-case-files-title">公司系統比對</div>' +
+      (meta ? '<p class="fin-cmp-dual-meta">' + esc(meta) + '</p>' : '') +
+      rows + '</div>';
+  }
+
   function renderCasePayloadHtml(r) {
     const rows = finPayloadEntries(r.payload);
     const fields = rows.length
@@ -922,6 +1172,7 @@
           '<span class="fin-case-v">' + esc(row.value) + '</span></div>'
         ).join('') + '</div>'
       : '<p class="fin-detail-empty">無欄位資料</p>';
+    const cmpHtml = renderCompanyCompareHtml(r.payload && r.payload.companyCompare);
     const files = Array.isArray(r.files) ? r.files : [];
     const fileHtml = files.length
       ? '<div class="fin-case-atts">' + files.map((f) =>
@@ -930,7 +1181,7 @@
         ).join('') + '</div>'
       : '<p class="fin-detail-empty">無附件</p>';
     return '<div class="fin-case-body">' +
-      '<div class="fin-case-fields">' + fields + '</div>' +
+      '<div class="fin-case-fields">' + fields + cmpHtml + '</div>' +
       '<div class="fin-case-files"><div class="fin-case-files-title">附件</div>' + fileHtml + '</div>' +
       '</div>';
   }
@@ -1088,6 +1339,8 @@
       const p = progressOf(r);
       const open = String(state.openDetailId) === String(r.id);
       const heading = [r.item, r.address].filter(Boolean).join('・') || '案件';
+      const pendingFix = !!(r.payload && (r.payload.systemDataPendingFix || (r.payload.companyCompare && r.payload.companyCompare.systemDataPendingFix)));
+      const fixBadge = pendingFix ? '<span class="fin-fix-badge">系統資料待更正</span>' : '';
       const who = state.mineAll && r.userName
         ? '<div class="fin-detail-who">填寫人：' + esc(r.userName) + '</div>'
         : '';
@@ -1108,7 +1361,7 @@
       return '<article class="fin-detail-row' + (open ? ' is-expanded' : '') + '" data-fin-row="' + esc(r.id) + '">' +
         '<div class="fin-detail-top"><span class="fin-detail-when">' + esc(fmtMineWhen(r.createdAt)) + '</span>' +
         '<span class="fin-mine-st ' + p.cls + '">' + esc(p.text) + '</span></div>' +
-        '<div class="fin-detail-title">' + esc(heading) + '</div>' +
+        '<div class="fin-detail-title">' + esc(heading) + ' ' + fixBadge + '</div>' +
         who + type + reason + rejectNote +
         '<div class="fin-act-bar fin-act-bar--top">' + detailBtn + '</div>' +
         detailPanel +
@@ -1857,16 +2110,16 @@
       addrHint.hidden = !!hideLookup;
       if (isGen) {
         addrHint.hidden = false;
-        addrHint.textContent = '一般宅請直接手填物件地址與房東／房客姓名。';
+        addrHint.textContent = '一般宅請直接手填物件地址與房東／房客姓名，填完後按「比對」。';
       } else if (!hideLookup) {
-        addrHint.textContent = '註記：可先輸入路名（例：文化一路）查出所有相符地址再選；查不到時請人工填寫租期與房東／房客姓名。';
+        addrHint.textContent = '註記：可先輸入路名查出相符地址再選；房東／房客／租期請手動填寫，填完後按「比對」核對公司系統。';
       }
     }
     if (addrBtn) addrBtn.hidden = !!hideLookup;
     if (addrInput) {
       addrInput.placeholder = isGen
         ? '請手填物件地址'
-        : '輸入地址後按查公司資料';
+        : '請手動輸入完整地址，或先用路名搜尋後再選';
     }
     if (hideLookup) {
       if (pickWrap) {
@@ -1887,6 +2140,9 @@
         }
       }
     }
+    const cmpBar = $('fin-cmp-bar');
+    if (cmpBar) cmpBar.hidden = !!isOffice;
+    syncSubmitEnabled();
   }
 
   function activeLlDocSet() {
@@ -2044,6 +2300,36 @@
     return office;
   }
 
+  function buildCompanyComparePayload(gate) {
+    if (!state.companyCompare) return null;
+    const fields = state.companyCompare.fields || {};
+    const overrides = (gate && gate.overrides) || readCmpOverrides();
+    const fieldOut = {};
+    Object.keys(fields).forEach((key) => {
+      const f = fields[key];
+      const o = overrides[key] || {};
+      fieldOut[key] = {
+        ok: !!f.ok,
+        user: f.user,
+        company: f.company,
+        companyDisplay: f.companyDisplay,
+        companyMissing: !!f.companyMissing,
+        override: !f.ok && !!o.checked,
+        overrideNote: !f.ok && o.checked ? String(o.note || '').trim() : ''
+      };
+    });
+    return {
+      comparedAt: state.companyCompare.comparedAt,
+      comparedBy: state.companyCompare.comparedBy || '',
+      address: state.companyCompare.address || '',
+      companyValues: state.companyCompare.companyValues || {},
+      fields: fieldOut,
+      fullyMatched: !!(gate ? gate.fullyMatched : state.companyCompare.fullyMatched),
+      systemDataPendingFix: !!(gate ? gate.systemDataPendingFix : state.companyCompare.systemDataPendingFix),
+      allOk: true
+    };
+  }
+
   function collectPayload() {
     const payload = {
       address: val('fin-address'),
@@ -2061,6 +2347,10 @@
       payload.leaseStart = payload.baoLeaseStart || payload.zhuanLeaseStart;
       payload.leaseEnd = payload.baoLeaseEnd || payload.zhuanLeaseEnd;
       payload.leasePick = val('fin-lease-pick');
+      payload.rent = val('fin-cmp-rent');
+      payload.managementFee = val('fin-cmp-mgmt');
+      payload.deposit = val('fin-cmp-deposit');
+      payload.caseType = val('fin-cmp-case-type');
       if (PKG_INTAKE.includes(payload.pkgItem)) {
         if ((DEPOSIT_BY_PKG[payload.pkgItem] || []).length) {
           payload.depositType = checked('fin-deposit-type');
@@ -2194,18 +2484,16 @@
     if (!payload.address && issue !== ISSUE_OFFICE) return '請填物件地址';
     if (!payload.landlord && issue !== ISSUE_OFFICE) return '請填房東姓名';
     if (!payload.tenant && issue !== ISSUE_OFFICE) return '請填房客姓名';
-    if (issue !== ISSUE_OFFICE && issue !== ISSUE_GEN) {
-      const leaseWrap = $('fin-lease-pick-wrap');
-      if (leaseWrap && !leaseWrap.hidden && state.leaseOptions.length && !payload.leasePick) {
-        return '請選擇租期';
-      }
-    }
     if (issue === ISSUE_PKG) {
       if (!payload.pkgItem) return '請選包租金流項目';
       if (!payload.baoLeaseStart) return '請填包租開始日期';
       if (!payload.baoLeaseEnd) return '請填包租到期日';
       if (!payload.zhuanLeaseStart) return '請填轉租開始日期';
       if (!payload.zhuanLeaseEnd) return '請填轉租到期日';
+      if (!String(payload.rent || '').trim()) return '請填租金';
+      if (!String(payload.managementFee || '').trim()) return '請填管理費（無則填 0）';
+      if (!String(payload.deposit || '').trim()) return '請填押金';
+      if (!payload.caseType) return '請選案件類型';
       if (payload.baoLeaseStart === payload.baoLeaseEnd) {
         return '包租開始日與到期日不可同一天';
       }
@@ -2508,11 +2796,31 @@
       if (e.target.id === 'fin-address') {
         clearAddrPick();
         clearLeasePick();
+        state.companySnapshot = null;
         setLookupStatus('');
+        resetCompanyCompare('地址已變更，請重新比對');
       }
-      if (e.target.matches('input[type="radio"], #fin-office, input[type="checkbox"]')) syncPanels();
+      if (e.target.matches('[data-fin-cmp-input]')) {
+        resetCompanyCompare('欄位已變更，請重新比對');
+      }
+      if (e.target.matches('[data-fin-cmp-flag], [data-fin-cmp-note]')) {
+        refreshCompareAfterOverrideChange();
+      }
+      if (e.target.matches('input[type="radio"], #fin-office, input[type="checkbox"]')) {
+        syncPanels();
+        syncSubmitEnabled();
+      }
+    });
+    page.addEventListener('input', (e) => {
+      if (e.target.matches('[data-fin-cmp-input]')) {
+        resetCompanyCompare('欄位已變更，請重新比對');
+      }
+      if (e.target.matches('[data-fin-cmp-note]')) {
+        refreshCompareAfterOverrideChange();
+      }
     });
     $('fin-addr-lookup')?.addEventListener('click', () => { void lookupCompanyByAddress(); });
+    $('fin-cmp-btn')?.addEventListener('click', () => { void runCompanyCompare(); });
     $('fin-address')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -2632,6 +2940,16 @@
       const btn = $('fin-submit');
       if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
       try {
+        if (needsCompanyCompare(issueType)) {
+          await runCompanyCompare();
+          const gate = evaluateCompareGate();
+          if (!gate.ok) throw new Error(gate.reason || '請先完成公司系統比對');
+          payload.companyCompare = buildCompanyComparePayload(gate);
+          payload.systemDataPendingFix = !!gate.systemDataPendingFix;
+          if (payload.companyCompare) {
+            payload.companyCompare.reverifiedAt = new Date().toISOString();
+          }
+        }
         const depositLabel = DEPOSIT_FILE_LABEL[payload.depositType] || '押金證明';
         const docsLabel = DOCS_FILE_LABEL[payload.pkgDocs] || '必檢附資料';
         const llDocGroups = Object.values(LL_DOC_SETS).flat().map((d) => ({ key: d.key, label: '異動｜' + d.label }));
@@ -2656,7 +2974,7 @@
           { key: 'misc', label: '附件' },
           { key: 'office', label: '商辦附件' },
           { key: 'change', label: '異動附件' }
-        ].concat(llDocGroups);
+        ].concat(llDocGroups).concat([{ key: 'supp', label: '補件附件' }]);
         let files = [];
         for (const g of groups) {
           const uploaded = await uploadSelected(state.files[g.key] || []);
@@ -2675,6 +2993,8 @@
         resetRoommates();
         clearAddrPick();
         clearLeasePick();
+        state.companySnapshot = null;
+        resetCompanyCompare();
         setLookupStatus('');
         renderFiles();
         fillOffice();
@@ -2685,7 +3005,8 @@
         setMsg(ex.message || String(ex), 'err');
       } finally {
         state.busy = false;
-        if (btn) { btn.disabled = false; btn.textContent = '送出'; }
+        if (btn) { btn.textContent = '送出'; }
+        syncSubmitEnabled();
       }
     });
 

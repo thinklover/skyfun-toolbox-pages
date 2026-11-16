@@ -4618,7 +4618,7 @@
 <link rel="stylesheet" href="./css/notice-ack.css?v=20261111-ackwm">
 <link rel="stylesheet" href="./css/biz-system-change.css?v=20261114-issueb">
 <link rel="stylesheet" href="./css/hr-report.css?v=20261107-hr11">
-<link rel="stylesheet" href="./css/fin-report.css?v=20261115-card-h">
+<link rel="stylesheet" href="./css/fin-report.css?v=20261116-cmp1">
 <link rel="stylesheet" href="./css/meeting-scoreboard.css?v=20261115-msb-rank">
 <!-- cover-deploy 20261107-escrow-staff -->
 </head>
@@ -6523,20 +6523,30 @@
                             <div class="hr-field fin-addr-wide" id="fin-address-block">
                             <label id="fin-address-label" class="hr-req" for="fin-address">物件地址</label>
                             <div class="fin-addr-row">
-                            <input id="fin-address" type="text" maxlength="120" placeholder="輸入地址後按查公司資料">
-                            <button type="button" id="fin-addr-lookup" class="fin-addr-lookup-btn">查公司資料</button>
+                            <input id="fin-address" type="text" maxlength="120" placeholder="請手動輸入完整地址，或先用路名搜尋後再選">
+                            <button type="button" id="fin-addr-lookup" class="fin-addr-lookup-btn">搜尋地址</button>
                             </div>
-                            <p class="hr-hint" id="fin-addr-hint">註記：可先輸入路名（例：文化一路）查出所有相符地址再選；查不到時請人工填寫租期與房東／房客姓名。</p>
+                            <p class="hr-hint" id="fin-addr-hint">註記：可先輸入路名（例：文化一路）查出相符地址再選；房東／房客／租期等請自行填寫，填完後按「比對」核對公司系統。</p>
                             <p id="fin-addr-lookup-status" class="hr-hint" aria-live="polite"></p>
                             </div>
                             <div class="fin-grid-2" id="fin-party-names">
-                            <div class="hr-field">
+                            <div class="hr-field" data-fin-cmp="landlord">
                             <label class="hr-req" for="fin-landlord">房東姓名</label>
-                            <input id="fin-landlord" type="text" maxlength="40" placeholder="查公司帶入，或人工填寫">
+                            <input id="fin-landlord" type="text" maxlength="40" placeholder="請手動輸入" data-fin-cmp-input="landlord">
+                            <p class="fin-cmp-result" data-fin-cmp-result="landlord" hidden></p>
+                            <label class="fin-cmp-override" data-fin-cmp-override="landlord" hidden>
+                              <input type="checkbox" data-fin-cmp-flag="landlord"> 公司系統資料有誤
+                            </label>
+                            <textarea class="fin-cmp-note" data-fin-cmp-note="landlord" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
                             </div>
-                            <div class="hr-field">
+                            <div class="hr-field" data-fin-cmp="tenant">
                             <label class="hr-req" for="fin-tenant">房客姓名</label>
-                            <input id="fin-tenant" type="text" maxlength="40" placeholder="查公司帶入，或人工填寫">
+                            <input id="fin-tenant" type="text" maxlength="40" placeholder="請手動輸入" data-fin-cmp-input="tenant">
+                            <p class="fin-cmp-result" data-fin-cmp-result="tenant" hidden></p>
+                            <label class="fin-cmp-override" data-fin-cmp-override="tenant" hidden>
+                              <input type="checkbox" data-fin-cmp-flag="tenant"> 公司系統資料有誤
+                            </label>
+                            <textarea class="fin-cmp-note" data-fin-cmp-note="tenant" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
                             </div>
                             </div>
                             <div class="hr-field" id="fin-addr-pick-wrap" hidden>
@@ -6545,22 +6555,87 @@
                             <div id="fin-addr-pick-panel" class="fin-addr-pick-panel" hidden></div>
                             </div>
                             <div class="hr-field" id="fin-lease-pick-wrap" hidden>
-                            <label class="hr-req" for="fin-lease-pick">選擇租期</label>
+                            <label for="fin-lease-pick">公司系統案件參考（選填，不會自動帶入）</label>
                             <select id="fin-lease-pick">
-                            <option value="">請選擇租期</option>
+                            <option value="">可略過，直接手動填寫後比對</option>
                             </select>
                             </div>
                             <div class="fin-lease-block" data-fin-when="pkg-lease">
                             <p class="fin-lease-caption">包租契約租期</p>
                             <div class="fin-grid-2">
-                            <div class="hr-field"><label class="hr-req" for="fin-bao-lease-start">包租開始日期</label><input id="fin-bao-lease-start" type="date"></div>
-                            <div class="hr-field"><label class="hr-req" for="fin-bao-lease-end">包租到期日</label><input id="fin-bao-lease-end" type="date"></div>
+                            <div class="hr-field" data-fin-cmp="baoLeaseStart">
+                              <label class="hr-req" for="fin-bao-lease-start">包租開始日期</label>
+                              <input id="fin-bao-lease-start" type="date" data-fin-cmp-input="baoLeaseStart">
+                              <p class="fin-cmp-result" data-fin-cmp-result="baoLeaseStart" hidden></p>
+                              <label class="fin-cmp-override" data-fin-cmp-override="baoLeaseStart" hidden><input type="checkbox" data-fin-cmp-flag="baoLeaseStart"> 公司系統資料有誤</label>
+                              <textarea class="fin-cmp-note" data-fin-cmp-note="baoLeaseStart" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
+                            </div>
+                            <div class="hr-field" data-fin-cmp="baoLeaseEnd">
+                              <label class="hr-req" for="fin-bao-lease-end">包租到期日</label>
+                              <input id="fin-bao-lease-end" type="date" data-fin-cmp-input="baoLeaseEnd">
+                              <p class="fin-cmp-result" data-fin-cmp-result="baoLeaseEnd" hidden></p>
+                              <label class="fin-cmp-override" data-fin-cmp-override="baoLeaseEnd" hidden><input type="checkbox" data-fin-cmp-flag="baoLeaseEnd"> 公司系統資料有誤</label>
+                              <textarea class="fin-cmp-note" data-fin-cmp-note="baoLeaseEnd" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
+                            </div>
                             </div>
                             <p class="fin-lease-caption">轉租契約租期</p>
                             <div class="fin-grid-2">
-                            <div class="hr-field"><label class="hr-req" for="fin-zhuan-lease-start">轉租開始日期</label><input id="fin-zhuan-lease-start" type="date"></div>
-                            <div class="hr-field"><label class="hr-req" for="fin-zhuan-lease-end">轉租到期日</label><input id="fin-zhuan-lease-end" type="date"></div>
+                            <div class="hr-field" data-fin-cmp="zhuanLeaseStart">
+                              <label class="hr-req" for="fin-zhuan-lease-start">轉租開始日期</label>
+                              <input id="fin-zhuan-lease-start" type="date" data-fin-cmp-input="zhuanLeaseStart">
+                              <p class="fin-cmp-result" data-fin-cmp-result="zhuanLeaseStart" hidden></p>
+                              <label class="fin-cmp-override" data-fin-cmp-override="zhuanLeaseStart" hidden><input type="checkbox" data-fin-cmp-flag="zhuanLeaseStart"> 公司系統資料有誤</label>
+                              <textarea class="fin-cmp-note" data-fin-cmp-note="zhuanLeaseStart" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
                             </div>
+                            <div class="hr-field" data-fin-cmp="zhuanLeaseEnd">
+                              <label class="hr-req" for="fin-zhuan-lease-end">轉租到期日</label>
+                              <input id="fin-zhuan-lease-end" type="date" data-fin-cmp-input="zhuanLeaseEnd">
+                              <p class="fin-cmp-result" data-fin-cmp-result="zhuanLeaseEnd" hidden></p>
+                              <label class="fin-cmp-override" data-fin-cmp-override="zhuanLeaseEnd" hidden><input type="checkbox" data-fin-cmp-flag="zhuanLeaseEnd"> 公司系統資料有誤</label>
+                              <textarea class="fin-cmp-note" data-fin-cmp-note="zhuanLeaseEnd" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
+                            </div>
+                            </div>
+                            <p class="fin-lease-caption">金額與案件類型（請手動填寫）</p>
+                            <div class="fin-grid-2">
+                            <div class="hr-field" data-fin-cmp="rent">
+                              <label class="hr-req" for="fin-cmp-rent">租金</label>
+                              <input id="fin-cmp-rent" type="text" inputmode="decimal" maxlength="20" placeholder="例 12000" data-fin-cmp-input="rent">
+                              <p class="fin-cmp-result" data-fin-cmp-result="rent" hidden></p>
+                              <label class="fin-cmp-override" data-fin-cmp-override="rent" hidden><input type="checkbox" data-fin-cmp-flag="rent"> 公司系統資料有誤</label>
+                              <textarea class="fin-cmp-note" data-fin-cmp-note="rent" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
+                            </div>
+                            <div class="hr-field" data-fin-cmp="managementFee">
+                              <label class="hr-req" for="fin-cmp-mgmt">管理費</label>
+                              <input id="fin-cmp-mgmt" type="text" inputmode="decimal" maxlength="20" placeholder="例 1000；無則填 0" data-fin-cmp-input="managementFee">
+                              <p class="fin-cmp-result" data-fin-cmp-result="managementFee" hidden></p>
+                              <label class="fin-cmp-override" data-fin-cmp-override="managementFee" hidden><input type="checkbox" data-fin-cmp-flag="managementFee"> 公司系統資料有誤</label>
+                              <textarea class="fin-cmp-note" data-fin-cmp-note="managementFee" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
+                            </div>
+                            <div class="hr-field" data-fin-cmp="deposit">
+                              <label class="hr-req" for="fin-cmp-deposit">押金</label>
+                              <input id="fin-cmp-deposit" type="text" inputmode="decimal" maxlength="20" placeholder="例 24000" data-fin-cmp-input="deposit">
+                              <p class="fin-cmp-result" data-fin-cmp-result="deposit" hidden></p>
+                              <label class="fin-cmp-override" data-fin-cmp-override="deposit" hidden><input type="checkbox" data-fin-cmp-flag="deposit"> 公司系統資料有誤</label>
+                              <textarea class="fin-cmp-note" data-fin-cmp-note="deposit" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
+                            </div>
+                            <div class="hr-field" data-fin-cmp="caseType">
+                              <label class="hr-req" for="fin-cmp-case-type">案件類型</label>
+                              <select id="fin-cmp-case-type" data-fin-cmp-input="caseType">
+                                <option value="">請選擇</option>
+                                <option value="新媒合">新媒合</option>
+                                <option value="續約">續約</option>
+                                <option value="轉包">轉包</option>
+                                <option value="轉租">轉租</option>
+                              </select>
+                              <p class="fin-cmp-result" data-fin-cmp-result="caseType" hidden></p>
+                              <label class="fin-cmp-override" data-fin-cmp-override="caseType" hidden><input type="checkbox" data-fin-cmp-flag="caseType"> 公司系統資料有誤</label>
+                              <textarea class="fin-cmp-note" data-fin-cmp-note="caseType" maxlength="200" rows="2" placeholder="請說明公司系統哪裡有誤（必填）" hidden></textarea>
+                            </div>
+                            </div>
+                            </div>
+                            <div class="fin-cmp-bar" id="fin-cmp-bar">
+                              <button type="button" id="fin-cmp-btn" class="fin-cmp-btn">比對</button>
+                              <p id="fin-cmp-status" class="hr-hint" aria-live="polite">請先手動填完欄位，再按比對；全部相符（或已勾選系統有誤並說明）才能送出。</p>
                             </div>
                         </div>
                     </div>
@@ -14387,7 +14462,8 @@
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261115-sheet"></script>
         <script src="./js/hr-report.js?v=20261107-hr12"></script>
-        <script src="./js/fin-report.js?v=20261115-gauge-top"></script>
+        <script src="./js/fin-company-compare.js?v=20261116-cmp1"></script>
+        <script src="./js/fin-report.js?v=20261116-cmp1"></script>
         <script src="./js/meeting-scoreboard.js?v=20261116-msb-board-fix"></script>
         <script src="./js/course-exam-data.js?v=20261116-contract"></script>
         <script src="./js/admin-meeting-exam-data.js?v=20261021-meet1019"></script>
