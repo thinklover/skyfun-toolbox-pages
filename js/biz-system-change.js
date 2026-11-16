@@ -440,11 +440,25 @@
         reasons.push({ by: m[1], at: m[2], reason: m[3].trim() });
         return;
       }
-      // 轉單只靠層級標籤顯示當前狀態，不重複列轉單歷程
+      // 轉單人改在卡片 meta「轉單人」顯示，這裡不重複列歷程
       if (/^(處長轉行政｜|行政轉管理員｜|行政轉處長｜)/.test(t) || t === '修改人已標記完成') return;
       rest.push(t);
     });
     return { reasons, rest };
+  }
+
+  /** 從 admin_note 取出「轉到目前層級」的最後一位轉單人 */
+  function lastTransferBy(r) {
+    const note = String((r && r.adminNote) || '');
+    const level = levelOf(r);
+    let re = null;
+    if (level === 'super') re = /行政轉管理員｜([^｜]+?) →/g;
+    else if (level === 'admin') re = /處長轉行政｜([^｜]+?) →/g;
+    else return '';
+    let m;
+    let last = '';
+    while ((m = re.exec(note))) last = String(m[1] || '').trim();
+    return last;
   }
 
   function notesHtml(note) {
@@ -488,6 +502,7 @@
     const pendingClass = showPending
       ? (level === 'author' ? 'rejected' : 'pending')
       : tagClass;
+    const transferBy = (showPending || showTransferred) ? lastTransferBy(r) : '';
     return `<article class="bsc-item">
       <div class="bsc-item-top">
         <div class="bsc-item-addr">${esc(r.address)}</div>
@@ -497,7 +512,7 @@
         (showPending || showTransferred || showCompleted)
           ? ` · 填寫人 ${esc(r.authorName)}${r.team ? `（${esc(r.team)}）` : ''}`
           : (mod ? ` · 處長 ${esc(mod)}` : '')
-      }</div>
+      }${transferBy ? ` · 轉單人 ${esc(transferBy)}` : ''}</div>
       <div><span class="bsc-level bsc-level--${esc(showCompleted ? 'manager' : level)}">${esc(levelText)}</span></div>
       ${Array.isArray(r.nodes) && r.nodes.length ? `<div class="bsc-node-tags">${r.nodes.map((n) => `<span class="bsc-node-tag">${esc(n)}</span>`).join('')}</div>` : ''}
       <div class="bsc-item-body">${esc(r.content)}</div>
