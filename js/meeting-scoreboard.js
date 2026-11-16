@@ -303,11 +303,30 @@
     if (!el || !document.body) return;
     if (el.parentElement !== document.body) document.body.appendChild(el);
   }
-  function defaultProjectId() {
-    const list = state.projects || [];
-    if (!list.length) return '';
-    const hit = list.find((p) => /一般|加減分|會議/.test(String(p.name || ''))) || list[0];
+  function defaultProjectId(personId) {
+    const board = personId != null && personId !== ''
+      ? writeBoardForPersonId(personId)
+      : WRITE_BOARD;
+    const all = state.projects || [];
+    const sameBoard = all.filter((p) => String(p.board || '') === board);
+    const pool = sameBoard.length
+      ? sameBoard
+      : all.filter((p) => String(p.board || '') === WRITE_BOARD);
+    const use = pool.length ? pool : all;
+    if (!use.length) return '';
+    const hit = use.find((p) => /一般|加減分/.test(String(p.name || '')))
+      || use.find((p) => /會議|月會/.test(String(p.name || '')))
+      || use[0];
     return hit ? String(hit.id) : '';
+  }
+  function syncProjectToPerson(personId) {
+    const el = $('msb-project');
+    if (!el) return;
+    const board = writeBoardForPersonId(personId);
+    const cur = String(el.value || '').trim();
+    const curRow = (state.projects || []).find((p) => String(p.id) === cur);
+    if (curRow && String(curRow.board || '') === board) return;
+    el.value = defaultProjectId(personId);
   }
   function setView(view) {
     state.view = view;
@@ -334,9 +353,14 @@
       if (keep && [...el.options].some((o) => o.value === keep)) el.value = keep;
     });
     if ($('msb-project')) {
+      const personKeep = preferPersonId != null
+        ? String(preferPersonId)
+        : ($('msb-person')?.value || '');
       const keep = String($('msb-project').value || '').trim();
-      const next = keep || defaultProjectId();
-      $('msb-project').value = next;
+      const keepRow = (state.projects || []).find((p) => String(p.id) === keep);
+      const board = writeBoardForPersonId(personKeep);
+      const keepOk = keepRow && String(keepRow.board || '') === board;
+      $('msb-project').value = keepOk ? keep : defaultProjectId(personKeep);
     }
     if ($('msb-filter-project')) {
       const keep = $('msb-filter-project').value;
@@ -906,7 +930,14 @@
     fillSelects(personId || (e && e.personId));
     if (e) {
       if ($('msb-person')) $('msb-person').value = String(e.personId);
-      if ($('msb-project')) $('msb-project').value = String(e.projectId || defaultProjectId());
+      if ($('msb-project')) {
+        const editPid = String(e.projectId || '');
+        const editRow = (state.projects || []).find((p) => String(p.id) === editPid);
+        const board = writeBoardForPersonId(e.personId);
+        $('msb-project').value = (editRow && String(editRow.board || '') === board)
+          ? editPid
+          : defaultProjectId(e.personId);
+      }
       if ($('msb-date')) $('msb-date').value = String(e.scoreDate || '').slice(0, 10);
       if ($('msb-score')) $('msb-score').value = String(e.score);
       if ($('msb-item')) $('msb-item').value = e.item || '加減分';
@@ -916,7 +947,6 @@
     } else {
       $('msb-entry-form')?.reset();
       if ($('msb-date')) $('msb-date').value = todayStr();
-      if ($('msb-project')) $('msb-project').value = defaultProjectId();
       if ($('msb-item')) $('msb-item').value = '加減分';
       if ($('msb-session')) $('msb-session').value = '';
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
@@ -929,7 +959,7 @@
       }
       fillSelects(personId);
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
-      if ($('msb-project')) $('msb-project').value = defaultProjectId();
+      syncProjectToPerson(personId || $('msb-person')?.value || '');
       if ($('msb-item')) $('msb-item').value = '加減分';
       setDeptMode(state.deptTarget);
     }
@@ -1310,6 +1340,10 @@
     });
     $('msb-entry-form')?.addEventListener('input', () => { checkDirty(); });
     $('msb-entry-form')?.addEventListener('change', () => { checkDirty(); });
+    $('msb-person')?.addEventListener('change', () => {
+      syncProjectToPerson($('msb-person')?.value || '');
+      checkDirty();
+    });
     $('msb-entry-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       if (state.busy) return;
@@ -1318,7 +1352,8 @@
       if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
       try {
         const entryPersonId = Number($('msb-person')?.value || 0) || null;
-        const projectId = Number($('msb-project')?.value || defaultProjectId() || 0) || null;
+        syncProjectToPerson(entryPersonId);
+        const projectId = Number($('msb-project')?.value || defaultProjectId(entryPersonId) || 0) || null;
         const item = String($('msb-item')?.value || $('msb-note')?.value || '加減分').trim() || '加減分';
         if (state.deptTarget) {
           const deptRes = await rpc('msb_dept_entry_save', {
