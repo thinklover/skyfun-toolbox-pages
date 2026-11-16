@@ -1,0 +1,12 @@
+name = "tingting-admin"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "line-media-tingting"
+
+# Secrets（wrangler secret put，勿寫進此檔）:
+#   ADMIN_PASSWORD
+#   SESSION_SECRET
