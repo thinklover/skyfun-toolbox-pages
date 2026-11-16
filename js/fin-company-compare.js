@@ -95,11 +95,13 @@
   function compareFields(user, company, keys) {
     const landlords = Array.isArray(company?.landlords) ? company.landlords : [];
     const tenants = Array.isArray(company?.tenants) ? company.tenants : [];
-    const ll = pickBestByName(landlords, user.landlord);
-    const tn = pickBestByName(tenants, user.tenant);
+    const llExact = pickBestByName(landlords, user.landlord);
+    const tnExact = pickBestByName(tenants, user.tenant);
+    const ll = llExact || landlords[0] || null;
+    const tn = tnExact || tenants[0] || null;
     const companyMap = {
-      landlord: ll?.name || '',
-      tenant: tn?.name || '',
+      landlord: (llExact || ll)?.name || (landlords[0] && landlords[0].name) || '',
+      tenant: (tnExact || tn)?.name || (tenants[0] && tenants[0].name) || '',
       baoLeaseStart: ll?.leaseStart || '',
       baoLeaseEnd: ll?.leaseEnd || '',
       zhuanLeaseStart: tn?.leaseStart || '',
@@ -146,8 +148,8 @@
       };
     });
     return {
-      matchedLandlord: ll || null,
-      matchedTenant: tn || null,
+      matchedLandlord: llExact || ll || null,
+      matchedTenant: tnExact || tn || null,
       companyMap,
       fields
     };
