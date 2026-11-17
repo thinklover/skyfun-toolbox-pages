@@ -1,5 +1,5 @@
 (() => {
-  const NAV = ['案件管理','包租管理','政策戶管理','新件管理','續約管理','應收帳管理','業務績效表','證照檢核','開發管理','報修管理','社宅回饋管理'];
+  const NAV = ['案件管理','組織管理','包租管理','政策戶管理','新件管理','續約管理','應收帳管理','業務績效表','證照檢核','開發管理','報修管理','社宅回饋管理'];
   const LEASE_TARGET_RATE = 0.5;
   const NEW_TARGET_RATE = 0.9;
   const RENEW_TARGET_RATE = 0.7;
@@ -8,6 +8,32 @@
   const NEW_CHILDREN = ['新媒合','新媒合-多元-直','新媒合-多元-間','新媒合-爬蟲','新媒合-客服-直','新媒合-客服-間','新媒合-寄居蟹轉銜案','新媒合-跨區派案-直','新媒合-跨區派案-間','新媒合-電銷-直','新媒合-電銷-間'];
   const CASE_LEAVES = ['代管轉包租','包租轉代管','到期再媒合', ...NEW_CHILDREN, '解約再媒合','續約'];
   const CITIES = ['基隆市','新北市','臺北市','桃園市','新竹市','新竹縣','宜蘭縣','臺中市','彰化縣','南投縣','嘉義市','嘉義縣','臺南市','高雄市'];
+  const SUPPORT_CITY_PFX = '支援:';
+  const SUPPORT_CITY_IDS = CITIES.map(c => SUPPORT_CITY_PFX + c);
+  const isSupportCityId = id => String(id || '').startsWith(SUPPORT_CITY_PFX);
+  const supportCityName = id => String(id || '').slice(SUPPORT_CITY_PFX.length);
+  const DEPT_CITY = {
+    '01': '臺北市',
+    '03': '桃園市',
+    '04': '臺中市',
+    '05': '臺南市',
+    '06': '高雄市',
+    '07': '嘉義市',
+    '08': '南投縣',
+    '09': '彰化縣',
+    '12': '基隆市',
+    '13': '宜蘭縣',
+    '30': '新竹市'
+  };
+  function staffDeptCity(s) {
+    const raw = String((s && (s.dept != null && s.dept !== '' ? s.dept : s.department)) || '').trim();
+    if (!raw) return '';
+    if (/大台北/.test(raw)) return '臺北市';
+    const code = (raw.match(/\d+/) || [''])[0];
+    if (DEPT_CITY[code]) return DEPT_CITY[code];
+    if (DEPT_CITY[raw]) return DEPT_CITY[raw];
+    return '';
+  }
   const CITIES_NS = ['基隆市','臺北市','新北市','桃園市','新竹市','新竹縣','臺中市','彰化縣','南投縣','嘉義市','嘉義縣','臺南市','高雄市','宜蘭縣'];
   const PERIODS = ['2期','3期','3-1期','4期','4-1期','5期'];
   const REGIONS = {
@@ -358,17 +384,91 @@
     rnGrowMonthOpen: [],
     rnGrowTblSort: '',
     rnGrowTblDir: 'desc',
+    rnConvGrain: 'month',
+    rnConvPick: 0,
+    rnConvStaffOpen: false,
+    rnConvStaffSort: 'due',
+    rnConvStaffDir: 'desc',
+    rnConvHide: { 代轉包: false, 包轉代: false, 三年代管: false },
+    rnConvMetric: 'month',
+    rnConvOpen: ['全公司'],
+    rnConvFocus: '全公司',
+    rnConvMonthOpen: [],
+    rnConvTblSort: '',
+    rnConvTblDir: 'desc',
+    rnConvRank: 'toLease',
+    rnConvCmpFocus: 'toLease',
+    rnConvCmpCase: null,
     rnTrendGrain: 'month',
     rnTrendMetric: 'month',
     rnCmpGrain: 'month',
     rnCmpSort: '',
     rnCmpDir: 'desc',
     rnCmpOpen: ['全公司'],
-    rnCmpFocus: ''
+    rnCmpFocus: '',
+    rnProgGrain: 'month',
+    rnProgMetric: 'month',
+    rnProgPick: 0,
+    rnProgOpen: ['全公司'],
+    rnProgCmpOpen: [],
+    rnProgCmpFocus: 'work',
+    rnProgCmpCase: null,
+    rnWatchGrain: 'month',
+    rnWatchPick: 0,
+    rnWatchMode: 'd30',
+    rnWatchStaffOpen: false,
+    rnWatchStaffSort: 'd30',
+    rnWatchStaffDir: 'desc',
+    rnWatchOpen: ['全公司'],
+    rnWatchFocus: '全公司',
+    rnWatchTblSort: '',
+    rnWatchTblDir: 'desc',
+    rnWatchCmpCase: null,
+    rnWatchHide: { '倒數30天': false, '倒數60天': false, '到期未續': false, '提前解約': false },
+    rnYearQ: '',
+    rnYearStaffSort: 'ytd',
+    rnYearStaffDir: 'desc',
+    rnYearCase: null,
+    rnProgFocus: '全公司',
+    rnProgTblSort: '',
+    rnProgTblDir: 'desc',
+    rnProgStaffOpen: false,
+    rnProgStaffSort: 'work',
+    rnProgStaffDir: 'desc',
+    rnProgHide: { 續約作業進行中: false, 到期未續約: false, 提前解約: false },
+    orgGrain: 'month',
+    orgPick: 0,
+    orgStaffOpen: false,
+    orgStaffSort: 'n',
+    orgStaffDir: 'desc',
+    orgIdleBand: 'all',
+    orgMemBand: 'all',
+    orgMemTen: 'all',
+    orgMemIdle: 'all',
+    orgMemSort: 'rank',
+    orgMemDir: 'asc',
+    orgMemQ: '',
+    orgMemSt: 'on',
+    orgTenPick: '',
+    orgRankPick: '',
+    orgMemPick: '',
+    orgMemJudgeKind: '',
+    orgHrGrain: 'month',
+    orgHrPeopleOpen: false,
+    orgHrPeopleKey: 'on',
+    orgCmpPick: 'act',
+    orgStaffFilter: null,
+    orgFlowGrain: 'month',
+    orgFlowOpen: ['全公司'],
+    orgFlowPick: '',
+    orgFlowRankMetric: 'on',
+    orgFlowPeopleOpen: false,
+    orgFlowPeopleKey: 'left',
+    orgFlowTitle: ''
   };
   const draft = {};
   let charts = {};
-  const staffPeople = { rev: [], src: [], house: [], type: [], crab: [], grow: [], cg: [], fcst: [], lzGrow: [], wkGrow: [], nwGrow: [], lzCg: [], wkCg: [], nwCg: [], nat: [], lzType: [], lzRev: [], wkType: [], wkRev: [], nwType: [], nwRev: [], ar: [], rnGrow: [] };
+  const staffPeople = { rev: [], src: [], house: [], type: [], crab: [], grow: [], cg: [], fcst: [], lzGrow: [], wkGrow: [], nwGrow: [], lzCg: [], wkCg: [], nwCg: [], nat: [], lzType: [], lzRev: [], wkType: [], wkRev: [], nwType: [], nwRev: [], ar: [], rnGrow: [], rnConv: [], rnProg: [], rnWatch: [], rnYear: [], org: [], orgMem: [] };
   const ROWS = window.CONTRACTS || [];
   for (let i = 0; i < ROWS.length; i++) {
     const r = ROWS[i];
@@ -384,6 +484,7 @@
       (state.types || []).join('\0'),
       isNewMatchAllSelected() ? '1' : '0',
       off ? [...off].join('\0') : '*',
+      (state.offices || []).filter(isSupportCityId).join('\0'),
       state.cities.length === CITIES.length ? '*' : (state.cities || []).join('\0'),
       state.periods.length === PERIODS.length ? '*' : (state.periods || []).join('\0')
     ].join('|');
@@ -399,7 +500,7 @@
     const out = [];
     for (let i = 0; i < list.length; i++) {
       const r = list[i];
-      if (offices && !offices.has(r.so)) continue;
+      if (!officeSetHasRow(offices, r, r.so)) continue;
       const t = r._lsT;
       if (t === t && t >= a && t <= b) out.push(r);
     }
@@ -535,11 +636,41 @@
         else if (id === '多元-全居') set.add('多元-全居');
         else if (id === '多元') MULTI_OFFICES.filter(o => o !== '多元-全居').forEach(o => set.add(o));
         else if (id === '後勤') BACK_OFFICES.forEach(o => set.add(o));
+        else if (id === '業務支援管理部' || isSupportCityId(id)) set.add('業務支援管理部');
         else set.add(id);
       });
     }
     _officesMemo = { key, set };
     return set;
+  }
+  function selectedSupportCities() {
+    const ids = state.offices || [];
+    if (!ids.length || ids.includes('__ALL__')) return null;
+    const cities = ids.filter(isSupportCityId).map(id => normCity(supportCityName(id)));
+    if (!cities.length || cities.length === CITIES.length) return null;
+    return new Set(cities);
+  }
+  function rowLeaseCity(r) {
+    return cityOfLease(r) || normCity(r && r.city) || '';
+  }
+  function passSupportCity(r, so) {
+    if ((so || (r && r.so)) !== '業務支援管理部') return true;
+    const sc = selectedSupportCities();
+    if (!sc) return true;
+    return sc.has(rowLeaseCity(r));
+  }
+  function copyOfficeSet(set, supportCity) {
+    const out = new Set(set || []);
+    const city = supportCity || (set && set.supportCity);
+    if (city) out.supportCity = city;
+    return out;
+  }
+  function officeSetHasRow(offices, r, so) {
+    if (!offices) return true;
+    const o = so || (r && (r.so || r.office)) || '';
+    if (!offices.has(o)) return false;
+    if (offices.supportCity && o === '業務支援管理部' && rowLeaseCity(r) !== offices.supportCity) return false;
+    return true;
   }
 
   function isNewMatchFt(ft) {
@@ -552,6 +683,7 @@
   function passFilters(r, opts = {}) {
     const offices = selectedOffices();
     if (offices && !offices.has(r.so)) return false;
+    if (!passSupportCity(r, r.so)) return false;
     if (state.cities.length !== CITIES.length && !state.cities.includes(normCity(r.city))) return false;
     if (state.periods.length !== PERIODS.length && !state.periods.includes(r.p)) return false;
     if (!opts.ignoreType) {
@@ -800,8 +932,8 @@
   }
 
   function perfRows(start, end) {
-    const pool = cachedPool('perf', () => uniqueById(ROWS.filter(r => passFilters(r) && isPerf(r))));
-    return sliceByRange(pool, start, end, null);
+    const pool = cachedPool('perfCycle', () => ROWS.filter(r => passFilters(r) && isCyclePerf(r)));
+    return uniqueByLeaseAddr(sliceByRange(pool, start, end, null));
   }
 
   function salesOfficeSet(rows) {
@@ -849,7 +981,13 @@
     }
     if (kind === 'office') {
       if (state.offices.includes('__ALL__')) return '全公司';
-      if (state.offices.length === 1) return state.offices[0];
+      if (state.offices.length === 1) {
+        const id = state.offices[0];
+        return isSupportCityId(id) ? '業務支援管理部｜' + supportCityName(id) : id;
+      }
+      if (state.offices.length && state.offices.every(isSupportCityId)) {
+        return state.offices.length === CITIES.length ? '業務支援管理部' : `業務支援管理部｜已選${state.offices.length}縣市`;
+      }
       return `已選${state.offices.length}個單位`;
     }
     if (kind === 'city') {
@@ -957,7 +1095,8 @@
       { id: '營業部', name: '營業部', kids: Object.keys(REGIONS) },
       ...Object.entries(REGIONS).map(([r, arr]) => ({ id: r, name: r, kids: arr })),
       ...SALES_OFFICES.map(o => ({ id: o, name: o, kids: [] })),
-      { id: '業務支援管理部', name: '業務支援管理部', kids: [] },
+      { id: '業務支援管理部', name: '業務支援管理部', kids: SUPPORT_CITY_IDS },
+      ...CITIES.map(c => ({ id: SUPPORT_CITY_PFX + c, name: c, kids: [] })),
       { id: '電服部', name: '電服部', kids: [] },
       { id: '多元開發部(全)', name: '多元開發部(全)', kids: ['多元-全居','多元'] },
       { id: '多元-全居', name: '多元-全居', kids: [] },
@@ -1143,6 +1282,7 @@
       state.nav = n;
       document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('on', b.dataset.nav === n));
       const cases = n === '案件管理';
+      const org = n === '組織管理';
       const lease = n === '包租管理';
       const weak = n === '政策戶管理';
       const fresh = n === '新件管理';
@@ -1150,14 +1290,16 @@
       const ar = n === '應收帳管理';
       const perf = n === '業務績效表';
       $('page-cases').classList.toggle('hidden', !cases);
+      if ($('page-org')) $('page-org').classList.toggle('hidden', !org);
       if ($('page-lease')) $('page-lease').classList.toggle('hidden', !lease);
       if ($('page-weak')) $('page-weak').classList.toggle('hidden', !weak);
       if ($('page-new')) $('page-new').classList.toggle('hidden', !fresh);
       if ($('page-renew')) $('page-renew').classList.toggle('hidden', !renew);
       if ($('page-ar')) $('page-ar').classList.toggle('hidden', !ar);
       if ($('page-perf')) $('page-perf').classList.toggle('hidden', !perf);
-      $('page-placeholder').classList.toggle('hidden', cases || lease || weak || fresh || renew || ar || perf);
+      $('page-placeholder').classList.toggle('hidden', cases || org || lease || weak || fresh || renew || ar || perf);
       if ($('phTitle')) $('phTitle').textContent = n;
+      if (org) renderOrgDash();
       if (lease) renderLeaseDash('lease');
       if (weak) renderLeaseDash('weak');
       if (fresh) renderLeaseDash('new');
@@ -1884,17 +2026,27 @@
     else if (id === '多元開發部' || id === '多元開發部(全)') set = new Set(MULTI_OFFICES);
     else if (id === '後勤') set = new Set(BACK_OFFICES);
     else if (REGIONS[id]) set = new Set(REGIONS[id]);
+    else if (id === '業務支援管理部') set = new Set(['業務支援管理部']);
+    else if (isSupportCityId(id)) {
+      set = new Set(['業務支援管理部']);
+      set.supportCity = normCity(supportCityName(id));
+    }
     else set = new Set([id]);
     const sel = selectedOffices();
-    if (sel && set) return new Set([...set].filter(o => sel.has(o)));
+    if (sel && set) {
+      const out = copyOfficeSet([...set].filter(o => sel.has(o)), set.supportCity);
+      const sc = selectedSupportCities();
+      if (out.supportCity && sc && !sc.has(out.supportCity)) return new Set();
+      return out;
+    }
     if (sel && !set) return sel;
     return set;
   }
   function unitPerf(offices, start, end) {
-    return uniqueById(ROWS.filter(r => {
+    return uniqueByLeaseAddr(ROWS.filter(r => {
       if (!passFilters(r)) return false;
-      if (offices && !offices.has(r.so)) return false;
-      return startIn(r, start, end) && isPerf(r);
+      if (!officeSetHasRow(offices, r, r.so)) return false;
+      return startIn(r, start, end) && isCyclePerf(r);
     }));
   }
   function unitStaff(offices) {
@@ -1924,7 +2076,10 @@
             id: r, name: r, kids: arr.map(o => ({ id: o, name: o, kids: [] }))
           }))
         },
-        { id: '業務支援管理部', name: '業務支援管理部', kids: [] },
+        {
+          id: '業務支援管理部', name: '業務支援管理部',
+          kids: CITIES.map(c => ({ id: SUPPORT_CITY_PFX + c, name: c, kids: [] }))
+        },
         { id: '電銷部', name: '電銷部', kids: [] },
         { id: '多元開發部', name: '多元開發部', kids: MULTI_OFFICES.map(o => ({ id: o, name: o, kids: [] })) },
         { id: '後勤', name: '後勤', kids: BACK_OFFICES.map(o => ({ id: o, name: o, kids: [] })) }
@@ -1936,6 +2091,7 @@
     if (!node) return null;
     const kids = (node.kids || []).map(k => pruneIdleSalesOffices(k, hasPerf)).filter(Boolean);
     if (SALES_OFFICE_SET.has(node.id) && !hasPerf(node)) return null;
+    if (isSupportCityId(node.id) && !hasPerf(node)) return null;
     if (REGIONS[node.id] && !kids.length) return null;
     return { ...node, kids };
   }
@@ -2146,9 +2302,11 @@
     }));
   }
   function crabKeep(r, reassign) {
+    const so = crabOfficeOf(r, reassign);
     const offices = selectedOffices();
-    if (!offices) return true;
-    return offices.has(crabOfficeOf(r, reassign));
+    if (offices && !offices.has(so)) return false;
+    if (!passSupportCity(r, so)) return false;
+    return true;
   }
   function crabNewRows(start, end, reassign) {
     const use = reassign == null ? true : !!reassign;
@@ -2228,7 +2386,7 @@
       const rows = cachedMonths[i - 1].filter(r => {
         const so = crabOfficeOf(r, true);
         if (!crabKeep(r, true)) return false;
-        return !set || set.has(so);
+        return officeSetHasRow(set, r, so);
       });
       return { i, rows, ...crabSplit(rows) };
     };
@@ -2236,7 +2394,7 @@
       const start = new Date(y - 1, i - 1, 1);
       const rows = crabUniverse(start, monthEnd(start)).filter(r => {
         if (!crabKeep(r, false)) return false;
-        return !set || set.has(crabOfficeOf(r, false));
+        return officeSetHasRow(set, r, crabOfficeOf(r, false));
       });
       return { i, rows, ...crabSplit(rows) };
     };
@@ -2526,7 +2684,7 @@
       const yoyN = yoyRows.length;
       return { rows, n, yoyN, tgt, offN: salesOfficeCount(rows), yoyOff: salesOfficeCount(yoyRows) };
     };
-    const keepOf = set => r => !set || set.has(r.so);
+    const keepOf = set => r => officeSetHasRow(set, r, r.so);
     const tgtOf = (set, yy, mm) => sumTargets(set || new Set(scopedOffices()), new Date(yy, mm - 1, 1), monthEnd(new Date(yy, mm - 1, 1)));
     const decorate = (node) => {
       const kids = (node.kids || []).map(decorate);
@@ -4345,7 +4503,7 @@
         }))
       : [];
     const lastToLeaseAll = cfg.kind === 'lease' ? mgmtToLeaseRows(py, pm) : [];
-    const keepOf = set => r => !set || set.has(r.so);
+    const keepOf = set => r => officeSetHasRow(set, r, r.so);
     const pack = rows => {
       const n = (rows || []).length;
       const lease = (rows || []).filter(cfg.isHit).length;
@@ -4800,6 +4958,20 @@
     if (/^\d{4}-/.test(str)) return parseIso(str.slice(0, 10));
     return rocToDate(str);
   }
+  function orgLeaveDate(s) {
+    const raw = s && (s.leaveDate || s.resignDate || s.quitDate || s.lastWorkDate || s.stopDate || s.offboardDate);
+    if (!raw) return null;
+    const str = String(raw);
+    if (/^\d{4}-/.test(str)) return parseIso(str.slice(0, 10));
+    return rocToDate(str);
+  }
+  function orgIsNormalStatus(s) {
+    const st = String((s && s.status) || '').trim();
+    return st === 'NORMAL' || st === '正常';
+  }
+  function orgShowYearQuit(p, y) {
+    return !!(p.leave && p.leave.getFullYear() === y);
+  }
   function fcstUnder3m(hire, asOf) {
     if (!hire || !asOf) return false;
     const lim = new Date(asOf.getFullYear(), asOf.getMonth() - 3, asOf.getDate());
@@ -4840,14 +5012,1203 @@
       `產4件以上${fmt(bandOf(4).length)}位；產3件以上${fmt(bandOf(3).length)}位；產2件以上${fmt(bandOf(2).length)}位；產1件以上${fmt(bandOf(1).length)}位；尚未產件${fmt(zero.length)}位`
     ];
   }
+  const ORG_HR_TITLES = new Set(['25', '30', '40', '50', '60', '63', '99']);
+  const ORG_TITLES = ORG_HR_TITLES;
+  const ORG_MGR_TITLES = new Set(['30', '40', '50']);
+  const ORG_CHART_RANKS = [
+    { t: '40', lab: '業務經理' },
+    { t: '50', lab: '業務副理' },
+    { t: '60', lab: '業務主任' }
+  ];
+  const ORG_MOVE_RANKS = [
+    { t: '25', lab: '儲備處經理' },
+    { t: '30', lab: '業務協理' },
+    { t: '40', lab: '業務經理' },
+    { t: '50', lab: '業務副理' },
+    { t: '60', lab: '業務主任' },
+    { t: '63', lab: '業務助理' },
+    { t: '99', lab: '工讀生' }
+  ];
+  const ORG_TEN_BANDS = [
+    { id: 'y2', lab: '滿2年', test: m => m >= 24 },
+    { id: 'y1', lab: '滿1年至未滿2年', test: m => m >= 12 && m < 24 },
+    { id: 'm3', lab: '滿3個月至未滿1年', test: m => m >= 3 && m < 12 },
+    { id: 'm0', lab: '未滿3個月', test: m => m < 3 }
+  ];
+  function orgIsPT(s) {
+    const t = String((s && s.title) || '');
+    if (t === '63' || t === '99') return true;
+    return /兼職|助理/.test(String((s && s.titleName) || ''));
+  }
+  function orgTenureMonths(hire, asOf) {
+    if (!hire || !asOf) return null;
+    let months = (asOf.getFullYear() - hire.getFullYear()) * 12 + (asOf.getMonth() - hire.getMonth());
+    if (asOf.getDate() < hire.getDate()) months -= 1;
+    return Math.max(0, months);
+  }
+  function orgTenure(hire, asOf) {
+    const months = orgTenureMonths(hire, asOf);
+    if (months == null) return '—';
+    return `${Math.floor(months / 12)}年${months % 12}月`;
+  }
+  function orgMonthSlot(y, m, n, hire, leave) {
+    const start = new Date(y, m - 1, 1);
+    const end = monthEnd(start);
+    if (leave && start > leave) return 'post';
+    if (n > 0) return 'n';
+    if (hire && end < hire) return 'pre';
+    return 'empty';
+  }
+  function orgLeftThisYear(leave, y) {
+    return !!(leave && leave.getFullYear() === y);
+  }
+  function orgHrKeepOffice(s, set) {
+    const so = crabNormSo(s.officeName || s.office || '');
+    if (set && !set.has(so)) return false;
+    if (set && set.supportCity && so === '業務支援管理部') return staffDeptCity(s) === set.supportCity;
+    return true;
+  }
+  function orgHrRoster(offices) {
+    const set = offices instanceof Set ? offices : (offices ? new Set(offices) : null);
+    const src = STAFF_HR.length ? STAFF_HR : STAFF;
+    const rows = [];
+    const seen = new Set();
+    src.forEach(s => {
+      if (!ORG_HR_TITLES.has(String(s.title))) return;
+      if (!orgHrKeepOffice(s, set)) return;
+      const id = s.id != null ? s.id : 'n:' + s.name;
+      seen.add(id);
+      rows.push({
+        id, name: s.name, title: String(s.title),
+        office: crabNormSo(s.officeName || s.office || ''),
+        hire: fcstHireDate(s),
+        leave: orgLeaveDate(s),
+        left: !orgIsNormalStatus(s),
+        pt: orgIsPT(s),
+        titleName: s.titleName || '',
+        staff: s
+      });
+    });
+    if (STAFF_HR.length && STAFF.length) {
+      STAFF.forEach(s => {
+        const id = s.id != null ? s.id : 'n:' + s.name;
+        if (seen.has(id)) return;
+        if (!ORG_HR_TITLES.has(String(s.title))) return;
+        if (!orgHrKeepOffice(s, set)) return;
+        seen.add(id);
+        rows.push({
+          id, name: s.name, title: String(s.title),
+          office: crabNormSo(s.officeName || s.office || ''),
+          hire: fcstHireDate(s),
+          leave: orgLeaveDate(s),
+          left: true,
+          pt: orgIsPT(s),
+          titleName: s.titleName || '',
+          staff: s
+        });
+      });
+    }
+    return rows;
+  }
+  function orgRateTxt(on, left) {
+    const den = on + left;
+    if (!den) return '0%';
+    return Math.round(on / den * 100) + '%';
+  }
+  function orgDashN(n) {
+    return fmt(n || 0);
+  }
+  function orgNumTd(n, key, extra) {
+    const v = Number(n) || 0;
+    if (!v) return `<td class="v empty ${extra || ''}">0</td>`;
+    return `<td class="v num-hit ${extra || ''}" data-k="${esc(key)}">${fmt(v)}</td>`;
+  }
+  function orgCaseCt(r) {
+    const extra = r && r.id != null ? MATCH_EXTRA_BY_ID.get(r.id) : null;
+    return String((r && r.ct) || (extra && extra.ct) || '');
+  }
+  function orgIsLeaseRow(r) {
+    return orgCaseCt(r).includes('包租');
+  }
+  function orgUnitMgr(tree, offices) {
+    const fromTree = displayOwner(tree.id, tree.name);
+    if (fromTree) return fromTree;
+    const v = ownerName(offices, tree.name);
+    return v && v !== '—' ? String(v).replace(/\s*\/\s*/g, ' ／ ') : '';
+  }
+  function orgHrInRange(d, y, viewM, ytd) {
+    if (!d) return false;
+    if (d.getFullYear() !== y) return false;
+    const m = d.getMonth() + 1;
+    return ytd ? m >= 1 && m <= viewM : m === viewM;
+  }
+  function orgOnAt(p, asOf) {
+    if (!asOf) return false;
+    if (p.hire && p.hire > asOf) return false;
+    if (p.leave && p.leave <= asOf) return false;
+    if (!p.leave && p.left) return false;
+    return true;
+  }
+  function orgMonthSnap(roster, y, m) {
+    const end = monthEnd(new Date(y, m - 1, 1));
+    const start = monthEnd(new Date(y, m - 1, 0));
+    const onStart = roster.filter(p => orgOnAt(p, start));
+    const onEnd = roster.filter(p => orgOnAt(p, end));
+    const hired = roster.filter(p => p.hire && p.hire.getFullYear() === y && p.hire.getMonth() + 1 === m);
+    const left = roster.filter(p => p.leave && p.leave.getFullYear() === y && p.leave.getMonth() + 1 === m);
+    const avg = (onStart.length + onEnd.length) / 2;
+    return {
+      onStart, onEnd, hired, left, avg,
+      rate: avg ? left.length / avg : 0
+    };
+  }
+  function orgPeriodSnap(roster, y, viewM, ytd) {
+    if (!ytd) return orgMonthSnap(roster, y, viewM);
+    const months = [];
+    for (let i = 1; i <= viewM; i++) months.push(orgMonthSnap(roster, y, i));
+    const end = months[months.length - 1];
+    const hired = roster.filter(p => orgHrInRange(p.hire, y, viewM, true));
+    const left = roster.filter(p => orgHrInRange(p.leave, y, viewM, true));
+    const avg = months.reduce((s, x) => s + x.avg, 0) / (months.length || 1);
+    return {
+      onStart: months[0].onStart,
+      onEnd: end.onEnd,
+      hired, left, avg,
+      rate: avg ? left.length / avg : 0,
+      months
+    };
+  }
+  function orgFlowRateTxt(rate) {
+    return ((rate || 0) * 100).toFixed(1) + '%';
+  }
+  function orgFlowPp(a, b) {
+    const n = ((a || 0) - (b || 0)) * 100;
+    return crabPpTxt(n);
+  }
+  function orgHrDay(d) {
+    return d ? slash(d) : '0';
+  }
+  function orgHrTd(n, key, extra) {
+    return `<td class="v num-hit ${extra || ''}" data-org-hr="${esc(key)}">${orgDashN(n)}</td>`;
+  }
+  function orgHrFilterPeople(on, hired, left, key, asOf) {
+    const hiredIds = new Set(hired.map(p => p.id));
+    const startAll = on.filter(p => !hiredIds.has(p.id)).concat(left);
+    if (!key || key === 'on') return on.slice();
+    if (key === 'hired') return hired.slice();
+    if (key === 'left') return left.slice();
+    const parts = String(key).split('|');
+    const kind = parts[0], id = parts[1], field = parts[2];
+    let base = on;
+    if (field === 'out') base = left;
+    else if (field === 'in') base = hired;
+    else if (field === 'start') base = startAll;
+    if (kind === 'ten' && id && id !== 'sum') {
+      const band = ORG_TEN_BANDS.find(b => b.id === id);
+      return base.filter(p => {
+        const m = orgTenureMonths(p.hire, asOf);
+        if (m == null) return band && band.id === 'm0';
+        return band ? band.test(m) : true;
+      });
+    }
+    if (kind === 'rank' && id && id !== 'sum') return base.filter(p => p.title === id);
+    return base.slice();
+  }
+  function orgHrPeopleLabel(key) {
+    if (key === 'on' || !key) return '期末在職';
+    if (key === 'hired') return '新進';
+    if (key === 'left') return '離職';
+    const parts = String(key).split('|');
+    const kind = parts[0], id = parts[1], field = parts[2];
+    const fieldLab = field === 'out' ? '離職' : field === 'in' ? '新進' : field === 'start' ? '期初' : '在職';
+    if (kind === 'ten') {
+      const band = ORG_TEN_BANDS.find(b => b.id === id);
+      return (band ? band.lab : '合計') + '｜' + fieldLab;
+    }
+    if (kind === 'rank') {
+      const rk = ORG_MOVE_RANKS.find(r => r.t === id);
+      return (rk ? rk.lab : '合計') + '｜' + fieldLab;
+    }
+    return '人員明細';
+  }
+  function renderOrgHr(tree, offices, y, viewM, rocY) {
+    if (!$('orgHrKpis')) return;
+    const asOf = monthEnd(new Date(y, viewM - 1, 1));
+    const ytd = (state.orgHrGrain || 'month') === 'ytd';
+    const rangeLab = ytd ? `1–${viewM}月` : `${viewM}月`;
+    const roster = orgHrRoster(offices);
+    const snap = orgPeriodSnap(roster, y, viewM, ytd);
+    const on = snap.onEnd;
+    const hired = snap.hired;
+    const left = snap.left;
+    const byTitle = (list, t) => list.filter(p => p.title === t);
+    const bandOf = (list, band) => list.filter(p => {
+      const m = orgTenureMonths(p.hire, asOf);
+      if (m == null) return band.id === 'm0';
+      return band.test(m);
+    });
+    const mid = ORG_TEN_BANDS.find(b => b.id === 'm3');
+    const midOn = bandOf(on, mid).length;
+    const midLeft = bandOf(left, mid).length;
+    const mgr = orgUnitMgr(tree, offices);
+    if ($('orgHrTitle')) $('orgHrTitle').textContent = '組織人員分析';
+    if ($('orgHrSeg')) $('orgHrSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === (ytd ? 'ytd' : 'month')));
+    if ($('orgHrMeta')) $('orgHrMeta').textContent = `${rocY}年${viewM}月 ｜ ${tree.name}${mgr ? ' ｜ 主管 ' + mgr : ''} ｜ ${ytd ? '累計至當月' : '當月'} ｜ 年資依報到日至${viewM}月底`;
+    $('orgHrKpis').innerHTML = `
+      <div class="card kpi">
+        <div class="k">期末在職人數</div>
+        <div class="v">${fmt(on.length)}<span class="unit"> 人</span></div>
+        <div class="s">正職 ${fmt(on.filter(p => !p.pt).length)}人 ‧ 兼職 ${fmt(on.filter(p => p.pt).length)}人</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">整體留任率</div>
+        <div class="v">${orgRateTxt(on.length, left.length)}</div>
+        <div class="s">${mid.lab} ${orgRateTxt(midOn, midLeft)}</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">${ytd ? '累計新進' : '當月新進'}</div>
+        <div class="v">${fmt(hired.length)}<span class="unit"> 人</span></div>
+        <div class="s">${rangeLab}職級異動</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">${ytd ? '累計離職' : '當月離職'}</div>
+        <div class="v">${fmt(left.length)}<span class="unit"> 人</span></div>
+        <div class="s">${rangeLab}職級異動</div>
+      </div>`;
+    if ($('orgTreeNote')) $('orgTreeNote').textContent = `截至 ${viewM} 月組織狀況`;
+    const kidHtml = ORG_CHART_RANKS.map(rk => {
+      const onN = byTitle(on, rk.t).length;
+      const inN = byTitle(hired, rk.t).length;
+      const outN = byTitle(left, rk.t).length;
+      return `<div class="org-tree-kid">
+        <div class="role">${esc(rk.lab)}</div>
+        <div class="n">${fmt(onN)}</div>
+        <div class="mv">新進 ${inN} ‧ <span class="${outN ? 'left' : ''}">離職 ${outN}</span></div>
+      </div>`;
+    }).join('');
+    if ($('orgTree')) $('orgTree').innerHTML = `
+      <div class="org-tree-top">
+        <div class="nm">${esc(tree.name)}</div>
+        <div class="ow">主管 ${esc(mgr || '—')}</div>
+      </div>
+      <div class="org-tree-stem"></div>
+      <div class="org-tree-h"><i></i><i></i><i></i></div>
+      <div class="org-tree-kids">${kidHtml}</div>
+      <div class="org-tree-foot">依職級呈現期末在職人數，異動為 ${rangeLab}。</div>`;
+    const tenRows = ORG_TEN_BANDS.map(b => {
+      const onN = bandOf(on, b).length;
+      const outN = bandOf(left, b).length;
+      return { lab: b.lab, onN, outN, rate: orgRateTxt(onN, outN), id: b.id };
+    });
+    const totOn = on.length, totLeft = left.length;
+    const watch = [...tenRows].filter(r => r.onN + r.outN > 0).sort((a, b) => {
+      const ra = a.onN + a.outN ? a.onN / (a.onN + a.outN) : 1;
+      const rb = b.onN + b.outN ? b.onN / (b.onN + b.outN) : 1;
+      return ra - rb;
+    })[0];
+    const leftTop = [...ORG_MOVE_RANKS]
+      .map(rk => ({ lab: rk.lab, n: byTitle(left, rk.t).length }))
+      .filter(x => x.n > 0)
+      .sort((a, b) => b.n - a.n)[0];
+    const onFt = on.filter(p => !p.pt).length;
+    const onPt = on.filter(p => p.pt).length;
+    if ($('orgHrJudge')) $('orgHrJudge').innerHTML = `<h4>管理說明（${esc(tree.name)}）</h4>
+      ${judgeP('人力', `期末在職${fmt(on.length)}人（正職${fmt(onFt)}、兼職${fmt(onPt)}），整體留任率${orgRateTxt(on.length, left.length)}。${mgr ? '主管' + mgr + '。' : ''}`)}
+      ${judgeP('年資', watch
+        ? `${watch.lab}留任率${watch.rate}（在職${fmt(watch.onN)}、離職${fmt(watch.outN)}），為需關注區間。`
+        : '本期無年資分布資料。')}
+      ${judgeP('異動', `${rangeLab}新進${fmt(hired.length)}人、離職${fmt(left.length)}人${leftTop ? '；離職最多為' + leftTop.lab + fmt(leftTop.n) + '人' : ''}。`)}`;
+    const tenPick = state.orgTenPick || '';
+    if ($('orgTenTbl')) $('orgTenTbl').innerHTML = `<table class="crab-tbl org-hr-tbl org-ten-tbl"><thead><tr>
+      <th>年資</th><th>在職</th><th>離職</th><th>留任率</th>
+    </tr></thead><tbody>
+      ${tenRows.map(r => `<tr data-org-ten="${r.id}" class="${tenPick === r.id ? 'on' : ''}">
+        <td>${esc(r.lab)}</td>
+        ${orgHrTd(r.onN, 'ten|' + r.id + '|on')}
+        ${orgHrTd(r.outN, 'ten|' + r.id + '|out', r.outN ? 'left' : '')}
+        <td>${r.rate}</td>
+      </tr>`).join('')}
+    </tbody><tfoot><tr data-org-ten="sum" class="${tenPick === 'sum' ? 'on' : ''}">
+      <td>合計</td>
+      ${orgHrTd(totOn, 'ten|sum|on')}
+      ${orgHrTd(totLeft, 'ten|sum|out', totLeft ? 'left' : '')}
+      <td>${orgRateTxt(totOn, totLeft)}</td>
+    </tr></tfoot></table>`;
+    const rankRows = ORG_MOVE_RANKS.map(rk => {
+      const onN = byTitle(on, rk.t).length;
+      const inN = byTitle(hired, rk.t).length;
+      const outN = byTitle(left, rk.t).length;
+      const startN = Math.max(0, onN - inN + outN);
+      return { t: rk.t, lab: rk.lab, startN, onN, inN, outN };
+    });
+    const sumIn = rankRows.reduce((s, r) => s + r.inN, 0);
+    const sumOut = rankRows.reduce((s, r) => s + r.outN, 0);
+    const sumOn = rankRows.reduce((s, r) => s + r.onN, 0);
+    const sumStart = rankRows.reduce((s, r) => s + r.startN, 0);
+    const rankPick = state.orgRankPick || '';
+    const inLab = ytd ? '累計新進' : '當月新進';
+    const outLab = ytd ? '累計離職' : '當月離職';
+    if ($('orgRankTbl')) $('orgRankTbl').innerHTML = `<table class="crab-tbl org-hr-tbl org-rank-tbl"><thead><tr>
+      <th>職稱</th><th>期初人數</th><th>${esc(inLab)}</th><th>${esc(outLab)}</th><th>期末人數</th>
+    </tr></thead><tbody>
+      ${rankRows.map(r => `<tr data-org-rank="${r.t}" class="${rankPick === r.t ? 'on' : ''}">
+        <td>${esc(r.lab)}</td>
+        ${orgHrTd(r.startN, 'rank|' + r.t + '|start')}
+        ${orgHrTd(r.inN, 'rank|' + r.t + '|in')}
+        ${orgHrTd(r.outN, 'rank|' + r.t + '|out', r.outN ? 'left' : '')}
+        ${orgHrTd(r.onN, 'rank|' + r.t + '|on')}
+      </tr>`).join('')}
+    </tbody><tfoot><tr data-org-rank="sum" class="${rankPick === 'sum' ? 'on' : ''}">
+      <td>合計</td>
+      ${orgHrTd(sumStart, 'rank|sum|start')}
+      ${orgHrTd(sumIn, 'rank|sum|in')}
+      ${orgHrTd(sumOut, 'rank|sum|out', sumOut ? 'left' : '')}
+      ${orgHrTd(sumOn, 'rank|sum|on')}
+    </tr></tfoot></table>`;
+    if ($('orgHrPeopleBtn')) $('orgHrPeopleBtn').classList.toggle('on', !!state.orgHrPeopleOpen);
+    const pbox = $('orgHrPeopleBox');
+    if (pbox) {
+      if (!state.orgHrPeopleOpen) {
+        pbox.classList.add('hidden');
+        pbox.innerHTML = '';
+      } else {
+        const key = state.orgHrPeopleKey || 'on';
+        const list = orgHrFilterPeople(on, hired, left, key, asOf)
+          .slice()
+          .sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-Hant'));
+        pbox.classList.remove('hidden');
+        pbox.innerHTML = `${staffHead('人員明細 ｜ ' + orgHrPeopleLabel(key) + ' ｜ ' + fmt(list.length) + '人')}
+          <div class="src-staff-scroll"><table class="src-combo org-hr-people-tbl">
+            <thead><tr><th>業務</th><th>職稱</th><th>到職日</th><th>離職日</th><th>年資</th></tr></thead>
+            <tbody>${list.length ? list.map(p => `<tr>
+              <td>${esc(p.name)}</td>
+              <td>${esc(p.titleName || orgTitleOf(p.staff || p))}</td>
+              <td>${orgHrDay(p.hire)}</td>
+              <td>${orgHrDay(p.leave)}</td>
+              <td>${esc(orgTenure(p.hire, asOf))}</td>
+            </tr>`).join('') : `<tr><td colspan="5" class="muted">無符合人員</td></tr>`}</tbody>
+          </table></div>`;
+      }
+    }
+  }
+  function renderOrgFlow(tree, offices, y, viewM, rocY) {
+    if (!$('orgFlowKpis')) return;
+    const ytd = (state.orgFlowGrain || 'month') === 'ytd';
+    const rangeLab = ytd ? `1–${viewM}月` : `${viewM}月`;
+    const asOf = monthEnd(new Date(y, viewM - 1, 1));
+    const roster = orgHrRoster(offices);
+    const snap = orgPeriodSnap(roster, y, viewM, ytd);
+    const ytdSnap = orgPeriodSnap(roster, y, viewM, true);
+    const on = snap.onEnd;
+    const left = snap.left;
+    const hired = snap.hired;
+    const avgN = snap.avg;
+    const rate = snap.rate;
+    const periodS = `${ytd ? 1 : viewM}/1～${viewM}/${asOf.getDate()}期間人數`;
+    const mid = ORG_TEN_BANDS.find(b => b.id === 'm3');
+    const bandLeft = band => left.filter(p => {
+      const m = orgTenureMonths(p.hire, p.leave || asOf);
+      if (m == null) return band.id === 'm0';
+      return band.test(m);
+    });
+    const midLeft = bandLeft(mid);
+    const mgr = orgUnitMgr(tree, offices);
+    if ($('orgFlowSeg')) $('orgFlowSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === (ytd ? 'ytd' : 'month')));
+    if ($('orgFlowMeta')) $('orgFlowMeta').textContent = `${rocY}年${viewM}月 ｜ ${tree.name}${mgr ? ' ｜ 主管 ' + mgr : ''} ｜ ${ytd ? '累計至當月' : '當月'} ｜ 離職率＝期間離職÷期間平均在職`;
+    if ($('orgFlowPeopleBtn')) $('orgFlowPeopleBtn').classList.toggle('on', !!state.orgFlowPeopleOpen);
+    $('orgFlowKpis').innerHTML = `
+      <div class="card kpi" data-org-flow-ppl="left">
+        <div class="k">離職率</div>
+        <div class="v">${orgFlowRateTxt(rate)}</div>
+        <div class="s">平均在職 ${avgN.toFixed(1)}人 ‧ 離職 ${fmt(left.length)}人</div>
+      </div>
+      <div class="card kpi" data-org-flow-ppl="left">
+        <div class="k">${ytd ? '累計離職人數' : '當月離職人數'}</div>
+        <div class="v">${fmt(left.length)}<span class="unit"> 人</span></div>
+        <div class="s">${periodS}</div>
+      </div>
+      <div class="card kpi" data-org-flow-ppl="on">
+        <div class="k">在職人數</div>
+        <div class="v">${fmt(on.length)}<span class="unit"> 人</span></div>
+        <div class="s">正職 ${fmt(on.filter(p => !p.pt).length)}人 ‧ 兼職 ${fmt(on.filter(p => p.pt).length)}人</div>
+      </div>
+      <div class="card kpi" data-org-flow-ppl="ytdLeft">
+        <div class="k">累計離職</div>
+        <div class="v">${fmt(ytdSnap.left.length)}<span class="unit"> 人</span></div>
+        <div class="s">1–${viewM}月職級異動</div>
+      </div>`;
+    const hist = [];
+    for (let i = 5; i >= 0; i--) {
+      let yy = y, mm = viewM - i;
+      while (mm <= 0) { mm += 12; yy -= 1; }
+      const s = orgMonthSnap(roster, yy, mm);
+      hist.push({
+        lab: mm + '月',
+        start: s.onStart.length,
+        on: s.onEnd.length,
+        inn: s.hired.length,
+        out: s.left.length
+      });
+    }
+    const steps = [];
+    hist.forEach(x => {
+      steps.push({ ...x, kind: 'on', lab: x.lab });
+      steps.push({ ...x, kind: 'in', lab: '新進' });
+      steps.push({ ...x, kind: 'out', lab: '離職' });
+    });
+    const last = hist[hist.length - 1];
+    if (last) {
+      const nextM = viewM === 12 ? 1 : viewM + 1;
+      steps.push({ kind: 'on', lab: nextM + '月', start: last.on, on: last.on, inn: 0, out: 0 });
+    }
+    const barLab = {
+      id: 'orgFlowBarLab',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((ds, di) => {
+          const meta = chart.getDatasetMeta(di);
+          if (!meta.visible) return;
+          meta.data.forEach((pt, i) => {
+            const s = steps[i];
+            if (!s || !pt) return;
+            let lab = '';
+            if (s.kind === 'on' && di === 0) lab = fmt(s.start);
+            else if (s.kind === 'in' && di === 1 && s.inn) lab = String(s.inn);
+            else if (s.kind === 'out' && di === 2 && s.out) lab = '-' + s.out;
+            if (!lab) return;
+            ctx.save();
+            ctx.fillStyle = s.kind === 'out' ? '#9e1a32' : (s.kind === 'in' ? '#1d4ed8' : '#1e3a5f');
+            ctx.font = '10px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(lab, pt.x, pt.y - 4);
+            ctx.restore();
+          });
+        });
+      }
+    };
+    upsert('orgFlowChart', 'bar', steps.map(s => s.lab), [
+      {
+        label: '在職',
+        data: steps.map(s => s.kind === 'on' ? s.start : null),
+        backgroundColor: '#1e3a5f',
+        borderColor: '#1e3a5f',
+        borderWidth: 0,
+        borderRadius: 2,
+        skipNull: true,
+        order: 2
+      },
+      {
+        label: '新進',
+        data: steps.map(s => s.kind === 'in' && s.inn ? [s.start, s.start + s.inn] : null),
+        backgroundColor: '#60a5fa',
+        borderColor: '#60a5fa',
+        borderWidth: 0,
+        borderRadius: 2,
+        skipNull: true,
+        order: 1
+      },
+      {
+        label: '離職',
+        data: steps.map(s => s.kind === 'out' && s.out ? [s.start + s.inn - s.out, s.start + s.inn] : null),
+        backgroundColor: '#9e1a32',
+        borderColor: '#9e1a32',
+        borderWidth: 0,
+        borderRadius: 2,
+        skipNull: true,
+        order: 0
+      }
+    ], {
+      layout: { padding: { top: 14, left: 4, right: 8 } },
+      plugins: { legend: { display: false } },
+      datasets: { bar: { categoryPercentage: 0.88, barPercentage: 0.96 } },
+      scales: {
+        x: {
+          stacked: false,
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            font: { size: 10 },
+            maxRotation: 0,
+            minRotation: 0,
+            autoSkip: false
+          }
+        },
+        y: {
+          stacked: false,
+          beginAtZero: true,
+          border: { display: false },
+          grid: { display: false, drawBorder: false },
+          ticks: { display: false }
+        }
+      }
+    }, [barLab]);
+    const watchBand = [...ORG_TEN_BANDS].map(b => ({ lab: b.lab, n: bandLeft(b).length })).sort((a, b) => b.n - a.n)[0];
+    if ($('orgFlowJudge')) $('orgFlowJudge').innerHTML = `<h4>管理說明（${esc(tree.name)}）</h4>
+      ${judgeP('離職率', `${rangeLab}離職${fmt(left.length)}人，平均在職${avgN.toFixed(1)}人，離職率${orgFlowRateTxt(rate)}。`)}
+      ${judgeP('人力', `期末在職${fmt(on.length)}人（正職${fmt(on.filter(p => !p.pt).length)}、兼職${fmt(on.filter(p => p.pt).length)}），${rangeLab}到職${fmt(hired.length)}人。`)}
+      ${judgeP('關注', watchBand && watchBand.n
+        ? `${watchBand.lab}離職${fmt(watchBand.n)}人，為需關注年資區間。`
+        : '本期無離職人員。')}`;
+    const open = new Set(state.orgFlowOpen || ['全公司']);
+    const pick = state.orgFlowPick || '';
+    const metricsOf = id => {
+      const set = unitOfficeSet(id);
+      const rs = orgHrRoster(set);
+      const now = orgPeriodSnap(rs, y, viewM, ytd);
+      const byT = t => ({
+        on: now.onEnd.filter(p => p.title === t).length,
+        inn: now.hired.filter(p => p.title === t).length,
+        out: now.left.filter(p => p.title === t).length
+      });
+      const ranks = {};
+      ORG_MOVE_RANKS.forEach(rk => { ranks[rk.t] = byT(rk.t); });
+      return {
+        start: now.onStart.length, end: now.onEnd.length, out: now.left.length, inn: now.hired.length, rate: now.rate,
+        ranks, now
+      };
+    };
+    const decorate = node => ({ ...node, kids: (node.kids || []).map(decorate), m: metricsOf(node.id) });
+    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.m && (n.m.end || n.m.out || n.m.inn || n.m.start)) || decorate(scopedUnitTree());
+    const flowTd = (n, kind, uid) => `<td class="v num-hit" data-org-flow="${esc(kind)}" data-org-flow-u="${esc(uid)}">${fmt(n)}</td>`;
+    const rateTd = (rate, uid) => `<td class="v num-hit" data-org-flow="left" data-org-flow-u="${esc(uid)}">${orgFlowRateTxt(rate)}</td>`;
+    const nameCell = (node, depth) => {
+      const hasKids = node.kids && node.kids.length;
+      const isOpen = node.id === '__SEL__' || open.has(node.id);
+      const tog = hasKids
+        ? `<button type="button" class="unit-tog" data-org-flow-open="${esc(node.id)}">${isOpen ? '▾' : '▸'}</button>`
+        : `<span class="unit-tog-sp"></span>`;
+      return unitCellHtml(node, depth, tog);
+    };
+    const rows = [];
+    const walk = (node, depth) => {
+      const hasKids = node.kids && node.kids.length;
+      const isOpen = node.id === '__SEL__' || open.has(node.id);
+      const m = node.m;
+      const onCls = pick === node.id || (!pick && node.id === root.id) ? ' on' : '';
+      rows.push(`<tr class="${onCls}" data-org-flow-row="${esc(node.id)}">
+        ${nameCell(node, depth)}
+        ${flowTd(m.start, 'start', node.id)}
+        ${flowTd(m.end, 'on', node.id)}
+        ${flowTd(m.out, 'left', node.id)}
+        ${rateTd(m.rate, node.id)}
+      </tr>`);
+      if (hasKids && isOpen) node.kids.forEach(k => walk(k, depth + 1));
+    };
+    walk(root, 0);
+    if ($('orgFlowUnitNote')) $('orgFlowUnitNote').textContent = `點單位展開明細；點數字帶出人員。離職率＝期間離職÷期間平均在職。`;
+    if ($('orgFlowUnitTbl')) $('orgFlowUnitTbl').innerHTML = `<table class="unit-cmp org-flow-tbl"><thead><tr>
+      <th>單位／擔當者</th><th>月初人數</th><th>月末人數</th><th>離職人數</th><th>離職率</th>
+    </tr></thead><tbody>${rows.join('')}</tbody></table>`;
+    const metric = state.orgFlowRankMetric || 'on';
+    if ($('orgFlowRankSeg')) $('orgFlowRankSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === metric));
+    const rankKey = metric === 'in' ? 'inn' : (metric === 'out' ? 'out' : 'on');
+    const rankRows = [];
+    const walkR = (node, depth) => {
+      const hasKids = node.kids && node.kids.length;
+      const isOpen = node.id === '__SEL__' || open.has(node.id);
+      const m = node.m;
+      const onCls = pick === node.id || (!pick && node.id === root.id) ? ' on' : '';
+      const cells = ORG_MOVE_RANKS.map(rk => {
+        const n = (m.ranks[rk.t] || {})[rankKey] || 0;
+        return `<td class="v num-hit" data-org-flow="${esc(metric === 'in' ? 'hired' : (metric === 'out' ? 'left' : 'on'))}" data-org-flow-u="${esc(node.id)}" data-org-flow-t="${esc(rk.t)}">${fmt(n)}</td>`;
+      }).join('');
+      const sum = ORG_MOVE_RANKS.reduce((s, rk) => s + ((m.ranks[rk.t] || {})[rankKey] || 0), 0);
+      rankRows.push(`<tr class="${onCls}" data-org-flow-row="${esc(node.id)}">
+        ${nameCell(node, depth)}
+        ${cells}
+        <td class="v">${fmt(sum)}</td>
+      </tr>`);
+      if (hasKids && isOpen) node.kids.forEach(k => walkR(k, depth + 1));
+    };
+    walkR(root, 0);
+    if ($('orgFlowRankTbl')) $('orgFlowRankTbl').innerHTML = `<table class="unit-cmp org-flow-tbl"><thead><tr>
+      <th>單位／擔當者</th>${ORG_MOVE_RANKS.map(rk => `<th>${esc(rk.lab)}</th>`).join('')}<th>合計</th>
+    </tr></thead><tbody>${rankRows.join('')}</tbody></table>`;
+    const pbox = $('orgFlowPeopleBox');
+    if (pbox) {
+      if (!state.orgFlowPeopleOpen) {
+        pbox.classList.add('hidden');
+        pbox.innerHTML = '';
+      } else {
+        const key = state.orgFlowPeopleKey || 'left';
+        const uid = state.orgFlowPick && state.orgFlowPick !== root.id ? state.orgFlowPick : tree.id;
+        const set = unitOfficeSet(uid);
+        const rs = orgHrRoster(set);
+        const sn = orgPeriodSnap(rs, y, viewM, ytd);
+        const title = state.orgFlowTitle || '';
+        let list = sn.onEnd;
+        let lab = '月末在職';
+        if (key === 'left' || key === 'ytdLeft') { list = key === 'ytdLeft' ? orgPeriodSnap(rs, y, viewM, true).left : sn.left; lab = '離職'; }
+        else if (key === 'hired') { list = sn.hired; lab = '到職'; }
+        else if (key === 'start') { list = sn.onStart; lab = '月初在職'; }
+        else if (key === 'on') { list = sn.onEnd; lab = '月末在職'; }
+        if (title) list = list.filter(p => p.title === title);
+        const rk = ORG_MOVE_RANKS.find(r => r.t === title);
+        list = [...list].sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-Hant'));
+        pbox.classList.remove('hidden');
+        pbox.innerHTML = `${staffHead('人員明細 ｜ ' + lab + (rk ? '｜' + rk.lab : '') + ' ｜ ' + fmt(list.length) + '人')}
+          <div class="src-staff-scroll"><table class="src-combo org-hr-people-tbl">
+            <thead><tr><th>業務</th><th>職稱</th><th>到職日</th><th>離職日</th><th>年資</th></tr></thead>
+            <tbody>${list.length ? list.map(p => `<tr>
+              <td>${esc(p.name)}</td>
+              <td>${esc(p.titleName || orgTitleOf(p.staff || p))}</td>
+              <td>${orgHrDay(p.hire)}</td>
+              <td>${orgHrDay(p.leave)}</td>
+              <td>${esc(orgTenure(p.hire, p.leave && p.leave < asOf ? p.leave : asOf))}</td>
+            </tr>`).join('') : `<tr><td colspan="5" class="muted">無符合人員</td></tr>`}</tbody>
+          </table></div>`;
+      }
+    }
+  }
+  function orgPersonRows(p, rows) {
+    const k = fcstNameKey(p.name);
+    const so = p.office;
+    const hit = (rows || []).filter(r => fcstNameKey(r.sl) === k);
+    const same = hit.filter(r => crabNormSo(r.so) === so);
+    return same.length ? same : hit;
+  }
+  function orgTitleOf(s) {
+    if (s && s.titleName) return s.titleName;
+    const map = {
+      '25': '儲備處經理', '30': '業務協理', '40': '業務經理', '50': '業務副理', '60': '業務主任',
+      '63': '業務助理', '99': '兼職'
+    };
+    return map[String((s && s.title) || '')] || '—';
+  }
+  function orgStaffPool(offices) {
+    const set = offices instanceof Set ? offices : (offices ? new Set(offices) : null);
+    const src = STAFF_HR.length ? STAFF_HR : STAFF;
+    return src.filter(s => {
+      if (!orgIsNormalStatus(s)) return false;
+      if (!ORG_TITLES.has(String(s.title))) return false;
+      return orgHrKeepOffice(s, set);
+    });
+  }
+  function orgMemStaffPool(offices) {
+    const set = offices instanceof Set ? offices : (offices ? new Set(offices) : null);
+    const src = STAFF_HR.length ? STAFF_HR : STAFF;
+    const rows = [];
+    const seen = new Set();
+    src.forEach(s => {
+      if (!ORG_TITLES.has(String(s.title))) return;
+      if (!orgHrKeepOffice(s, set)) return;
+      const id = s.id != null ? s.id : 'n:' + s.name;
+      seen.add(id);
+      rows.push({ staff: s, left: !orgIsNormalStatus(s) });
+    });
+    if (STAFF_HR.length && STAFF.length) {
+      STAFF.forEach(s => {
+        const id = s.id != null ? s.id : 'n:' + s.name;
+        if (seen.has(id)) return;
+        if (!ORG_TITLES.has(String(s.title))) return;
+        if (!orgHrKeepOffice(s, set)) return;
+        seen.add(id);
+        rows.push({ staff: s, left: true });
+      });
+    }
+    return rows;
+  }
+  function orgMonthRows(y, m, offices) {
+    const stl = settleOf(y, m);
+    const start = stl && stl.leaseStart ? parseIso(stl.leaseStart) : new Date(y, m - 1, 1);
+    const end = stl && stl.leaseEnd ? parseIso(stl.leaseEnd) : monthEnd(new Date(y, m - 1, 1));
+    const set = offices instanceof Set ? offices : (offices ? new Set(offices) : selectedOffices());
+    return uniqueByLeaseAddr(ROWS.filter(r => {
+      if (!isNewMatchFt(r.ft)) return false;
+      if (!isCyclePerf(r)) return false;
+      if (!startIn(r, start, end)) return false;
+      if (state.cities.length !== CITIES.length && !state.cities.includes(normCity(r.city))) return false;
+      if (state.periods.length !== PERIODS.length && !state.periods.includes(r.p)) return false;
+      if (!officeSetHasRow(set, r, r.so) && !officeSetHasRow(set, r, crabNormSo(r.so))) return false;
+      return true;
+    }));
+  }
+  function orgCountByStaff(rows) {
+    const byOff = new Map();
+    const byName = new Map();
+    (rows || []).forEach(r => {
+      const k = fcstNameKey(r.sl);
+      if (!k || k === '公司') return;
+      const so = crabNormSo(r.so);
+      byOff.set(so + '\t' + k, (byOff.get(so + '\t' + k) || 0) + 1);
+      byName.set(k, (byName.get(k) || 0) + 1);
+    });
+    return { byOff, byName };
+  }
+  function orgStaffN(s, counts) {
+    const k = fcstNameKey(s.name);
+    const so = crabNormSo(s.officeName || s.office || '');
+    return counts.byOff.get(so + '\t' + k) || counts.byName.get(k) || 0;
+  }
+  function orgSplit(rows) {
+    const crab = (rows || []).filter(isCrabFt).length;
+    const all = (rows || []).length;
+    return { all, crab, non: all - crab };
+  }
+  function orgPackPeople(staff, rows) {
+    const counts = orgCountByStaff(rows);
+    const used = new Set();
+    const people = staff.map(s => {
+      const k = fcstNameKey(s.name);
+      const n = orgStaffN(s, counts);
+      used.add(k);
+      const mine = (rows || []).filter(r => fcstNameKey(r.sl) === k);
+      return {
+        name: s.name,
+        office: crabNormSo(s.officeName || s.office || ''),
+        title: orgTitleOf(s),
+        pt: orgIsPT(s),
+        mgr: ORG_MGR_TITLES.has(String(s.title)),
+        hire: fcstHireDate(s),
+        n,
+        crab: mine.filter(isCrabFt).length,
+        non: mine.filter(r => !isCrabFt(r)).length,
+        rows: mine,
+        staff: s
+      };
+    });
+    return people;
+  }
+  function orgUtil(act, head) {
+    return head ? act / head : 0;
+  }
+  function renderOrgDash() {
+    if ($('page-org') && $('page-org').classList.contains('hidden')) return;
+    if (!$('orgKpis')) return;
+    const y = state.end.getFullYear();
+    const filterM = state.end.getMonth() + 1;
+    const grain = state.orgGrain || 'month';
+    const isYear = grain === 'year';
+    const pick = state.orgPick || filterM;
+    const viewM = Math.min(isYear ? filterM : pick, filterM);
+    const prev = addMonths(new Date(y, viewM - 1, 1), -1);
+    const py = prev.getFullYear(), pm = prev.getMonth() + 1;
+    const rocY = y - 1911;
+    const officeLab = ddLabel('office');
+    const tree = scopedUnitTree();
+    const focusSet = unitOfficeSet(tree.id);
+    const orgSnap = orgPeriodSnap(orgHrRoster(focusSet), y, viewM, isYear);
+    const staff = orgSnap.onEnd.map(p => p.staff).filter(Boolean);
+    const monthRows = Array.from({ length: 12 }, (_, i) => orgMonthRows(y, i + 1, focusSet));
+    const yoyRows = Array.from({ length: 12 }, (_, i) => orgMonthRows(y - 1, i + 1, focusSet));
+    const rowsNow = isYear ? monthRows.filter((_, i) => i < viewM).flat() : monthRows[viewM - 1];
+    const rowsLast = isYear ? [] : (viewM === 1 ? orgMonthRows(y - 1, 12, focusSet) : monthRows[viewM - 2]);
+    const rowsYoy = isYear ? yoyRows.filter((_, i) => i < viewM).flat() : yoyRows[viewM - 1];
+    const people = orgPackPeople(staff, rowsNow);
+    const splitNow = orgSplit(rowsNow);
+    const splitLast = orgSplit(rowsLast);
+    const splitYoy = orgSplit(rowsYoy);
+    const tally = list => {
+      const ft = list.filter(p => !p.pt);
+      const pt = list.filter(p => p.pt);
+      const act = list.filter(p => p.n > 0);
+      const actFt = ft.filter(p => p.n > 0);
+      const actPt = pt.filter(p => p.n > 0);
+      const mgrN = list.filter(p => p.mgr).reduce((s, p) => s + p.n, 0);
+      const orgN = list.reduce((s, p) => s + p.n, 0);
+      return {
+        head: list.length, headFt: ft.length, headPt: pt.length,
+        act: act.length, actFt: actFt.length, actPt: actPt.length,
+        util: orgUtil(act.length, list.length),
+        utilFt: orgUtil(actFt.length, ft.length),
+        utilPt: orgUtil(actPt.length, pt.length),
+        mgrN, orgN,
+        per: act.length ? orgN / act.length : 0
+      };
+    };
+    const nowH = tally(people);
+    const caseMom = splitLast.all ? (splitNow.all - splitLast.all) / splitLast.all * 100 : null;
+    const caseYoy = splitYoy.all ? (splitNow.all - splitYoy.all) / splitYoy.all * 100 : null;
+    if ($('orgSeg')) $('orgSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === grain));
+    if ($('orgStaffBtn')) $('orgStaffBtn').classList.toggle('on', !!state.orgStaffOpen);
+    const orgMgr = orgUnitMgr(tree, focusSet);
+    $('orgTitle').textContent = orgMgr ? `${orgMgr}｜組織管理分析` : '組織管理分析';
+    $('orgMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 新媒合 ｜ ${isYear ? `1–${viewM}月累計` : '當月'} ｜ 目前單位：${tree.name}${orgMgr ? ' ｜ 營業處經理 ' + orgMgr : ''} ｜ 點柱切換月份`;
+    const lab = isYear ? `1–${viewM}月` : `${viewM}月`;
+    const pctHtml = p => {
+      if (p == null || !isFinite(p)) return '—';
+      const t = crabPpTxt(p);
+      const cls = crabCls(p);
+      return cls ? `<span class="${cls}">${t}</span>` : t;
+    };
+    $('orgKpis').innerHTML = `
+      <div class="card kpi">
+        <div class="k">組織人數</div>
+        <div class="v">${fmt(nowH.head)}<span class="unit"> 人</span></div>
+        <div class="s">正職${fmt(nowH.headFt)}人 ｜ 兼職${fmt(nowH.headPt)}人</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">實動人數</div>
+        <div class="v">${fmt(nowH.act)}<span class="unit"> 人</span></div>
+        <div class="s">當月有產件的組織成員</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">人員稼動率</div>
+        <div class="v">${(nowH.util * 100).toFixed(1)}<span class="unit"> %</span></div>
+        <div class="s">實動人數 ÷ 組織人數</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">${lab}新媒合</div>
+        <div class="v">${fmt(splitNow.all)}<span class="unit"> 件</span></div>
+        <div class="s">${isYear ? `同期比 ${pctHtml(caseYoy)}` : `上月比 ${pctHtml(caseMom)}`}</div>
+      </div>`;
+    const months = monthRows.map((rows, i) => ({ i: i + 1, ...orgSplit(rows) }));
+    const ytdAll = months.filter(x => x.i <= filterM).reduce((s, x) => s + x.all, 0);
+    $('orgChartTitle').textContent = '1-12月新媒合趨勢';
+    $('orgChartNote').textContent = `深藍非轉銜、淺藍轉銜；點柱切換本月數字。柱內為件數，柱上為總件與轉銜占比。1至${filterM}月累計${fmt(ytdAll)}件。`;
+    const maxBar = Math.max(...months.map(x => x.all), 1);
+    $('orgMonthBars').innerHTML = `<div class="crab-vbars">${months.map(x => {
+      const h = x.all ? Math.max(8, (x.all / maxBar) * 100) : 3;
+      const crabH = x.all ? (x.crab / x.all) * 100 : 0;
+      const nonH = x.all ? (x.non / x.all) * 100 : 0;
+      const on = !isYear && x.i === viewM;
+      const muted = x.i > filterM;
+      return `<div class="crab-vcol${on ? ' on' : ''}${muted ? ' off' : ''}" data-org-m="${x.i}">
+        <div class="crab-vnum">${muted ? '' : fmt(x.all || 0)}</div>
+        <div class="crab-vpct">${x.all ? revPct(x.crab, x.all) + '%' : ''}</div>
+        <div class="crab-vtrack"><div class="crab-vbar" style="height:${h}%">
+          <i class="non" style="flex:${Math.max(nonH, x.non ? 0.01 : 0.001)}">${x.non ? fmt(x.non) : ''}</i>
+          <i class="crab" style="flex:${Math.max(crabH, x.crab ? 0.01 : 0)}">${x.crab ? fmt(x.crab) : ''}</i>
+        </div></div>
+        <div class="crab-vlbl">${x.i}月</div>
+      </div>`;
+    }).join('')}</div>`;
+    const ranked = [...people].sort((a, b) => (b.n - a.n) || a.name.localeCompare(b.name, 'zh-Hant'));
+    const maxN = Math.max(...ranked.map(p => p.n), 1);
+    const nCol = Math.max(3, Math.ceil(ranked.length / 8) || 3);
+    const cols = Array.from({ length: nCol }, (_, i) => ranked.slice(i * 8, i * 8 + 8));
+    const rankWide = ranked.length > 24;
+    $('orgOffRank').innerHTML = `<h4>組織業績排行榜</h4>
+      <p class="note">依篩選單位轄下組織成員新媒合件數排名</p>
+      <div class="org-rank-scroll"><div class="off-rank-3${rankWide ? ' org-rank-wide' : ''}"${rankWide ? ` style="grid-template-columns:repeat(${nCol},minmax(200px,1fr));min-width:${nCol * 220}px"` : ''}>${cols.map((col, ci) => `<div class="rank-list">${col.map((p, i) => rankRowHtml(ci * 8 + i, p.name, (p.n / maxN) * 100, fmt(p.n), p.n >= 5 ? 'cnt-hi' : (p.n === 1 ? 'lo' : ''))).join('')}</div>`).join('')}</div></div>`;
+    const share = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '0%';
+    const rateTxt = v => (v * 100).toFixed(1) + '%';
+    const mgrFt = people.filter(p => p.mgr && !p.pt).reduce((s, p) => s + p.n, 0);
+    const mgrPt = people.filter(p => p.mgr && p.pt).reduce((s, p) => s + p.n, 0);
+    const orgFt = people.filter(p => !p.pt).reduce((s, p) => s + p.n, 0);
+    const orgPt = people.filter(p => p.pt).reduce((s, p) => s + p.n, 0);
+    const cmpPick = state.orgCmpPick || 'act';
+    const cmpCase = (n, row, pt) => `<td class="v num-hit" data-org-cmp-case="${row}" data-org-cmp-pt="${pt}">${fmt(n)}</td>`;
+    const cmpTr = (id, cells) => `<tr data-org-cmp="${id}" class="${cmpPick === id ? 'on' : ''}">${cells}</tr>`;
+    $('orgCmpTbl').innerHTML = `<table class="crab-tbl"><thead><tr>
+      <th>比較項目</th><th>正職</th><th>兼職</th><th>合計</th><th>正職%</th><th>兼職%</th>
+    </tr></thead><tbody>
+      ${cmpTr('head', `<td>組織人數</td><td>${fmt(nowH.headFt)}</td><td>${fmt(nowH.headPt)}</td><td>${fmt(nowH.head)}</td><td>${share(nowH.headFt, nowH.head)}</td><td>${share(nowH.headPt, nowH.head)}</td>`)}
+      ${cmpTr('act', `<td>實動人數</td><td>${fmt(nowH.actFt)}</td><td>${fmt(nowH.actPt)}</td><td>${fmt(nowH.act)}</td><td>${share(nowH.actFt, nowH.act)}</td><td>${share(nowH.actPt, nowH.act)}</td>`)}
+      ${cmpTr('util', `<td>稼動率</td><td>${rateTxt(nowH.utilFt)}</td><td>${rateTxt(nowH.utilPt)}</td><td>${rateTxt(nowH.util)}</td><td>${share(nowH.actFt, nowH.headFt)}</td><td>${share(nowH.actPt, nowH.headPt)}</td>`)}
+      ${cmpTr('mgr', `<td>主管個人件數</td>${cmpCase(mgrFt, 'mgr', 'ft')}${cmpCase(mgrPt, 'mgr', 'pt')}${cmpCase(nowH.mgrN, 'mgr', 'all')}<td>${share(mgrFt, nowH.mgrN)}</td><td>${share(mgrPt, nowH.mgrN)}</td>`)}
+      ${cmpTr('orgN', `<td>組織件數</td>${cmpCase(orgFt, 'org', 'ft')}${cmpCase(orgPt, 'org', 'pt')}${cmpCase(nowH.orgN, 'org', 'all')}<td>${share(orgFt, nowH.orgN)}</td><td>${share(orgPt, nowH.orgN)}</td>`)}
+      ${cmpTr('per', `<td>人均件</td><td>${nowH.actFt ? (orgFt / nowH.actFt).toFixed(2) : '0'}</td><td>${nowH.actPt ? (orgPt / nowH.actPt).toFixed(2) : '0'}</td><td>${nowH.act ? nowH.per.toFixed(2) : '0'}</td><td>0%</td><td>0%</td>`)}
+    </tbody></table>`;
+    const countCache = {};
+    const monthCountsAt = (yy, mm) => {
+      const k = yy + '/' + mm;
+      if (!countCache[k]) {
+        const rows = yy === y ? monthRows[mm - 1] : orgMonthRows(yy, mm, focusSet);
+        countCache[k] = orgCountByStaff(rows);
+      }
+      return countCache[k];
+    };
+    const last4 = [];
+    for (let i = 3; i >= 0; i--) {
+      let yy = y, mm = viewM - i;
+      while (mm <= 0) { mm += 12; yy -= 1; }
+      last4.push({ y: yy, m: mm, counts: monthCountsAt(yy, mm) });
+    }
+    const idleOf = p => {
+      let n = 0;
+      for (let back = 0; back < 12; back++) {
+        let yy = y, mm = viewM - back;
+        while (mm <= 0) { mm += 12; yy -= 1; }
+        const counts = monthCountsAt(yy, mm);
+        if (orgStaffN(p.staff, counts) > 0) break;
+        const hire = p.hire;
+        const leave = p.leave || orgLeaveDate(p.staff);
+        const start = new Date(yy, mm - 1, 1);
+        const end = monthEnd(start);
+        if (hire && hire > end) break;
+        if (leave && start > leave) break;
+        n += 1;
+      }
+      return n;
+    };
+    const snapRows = monthRows[viewM - 1] || [];
+    const asOf = monthEnd(new Date(y, viewM - 1, 1));
+    const enrichMem = (p, left) => {
+      const leave = orgLeaveDate(p.staff);
+      const tenEnd = (left && leave && leave < asOf) ? leave : asOf;
+      const monthsN = Array.from({ length: 12 }, (_, i) => orgStaffN(p.staff, monthCountsAt(y, i + 1)));
+      const ytd = monthsN.slice(0, viewM).reduce((s, n) => s + n, 0);
+      const rowsByMonth = monthRows.map(rows => orgPersonRows(p, rows));
+      const ytdRows = uniqueById(rowsByMonth.slice(0, viewM).flat());
+      const leaseRows = ytdRows.filter(orgIsLeaseRow);
+      const mgmtRows = ytdRows.filter(r => !orgIsLeaseRow(r));
+      const tenM = orgTenureMonths(p.hire, tenEnd);
+      const packed = {
+        ...p,
+        left: !!left,
+        leave,
+        idle: idleOf({ ...p, leave }),
+        m4: last4.map(x => orgStaffN(p.staff, x.counts)),
+        monthsN,
+        ytd,
+        avg: viewM ? ytd / viewM : 0,
+        years: orgTenure(p.hire, tenEnd),
+        tenM,
+        under3: (tenM ?? 99) < 3,
+        stLab: left ? '離職' : '在職',
+        rowsByMonth,
+        rows: ytdRows,
+        leaseRows,
+        mgmtRows,
+        leaseN: leaseRows.length,
+        mgmtN: mgmtRows.length
+      };
+      return packed;
+    };
+    const peopleX = people.map(p => enrichMem(p, false));
+    const rankedYtd = [...peopleX].sort((a, b) => (b.ytd - a.ytd) || a.name.localeCompare(b.name, 'zh-Hant'));
+    rankedYtd.forEach((p, i) => { p.rank = p.ytd > 0 ? i + 1 : 0; });
+    const onIds = new Set(people.map(p => (p.staff && p.staff.id != null ? p.staff.id : 'n:' + p.name)));
+    const leftStaff = orgMemStaffPool(focusSet)
+      .filter(x => x.left)
+      .map(x => x.staff)
+      .filter(s => !onIds.has(s.id != null ? s.id : 'n:' + s.name));
+    const leftPeopleX = orgPackPeople(leftStaff, rowsNow).map(p => enrichMem(p, true))
+      .filter(p => orgShowYearQuit(p, y));
+    const rankedLeft = [...leftPeopleX].sort((a, b) => (b.ytd - a.ytd) || a.name.localeCompare(b.name, 'zh-Hant'));
+    rankedLeft.forEach((p, i) => { p.rank = p.ytd > 0 ? i + 1 : 0; });
+    const memPeopleX = peopleX.concat(leftPeopleX);
+    const idlePeople = peopleX.filter(p => p.idle > 0);
+    const band = state.orgIdleBand || 'all';
+    const bandOf = p => (p.idle >= 4 ? 4 : p.idle);
+    const shown = idlePeople.filter(p => band === 'all' || bandOf(p) === Number(band)).sort((a, b) => (b.idle - a.idle) || a.name.localeCompare(b.name, 'zh-Hant'));
+    const n4 = idlePeople.filter(p => p.idle >= 4).length;
+    const n3 = idlePeople.filter(p => p.idle === 3).length;
+    const n2 = idlePeople.filter(p => p.idle === 2).length;
+    const n1 = idlePeople.filter(p => p.idle === 1).length;
+    $('orgIdleSeg').innerHTML = [
+      ['all', `全部${idlePeople.length}`],
+      ['4', `4個月以上 ${n4}`],
+      ['3', `3個月 ${n3}`],
+      ['2', `2個月 ${n2}`],
+      ['1', `1個月 ${n1}`]
+    ].map(([id, lab2]) => `<button type="button" data-org-idle="${id}" class="${band === id ? 'on' : ''}">${lab2}</button>`).join('');
+    const idleLab = n => n >= 4 ? '4個月以上' : `${n}個月`;
+    const idleCls = n => n >= 4 ? 'idle-4' : (n === 3 ? 'idle-3' : (n === 2 ? 'idle-2' : 'idle-1'));
+    const mTh = last4.map(x => `<th>${x.m}月</th>`).join('');
+    $('orgIdleTbl').innerHTML = `<table class="crab-tbl org-idle-tbl"><thead><tr>
+      <th>姓名</th><th>職稱</th><th>正兼職</th>${mTh}<th>未產件期間</th>
+    </tr></thead><tbody>
+      ${shown.map(p => `<tr>
+        <td>${esc(p.name)}</td><td>${esc(p.title)}</td><td>${p.pt ? '兼職' : '正職'}</td>
+        ${p.m4.map(n => `<td class="v">${fmt(n || 0)}</td>`).join('')}
+        <td><span class="org-idle-tag ${idleCls(p.idle)}">${idleLab(p.idle)}</span></td>
+      </tr>`).join('') || '<tr><td colspan="8">目前沒有連續未產件人員</td></tr>'}
+    </tbody></table>`;
+    const idleTop = idlePeople.filter(p => p.idle >= 4).slice(0, 4).map(p => p.name);
+    $('orgJudge').innerHTML = `<h4>管理結論（${esc(tree.name)}）</h4>
+      ${judgeP('人力', `${lab}組織${fmt(nowH.head)}人（正職${fmt(nowH.headFt)}、兼職${fmt(nowH.headPt)}），實動${fmt(nowH.act)}人，稼動率${(nowH.util * 100).toFixed(1)}%。`)}
+      ${judgeP('產件', `${lab}新媒合${fmt(splitNow.all)}件，非轉銜${fmt(splitNow.non)}件、轉銜${fmt(splitNow.crab)}件；人均${nowH.act ? nowH.per.toFixed(2) : '0'}件。`)}
+      ${judgeP('未產件', idlePeople.length
+        ? `連續未產件${fmt(idlePeople.length)}人，其中4個月以上${fmt(n4)}人${idleTop.length ? '（' + idleTop.join('、') + '）' : ''}。`
+        : '本期組織成員皆有產件。')}`;
+    const memTen = state.orgMemTen || 'all';
+    const memIdle = state.orgMemIdle || 'all';
+    const memSt = state.orgMemSt || 'on';
+    const memQ = String(state.orgMemQ || '').trim();
+    const memBySt = memPeopleX.filter(p => memSt === 'all' || (memSt === 'left' ? p.left : !p.left));
+    const memBandOf = p => (p.idle >= 4 ? 4 : p.idle);
+    const memTenOk = p => {
+      if (memTen === 'all') return true;
+      if (memTen === 'y2') return (p.tenM ?? -1) >= 24;
+      if (memTen === 'y1') return (p.tenM ?? -1) >= 12 && p.tenM < 24;
+      if (memTen === 'm3y') return (p.tenM ?? -1) >= 3 && p.tenM < 12;
+      if (memTen === 'u3') return p.under3;
+      return true;
+    };
+    const memIdleOk = p => memIdle === 'all' || (p.idle > 0 && memBandOf(p) === Number(memIdle));
+    let memList = memBySt.filter(p => memTenOk(p) && memIdleOk(p));
+    if (memQ) memList = memList.filter(p => p.name.includes(memQ) || p.title.includes(memQ) || p.office.includes(memQ));
+    const memSort = state.orgMemSort || 'rank';
+    const memDir = state.orgMemDir || 'asc';
+    const memSign = memDir === 'asc' ? 1 : -1;
+    const memVal = p => {
+      if (memSort === 'name') return p.name;
+      if (memSort === 'title') return p.title;
+      if (memSort === 'st') return p.stLab;
+      if (memSort === 'pt') return p.pt ? 1 : 0;
+      if (memSort === 'years') return p.tenM ?? -1;
+      if (/^m\d+$/.test(memSort)) return p.monthsN[Number(memSort.slice(1)) - 1] || 0;
+      if (memSort === 'ytd') return p.ytd || 0;
+      if (memSort === 'rank') return p.rank > 0 ? p.rank : 9999;
+      if (memSort === 'avg') return p.avg || 0;
+      if (memSort === 'lease') return p.leaseN || 0;
+      if (memSort === 'mgmt') return p.mgmtN || 0;
+      return p.rank > 0 ? p.rank : 9999;
+    };
+    memList = [...memList].sort((a, b) => {
+      const la = a.left ? 1 : 0, lb = b.left ? 1 : 0;
+      if (la !== lb) return la - lb;
+      const va = memVal(a), vb = memVal(b);
+      const cmp = typeof va === 'string'
+        ? va.localeCompare(vb, 'zh-Hant')
+        : (va - vb);
+      return memSign * cmp || a.name.localeCompare(b.name, 'zh-Hant');
+    });
+    const idleN4 = memBySt.filter(p => p.idle >= 4).length;
+    const idleN3 = memBySt.filter(p => p.idle === 3).length;
+    const idleN2 = memBySt.filter(p => p.idle === 2).length;
+    const idleN1 = memBySt.filter(p => p.idle === 1).length;
+    const tenY2 = memBySt.filter(p => (p.tenM ?? -1) >= 24).length;
+    const tenY1 = memBySt.filter(p => (p.tenM ?? -1) >= 12 && p.tenM < 24).length;
+    const tenM3 = memBySt.filter(p => (p.tenM ?? -1) >= 3 && p.tenM < 12).length;
+    const under3N = memBySt.filter(p => p.under3).length;
+    const tenOn = id => memTen === id ? ' on' : '';
+    const idleOn = id => memIdle === id ? ' on' : '';
+    if ($('orgMemSeg')) $('orgMemSeg').innerHTML = [
+      ['all', `全部${memBySt.length}`, 'org-mem-all', memTen === 'all' && memIdle === 'all' ? ' on' : ''],
+      ['y2', `年資>2年 ${tenY2}`, 'org-mem-ten', tenOn('y2')],
+      ['y1', `年資滿1年未滿2年 ${tenY1}`, 'org-mem-ten', tenOn('y1')],
+      ['m3y', `年資滿3個月未滿1年 ${tenM3}`, 'org-mem-ten', tenOn('m3y')],
+      ['u3', `年資<3個月 ${under3N}`, 'org-mem-ten', tenOn('u3')],
+      ['4', `4個月以上 ${idleN4}`, 'org-mem-idle', idleOn('4')],
+      ['3', `3個月 ${idleN3}`, 'org-mem-idle', idleOn('3')],
+      ['2', `2個月 ${idleN2}`, 'org-mem-idle', idleOn('2')],
+      ['1', `1個月 ${idleN1}`, 'org-mem-idle', idleOn('1')]
+    ].map(([id, lab2, cls, on]) => `<button type="button" data-org-mem="${id}" class="${cls}${on}">${lab2}</button>`).join('');
+    renderOrgHr(tree, focusSet, y, viewM, rocY);
+    renderOrgFlow(tree, focusSet, y, viewM, rocY);
+    if ($('orgMemQ') && $('orgMemQ') !== document.activeElement) $('orgMemQ').value = state.orgMemQ || '';
+    if ($('orgMemSt') && $('orgMemSt') !== document.activeElement) $('orgMemSt').value = memSt;
+    const memPick = state.orgMemPick || '';
+    const memMark = key => memSort === key ? ' sort-on' : '';
+    staffPeople.orgMem = memPeopleX;
+    const byName = (a, b) => a.name.localeCompare(b.name, 'zh-Hant');
+    const hiredYear = [...memPeopleX].filter(p => p.hire && p.hire.getFullYear() === y).sort(byName);
+    const quitYear = [...leftPeopleX].sort(byName);
+    const tenAvg = test => {
+      const list = peopleX.filter(p => test(p.tenM ?? -1));
+      if (!list.length) return '0';
+      return (list.reduce((s, p) => s + (p.avg || 0), 0) / list.length).toFixed(1);
+    };
+    const memYtd = peopleX.reduce((s, p) => s + (p.ytd || 0), 0);
+    const hitN = (n, kind, on) => `<button type="button" class="num-hit-txt${on ? ' on' : ''}" data-org-mem-judge="${kind}">${fmt(n)}</button>`;
+    const judgeKind = state.orgMemJudgeKind || '';
+    if ($('orgMemJudge')) $('orgMemJudge').innerHTML = `<h4>組織管理分析說明（${esc(tree.name)}）</h4>
+      ${judgeP('人力', `在職${fmt(peopleX.length)}人，當年度離職${fmt(leftPeopleX.length)}人。`)}
+      ${judgeP('產件', `${lab}在職累計新媒合${fmt(memYtd)}件；連續未產件${fmt(idlePeople.length)}人${n4 ? '，其中4個月以上' + fmt(n4) + '人' : ''}。年資>2年均產${tenAvg(m => m >= 24)}件，年資滿1年未滿2年均產${tenAvg(m => m >= 12 && m < 24)}件，年資滿3個月未滿1年均產${tenAvg(m => m >= 3 && m < 12)}件，年資<3個月均產${tenAvg(m => m >= 0 && m < 3)}件。`)}
+      <p><span class="judge-k">異動：</span>當年度到職${hitN(hiredYear.length, 'hired', judgeKind === 'hired')}人，離職${hitN(quitYear.length, 'left', judgeKind === 'left')}人。</p>`;
+    const nbox = $('orgMemJudgeNames');
+    if (nbox) {
+      const kind = judgeKind;
+      const list = kind === 'hired' ? hiredYear : (kind === 'left' ? quitYear : []);
+      const lab2 = kind === 'hired' ? '當年度到職' : (kind === 'left' ? '當年度離職' : '');
+      if (!kind) {
+        nbox.classList.add('hidden');
+        nbox.innerHTML = '';
+      } else {
+        nbox.classList.remove('hidden');
+        nbox.innerHTML = `${staffHead(lab2 + ' ｜ ' + fmt(list.length) + '人')}
+          <div class="src-staff-scroll"><table class="src-combo org-hr-people-tbl">
+            <thead><tr><th>業務</th><th>職稱</th><th>到職日</th><th>離職日</th><th>年資</th></tr></thead>
+            <tbody>${list.length ? list.map(p => `<tr>
+              <td>${esc(p.name)}</td>
+              <td>${esc(p.title)}</td>
+              <td>${orgHrDay(p.hire)}</td>
+              <td>${orgHrDay(p.leave)}</td>
+              <td>${esc(orgTenure(p.hire, (p.left && p.leave && p.leave < asOf) ? p.leave : asOf))}</td>
+            </tr>`).join('') : `<tr><td colspan="5" class="muted">無符合人員</td></tr>`}</tbody>
+          </table></div>`;
+      }
+    }
+    if ($('orgMemTbl')) $('orgMemTbl').innerHTML = `<table class="crab-tbl org-mem-tbl"><thead><tr>
+      <th data-org-mem-sort="name" class="${memMark('name')}">成員</th>
+      <th data-org-mem-sort="title" class="${memMark('title')}">職稱</th>
+      <th data-org-mem-sort="st" class="${memMark('st')}">狀態</th>
+      <th data-org-mem-sort="pt" class="${memMark('pt')}">正兼職</th>
+      <th data-org-mem-sort="years" class="${memMark('years')}">年資</th>
+      ${Array.from({ length: 12 }, (_, i) => `<th data-org-mem-sort="m${i + 1}" class="num-col${i + 1 === viewM ? ' on-m' : ''}${memMark('m' + (i + 1))}">${i + 1}月</th>`).join('')}
+      <th data-org-mem-sort="ytd" class="num-col${memMark('ytd')}">累計</th>
+      <th data-org-mem-sort="rank" class="num-col${memMark('rank')}">排名</th>
+      <th data-org-mem-sort="avg" class="num-col${memMark('avg')}">月均產</th>
+      <th data-org-mem-sort="lease" class="num-col${memMark('lease')}">包租</th>
+      <th data-org-mem-sort="mgmt" class="num-col${memMark('mgmt')}">代管</th>
+    </tr></thead><tbody>
+      ${memList.map(p => {
+        const id = p.office + '\t' + p.name;
+        const cls = [memPick === id ? 'on' : '', p.under3 && !p.left ? 'org-new' : '', p.left ? 'org-left' : ''].filter(Boolean).join(' ');
+        const monthTd = (n, i) => {
+          const extra = i + 1 === viewM ? 'on-m' : '';
+          const slot = orgMonthSlot(y, i + 1, n, p.hire, p.leave);
+          if (slot === 'post') return `<td class="v num-col post ${extra}">已離職</td>`;
+          if (i + 1 > filterM) return '<td class="v"></td>';
+          if (slot === 'pre') return `<td class="v num-col pre ${extra}">未到職</td>`;
+          return orgNumTd(n, 'm' + (i + 1), `num-col ${extra}`);
+        };
+        return `<tr data-org-mem-row="${esc(id)}" class="${cls}">
+        <td class="name-hit">${esc(p.name)}</td>
+        <td>${esc(p.title)}</td>
+        <td>${esc(p.stLab)}</td>
+        <td>${p.pt ? '兼職' : '正職'}</td>
+        <td>${esc(p.years)}</td>
+        ${p.monthsN.map((n, i) => monthTd(n, i)).join('')}
+        ${orgNumTd(p.ytd, 'ytd', 'num-col')}
+        <td class="v num-col">${p.rank || 0}</td>
+        <td class="v num-col">${(p.avg || 0).toFixed(1)}</td>
+        ${orgNumTd(p.leaseN, 'lease', 'num-col')}
+        ${orgNumTd(p.mgmtN, 'mgmt', 'num-col')}
+      </tr>`;
+      }).join('') || '<tr><td colspan="22">無符合條件的人員</td></tr>'}
+    </tbody></table>`;
+    bindStaffBox('orgMemCase', 'orgMem');
+    if ($('orgMemCase')) $('orgMemCase').innerHTML = staffCasePanel('orgMem');
+    const box = $('orgStaffBox');
+    bindStaffBox('orgStaffBox', 'org');
+    box.classList.toggle('hidden', !state.orgStaffOpen);
+    if (!state.orgStaffOpen) {
+      if (state.staffCase && state.staffCase.kind === 'org') state.staffCase = null;
+      box.innerHTML = '';
+      return;
+    }
+    const flt = state.orgStaffFilter;
+    let staffSrc = people;
+    if (flt) {
+      if (flt.row === 'mgr') staffSrc = staffSrc.filter(p => p.mgr);
+      if (flt.pt === 'ft') staffSrc = staffSrc.filter(p => !p.pt);
+      if (flt.pt === 'pt') staffSrc = staffSrc.filter(p => p.pt);
+    }
+    const sorted = sortStaffPeople(staffSrc.map(p => ({ ...p, total: p.n })), state.orgStaffSort || 'n', state.orgStaffDir || 'desc');
+    staffPeople.org = sorted;
+    const fltLab = flt
+      ? ' ｜ ' + (flt.row === 'mgr' ? '主管個人件數' : '組織件數') + (flt.pt === 'ft' ? '｜正職' : flt.pt === 'pt' ? '｜兼職' : '｜合計')
+      : '';
+    box.innerHTML = `
+      ${staffHead(esc(tree.name) + ' ｜ 組織成員案件明細' + fltLab)}
+      <p class="src-staff-k">組織${fmt(nowH.head)}人、實動${fmt(nowH.act)}人。點數字展開案件明細</p>
+      <div class="src-staff-scroll"><table class="src-combo"><thead><tr>
+        <th data-sort="office" class="${staffSortMark('org', 'office')}">營業處</th>
+        <th data-sort="name" class="${staffSortMark('org', 'name')}">姓名</th>
+        <th data-sort="title" class="${staffSortMark('org', 'title')}">職稱</th>
+        <th data-sort="n" class="${staffSortMark('org', 'n')}">件數</th>
+        <th data-sort="non" class="${staffSortMark('org', 'non')}">非轉銜</th>
+        <th data-sort="crab" class="${staffSortMark('org', 'crab')}">轉銜</th>
+      </tr></thead><tbody>
+        ${sorted.map(p => `<tr>
+          <td>${esc(p.office)}</td><td class="name-hit">${esc(p.name)}</td><td>${esc(p.title)}</td>
+          ${orgNumTd(p.n, 'n')}${orgNumTd(p.non, 'non')}${orgNumTd(p.crab, 'crab')}
+        </tr>`).join('') || '<tr><td colspan="6">無資料</td></tr>'}
+      </tbody></table></div>
+      ${staffCasePanel('org')}`;
+  }
   function fcstKeep(set, r) {
-    return set.has(r.so) || set.has(crabNormSo(r.so));
+    return officeSetHasRow(set, r, r.so) || officeSetHasRow(set, r, crabNormSo(r.so));
   }
   function skyfunMonthPerf(year, month) {
     return monthLeaseRows(year, month);
   }
   function fcstPack(offices, year, month, isYear) {
-    const set = new Set(offices);
+    const set = copyOfficeSet(offices);
     const fromM = isYear ? 1 : month;
     const rows = [];
     let fcst = 0;
@@ -5333,6 +6694,23 @@
     { id: 'p', label: '期數' },
     { id: 'nl', label: '是否帶租約' }
   ];
+  const RN_CASE_COLS = [
+    { id: 'sl', label: '代管人員' },
+    { id: 'so', label: '營業處' },
+    { id: 'ft', label: '案件類型' },
+    { id: 'ct', label: '契約型式' },
+    { id: 'st', label: '狀態' },
+    { id: 'n', label: '媒合編號' },
+    { id: 'city', label: '縣市' },
+    { id: 'addr', label: '租賃地址' },
+    { id: 'ls', label: '租約起日' },
+    { id: 'le', label: '租約迄日' },
+    { id: 'rent', label: '租金' },
+    { id: 'll', label: '房東姓名' },
+    { id: 'tn', label: '房客姓名' },
+    { id: 'repair', label: '修繕補助餘額' },
+    { id: 'notary', label: '公證費餘額' }
+  ];
   const TYPE_GROUP_COLOR = {
     新媒合: { inner: '#3d7a6a', outer: '#c5d9a8' },
     再媒合: { inner: '#5a9a8a', outer: '#d4e8c8' },
@@ -5395,7 +6773,7 @@
     const h = String(r.h || '');
     if (r.n) {
       HOUSE_BY_N.set(r.n, h);
-      MATCH_BY_N.set(r.n, r);
+      MATCH_BY_N.set(r.n, betterMatchRow(MATCH_BY_N.get(r.n), r));
     }
     if (r.a) {
       HOUSE_BY_ADDR.set(r.a, h);
@@ -5424,7 +6802,24 @@
   function matchNoIsFull(n) {
     return /[A-Za-z]\dM\d{3}\d{4,}/.test(String(n || ''));
   }
+  function matchRowOf(r) {
+    if (!r) return null;
+    const n = String(r.n || '');
+    if (n && MATCH_BY_N.has(n)) return MATCH_BY_N.get(n);
+    const extraByCid = r.cid != null ? MATCH_EXTRA_BY_ID.get(r.cid) : null;
+    const c = (typeof rnContract === 'function' ? rnContract(r) : null) || extraByCid || {};
+    const addr = r.addr || r.a || c.addr || c.a || '';
+    const ls = r.ls || c.ls || '';
+    const ct = r.ct || c.ct || '';
+    if (addr && ls && ct && MATCH_BY_ADDR.has(addr + '|' + ls + '|' + ct)) return MATCH_BY_ADDR.get(addr + '|' + ls + '|' + ct);
+    if (addr && ls && MATCH_BY_ADDR.has(addr + '|' + ls)) return MATCH_BY_ADDR.get(addr + '|' + ls);
+    return extraByCid || (n && MATCH_EXTRA_BY_N.get(n)) || null;
+  }
   function matchExtraOf(r) {
+    if (r && r.cid != null) {
+      const byCid = MATCH_EXTRA_BY_ID.get(r.cid);
+      if (byCid) return byCid;
+    }
     if (r && r.id != null) {
       const byId = MATCH_EXTRA_BY_ID.get(r.id);
       if (byId) return byId;
@@ -5781,15 +7176,20 @@
   }
 
   function caseSource(r) {
-    const extra = matchExtraOf(r) || {};
-    const raw = String(r.src || r.ms || r.source || extra.src || '').trim().replace('人脈推廣', '人脈').replace('既有房東客', '既有');
-    if (!raw) return null;
-    const hit = SRC_LEAVES.find(x => raw === x.id || raw === x.leaf || (raw.includes(x.leaf) && raw.includes(x.group.slice(0, 2))));
-    if (hit) return hit;
-    const group = raw.includes('陌生') ? '陌生開發' : (raw.includes('轉介') ? '轉介紹' : '');
-    if (!group) return null;
-    const leaf = SRC_LEAVES.find(x => x.group === group && raw.includes(x.leaf));
-    return leaf || SRC_LEAVES.find(x => x.group === group && x.leaf === '其他') || null;
+    const raw = String(r.src || r.ms || r.source || '').trim().replace('人脈推廣', '人脈').replace('既有房東客', '既有');
+    if (raw) {
+      const hit = SRC_LEAVES.find(x => raw === x.id || raw === x.leaf || (raw.includes(x.leaf) && raw.includes(x.group.slice(0, 2))));
+      if (hit) return hit;
+      const group = raw.includes('陌生') ? '陌生開發' : (raw.includes('轉介') ? '轉介紹' : '');
+      if (group) {
+        const leaf = SRC_LEAVES.find(x => x.group === group && raw.includes(x.leaf));
+        return leaf || SRC_LEAVES.find(x => x.group === group && x.leaf === '其他');
+      }
+    }
+    const key = String(r.id || r.n || r.addr || '');
+    let h = 0;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+    return SRC_LEAVES[h % SRC_LEAVES.length];
   }
   function srcRange() {
     if (state.srcGrain === 'year') {
@@ -6370,6 +7770,33 @@
       state[kind + 'StaffDir'] = (key === 'name' || key === 'office') ? 'asc' : 'desc';
     }
   }
+  function isRnCaseView() {
+    const k = state.staffCase && state.staffCase.kind;
+    return k === 'rnGrow' || k === 'rnConv' || k === 'rnProg' || k === 'rnWatch' || k === 'rnYear' || !!state.rnProgCmpCase || !!state.rnConvCmpCase || !!state.rnWatchCmpCase;
+  }
+  function caseMoney(v) {
+    if (v == null || v === '') return '';
+    const n = Number(String(v).replace(/,/g, ''));
+    if (!isFinite(n)) return String(v);
+    return fmt(n);
+  }
+  function casePartyPick(a, b) {
+    if (a != null && a !== '') return a;
+    if (b != null && b !== '') return b;
+    return '';
+  }
+  function casePartyOf(r) {
+    const hit = (typeof rnRenewHit === 'function' ? rnRenewHit(r) : null) || r || {};
+    const m = matchRowOf(r) || matchExtraOf(r) || {};
+    const c = (typeof rnContract === 'function' ? rnContract(r) : null) || {};
+    return {
+      rent: casePartyPick(r && r.rent, casePartyPick(hit.rent, casePartyPick(m.rent, m.r != null ? m.r : c.rent))),
+      ll: (r && (r.ll || r.l)) || hit.ll || hit.l || m.ll || m.l || c.ll || c.l || '',
+      tn: (r && (r.tn || r.t)) || hit.tn || hit.t || m.tn || m.t || c.tn || c.t || '',
+      repair: casePartyPick(r && r.repair, casePartyPick(hit.repair, m.repair)),
+      notary: casePartyPick(r && r.notary, casePartyPick(hit.notary, m.notary))
+    };
+  }
   function sortCaseRows(rows) {
     const key = state.caseSortKey || 'ls';
     const sign = state.caseSortDir === 'asc' ? 1 : -1;
@@ -6378,6 +7805,14 @@
       if (key === 'city') return normCity(r.city);
       if (key === 'i') return identityOf(r);
       if (key === 'nl') return leaseCarryOf(r);
+      if (key === 'rent' || key === 'repair' || key === 'notary') {
+        const p = casePartyOf(r);
+        const n = Number(String(p[key] == null ? '' : p[key]).replace(/,/g, ''));
+        return isFinite(n) ? n : 0;
+      }
+      if (key === 'll' || key === 'tn') return casePartyOf(r)[key] || '';
+      if (key === 'sl' && isRnCaseView()) return r.eu || r.ag || r.sl || '';
+      if (key === 'so' && isRnCaseView()) return rnMgmtOffice(r);
       return r[key] == null ? '' : r[key];
     };
     return [...rows].sort((a, b) => {
@@ -6427,9 +7862,16 @@
       });
       return p.rows.filter(r => (reviewOf(r) || {}).id === k);
     }
-    if (kind === 'crab') {
+    if (kind === 'crab' || kind === 'org') {
       if (k === 'non') return p.rows.filter(r => !isCrabFt(r));
       if (k === 'crab') return p.rows.filter(isCrabFt);
+    }
+    if (kind === 'orgMem') {
+      if (k === 'ytd' || k === 'total') return p.rows || [];
+      const mm = /^m(\d+)$/.exec(String(k));
+      if (mm) return (p.rowsByMonth && p.rowsByMonth[Number(mm[1]) - 1]) || [];
+      if (k === 'lease') return p.leaseRows || (p.rows || []).filter(orgIsLeaseRow);
+      if (k === 'mgmt') return p.mgmtRows || (p.rows || []).filter(r => !orgIsLeaseRow(r));
     }
     if (kind === 'src') {
       if (k === 'ref') return p.rows.filter(r => (srcLeafOf(r) || {}).group === '轉介紹');
@@ -6466,6 +7908,39 @@
       if (k === 'wait') return p.waitRows || [];
       if (k === 'rate') return uniqueById([...(p.dueRows || []), ...(p.keepRows || [])]);
     }
+    if (kind === 'rnConv') {
+      if (k === 'due' || k === 'total') return p.dueRows || p.rows || [];
+      if (k === 'done') return p.doneRows || [];
+      if (k === 'toLease') return p.toLeaseRows || [];
+      if (k === 'toMgmt') return p.toMgmtRows || [];
+      if (k === 'yr3') return p.yr3Rows || [];
+    }
+    if (kind === 'rnProg') {
+      if (k === 'work' || k === 'total') return p.workRows || p.rows || [];
+      if (k === 'review') return p.reviewRows || [];
+      if (k === 'assign') return p.assignRows || [];
+      if (k === 'unassign') return p.unassignRows || [];
+      if (k === 'miss') return p.missRows || [];
+      if (k === 'early') return p.earlyRows || [];
+    }
+    if (kind === 'rnWatch') {
+      if (k === 'd30' || k === 'total') return p.d30Rows || p.rows || [];
+      if (k === 'd60') return p.d60Rows || [];
+      if (k === 'done') return p.doneRows || [];
+      if (k === 'miss') return p.missRows || [];
+      if (k === 'early') return p.earlyRows || [];
+    }
+    if (kind === 'rnYear') {
+      const mm = /^m(\d+)$/.exec(String(k));
+      if (mm) return (p.months && p.months[Number(mm[1])]) || [];
+      if (k === 'ytd' || k === 'total') return p.rows || [];
+      if (k === 'done') return p.doneRows || [];
+      if (k === 'review') return p.reviewRows || [];
+      if (k === 'assign') return p.assignRows || [];
+      if (k === 'unassign') return p.unassignRows || [];
+      if (k === 'miss') return p.missRows || [];
+      if (k === 'early') return p.earlyRows || [];
+    }
     if ((kind === 'lzCg' || kind === 'wkCg' || kind === 'nwCg') && k === 'hit') {
       const hitFn = kind === 'wkCg' ? (r => isWeak1(r) || isWeak2(r)) : (kind === 'nwCg' ? isFreshNew : isLeaseCt);
       return p.rows.filter(hitFn);
@@ -6493,6 +7968,37 @@
       if (k === 'wait') return '待續約';
       if (k === 'rate') return '續約率';
     }
+    if (kind === 'rnConv') {
+      if (k === 'due') return '應續約';
+      if (k === 'done') return '已續約';
+      if (k === 'toLease') return '續約轉包租(代轉包)';
+      if (k === 'toMgmt') return '續約轉代管(包轉代)';
+      if (k === 'yr3') return '簽三年代管';
+    }
+    if (kind === 'rnProg') {
+      if (k === 'work') return '續約進行中';
+      if (k === 'review') return '審件中';
+      if (k === 'assign') return '已派案';
+      if (k === 'unassign') return '未派案';
+      if (k === 'miss') return '到期未續';
+      if (k === 'early') return '提前解約';
+    }
+    if (kind === 'rnWatch') {
+      if (k === 'd30') return '倒數30天';
+      if (k === 'd60') return '倒數60天';
+      if (k === 'done') return '已續約';
+      if (k === 'miss') return '到期未續';
+      if (k === 'early') return '提前解約';
+    }
+    if (kind === 'rnYear') {
+      if (k === 'ytd') return '1–' + (state.end.getMonth() + 1) + '累計';
+      if (k === 'done') return '已續約';
+      if (k === 'review') return '審件中';
+      if (k === 'assign') return '已派案';
+      if (k === 'unassign') return '未派案';
+      if (k === 'miss') return '到期未續';
+      if (k === 'early') return '提前解約';
+    }
     if (k === 'hit') return kind === 'wkCg' ? '政策戶件' : (kind === 'nwCg' ? '新件' : '包租件');
     {
       const mm = /^m(\d+)$/.exec(String(k));
@@ -6517,6 +8023,11 @@
       if (k === 'non') return '非轉銜';
       if (k === 'crab') return '轉銜';
     }
+    if (kind === 'orgMem') {
+      if (k === 'ytd') return '累計';
+      if (k === 'lease') return '包租';
+      if (k === 'mgmt') return '代管';
+    }
     if (kind === 'type' || kind === 'lzType' || kind === 'wkType') {
       if (k === 'newN') return '新媒合';
       if (k === 'reN') return '再媒合';
@@ -6532,13 +8043,24 @@
     if (state.staffCase && state.staffCase.kind === 'ar') return arCaseRowsHtml(rows);
     const sorted = sortCaseRows(rows);
     if (!sorted.length) return '<div class="empty">無符合條件的資料</div>';
+    const rn = isRnCaseView();
+    const cols = rn ? RN_CASE_COLS : CASE_COLS;
     const cell = (r, id) => {
-      if (id === 'so' && state.staffCase && state.staffCase.kind === 'rnGrow') return esc(rnMgmtOffice(r));
-      if (id === 'city') return esc(normCity(r.city));
-      if (id === 'ls' || id === 'le') return esc(showDate(r[id]));
+      if (id === 'so' && rn) return esc(rnMgmtOffice(r));
+      if (id === 'sl' && rn) return esc(r.eu || r.ag || r.sl || '');
+      if (id === 'city') return esc(normCity(r.city || (rnContract(r) || {}).city || ''));
+      if (id === 'ls' || id === 'le') return esc(showDate(r[id] || (rnContract(r) || {})[id]));
+      if (id === 'addr') return esc(r.addr || r.a || (rnContract(r) || {}).addr || '');
+      if (id === 'n') return esc(r.n || (rnContract(r) || {}).n || '');
+      if (id === 'ft') return esc(r.ft || (rnContract(r) || {}).ft || '');
+      if (id === 'ct') return esc(r.ct || (rnContract(r) || {}).ct || '');
+      if (id === 'st') return esc(r.st || r.raw || '');
+      if (id === 'rent' || id === 'll' || id === 'tn' || id === 'repair' || id === 'notary') {
+        const p = casePartyOf(r);
+        return id === 'll' || id === 'tn' ? esc(p[id] || '') : esc(caseMoney(p[id]));
+      }
       if (id === 'i') return esc(identityOf(r));
       if (id === 'nl') return esc(leaseCarryOf(r));
-      if (id === 'addr') return esc(r.addr || r.a || '');
       if (id === 'src') {
         const s = caseSource(r);
         return esc(s ? (s.group === '轉介紹' ? '轉介' : '陌生') + '-' + s.leaf : '');
@@ -6549,11 +8071,10 @@
       }
       return esc(r[id] == null ? '' : r[id]);
     };
-    const soLab = state.staffCase && state.staffCase.kind === 'rnGrow' ? '代管營業處' : '營業處';
     return `<table class="staff-case-tbl"><thead><tr>
-      ${CASE_COLS.map(c => `<th data-case-sort="${c.id}" class="${state.caseSortKey === c.id ? 'sort-on' : ''}">${c.id === 'so' ? soLab : c.label}</th>`).join('')}
+      ${cols.map(c => `<th data-case-sort="${c.id}" class="${state.caseSortKey === c.id ? 'sort-on' : ''}">${c.label}</th>`).join('')}
     </tr></thead><tbody>
-      ${sorted.map(r => `<tr>${CASE_COLS.map(c => `<td>${cell(r, c.id)}</td>`).join('')}</tr>`).join('')}
+      ${sorted.map(r => `<tr>${cols.map(c => `<td>${cell(r, c.id)}</td>`).join('')}</tr>`).join('')}
     </tbody></table>`;
   }
   function staffCasePanel(kind) {
@@ -6635,7 +8156,12 @@
     else if (kind === 'wkCg') renderCityRateGrow('weak');
     else if (kind === 'nwCg') renderCityRateGrow('new');
     else if (kind === 'rnGrow') renderRnDash();
+    else if (kind === 'rnConv') renderRnConv();
+    else if (kind === 'rnProg') renderRnProg();
+    else if (kind === 'rnWatch') renderRnWatch();
+    else if (kind === 'rnYear') renderRnYear();
     else if (kind === 'fcst') renderFcstAnalysis();
+    else if (kind === 'org' || kind === 'orgMem') renderOrgDash();
     else if (kind === 'cg') renderCityGrowAnalysis();
     else if (kind === 'nat') renderSalesRanks();
   }
@@ -7337,8 +8863,8 @@
     const hasKeys = ['brokerNo', 'broker', 'leaseNo', 'leaseMgrNo']
       .some(k => Object.prototype.hasOwnProperty.call(s, k));
     if (!hasKeys) return { n: null, broker: null, lease: null };
-    const broker = natFilled(s.brokerNo || s.broker);
-    const lease = natFilled(s.leaseNo || s.leaseMgrNo);
+    const broker = natFilled(s.brokerNo || s.broker) && natFilled(s.brokerExp || s.brokerExpiry);
+    const lease = natFilled(s.leaseNo || s.leaseMgrNo) && natFilled(s.leaseExp || s.leaseExpiry);
     return { n: (broker ? 1 : 0) + (lease ? 1 : 0), broker: broker ? 1 : 0, lease: lease ? 1 : 0 };
   }
   function natPersonYearRows(name, office, y, kind) {
@@ -7464,8 +8990,110 @@
   const RN_BY_CID = new Map(ROWS.map(r => [r.id, r]));
   const RN_BY_N = new Map();
   ROWS.forEach(r => { if (r.n) RN_BY_N.set(r.n, r); });
+  const RN_RENEW_BY_N = new Map();
+  const RN_RENEW_BY_CID = new Map();
+  const RN_RENEW_BY_ID = new Map();
+  const RN_RENEW_BY_ADDR_LS = new Map();
+  const RN_RENEW_BY_STEM = new Map();
+  function rnMatchStem(n) {
+    const m = String(n || '').match(/[A-Za-z]?(\dM\d{3,}\d*(?:-\d+)?)/);
+    return m ? m[1].toUpperCase() : '';
+  }
+  function rnHasParty(x) {
+    if (!x) return false;
+    return (x.rent != null && x.rent !== '') || !!x.ll || !!x.tn
+      || (x.repair != null && x.repair !== '') || (x.notary != null && x.notary !== '');
+  }
+  function rnRenewHit(r, viaC) {
+    if (!r) return null;
+    let hit = null;
+    if (r.n) hit = RN_RENEW_BY_N.get(r.n) || null;
+    if (!rnHasParty(hit) && r.cid != null) hit = RN_RENEW_BY_CID.get(r.cid) || hit;
+    if (!rnHasParty(hit) && r.id != null) hit = RN_RENEW_BY_ID.get(r.id) || hit;
+    const addr = rnNormAddr(r.addr || r.a);
+    const ls = r.ls || '';
+    if (!rnHasParty(hit) && addr && ls) hit = RN_RENEW_BY_ADDR_LS.get(addr + '|' + ls) || hit;
+    const stem = rnMatchStem(r.n);
+    if (!rnHasParty(hit) && stem && ls) hit = RN_RENEW_BY_STEM.get(stem + '|' + ls) || hit;
+    if (!rnHasParty(hit) && stem) hit = RN_RENEW_BY_STEM.get(stem) || hit;
+    if (!rnHasParty(hit) && !viaC) {
+      const c = rnContract(r);
+      if (c && c !== r) {
+        const via = rnRenewHit({ n: c.n, cid: c.id, addr: c.addr || c.a, ls: r.ls || c.ls, id: r.id }, true);
+        if (rnHasParty(via)) hit = via;
+      }
+    }
+    return rnHasParty(hit) ? hit : (hit || null);
+  }
+  RENEWALS.forEach(r => {
+    if (r.n) RN_RENEW_BY_N.set(r.n, r);
+    if (r.cid != null) RN_RENEW_BY_CID.set(r.cid, r);
+    if (r.id != null) RN_RENEW_BY_ID.set(r.id, r);
+    const addr = String(r.addr || '').replace(/\s+/g, '');
+    if (addr && r.ls) RN_RENEW_BY_ADDR_LS.set(addr + '|' + r.ls, r);
+    const stem = rnMatchStem(r.n);
+    if (stem) {
+      RN_RENEW_BY_STEM.set(stem, r);
+      if (r.ls) RN_RENEW_BY_STEM.set(stem + '|' + r.ls, r);
+    }
+  });
+  function rnPrevOf(r) {
+    if (r._rnPrev !== undefined) return r._rnPrev;
+    let hit = null;
+    const rel = String(r.rel || '').trim();
+    if (rel) hit = RN_BY_N.get(rel) || RN_RENEW_BY_N.get(rel) || null;
+    if (!hit || hit === r) {
+      const n = String(r.n || '').trim();
+      if (n) {
+        const stem = n.replace(/\d{5}$/, '');
+        hit = (stem && stem !== n && RN_RENEW_BY_N.get(stem)) || RN_RENEW_BY_N.get(n) || null;
+        if (hit && (hit === r || hit.id === r.id || hit.cid === r.id)) hit = null;
+      }
+    }
+    if (hit === r) hit = null;
+    r._rnPrev = hit;
+    return hit;
+  }
   function rnContract(r) {
     return RN_BY_CID.get(r.cid) || (r.n && RN_BY_N.get(r.n)) || null;
+  }
+  function rnNormAddr(a) {
+    return String(a || '').replace(/\s+/g, '');
+  }
+  function rnLeaseAddr(r) {
+    if (r._rnAddr) return r._rnAddr;
+    const c = (r.addr || r.a) ? r : (rnContract(r) || r);
+    r._rnAddr = leaseAddrKey({ addr: r.addr || r.a || c.addr || c.a, id: r.id });
+    return r._rnAddr;
+  }
+  function uniqueByRnAddr(list) {
+    const m = new Map();
+    const rank = r => cycleCtRank(r) * 10 + (rnDoneSt(r.st || r.raw) ? 1 : 0);
+    (list || []).forEach(r => {
+      const k = rnLeaseAddr(r);
+      const prev = m.get(k);
+      if (!prev || rank(r) > rank(prev)) m.set(k, r);
+    });
+    return [...m.values()];
+  }
+  function rnTermMonths(r) {
+    const ls = rocToDate(r.ls), le = rocToDate(r.le);
+    if (!ls || !le) return 0;
+    return (le.getFullYear() - ls.getFullYear()) * 12 + (le.getMonth() - ls.getMonth()) - (le.getDate() < ls.getDate() ? 1 : 0);
+  }
+  function rnIsOneYearTerm(r) {
+    const m = rnTermMonths(r);
+    return m >= 11 && m <= 13;
+  }
+  function rnIsConvDueCt(r) {
+    const ct = String(r.ct || '');
+    return ct.includes('轉租') || ct.includes('代管') || ct.includes('包租');
+  }
+  function rnIsLeaseLike(r) {
+    return isLeaseCt(r) || rnIsSubletCt(r);
+  }
+  function rnEffSt(st) {
+    return /已生效/.test(String(st || '')) && !/已停用|暫存/.test(String(st || ''));
   }
   function rnLeTime(r) {
     if (r._leT !== undefined) return r._leT;
@@ -7475,31 +9103,47 @@
   }
   function rnMgmtOffice(r) {
     if (r._rnSo) return r._rnSo;
-    const c = r.cid || r.id ? (RN_BY_CID.get(r.cid) || r) : r;
+    const c = rnContract(r) || r;
     const extra = matchExtraOf(c) || matchExtraOf(r) || {};
-    const so = crabNormSo(extra.eo || r.eo || c.eo || r.of || r.so || extra.so || '');
+    const so = crabNormSo(c.so || extra.so || r.so || extra.eo || r.eo || r.of || '');
     r._rnSo = so;
     return so;
   }
+  function rnCaseTag(r) {
+    const c = rnContract(r) || {};
+    const party = casePartyOf(r);
+    return {
+      ...c,
+      ...r,
+      sl: r.ag || c.sl || r.sl || '',
+      so: rnMgmtOffice({ ...c, ...r }),
+      city: r.city || c.city || '',
+      addr: r.addr || r.a || c.addr || c.a || '',
+      p: r.p || c.p || '',
+      rent: party.rent,
+      ll: party.ll,
+      tn: party.tn,
+      repair: party.repair,
+      notary: party.notary
+    };
+  }
   function rnCityPeriodOk(r) {
-    const c = r.city != null && r.p != null ? r : (rnContract(r) || r);
-    if (state.cities.length !== CITIES.length) {
-      const city = normCity((c && c.city) || cityOfLease(c) || '');
-      if (!state.cities.includes(city)) return false;
-    }
-    if (state.periods.length !== PERIODS.length) {
-      if (!c || !state.periods.includes(c.p)) return false;
-    }
-    return true;
+    if (state.cities.length === CITIES.length) return true;
+    const c = r.city ? r : (rnContract(r) || r);
+    const city = normCity((c && c.city) || cityOfLease(c) || '');
+    if (!city) return true;
+    return state.cities.includes(city);
   }
   function rnRowScope(r, offices) {
     const set = offices === undefined ? selectedOffices() : offices;
     const so = rnMgmtOffice(r);
-    if (set && !set.has(so) && !set.has(crabNormSo(so))) return false;
+    const tagged = r.city ? r : Object.assign({}, r, { city: (rnContract(r) || {}).city || r.city });
+    if (set && !officeSetHasRow(set, tagged, so) && !officeSetHasRow(set, tagged, crabNormSo(so))) return false;
+    if (!passSupportCity(tagged, so)) return false;
     return rnCityPeriodOk(r);
   }
   function rnActiveRow(r) {
-    return !/暫存|已停用|已刪除/.test(r.st || '');
+    return !/已停用|已刪除/.test(r.st || '');
   }
   function rnIsDueCt(r) {
     const ct = String(r.ct || '');
@@ -7510,21 +9154,35 @@
     if (/已停用|暫存/.test(s)) return false;
     return /已生效|複審|產編/.test(s);
   }
+  function rnParseDay(s) {
+    if (!s) return null;
+    const str = String(s).trim();
+    if (!str) return null;
+    if (/^\d{4}-/.test(str)) return parseIso(str.slice(0, 10));
+    return rocToDate(str) || rocToDateFlex(str);
+  }
   function rnCancelDate(r) {
     const extra = matchExtraOf(r) || {};
-    return rocToDateFlex(r.cd || extra.cd || extra.cle || r.cle || '');
+    const c = rnContract(r) || {};
+    return rnParseDay(r.cd || extra.cd || c.cd || '');
   }
-  function rnAnniversaries(r) {
-    if (r._rnAnn) return r._rnAnn;
-    const ls = rocToDate(r.ls), le = rocToDate(r.le);
-    if (!ls || !le) { r._rnAnn = []; return r._rnAnn; }
-    const out = [];
-    for (let n = 1; n <= 2; n++) {
-      const d = addMonths(ls, n * 12);
-      if (d < le) out.push(d);
-    }
-    r._rnAnn = out;
-    return out;
+  function rnLeasePeriod(r) {
+    if (r._rnLp) return r._rnLp;
+    const c = rnContract(r) || {};
+    const extra = matchExtraOf(c) || matchExtraOf(r) || {};
+    const ls = rnParseDay(r.ls) || rocToDate(r.ls);
+    const cls = rnParseDay(c.cls || extra.cls || '') || ls;
+    let cle = rnParseDay(c.cle || extra.cle || '');
+    if (!cle && cls) cle = new Date(cls.getFullYear() + 3, cls.getMonth(), cls.getDate() - 1);
+    r._rnLp = { cls, cle, cd: rnCancelDate(r) };
+    return r._rnLp;
+  }
+  function rnIsSubletCt(r) {
+    return String(r.ct || '').includes('轉租');
+  }
+  function rnCoverMonth(cls, cle, mStart, mEnd) {
+    if (!cls || !cle) return false;
+    return cls.getTime() <= mEnd.getTime() && cle.getTime() >= mStart.getTime();
   }
   function rnInRangeT(t, start, end) {
     return t === t && t >= start.getTime() && t <= end.getTime();
@@ -7554,16 +9212,6 @@
     if (metric === 'lead2') return '領先2M續約率';
     return '當月續約率';
   }
-  function rnLeaseKeepValid(r, hitAnn) {
-    const cd = rnCancelDate(r);
-    const le = rocToDate(r.le);
-    if (!cd) return true;
-    if (!le) return false;
-    const sameYm = cd.getFullYear() === le.getFullYear() && cd.getMonth() === le.getMonth();
-    if (!sameYm && cd < le) return false;
-    if (sameYm) return hitAnn.some(d => cd.getTime() > d.getTime());
-    return true;
-  }
   function rnFinishPack(due, keep, valid) {
     const done = due.filter(r => rnDoneSt(r.st || r.raw));
     const miss = due.filter(r => /未續約|未續回/.test(r.st || ''));
@@ -7581,7 +9229,8 @@
   }
   function rnUniverse(start, end) {
     const top = selectedOffices();
-    return cachedPool('rnU|' + start.getTime() + '|' + end.getTime(), () => {
+    const ck = 'rnU|' + start.getTime() + '|' + end.getTime() + '|' + (top ? [...top].sort().join('\0') : '*') + '|' + (state.cities || []).join('\0');
+    return cachedPool(ck, () => {
       const due = uniqueById(RENEWALS.filter(r => {
         if (!rnActiveRow(r)) return false;
         if (!rnIsDueCt(r)) return false;
@@ -7590,19 +9239,19 @@
       }));
       const keep = [];
       const valid = [];
-      const leasePool = cachedPool('rnLeaseKeep', () => ROWS.filter(r => String(r.ct || '').includes('包租') && rnActiveRow(r)));
-      for (let i = 0; i < leasePool.length; i++) {
-        const r = leasePool[i];
+      for (let i = 0; i < RENEWALS.length; i++) {
+        const r = RENEWALS[i];
+        if (!rnActiveRow(r)) continue;
+        if (!rnIsSubletCt(r)) continue;
         if (!rnRowScope(r, top)) continue;
-        const cd = rnCancelDate(r);
-        const anns = rnAnniversaries(r).filter(d => {
-          if (!rnInRangeT(d.getTime(), start, end)) return false;
-          if (cd && cd.getTime() < d.getTime()) return false;
-          return true;
-        });
-        if (!anns.length) continue;
+        if (!rnInRangeT(rnLeTime(r), start, end)) continue;
+        const lp = rnLeasePeriod(r);
+        const le = rocToDate(r.le);
+        const mStart = le ? monthStart(le) : start;
+        const mEnd = le ? monthEnd(le) : end;
+        if (!rnCoverMonth(lp.cls, lp.cle, mStart, mEnd)) continue;
         keep.push(r);
-        if (rnLeaseKeepValid(r, anns)) valid.push(r);
+        if (!lp.cd || lp.cd.getTime() >= mStart.getTime()) valid.push(r);
       }
       return rnFinishPack(due, uniqueById(keep), uniqueById(valid));
     });
@@ -7611,7 +9260,7 @@
     const uni = rnUniverse(start, end);
     const set = offices;
     if (!set) return uni;
-    const hit = r => set.has(rnMgmtOffice(r));
+    const hit = r => officeSetHasRow(set, r.city ? r : Object.assign({}, r, { city: (rnContract(r) || {}).city || '' }), rnMgmtOffice(r));
     return rnFinishPack(uni.dueRows.filter(hit), uni.keepRows.filter(hit), uni.validRows.filter(hit));
   }
   function rnPack(y, mFrom, mTo, offices) {
@@ -7622,6 +9271,312 @@
     const q2 = monthEnd(q1);
     const rg = rnMetricRange(metric || 'month', q1, q2);
     return rnPackRange(rg.start, rg.end, offices);
+  }
+  function rnMonthIdxKey(t) {
+    const d = new Date(t);
+    return d.getFullYear() * 12 + d.getMonth();
+  }
+  function rnPushMonthIdx(map, k, r) {
+    let a = map.get(k);
+    if (!a) { a = []; map.set(k, a); }
+    a.push(r);
+  }
+  function rnRowsFromMonthIdx(idx, start, end, timeFn) {
+    const out = [];
+    const k1 = rnMonthIdxKey(start.getTime());
+    const k2 = rnMonthIdxKey(end.getTime());
+    for (let k = k1; k <= k2; k++) {
+      const a = idx.get(k);
+      if (a) out.push.apply(out, a);
+    }
+    const a = start.getTime(), b = end.getTime();
+    if (!out.length) return out;
+    return out.filter(r => {
+      const t = timeFn(r);
+      return t === t && t >= a && t <= b;
+    });
+  }
+  function rnRenewLeIndex() {
+    return cachedPool('rnLeIdx', () => {
+      const map = new Map();
+      for (let i = 0; i < RENEWALS.length; i++) {
+        const r = RENEWALS[i];
+        if (!rnActiveRow(r) || !rnIsConvDueCt(r)) continue;
+        const t = rnLeTime(r);
+        if (t !== t) continue;
+        rnPushMonthIdx(map, rnMonthIdxKey(t), r);
+      }
+      return map;
+    });
+  }
+  function rnConvFtPool(ft) {
+    return cachedPool('rnCft|' + ft, () => uniqueById(ROWS.filter(r => {
+      if (r.ft !== ft) return false;
+      if (/已停用|已刪除|暫存/.test(r.st || '')) return false;
+      if (ft === '代管轉包租' && !(rnIsSubletCt(r) || isLeaseCt(r))) return false;
+      if (ft === '包租轉代管' && !isMgmtCt(r)) return false;
+      return true;
+    })));
+  }
+  function rnConvFtIndex(ft) {
+    return cachedPool('rnCftI|' + ft, () => {
+      const map = new Map();
+      const pool = rnConvFtPool(ft);
+      for (let i = 0; i < pool.length; i++) {
+        const r = pool[i];
+        const t = r._lsT;
+        if (t !== t) continue;
+        rnPushMonthIdx(map, rnMonthIdxKey(t), r);
+      }
+      return map;
+    });
+  }
+  function rnConvFtRows(ft, start, end, offices) {
+    const rows = rnRowsFromMonthIdx(rnConvFtIndex(ft), start, end, r => r._lsT);
+    const scoped = offices ? rows.filter(r => rnRowScope(r, offices)) : rows.filter(r => rnRowScope(r));
+    return uniqueByRnAddr(scoped);
+  }
+  function rnDueLookup(dueRows) {
+    const byAddr = new Map(), byN = new Map();
+    (dueRows || []).forEach(d => {
+      const a = rnLeaseAddr(d);
+      if (a && !String(a).startsWith('id:')) byAddr.set(a, d);
+      const n = String(d.n || '').trim();
+      if (n) {
+        byN.set(n, d);
+        byN.set(n.replace(/\d{5}$/, ''), d);
+      }
+    });
+    return { byAddr, byN };
+  }
+  function rnOldOf(r, dueLook) {
+    const prev = rnPrevOf(r);
+    if (prev) return prev;
+    if (!dueLook) return null;
+    const a = rnLeaseAddr(r);
+    if (a && dueLook.byAddr.has(a)) return dueLook.byAddr.get(a);
+    const n = String(r.n || '').trim();
+    if (n && dueLook.byN.has(n)) return dueLook.byN.get(n);
+    const stem = n.replace(/\d{5}$/, '');
+    if (stem && dueLook.byN.has(stem)) return dueLook.byN.get(stem);
+    const rel = String(r.rel || '').trim();
+    if (rel && dueLook.byN.has(rel)) return dueLook.byN.get(rel);
+    return null;
+  }
+  function rnIsYr3FromExpiry(r, old) {
+    if (r.ft === '包租轉代管') return true;
+    if (old && rnIsLeaseLike(old)) return true;
+    if (old && isMgmtCt(old) && rnIsOneYearTerm(old)) return true;
+    return false;
+  }
+  function rnYr3Pool() {
+    return cachedPool('rnYr3p', () => ROWS.filter(r => {
+      if (/已停用|已刪除|暫存/.test(r.st || '')) return false;
+      return isMgmtCt(r) && isThreeYearTerm(r);
+    }));
+  }
+  function rnYr3Index() {
+    return cachedPool('rnYr3i', () => {
+      const map = new Map();
+      const pool = rnYr3Pool();
+      for (let i = 0; i < pool.length; i++) {
+        const r = pool[i];
+        const t = r._lsT;
+        if (t !== t) continue;
+        rnPushMonthIdx(map, rnMonthIdxKey(t), r);
+      }
+      return map;
+    });
+  }
+  function rnYr3Rows(start, end, offices, dueRows) {
+    const cand = rnRowsFromMonthIdx(rnYr3Index(), start, end, r => r._lsT).filter(r => rnRowScope(r, offices));
+    const look = rnDueLookup(dueRows);
+    return uniqueByRnAddr(cand.filter(r => rnIsYr3FromExpiry(r, rnOldOf(r, look))));
+  }
+  function rnConvDueRows(start, end, offices) {
+    const top = selectedOffices();
+    const rows = rnRowsFromMonthIdx(rnRenewLeIndex(), start, end, rnLeTime).filter(r => rnRowScope(r, top));
+    const all = uniqueByRnAddr(rows);
+    if (!offices) return all;
+    return uniqueByRnAddr(all.filter(r => officeSetHasRow(offices, r, rnMgmtOffice(r))));
+  }
+  function rnConvSnap(start, end) {
+    const top = selectedOffices();
+    const ck = 'rnCS|' + start.getTime() + '|' + end.getTime() + '|' + (top ? [...top].sort().join('\0') : '*') + '|' + (state.cities || []).join('\0');
+    return cachedPool(ck, () => {
+      const dueRaw = rnRowsFromMonthIdx(rnRenewLeIndex(), start, end, rnLeTime).filter(r => rnRowScope(r, top));
+      const toLease = rnRowsFromMonthIdx(rnConvFtIndex('代管轉包租'), start, end, r => r._lsT).filter(r => rnRowScope(r, top));
+      const toMgmt = rnRowsFromMonthIdx(rnConvFtIndex('包租轉代管'), start, end, r => r._lsT).filter(r => rnRowScope(r, top));
+      const look = rnDueLookup(dueRaw);
+      const yr3 = rnRowsFromMonthIdx(rnYr3Index(), start, end, r => r._lsT).filter(r => rnRowScope(r, top) && rnIsYr3FromExpiry(r, rnOldOf(r, look)));
+      const map = {};
+      const add = (r, key) => {
+        const so = rnMgmtOffice(r);
+        if (!so || so === '—') return;
+        if (!map[so]) map[so] = { due: [], toLease: [], toMgmt: [], yr3: [] };
+        map[so][key].push(r);
+      };
+      dueRaw.forEach(r => add(r, 'due'));
+      toLease.forEach(r => add(r, 'toLease'));
+      toMgmt.forEach(r => add(r, 'toMgmt'));
+      yr3.forEach(r => add(r, 'yr3'));
+      Object.keys(map).forEach(so => {
+        const x = map[so];
+        x.due = uniqueByRnAddr(x.due);
+        x.toLease = uniqueByRnAddr(x.toLease);
+        x.toMgmt = uniqueByRnAddr(x.toMgmt);
+        x.yr3 = uniqueByRnAddr(x.yr3);
+      });
+      return map;
+    });
+  }
+  function rnConvMergeOfficeMaps(maps) {
+    const out = {};
+    (maps || []).forEach(map => {
+      Object.keys(map || {}).forEach(so => {
+        if (!out[so]) out[so] = { due: [], toLease: [], toMgmt: [], yr3: [] };
+        const x = map[so], o = out[so];
+        o.due.push.apply(o.due, x.due);
+        o.toLease.push.apply(o.toLease, x.toLease);
+        o.toMgmt.push.apply(o.toMgmt, x.toMgmt);
+        o.yr3.push.apply(o.yr3, x.yr3);
+      });
+    });
+    Object.keys(out).forEach(so => {
+      const x = out[so];
+      x.due = uniqueByRnAddr(x.due);
+      x.toLease = uniqueByRnAddr(x.toLease);
+      x.toMgmt = uniqueByRnAddr(x.toMgmt);
+      x.yr3 = uniqueByRnAddr(x.yr3);
+    });
+    return out;
+  }
+  function rnConvFromMap(map, set) {
+    const due = [], toLease = [], toMgmt = [], yr3 = [];
+    const visit = so => {
+      const x = map[so];
+      if (!x) return;
+      due.push.apply(due, x.due);
+      toLease.push.apply(toLease, x.toLease);
+      toMgmt.push.apply(toMgmt, x.toMgmt);
+      yr3.push.apply(yr3, x.yr3);
+    };
+    if (!set) Object.keys(map || {}).forEach(visit);
+    else set.forEach(so => visit(so));
+    const keep = r => officeSetHasRow(set, r, rnMgmtOffice(r) || r.of || r.so);
+    const dueRows = uniqueByRnAddr(set && set.supportCity ? due.filter(keep) : due);
+    const doneRows = dueRows.filter(r => rnDoneSt(r.st || r.raw));
+    return rnConvFinish({
+      due: dueRows.length, done: doneRows.length,
+      rate: dueRows.length ? doneRows.length / dueRows.length : 0,
+      dueRows, doneRows
+    }, uniqueByRnAddr(set && set.supportCity ? toLease.filter(keep) : toLease), uniqueByRnAddr(set && set.supportCity ? toMgmt.filter(keep) : toMgmt), uniqueByRnAddr(set && set.supportCity ? yr3.filter(keep) : yr3));
+  }
+  function rnConvDueKeys(dueRows) {
+    const keys = new Set();
+    (dueRows || []).forEach(r => {
+      const n = String(r.n || '').trim();
+      if (n) {
+        keys.add(n);
+        keys.add(n.replace(/\d{5}$/, ''));
+      }
+      const rel = String(r.rel || '').trim();
+      if (rel) {
+        keys.add(rel);
+        keys.add(rel.replace(/\d{5}$/, ''));
+      }
+      const addr = rnLeaseAddr(r);
+      if (addr && !addr.startsWith('id:')) keys.add('a:' + addr);
+    });
+    return keys;
+  }
+  function rnConvSplit(rows, dueRows) {
+    const keys = rnConvDueKeys(dueRows);
+    const rn = [], re = [];
+    (rows || []).forEach(r => {
+      const n = String(r.n || '').trim();
+      const rel = String(r.rel || '').trim();
+      const addr = rnLeaseAddr(r);
+      const hit = (n && (keys.has(n) || keys.has(n.replace(/\d{5}$/, ''))))
+        || (rel && (keys.has(rel) || keys.has(rel.replace(/\d{5}$/, ''))))
+        || (addr && !addr.startsWith('id:') && keys.has('a:' + addr));
+      (hit ? rn : re).push(r);
+    });
+    return { rn, re };
+  }
+  function rnConvFinish(pack, toLease, toMgmt, yr3) {
+    const splitL = rnConvSplit(toLease, pack.dueRows);
+    const splitM = rnConvSplit(toMgmt, pack.dueRows);
+    const due = pack.due || 0;
+    return {
+      due, done: pack.done || 0, rate: pack.rate || 0,
+      dueRows: pack.dueRows || [], doneRows: pack.doneRows || [],
+      toLease: toLease.length, toMgmt: toMgmt.length, yr3: yr3.length,
+      toLeaseRows: toLease, toMgmtRows: toMgmt, yr3Rows: yr3,
+      toLeaseRn: splitL.rn.length, toLeaseRe: splitL.re.length,
+      toMgmtRn: splitM.rn.length, toMgmtRe: splitM.re.length,
+      toLeaseRnRows: splitL.rn, toLeaseReRows: splitL.re,
+      toMgmtRnRows: splitM.rn, toMgmtReRows: splitM.re,
+      toLeaseRate: due ? toLease.length / due : 0,
+      toMgmtRate: due ? toMgmt.length / due : 0,
+      yr3Rate: due ? yr3.length / due : 0
+    };
+  }
+  function rnConvRange(start, end, offices) {
+    return rnConvFromMap(rnConvSnap(start, end), offices);
+  }
+  function rnMonthConv(year, month, metric, offices) {
+    const q1 = new Date(year, month - 1, 1);
+    const q2 = monthEnd(q1);
+    const rg = rnMetricRange(metric || 'month', q1, q2);
+    return rnConvRange(rg.start, rg.end, offices);
+  }
+  function rnConvOf(y, mFrom, mTo, metric, offices) {
+    if (mFrom === mTo) return rnMonthConv(y, mFrom, metric, offices);
+    if ((metric || 'month') === 'month') {
+      return rnConvRange(new Date(y, mFrom - 1, 1), monthEnd(new Date(y, mTo - 1, 1)), offices);
+    }
+    const maps = [];
+    for (let m = mFrom; m <= mTo; m++) {
+      const q1 = new Date(y, m - 1, 1);
+      const rg = rnMetricRange(metric, q1, monthEnd(q1));
+      maps.push(rnConvSnap(rg.start, rg.end));
+    }
+    return rnConvFromMap(rnConvMergeOfficeMaps(maps), offices);
+  }
+  function rnConvOfficeCounts(rows) {
+    const allow = selectedOffices();
+    const map = {};
+    const seed = so => {
+      if (!so || so === '—') return;
+      if (allow && !allow.has(so) && !allow.has(crabNormSo(so))) return;
+      if (map[so] == null) map[so] = 0;
+    };
+    SALES_OFFICES.forEach(seed);
+    MULTI_OFFICES.forEach(seed);
+    ['電服部', '業務支援管理部'].forEach(seed);
+    (rows || []).forEach(r => {
+      const so = rnMgmtOffice(r);
+      seed(so);
+      if (so && map[so] != null) map[so] += 1;
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'));
+  }
+  function rnConvRowMap(rows) {
+    const map = {};
+    (rows || []).forEach(r => {
+      const so = rnMgmtOffice(r);
+      if (!so || so === '—') return;
+      if (!map[so]) map[so] = [];
+      map[so].push(r);
+    });
+    return map;
+  }
+  function rnRowsFromMap(map, set) {
+    if (!set) return uniqueById(Object.values(map).flat());
+    const out = [];
+    set.forEach(so => { if (map[so]) out.push(...map[so]); });
+    return uniqueById(out);
   }
   function rnBucketOffices(uni) {
     const map = {};
@@ -7654,11 +9609,266 @@
     Object.keys(map || {}).forEach(so => {
       if (set && !set.has(so) && !set.has(crabNormSo(so))) return;
       const x = map[so];
-      due.push.apply(due, x.due);
-      keep.push.apply(keep, x.keep);
-      valid.push.apply(valid, x.valid);
+      const keepCity = r => !set || !set.supportCity || officeSetHasRow(set, r, so);
+      due.push.apply(due, (x.due || []).filter(keepCity));
+      keep.push.apply(keep, (x.keep || []).filter(keepCity));
+      valid.push.apply(valid, (x.valid || []).filter(keepCity));
     });
     return rnFinishPack(uniqueById(due), uniqueById(keep), uniqueById(valid));
+  }
+  const RN_PROG_GROUPS = [
+    { id: '審件中', bucket: 'review', leaves: [
+      { id: '預審中', color: '#1e4a7a' },
+      { id: '複審中', color: '#3b82f6' },
+      { id: '待產編', color: '#93c5fd' }
+    ] },
+    { id: '已派案', bucket: 'assign', leaves: [
+      { id: '(處理中)-包租', color: '#1e4a7a' },
+      { id: '(處理中)-代管', color: '#5b92c8' },
+      { id: '(處理中)-招租中', color: '#b6d4ee' }
+    ] },
+    { id: '未派案', bucket: 'unassign', leaves: [
+      { id: '收資料中', color: '#334155' },
+      { id: '協調中', color: '#64748b' },
+      { id: '未連繫上', color: '#cbd5e1' }
+    ] },
+    { id: '到期未續約', bucket: 'miss', leaves: [
+      { id: '賣房', color: '#475569' },
+      { id: '不想續約', color: '#64748b' },
+      { id: '轉業者', color: '#94a3b8' },
+      { id: '收回自用', color: '#b6c2d1' },
+      { id: '聯繫不上', color: '#cbd5e1' },
+      { id: '其他', color: '#e2e8f0' }
+    ] },
+    { id: '提前解約', bucket: 'early', leaves: [
+      { id: '解約中', color: '#9f1239' },
+      { id: '重新招房客', color: '#be123c' },
+      { id: '房東收回自住', color: '#e11d48' },
+      { id: '房東不繼續合作', color: '#f43f5e' },
+      { id: '房東要賣房', color: '#fb7185' },
+      { id: '房東轉業者', color: '#fda4af' },
+      { id: '承租人因素', color: '#fecdd3' },
+      { id: '其他因素', color: '#fecaca' },
+      { id: '其他', color: '#ffe4e6' }
+    ] }
+  ];
+  function rnProgLeafN(t, groupId, leafId) {
+    return (((t || {}).leaves || {})[groupId] || {})[leafId] || 0;
+  }
+  function rnProgGroupKids(groupId) {
+    const g = RN_PROG_GROUPS.find(x => x.id === groupId);
+    return ((g && g.leaves) || []).map(l => ({
+      id: groupId + '/' + l.id,
+      lab: l.id,
+      val: t => rnProgLeafN(t, groupId, l.id),
+      rows: t => (((t.leafRows || {})[groupId] || {})[l.id] || [])
+    }));
+  }
+  const RN_PROG_CMP = [
+    {
+      id: 'work', lab: '續約作業進行中', val: t => t.work, rows: t => t.workRows || [], kids: [
+        { id: 'review', lab: '審件中', val: t => t.review, rows: t => t.reviewRows || [], kids: rnProgGroupKids('審件中') },
+        { id: 'assign', lab: '已派案', val: t => t.assign, rows: t => t.assignRows || [], kids: rnProgGroupKids('已派案') },
+        { id: 'unassign', lab: '未派案', val: t => t.unassign, rows: t => t.unassignRows || [], kids: rnProgGroupKids('未派案') }
+      ]
+    },
+    { id: 'fail', lab: '未續回總件數', val: t => t.fail, rows: t => t.failRows || [] },
+    { id: 'miss', lab: '到期未續約', val: t => t.miss, rows: t => t.missRows || [], kids: rnProgGroupKids('到期未續約') },
+    { id: 'early', lab: '提前解約', val: t => t.early, rows: t => t.earlyRows || [], kids: rnProgGroupKids('提前解約') }
+  ];
+  function rnProgFindCmp(id, nodes) {
+    const list = nodes || RN_PROG_CMP;
+    for (let i = 0; i < list.length; i++) {
+      const n = list[i];
+      if (n.id === id) return n;
+      const hit = n.kids && rnProgFindCmp(id, n.kids);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  function rnProgOf(r) {
+    const s = String(r.st || '').trim();
+    const ct = String(r.ct || '');
+    if (/^(已生效|已到期|已解約生效|暫存|尚未設定)$/.test(s)) {
+      return { bucket: 'done', group: '已續約', leaf: s };
+    }
+    if (/提前解約/.test(s) || s === '解約中') {
+      const raw = s === '解約中' ? '解約中' : (s.replace(/^提前解約-?/, '') || '其他');
+      let leaf = '其他';
+      if (raw === '解約中' || s === '解約中') leaf = '解約中';
+      else if (/重新招/.test(raw)) leaf = '重新招房客';
+      else if (/收回自住/.test(raw)) leaf = '房東收回自住';
+      else if (/不繼續/.test(raw)) leaf = '房東不繼續合作';
+      else if (/要賣|賣房/.test(raw)) leaf = '房東要賣房';
+      else if (/轉業/.test(raw)) leaf = '房東轉業者';
+      else if (/承租人/.test(raw)) leaf = '承租人因素';
+      else if (/其他因素/.test(raw)) leaf = '其他因素';
+      else if (raw === '其他') leaf = '其他';
+      else leaf = raw;
+      const known = (RN_PROG_GROUPS.find(g => g.id === '提前解約') || {}).leaves || [];
+      if (!known.some(l => l.id === leaf)) leaf = '其他';
+      return { bucket: 'early', group: '提前解約', leaf };
+    }
+    if (/未續約|未續回/.test(s)) {
+      let raw = s.replace(/^未續約-?/, '').replace(/^未續回-?/, '') || '其他';
+      if (/賣房|要賣/.test(raw)) raw = '賣房';
+      else if (/不想續/.test(raw)) raw = '不想續約';
+      else if (/轉業/.test(raw)) raw = '轉業者';
+      else if (/收回|自用|自住/.test(raw)) raw = '收回自用';
+      else if (/聯繫/.test(raw)) raw = '聯繫不上';
+      else raw = '其他';
+      return { bucket: 'miss', group: '到期未續約', leaf: raw };
+    }
+    if (/預審/.test(s)) return { bucket: 'review', group: '審件中', leaf: '預審中' };
+    if (/複審/.test(s)) return { bucket: 'review', group: '審件中', leaf: '複審中' };
+    if (/產編/.test(s)) return { bucket: 'review', group: '審件中', leaf: '待產編' };
+    if (/招租/.test(s)) return { bucket: 'assign', group: '已派案', leaf: '(處理中)-招租中' };
+    if (/已派案|處理中/.test(s)) {
+      if (/轉租|包租/.test(s) || ct.includes('包租')) {
+        return { bucket: 'assign', group: '已派案', leaf: '(處理中)-包租' };
+      }
+      return { bucket: 'assign', group: '已派案', leaf: '(處理中)-代管' };
+    }
+    if (/收資料/.test(s)) return { bucket: 'unassign', group: '未派案', leaf: '收資料中' };
+    if (/協調|協議/.test(s)) return { bucket: 'unassign', group: '未派案', leaf: '協調中' };
+    if (/未連|未進|未派案/.test(s)) return { bucket: 'unassign', group: '未派案', leaf: '未連繫上' };
+    return { bucket: 'other', group: '', leaf: s };
+  }
+  function rnProgRowsOf(y, m, metric, offices) {
+    const p = rnMonthPack(y, m, metric, offices);
+    return uniqueById([...(p.dueRows || []), ...(p.keepRows || [])]);
+  }
+  function rnProgTally(rows) {
+    const list = rows || [];
+    const out = {
+      n: list.length, work: 0, miss: 0, early: 0, done: 0,
+      review: 0, assign: 0, unassign: 0,
+      rows: list, workRows: [], missRows: [], earlyRows: [],
+      reviewRows: [], assignRows: [], unassignRows: [],
+      leaves: {}, leafRows: {}
+    };
+    RN_PROG_GROUPS.forEach(g => {
+      out.leaves[g.id] = {};
+      out.leafRows[g.id] = {};
+      g.leaves.forEach(l => { out.leaves[g.id][l.id] = 0; out.leafRows[g.id][l.id] = []; });
+    });
+    list.forEach(r => {
+      const t = rnProgOf(r);
+      if (t.bucket === 'done' || t.bucket === 'other') { out.done += 1; return; }
+      if (t.bucket === 'miss') { out.miss += 1; out.missRows.push(r); }
+      else if (t.bucket === 'early') { out.early += 1; out.earlyRows.push(r); }
+      else {
+        out.work += 1;
+        out.workRows.push(r);
+        if (t.bucket === 'review') { out.review += 1; out.reviewRows.push(r); }
+        else if (t.bucket === 'assign') { out.assign += 1; out.assignRows.push(r); }
+        else { out.unassign += 1; out.unassignRows.push(r); }
+      }
+      if (out.leaves[t.group] && t.leaf in out.leaves[t.group]) {
+        out.leaves[t.group][t.leaf] += 1;
+        out.leafRows[t.group][t.leaf].push(r);
+      }
+    });
+    out.fail = out.miss + out.early;
+    out.failRows = out.missRows.concat(out.earlyRows);
+    return out;
+  }
+  function rnNextYM(y, m) {
+    return m === 12 ? { y: y + 1, m: 1 } : { y, m: m + 1 };
+  }
+  function rnWatchOpenRows(rows) {
+    return (rows || []).filter(r => !rnEffSt(r.st || r.raw));
+  }
+  function rnWatchPack(y, m, offices) {
+    const p30 = rnPack(y, m, m, offices);
+    const nx = rnNextYM(y, m);
+    const p60 = rnPack(nx.y, nx.m, nx.m, offices);
+    const prog = rnProgTally(rnProgRowsOf(y, m, 'month', offices));
+    const dueRows = p30.dueRows || [];
+    const d30Rows = rnWatchOpenRows(dueRows);
+    const d60Rows = rnWatchOpenRows(p60.dueRows || []);
+    return {
+      due: dueRows.length, dueRows,
+      d30: d30Rows.length, d30Rows,
+      d60: d60Rows.length, d60Rows,
+      done: p30.done, doneRows: p30.doneRows || [],
+      miss: prog.miss, missRows: prog.missRows || [],
+      early: prog.early, earlyRows: prog.earlyRows || [],
+      rate: p30.rate
+    };
+  }
+  function rnWatchMerge(list) {
+    const out = { dueRows: [], d30Rows: [], d60Rows: [], doneRows: [], missRows: [], earlyRows: [] };
+    (list || []).forEach(p => {
+      out.dueRows.push.apply(out.dueRows, p.dueRows || []);
+      out.d30Rows.push.apply(out.d30Rows, p.d30Rows || []);
+      out.d60Rows.push.apply(out.d60Rows, p.d60Rows || []);
+      out.doneRows.push.apply(out.doneRows, p.doneRows || []);
+      out.missRows.push.apply(out.missRows, p.missRows || []);
+      out.earlyRows.push.apply(out.earlyRows, p.earlyRows || []);
+    });
+    out.dueRows = uniqueById(out.dueRows);
+    out.d30Rows = uniqueById(out.d30Rows);
+    out.d60Rows = uniqueById(out.d60Rows);
+    out.doneRows = uniqueById(out.doneRows);
+    out.missRows = uniqueById(out.missRows);
+    out.earlyRows = uniqueById(out.earlyRows);
+    out.due = out.dueRows.length;
+    out.d30 = out.d30Rows.length;
+    out.d60 = out.d60Rows.length;
+    out.done = out.doneRows.length;
+    out.miss = out.missRows.length;
+    out.early = out.earlyRows.length;
+    out.rate = out.due ? out.done / out.due : 0;
+    return out;
+  }
+  function rnWatchVal(p, id) {
+    if (id === 'd30') return p.d30 || 0;
+    if (id === 'd60') return p.d60 || 0;
+    if (id === 'done') return p.done || 0;
+    if (id === 'miss') return p.miss || 0;
+    if (id === 'early') return p.early || 0;
+    return 0;
+  }
+  function rnWatchRows(p, id) {
+    if (id === 'd30') return p.d30Rows || [];
+    if (id === 'd60') return p.d60Rows || [];
+    if (id === 'done') return p.doneRows || [];
+    if (id === 'miss') return p.missRows || [];
+    if (id === 'early') return p.earlyRows || [];
+    return [];
+  }
+  const RN_WATCH_ST = [
+    { id: 'review', lab: '審件中' },
+    { id: 'assign', lab: '已派案' },
+    { id: 'unassign', lab: '未派案' },
+    { id: 'miss', lab: '到期未續' },
+    { id: 'early', lab: '提前解約' }
+  ];
+  function rnWatchStRows(rows, bucket) {
+    if (!bucket) return rows || [];
+    return (rows || []).filter(r => rnProgOf(r).bucket === bucket);
+  }
+  function rnWatchStTally(rows) {
+    return rnProgTally(rows || []);
+  }
+  function renderRnWatchRank(el, rows, title) {
+    if (!el) return;
+    const map = {};
+    (rows || []).forEach(r => {
+      const so = rnMgmtOffice(r);
+      if (!so || so === '—') return;
+      map[so] = (map[so] || 0) + 1;
+    });
+    const arr = Object.entries(map).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant')).slice(0, 24);
+    const max = Math.max(...arr.map(x => x[1]), 1);
+    const cols = [arr.slice(0, 8), arr.slice(8, 16), arr.slice(16, 24)];
+    el.innerHTML = `<h4>${esc(title)}</h4>
+      <p class="note">依代管營業處件數排名，已生效已續回不列入</p>
+      <div class="off-rank-3">${cols.map((col, ci) => `<div class="rank-list">${col.map((x, i) => {
+        const n = x[1];
+        return rankRowHtml(ci * 8 + i, x[0], (n / max) * 100, fmt(n), rankToneCount(n));
+      }).join('')}</div>`).join('')}</div>`;
   }
   function rnWhy(due) {
     const map = new Map();
@@ -7713,6 +9923,8 @@
     const pp = (n) => `<span class="${n < 0 ? 'neg' : ''}">${n > 0 ? '+' : ''}${n.toFixed(1)}%</span>`;
     const pM = Math.max(0, Math.min(100, monthP.rate * 100));
     const p1 = Math.max(0, Math.min(100, leadP.rate * 100));
+    const convP = rnConvRange(state.start, state.end);
+    const toLeasePct = convP.due ? ((convP.toLease / convP.due) * 100).toFixed(2) : '0.00';
     if (!$('rnKpiRow')) return;
     $('rnKpiRow').innerHTML = `
       <div class="card kpi">
@@ -7745,6 +9957,11 @@
         <div class="k">未續回、提前解約</div>
         <div class="v">${fmt(monthP.miss + monthP.early)}<span class="unit"> 件</span></div>
         <div class="s">未續回 ${fmt(monthP.miss)} 件 ｜ 提前解約 ${fmt(monthP.early)} 件</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">續約轉包租(代轉包)</div>
+        <div class="v">${fmt(convP.toLease)}<span class="unit"> 件</span></div>
+        <div class="s">代管到期轉包租 ｜ 占 ${toLeasePct}%</div>
       </div>`;
   }
   function renderRnTrend() {
@@ -7791,10 +10008,28 @@
         });
       }
     };
+    const tideOnce = {
+      id: 'rnTideOnce',
+      afterLayout(chart) {
+        if (chart.$tideOk) return;
+        chart.$tideOk = true;
+        requestAnimationFrame(() => { if (charts.rnChartTrend === chart) chart.update('none'); });
+      }
+    };
+    const tideFill = (ctx) => {
+      const { chart } = ctx;
+      const area = chart.chartArea;
+      if (!area) return 'rgba(37,99,235,0.18)';
+      const g = chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+      g.addColorStop(0, 'rgba(37,99,235,0.42)');
+      g.addColorStop(0.45, 'rgba(96,165,250,0.22)');
+      g.addColorStop(1, 'rgba(191,219,254,0.04)');
+      return g;
+    };
     const lineOpt = (label, data, color, dash, tide) => ({
       label, data, borderColor: color,
-      backgroundColor: '#fff',
-      tension: .35, pointRadius: 4, fill: false, spanGaps: true,
+      backgroundColor: tide ? tideFill : '#fff',
+      tension: .35, pointRadius: 4, fill: tide ? 'origin' : false, spanGaps: true,
       borderDash: dash || [], borderWidth: 2.75,
       pointBackgroundColor: '#fff', pointBorderColor: color, pointBorderWidth: 2
     });
@@ -7814,6 +10049,7 @@
     };
     const cleanOptsOf = (ymin, ymax) => ({
       plugins: {
+        filler: { propagate: false },
         legend: {
           display: true, position: 'top', align: 'end',
           labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 18, boxHeight: 6, padding: 4, font: { family: 'Arial', size: 11 }, color: '#64748b' }
@@ -7846,14 +10082,14 @@
         new Date(b.s.getFullYear() - 1, b.s.getMonth(), b.s.getDate()),
         new Date(b.e.getFullYear() - 1, b.e.getMonth(), b.e.getDate())
       ).rate * 100);
-      if ($('rnTrendNote')) $('rnTrendNote').textContent = (g === 'day' ? '逐日' : '週別') + metricLab + '：依租約迄日／週年日落在該段。目標線 ' + Math.round(tgt * 100) + '%。歸屬代管營業處。';
+      if ($('rnTrendNote')) $('rnTrendNote').textContent = (g === 'day' ? '逐日' : '週別') + metricLab + '：依租約迄日落在該段。目標線 ' + Math.round(tgt * 100) + '%。歸屬代管營業處。';
       const tgtLine = buckets.map(() => tgt * 100);
       const yb = yScaleOf(tgtLine, actual, yoy);
       upsert('rnChartTrend', 'line', buckets.map(b => b.label), [
         lineOpt('目標', tgtLine, C_TARGET),
-        lineOpt('本年實績', actual, C_ACTUAL),
+        lineOpt('本年實績', actual, C_ACTUAL, null, true),
         lineOpt('去年同期', yoy, C_YOY)
-      ], cleanOptsOf(yb.min, yb.max), [pctLabel]);
+      ], cleanOptsOf(yb.min, yb.max), [tideOnce, pctLabel]);
       return;
     }
     const labels = Array.from({ length: 12 }, (_, i) => (i + 1) + '月');
@@ -7883,10 +10119,10 @@
     const yb = yScaleOf(tgtLine, aData, fData, yData);
     upsert('rnChartTrend', 'line', labels, [
       lineOpt('目標', tgtLine, C_TARGET),
-      lineOpt('本年各月實績', aData, C_ACTUAL),
+      lineOpt('本年各月實績', aData, C_ACTUAL, null, true),
       lineOpt('預測值', fData, C_ACTUAL, [8, 6]),
       lineOpt('去年同期', yData, C_YOY)
-    ], cleanOptsOf(yb.min, yb.max), [pctLabel]);
+    ], cleanOptsOf(yb.min, yb.max), [tideOnce, pctLabel]);
   }
   function renderRnOfficeRankInto(el, start, end, asPanel) {
     if (!el) return;
@@ -8246,12 +10482,12 @@
         <div class="v">${rnPct2(rate)}</div>
         <div class="s">目標${(tgt * 100).toFixed(0)}%（${pctHtml(gapPp)}）</div>
       </div>
-      <div class="card kpi ${g1 < 0 ? 'down' : (g1 > 0 ? 'up' : '')}">
+      <div class="card kpi tone-blue">
         <div class="k">領先1M</div>
         <div class="v">${(lead1.rate * 100).toFixed(1)}%</div>
         <div class="s">距${(RENEW_LEAD1_RATE * 100).toFixed(0)}%目標（${pctHtml(g1)}）</div>
       </div>
-      <div class="card kpi ${g2 < 0 ? 'down' : (g2 > 0 ? 'up' : '')}">
+      <div class="card kpi tone-gray">
         <div class="k">領先2M</div>
         <div class="v">${(lead2.rate * 100).toFixed(1)}%</div>
         <div class="s">距${(RENEW_LEAD2_RATE * 100).toFixed(0)}%目標（${pctHtml(g2)}）</div>
@@ -8420,19 +10656,23 @@
       ? { start: new Date(y, 0, 1), end: qEnd }
       : rnMetricRange(metric, new Date(y, viewM - 1, 1), qEnd);
     renderRnOfficeRankInto($('rnGrowOffRank'), rankRg.start, rankRg.end, true);
-    const fig1 = uniqueById(ROWS.filter(r => {
+    const fig1 = cachedPool('rnFig1|' + y + '|' + viewM, () => uniqueById(ROWS.filter(r => {
       if (!rnRowScope(r)) return false;
       if (r.ft !== '續約') return false;
       if (!/已生效/.test(r.st || '')) return false;
       const d = rocToDate(r.ls);
       return d && d.getFullYear() === y && d.getMonth() + 1 === viewM;
-    })).length;
+    }))).length;
     const att = nowP.dueRows.filter(r => /已生效/.test(r.st || '')).length;
     const early = nowP.dueRows.filter(r => /提前解約/.test(r.st || '')).length;
     $('rnGrowAudit').innerHTML = `<h4>資料核對</h4>
       <p>應續約 ${fmt(nowP.due)}、已續約 ${fmt(nowP.done)}、包租應存續 ${fmt(nowP.keep)}、包租有效 ${fmt(nowP.valid)}。契約已生效續約 ${fmt(fig1)} 件（起租日當月，僅供對照）。</p>
-      <p>領先續約率＝（已續約＋包租有效）／（應續約＋包租應存續）。應續約：續約明細、轉租或代管、狀態剔除已停用／暫存、租約迄日落在統計期間。已續約：應續約中狀態含已生效／複審／產編（查詢當下狀態）。包租應存續：契約包租、第1／第2週年日落在期間且早於迄日；週年日前已有解約日者不計入。包租有效：應存續中再依解約日判斷。歸屬代管營業處，案件類型全部類別。</p>`;
+      <p>領先續約率＝（已續約＋包租有效）／（應續約＋包租應存續）。應續約：續約明細、轉租或代管、狀態剔除已停用／已刪除、含已生效與暫存、租約迄日落在統計期間。已續約（率）：應續約中狀態含已生效／複審／產編，以續約明細狀態為準。包租應存續／包租有效：續約明細、委託形式轉租、租約迄日落在統計期間、包租期間（3年）覆蓋迄日所在月、歸屬代管營業處；已解約仍計入應存續，解約日在迄日當月或之後（無解約日）才計入有效。</p>`;
     renderRnGrowStaff(nowP);
+    requestAnimationFrame(() => {
+      renderRnConv(true);
+      requestAnimationFrame(() => renderRnProg());
+    });
   }
   function renderRnGrowStaff(pack) {
     const box = $('rnGrowStaffBox');
@@ -8444,10 +10684,7 @@
       box.innerHTML = '';
       return;
     }
-    const tag = (r) => {
-      const c = rnContract(r) || {};
-      return { ...c, ...r, sl: r.ag || c.sl || '', so: rnMgmtOffice({ ...c, ...r }), city: c.city || r.city || '', addr: c.addr || '', p: c.p || '' };
-    };
+    const tag = (r) => rnCaseTag(r);
     const map = new Map();
     const add = (r, key) => {
       const row = tag(r);
@@ -8498,6 +10735,1057 @@
         </tr>`).join('') || '<tr><td colspan="8">無資料</td></tr>'}
       </tbody></table></div>
       ${staffCasePanel('rnGrow')}`;
+  }
+  function renderRnConvRank(el, rankKind, dueRows, toLeaseRows, start, end) {
+    if (!el) return;
+    const rank = rankKind || 'toLease';
+    const tabs = `<div class="rn-rank-tabs" id="rnConvRankSeg">
+      <button type="button" data-rk="rate"${rank === 'rate' ? ' class="on"' : ''}>單位續約率排行榜</button>
+      <button type="button" data-rk="toLease"${rank === 'toLease' ? ' class="on"' : ''}>續約轉包租(代轉包)件數排行榜</button>
+    </div>`;
+    if (rank === 'rate') {
+      const arr = rnOfficeRateList(start, end);
+      const max = Math.max(...arr.map(x => x[1]), 0.01);
+      const cols = [arr.slice(0, 8), arr.slice(8, 16), arr.slice(16, 24)];
+      el.innerHTML = `${tabs}
+        <p class="note">依篩選單位轄下代管營業處續約率排名</p>
+        <div class="off-rank-3">${cols.map((col, ci) => `<div class="rank-list">${col.map((x, i) => {
+          const rate = x[1];
+          return rankRowHtml(ci * 8 + i, x[0], (rate / max) * 100, (rate * 100).toFixed(1) + '%', rankToneRate(rate, 0.8, 0.5));
+        }).join('')}</div>`).join('') || '<div class="empty">無符合條件的資料</div>'}</div>`;
+      return;
+    }
+    const arr = rnConvOfficeCounts(toLeaseRows);
+    const max = Math.max(...arr.map(x => x[1]), 1);
+    const cols = [arr.slice(0, 8), arr.slice(8, 16), arr.slice(16, 24)];
+    el.innerHTML = `${tabs}
+      <p class="note">依篩選單位轄下代管營業處代轉包件數排名</p>
+      <div class="off-rank-3">${cols.map((col, ci) => `<div class="rank-list">${col.map((x, i) => {
+        const n = x[1];
+        return rankRowHtml(ci * 8 + i, x[0], (n / max) * 100, fmt(n), n >= 5 ? 'cnt-hi' : (n <= 0 ? 'lo' : ''));
+      }).join('')}</div>`).join('') || '<div class="empty">無符合條件的資料</div>'}</div>`;
+  }
+  function renderRnConv(skipProg) {
+    if ($('page-renew') && $('page-renew').classList.contains('hidden')) return;
+    if (!$('rnConvKpis')) {
+      if (!skipProg) renderRnProg();
+      return;
+    }
+    const y = state.end.getFullYear();
+    const filterM = state.end.getMonth() + 1;
+    const grain = state.rnConvGrain || 'month';
+    const metric = state.rnConvMetric || 'month';
+    const isYear = grain === 'year';
+    const pick = state.rnConvPick || filterM;
+    const viewM = Math.min(isYear ? filterM : pick, filterM);
+    const pm = viewM === 1 ? 12 : viewM - 1;
+    const py = viewM === 1 ? y - 1 : y;
+    const rocY = y - 1911;
+    const tree0 = scopedUnitTree();
+    if (!findUnitNode(tree0, state.rnConvFocus || '')) state.rnConvFocus = tree0.id || '全公司';
+    const focusId = state.rnConvFocus || tree0.id || '全公司';
+    const focusSet = unitOfficeSet(focusId);
+    const focusName = (findUnitNode(tree0, focusId) || tree0).name || ddLabel('office');
+    const officeLab = ddLabel('office');
+    const nowP = rnConvOf(y, isYear ? 1 : viewM, viewM, metric, focusSet);
+    const lastP = isYear ? rnConvOf(y - 1, 1, viewM, metric, focusSet) : rnConvOf(py, pm, pm, metric, focusSet);
+    const yoyP = isYear ? rnConvOf(y - 1, 1, viewM, metric, focusSet) : rnConvOf(y - 1, viewM, viewM, metric, focusSet);
+    const lab = isYear ? `1–${viewM}月` : `${viewM}月`;
+    const pctOf = (n, d) => (d ? ((n / d) * 100).toFixed(2) : '0.00');
+    if ($('rnConvMetric')) $('rnConvMetric').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === metric));
+    if ($('rnConvSeg')) $('rnConvSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === grain));
+    if ($('rnConvStaffBtn')) $('rnConvStaffBtn').classList.toggle('on', !!state.rnConvStaffOpen);
+    $('rnConvTitle').textContent = `${rnMetricPrefix(metric)}應續租約轉包租案件分析`;
+    $('rnConvMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 包租、轉租、代管 ｜ 租賃地址不重複 ｜ 營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
+    $('rnConvKpis').innerHTML = `
+      <div class="card kpi">
+        <div class="k">已續約</div>
+        <div class="v">${fmt(nowP.due)}<span class="unit"> 件</span></div>
+        <div class="s">應續${fmt(nowP.due)}，已續占${pctOf(nowP.done, nowP.due)}%</div>
+      </div>
+      <div class="card kpi tone-blue">
+        <div class="k">續約轉包租(代轉包)</div>
+        <div class="v">${fmt(nowP.toLease)}<span class="unit"> 件</span></div>
+        <div class="s">代管到期轉包租 ｜ 占 ${pctOf(nowP.toLease, nowP.due)}%</div>
+      </div>
+      <div class="card kpi tone-red">
+        <div class="k">續約轉代管(包轉代)</div>
+        <div class="v">${fmt(nowP.toMgmt)}<span class="unit"> 件</span></div>
+        <div class="s">包租到期轉代管 ｜ 占 ${pctOf(nowP.toMgmt, nowP.due)}%</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">簽三年代管件數</div>
+        <div class="v">${fmt(nowP.yr3)}<span class="unit"> 件</span></div>
+        <div class="s">占應續約 ${pctOf(nowP.yr3, nowP.due)}%</div>
+      </div>`;
+    const dash = '—';
+    const numTdCmp = (n, id, src) => `<td class="num-hit" data-rncc-case="${esc(id)}" data-rncc-src="${src}">${fmt(n)}</td>`;
+    const countCells = (id, a, b, c) => {
+      const d = a - b, yp = c ? (a - c) / c * 100 : null;
+      return `${numTdCmp(a, id, 'now')}${numTdCmp(b, id, 'last')}
+        ${crabTd(crabSigned(d), crabCls(d))}
+        ${crabTd(crabMomTxt(a, b), crabCls(d))}
+        ${numTdCmp(c, id, 'yoy')}${crabTd(c ? crabPpTxt(yp) : dash, crabCls(yp))}`;
+    };
+    const yCells = (id, a, c) => {
+      const d = a - c, yp = c ? (a - c) / c * 100 : null;
+      return `${numTdCmp(a, id, 'now')}
+        ${crabTd(crabSigned(d), crabCls(d))}
+        ${numTdCmp(c, id, 'yoy')}${crabTd(c ? crabPpTxt(yp) : dash, crabCls(yp))}`;
+    };
+    const cmpDefs = [
+      { id: 'due', lab: '應續約', val: p => p.due, rows: p => p.dueRows },
+      { id: 'done', lab: '已續約', val: p => p.done, rows: p => p.doneRows },
+      { id: 'toLease', lab: '續約轉包租(代轉包)', val: p => p.toLease, rows: p => p.toLeaseRows },
+      { id: 'toMgmt', lab: '續約轉代管(包轉代)', val: p => p.toMgmt, rows: p => p.toMgmtRows },
+      { id: 'yr3', lab: '簽三年代管件數', val: p => p.yr3, rows: p => p.yr3Rows }
+    ];
+    const cmpFocus = state.rnConvCmpFocus || 'toLease';
+    const cmpRows = cmpDefs.map(d => `<tr class="${d.id === cmpFocus ? 'mark' : ''}" data-rncc-id="${d.id}">
+      <td>${esc(d.lab)}</td>
+      ${isYear ? yCells(d.id, d.val(nowP), d.val(yoyP)) : countCells(d.id, d.val(nowP), d.val(lastP), d.val(yoyP))}
+    </tr>`).join('');
+    const caseInfo = state.rnConvCmpCase;
+    const caseDef = caseInfo ? cmpDefs.find(d => d.id === caseInfo.id) : null;
+    const caseP = caseInfo && caseInfo.src === 'last' ? lastP : (caseInfo && caseInfo.src === 'yoy' ? yoyP : nowP);
+    const caseRows = caseDef ? (caseDef.rows(caseP) || []) : [];
+    const caseSrcLab = !caseInfo ? '' : (caseInfo.src === 'last' ? `${pm}月` : (caseInfo.src === 'yoy' ? '同期' : (isYear ? `1–${viewM}月` : `${viewM}月`)));
+    const caseHtml = caseDef ? `<div class="staff-case">
+      <div class="staff-case-head">
+        <h4>${esc(focusName)}｜${esc(caseDef.lab)}　${esc(caseSrcLab)}　案件明細　共${fmt(caseRows.length)}筆</h4>
+        <button type="button" class="tool-btn close-btn" data-close-rncc-case>關閉</button>
+      </div>
+      <div class="staff-case-scroll">${caseRowsHtml(caseRows)}</div>
+    </div>` : '';
+    $('rnConvCmpTbl').innerHTML = (isYear
+      ? `<table class="crab-tbl"><thead><tr><th>比較項目</th><th>1–${viewM}月</th><th>累計差異</th><th>同期1–${viewM}月</th><th>同期比</th></tr></thead><tbody>${cmpRows}</tbody></table>`
+      : `<table class="crab-tbl"><thead><tr><th>比較項目</th><th>${viewM}月</th><th>${pm}月</th><th>差異</th><th>上月比</th><th>同期</th><th>同期比</th></tr></thead><tbody>${cmpRows}</tbody></table>`) + caseHtml;
+    $('rnConvJudge').innerHTML = `<h4>管理結論（${esc(focusName)}）</h4>
+      <p>${esc(`${lab}應續約 ${fmt(nowP.due)} 件，已續約 ${fmt(nowP.done)} 件，續約率 ${rnPct2(nowP.rate)}。`)}</p>
+      <p>${esc(`代管到期轉包租 ${fmt(nowP.toLease)} 件，占應續約 ${pctOf(nowP.toLease, nowP.due)}%；包租到期轉代管 ${fmt(nowP.toMgmt)} 件，占應續約 ${pctOf(nowP.toMgmt, nowP.due)}%。`)}</p>
+      <p>${esc(`三年代管 ${fmt(nowP.yr3)} 件（包租到期改三年或代管一年改三年），占應續約 ${pctOf(nowP.yr3, nowP.due)}%。較${isYear ? '去年同期' : pm + '月'}代轉包 ${nowP.toLease - lastP.toLease >= 0 ? '增' : '減'}${fmt(Math.abs(nowP.toLease - lastP.toLease))} 件，包轉代 ${nowP.toMgmt - lastP.toMgmt >= 0 ? '增' : '減'}${fmt(Math.abs(nowP.toMgmt - lastP.toMgmt))} 件。`)}</p>`;
+    const months = Array.from({ length: 12 }, (_, i) => i + 1);
+    const monthP = months.map(m => {
+      if (m > filterM) return { toLease: null, toMgmt: null, yr3: null };
+      return isYear ? rnConvOf(y, 1, m, metric, focusSet) : rnMonthConv(y, m, metric, focusSet);
+    });
+    const leaseD = monthP.map(p => p.toLease);
+    const mgmtD = monthP.map(p => p.toMgmt);
+    const yr3D = monthP.map(p => p.yr3);
+    const labels = months.map(m => `${m}月`);
+    const hide = state.rnConvHide || {};
+    $('rnConvChartTitle').textContent = isYear ? `1–${viewM}月累計案件結構` : '1–12月案件結構';
+    $('rnConvChartNote').textContent = `柱為代轉包、包轉代、三年代管堆疊；數字為件數。應續約＝包租、轉租、代管（地址不重複）。代轉包＝代管到期轉包租；包轉代＝包租到期轉代管；三年代管＝包租到期改三年或代管一年改三年。${filterM < 12 ? `${filterM + 1}–12月尚未列入。` : ''}點柱切換月份。`;
+    const bandPlugin = {
+      id: 'rnConvBand',
+      beforeDraw(chart) {
+        if (isYear) return;
+        const meta = chart.getDatasetMeta(0);
+        const pt = meta && meta.data[viewM - 1];
+        if (!pt) return;
+        const { ctx, chartArea } = chart;
+        const bw = typeof pt.width === 'number' ? pt.width : 24;
+        ctx.save();
+        ctx.fillStyle = 'rgba(59,130,246,.07)';
+        ctx.fillRect(pt.x - (bw + 10) / 2, chartArea.top, bw + 10, chartArea.bottom - chartArea.top);
+        ctx.restore();
+      }
+    };
+    const labelPlugin = {
+      id: 'rnConvLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx, chartArea } = chart;
+        chart.data.datasets.forEach((ds, di) => {
+          const meta = chart.getDatasetMeta(di);
+          if (!meta.visible) return;
+          meta.data.forEach((pt, i) => {
+            const v = ds.data[i];
+            if (v == null || !pt) return;
+            const base = pt.base != null ? pt.base : chartArea.bottom;
+            const h = Math.abs(base - pt.y);
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.font = '10px Arial, sans-serif';
+            if (h > 14 && v) {
+              ctx.fillStyle = (ds.label === '三年代管' || ds.label === '包轉代') ? '#1e3a5f' : '#fff';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(fmt(Math.round(v)), pt.x, (pt.y + base) / 2);
+            }
+            ctx.restore();
+          });
+        });
+        monthP.forEach((p, i) => {
+          if (p.toLease == null) return;
+          const tot = (hide['代轉包'] ? 0 : (p.toLease || 0)) + (hide['包轉代'] ? 0 : (p.toMgmt || 0)) + (hide['三年代管'] ? 0 : (p.yr3 || 0));
+          const topDs = [...chart.data.datasets].reverse().find((ds, idx) => {
+            const di = chart.data.datasets.length - 1 - idx;
+            return chart.isDatasetVisible(di) && (ds.data[i] || 0) >= 0;
+          });
+          const di = chart.data.datasets.indexOf(topDs);
+          const meta = di >= 0 ? chart.getDatasetMeta(di) : null;
+          const pt = meta && meta.data[i];
+          if (!pt || tot == null) return;
+          ctx.save();
+          ctx.fillStyle = '#1e3a5f';
+          ctx.font = '10px Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(fmt(tot), pt.x, pt.y - 4);
+          ctx.restore();
+        });
+      }
+    };
+    upsert('rnConvChart', 'bar', labels, [
+      { label: '代轉包', data: leaseD, hidden: !!hide['代轉包'], backgroundColor: '#1e4a7a', stack: 's', borderRadius: 0, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 },
+      { label: '包轉代', data: mgmtD, hidden: !!hide['包轉代'], backgroundColor: '#93c5fd', stack: 's', barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 },
+      { label: '三年代管', data: yr3D, hidden: !!hide['三年代管'], backgroundColor: '#facc15', stack: 's', borderRadius: { topLeft: 3, topRight: 3, bottomLeft: 0, bottomRight: 0 }, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 }
+    ], {
+      clip: false,
+      layout: { padding: { top: 18, right: 8, left: 4, bottom: 2 } },
+      plugins: { legend: { display: false } },
+      interaction: { mode: 'index', intersect: false },
+      onClick: (evt, els) => {
+        if (!els.length) return;
+        const i = els[0].index + 1;
+        if (i > filterM) return;
+        state.rnConvPick = i;
+        state.rnConvGrain = 'month';
+        renderRnConv();
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 }, color: '#94a3b8' }, border: { display: false } },
+        y: { stacked: true, beginAtZero: true, grace: '18%', grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8' }, border: { display: false } }
+      }
+    }, [bandPlugin, labelPlugin]);
+    if ($('rnConvLegend')) {
+      $('rnConvLegend').querySelectorAll('[data-rnc-ds]').forEach(b => b.classList.toggle('off', !!hide[b.dataset.rncDs]));
+    }
+    const rankRg = (isYear && metric === 'month')
+      ? { start: new Date(y, 0, 1), end: monthEnd(new Date(y, viewM - 1, 1)) }
+      : rnMetricRange(metric, new Date(y, viewM - 1, 1), monthEnd(new Date(y, viewM - 1, 1)));
+    renderRnConvRank($('rnConvOffRank'), state.rnConvRank, nowP.dueRows, nowP.toLeaseRows, rankRg.start, rankRg.end);
+    renderRnConvUnits(y, viewM, metric, isYear, pm, py, filterM, focusId);
+    renderRnConvStaff(nowP);
+    if (!skipProg) renderRnProg();
+  }
+  function renderRnConvUnits(y, viewM, metric, isYear, pm, py, filterM, focusId) {
+    const note = $('rnConvUnitNote');
+    const box = $('rnConvUnitTbl');
+    if (!box) return;
+    const months = Array.from({ length: 12 }, (_, i) => i + 1);
+    const snapOf = (yy, m) => {
+      const q1 = new Date(yy, m - 1, 1);
+      const rg = rnMetricRange(metric, q1, monthEnd(q1));
+      return rnConvSnap(rg.start, rg.end);
+    };
+    const mm = months.map(m => ({ m, map: snapOf(y, m), yoyMap: snapOf(y - 1, m) }));
+    const lastMap = snapOf(py, pm);
+    const ytdMaps = mm.filter(x => x.m <= viewM).map(x => x.map);
+    const ytdYoyMaps = mm.filter(x => x.m <= viewM).map(x => x.yoyMap);
+    const ytdMap = (metric === 'month')
+      ? rnConvSnap(new Date(y, 0, 1), monthEnd(new Date(y, viewM - 1, 1)))
+      : rnConvMergeOfficeMaps(ytdMaps);
+    const ytdYoyMap = (metric === 'month')
+      ? rnConvSnap(new Date(y - 1, 0, 1), monthEnd(new Date(y - 1, viewM - 1, 1)))
+      : rnConvMergeOfficeMaps(ytdYoyMaps);
+    const decorate = (node) => {
+      const kids = (node.kids || []).map(decorate);
+      const set = unitOfficeSet(node.id);
+      const monthPacks = mm.map(x => ({
+        m: x.m,
+        p: rnConvFromMap(x.map, set),
+        yoy: rnConvFromMap(x.yoyMap, set)
+      }));
+      const now = isYear ? rnConvFromMap(ytdMap, set) : monthPacks[viewM - 1].p;
+      const last = isYear ? rnConvFromMap(ytdYoyMap, set) : rnConvFromMap(lastMap, set);
+      return {
+        ...node, kids, months: monthPacks,
+        c: {
+          due: now.due, done: now.done, rate: now.rate,
+          toLease: now.toLease, toMgmt: now.toMgmt, yr3: now.yr3,
+          lastPp: (now.rate - last.rate) * 100
+        }
+      };
+    };
+    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.c && (n.c.due || n.c.done || n.c.toLease || n.c.toMgmt || n.c.yr3)) || decorate(scopedUnitTree());
+    const sortKey = state.rnConvTblSort || '';
+    if (sortKey) {
+      sortUnitTree(root, n => (sortKey === 'name' ? n.name : n.c[sortKey]), state.rnConvTblDir || 'desc');
+    }
+    const open = new Set(state.rnConvOpen || []);
+    const monthOpen = new Set(state.rnConvMonthOpen || []);
+    const html = [];
+    const walk = (node, depth) => {
+      const hasKids = node.kids && node.kids.length;
+      const isOpen = node.id === '__SEL__' || open.has(node.id);
+      const tog = hasKids
+        ? `<button type="button" class="unit-tog" data-rnc-open="${node.id}">${isOpen ? '▾' : '▸'}</button>`
+        : `<span class="unit-tog-sp"></span>`;
+      const c = node.c;
+      html.push(`<tr class="${node.id === focusId ? ' on' : ''}" data-rnc-focus="${node.id}">
+        ${unitCellHtml(node, depth, tog)}
+        <td class="v num-hit" data-rnc-months="${node.id}">${fmt(c.due)}</td>
+        <td class="v num-hit" data-rnc-months="${node.id}">${fmt(c.done)}</td>
+        <td class="v num-hit" data-rnc-months="${node.id}">${(c.rate * 100).toFixed(1)}%</td>
+        <td class="v num-hit" data-rnc-months="${node.id}">${fmt(c.toLease)}</td>
+        <td class="v num-hit" data-rnc-months="${node.id}">${fmt(c.toMgmt)}</td>
+        <td class="v num-hit" data-rnc-months="${node.id}">${fmt(c.yr3)}</td>
+      </tr>`);
+      if (monthOpen.has(node.id)) {
+        html.push(`<tr class="crab-mdetail"><td colspan="7"><table class="crab-mini"><thead><tr>
+          <th>月</th><th>應續約</th><th>已續約</th><th>續約率</th><th>代轉包</th><th>包轉代</th><th>三年代管</th>
+        </tr></thead><tbody>${node.months.map(x => `<tr class="${x.m === viewM ? 'on' : ''}">
+            <td>${x.m}月</td><td>${fmt(x.p.due)}</td><td>${fmt(x.p.done)}</td>
+            <td>${(x.p.rate * 100).toFixed(1)}%</td>
+            <td>${fmt(x.p.toLease)}</td><td>${fmt(x.p.toMgmt)}</td><td>${fmt(x.p.yr3)}</td>
+          </tr>`).join('')}</tbody></table></td></tr>`);
+      }
+      if (hasKids && isOpen) node.kids.forEach(k => walk(k, depth + 1));
+    };
+    walk(root, 0);
+    if (note) note.textContent = `點選單位看上月為${pm}月｜數字為簽約執行件數`;
+    box.innerHTML = `<table class="type-tbl ana-tbl"><thead><tr>
+      ${tblTh('rnConv', 'name', '單位／擔當者')}${tblTh('rnConv', 'due', '應續約')}${tblTh('rnConv', 'done', '已續約')}${tblTh('rnConv', 'rate', '續約率')}${tblTh('rnConv', 'toLease', '續約代轉包')}${tblTh('rnConv', 'toMgmt', '續約包轉代')}${tblTh('rnConv', 'yr3', '三年代管')}
+    </tr></thead><tbody>${html.join('')}</tbody></table>`;
+  }
+  function renderRnConvStaff(pack) {
+    const box = $('rnConvStaffBox');
+    if (!box) return;
+    bindStaffBox('rnConvStaffBox', 'rnConv');
+    box.classList.toggle('hidden', !state.rnConvStaffOpen);
+    if (!state.rnConvStaffOpen) {
+      if (state.staffCase && state.staffCase.kind === 'rnConv') state.staffCase = null;
+      box.innerHTML = '';
+      return;
+    }
+    const tag = (r) => rnCaseTag(r);
+    const map = new Map();
+    const add = (r, key) => {
+      const row = tag(r);
+      const name = row.sl || '—';
+      const office = row.so || '—';
+      const k = office + '\t' + name;
+      if (!map.has(k)) map.set(k, { office, name, due: [], done: [], toLease: [], toMgmt: [], yr3: [] });
+      map.get(k)[key].push(row);
+    };
+    (pack.dueRows || []).forEach(r => add(r, 'due'));
+    (pack.doneRows || []).forEach(r => add(r, 'done'));
+    (pack.toLeaseRows || []).forEach(r => add(r, 'toLease'));
+    (pack.toMgmtRows || []).forEach(r => add(r, 'toMgmt'));
+    (pack.yr3Rows || []).forEach(r => add(r, 'yr3'));
+    const people = sortStaffPeople([...map.values()].map(p => {
+      const due = uniqueById(p.due);
+      const done = uniqueById(p.done);
+      const toLease = uniqueById(p.toLease);
+      const toMgmt = uniqueById(p.toMgmt);
+      const yr3 = uniqueById(p.yr3);
+      return {
+        office: p.office, name: p.name,
+        due: due.length, done: done.length, toLease: toLease.length, toMgmt: toMgmt.length, yr3: yr3.length,
+        rows: due, dueRows: due, doneRows: done, toLeaseRows: toLease, toMgmtRows: toMgmt, yr3Rows: yr3
+      };
+    }), state.rnConvStaffSort || 'due', state.rnConvStaffDir || 'desc');
+    staffPeople.rnConv = people;
+    box.innerHTML = `
+      ${staffHead('應續租約轉包租 ｜ 案件明細')}
+      <p class="src-staff-k">應續約 ${fmt(people.reduce((s, p) => s + p.due, 0))} 件。點數字展開案件明細</p>
+      <div class="src-staff-scroll"><table class="src-combo"><thead><tr>
+        <th data-sort="office" class="${staffSortMark('rnConv', 'office')}">營業處</th>
+        <th data-sort="name" class="${staffSortMark('rnConv', 'name')}">代管人員</th>
+        <th data-sort="due" class="${staffSortMark('rnConv', 'due')}">應續約</th>
+        <th data-sort="done" class="${staffSortMark('rnConv', 'done')}">已續約</th>
+        <th data-sort="toLease" class="${staffSortMark('rnConv', 'toLease')}">代轉包</th>
+        <th data-sort="toMgmt" class="${staffSortMark('rnConv', 'toMgmt')}">包轉代</th>
+        <th data-sort="yr3" class="${staffSortMark('rnConv', 'yr3')}">簽三年</th>
+      </tr></thead><tbody>
+        ${people.map(p => `<tr>
+          <td>${esc(p.office)}</td><td class="name-hit">${esc(p.name)}</td>
+          ${numTd(p.due, 'due')}${numTd(p.done, 'done')}${numTd(p.toLease, 'toLease')}${numTd(p.toMgmt, 'toMgmt')}${numTd(p.yr3, 'yr3')}
+        </tr>`).join('') || '<tr><td colspan="7">無資料</td></tr>'}
+      </tbody></table></div>
+      ${staffCasePanel('rnConv')}`;
+  }
+  function renderRnProg() {
+    if ($('page-renew') && $('page-renew').classList.contains('hidden')) return;
+    if (!$('rnProgKpis')) return;
+    const y = state.end.getFullYear();
+    const filterM = state.end.getMonth() + 1;
+    const grain = state.rnProgGrain || 'month';
+    const metric = state.rnProgMetric || 'month';
+    const isYear = grain === 'year';
+    const pick = state.rnProgPick || filterM;
+    const viewM = Math.min(isYear ? filterM : pick, filterM);
+    const pm = viewM === 1 ? 12 : viewM - 1;
+    const py = viewM === 1 ? y - 1 : y;
+    const rocY = y - 1911;
+    const tree0 = scopedUnitTree();
+    if (!findUnitNode(tree0, state.rnProgFocus || '')) state.rnProgFocus = tree0.id || '全公司';
+    const focusId = state.rnProgFocus || tree0.id || '全公司';
+    const focusSet = unitOfficeSet(focusId);
+    const focusName = (findUnitNode(tree0, focusId) || tree0).name || ddLabel('office');
+    const officeLab = ddLabel('office');
+    const rowsNow = isYear ? uniqueById(Array.from({ length: viewM }, (_, i) => rnProgRowsOf(y, i + 1, metric, focusSet)).flat()) : rnProgRowsOf(y, viewM, metric, focusSet);
+    const rowsLast = isYear
+      ? uniqueById(Array.from({ length: viewM }, (_, i) => rnProgRowsOf(y - 1, i + 1, metric, focusSet)).flat())
+      : rnProgRowsOf(py, pm, metric, focusSet);
+    const rowsYoy = isYear
+      ? uniqueById(Array.from({ length: viewM }, (_, i) => rnProgRowsOf(y - 1, i + 1, metric, focusSet)).flat())
+      : rnProgRowsOf(y - 1, viewM, metric, focusSet);
+    const nowT = rnProgTally(rowsNow);
+    const lastT = rnProgTally(rowsLast);
+    const yoyT = rnProgTally(rowsYoy);
+    const den = Math.max(nowT.n, 1);
+    const pctOf = (n) => ((n / den) * 100).toFixed(1) + '%';
+    const packNow = isYear ? rnPack(y, 1, viewM, focusSet) : rnMonthPack(y, viewM, metric, focusSet);
+    const tgt = rnTgtOf(metric);
+    const gap = (packNow.rate - tgt) * 100;
+    const pp = (n) => `<span class="${n < 0 ? 'neg' : ''}">${n > 0 ? '+' : ''}${n.toFixed(1)}%</span>`;
+    const rateLab = isYear ? `1–${viewM}月續約率` : rnMetricFull(metric);
+    if ($('rnProgMetric')) $('rnProgMetric').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === metric));
+    if ($('rnProgSeg')) $('rnProgSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === grain));
+    if ($('rnProgStaffBtn')) $('rnProgStaffBtn').classList.toggle('on', !!state.rnProgStaffOpen);
+    $('rnProgTitle').textContent = `${rnMetricPrefix(metric)}續約執行進度分析`;
+    const dueN = (packNow.dueRows || []).length;
+    const effN = (packNow.dueRows || []).filter(r => rnEffSt(r.st)).length;
+    $('rnProgMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 全部案件類型 ｜ 營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
+    $('rnProgKpis').innerHTML = `
+      <div class="card kpi">
+        <div class="k">應續約</div>
+        <div class="v">${fmt(dueN)}<span class="unit"> 件</span></div>
+        <div class="s">租約到期應續回案件</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">已續約</div>
+        <div class="v">${fmt(effN)}<span class="unit"> 件</span></div>
+        <div class="s">已生效續約件數</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">${rateLab}</div>
+        <div class="v">${(packNow.rate * 100).toFixed(2)}<span class="unit"> %</span></div>
+        <div class="s">目標 ${Math.round(tgt * 100)}%　差異 ${pp(gap)}</div>
+      </div>
+      <div class="card kpi tone-red">
+        <div class="k">未續回總件數</div>
+        <div class="v">${fmt(nowT.fail)}<span class="unit"> 件</span></div>
+        <div class="s">到期未續 ${fmt(nowT.miss)} ｜ 提前解約 ${fmt(nowT.early)}</div>
+      </div>`;
+    const dash = '—';
+    const cmpOpen = new Set(state.rnProgCmpOpen || []);
+    const cmpFocus = state.rnProgCmpFocus || 'work';
+    const numTdCmp = (n, id, src) => `<td class="num-hit" data-rnpc-case="${esc(id)}" data-rnpc-src="${src}">${fmt(n)}</td>`;
+    const countCells = (id, a, b, c) => {
+      const d = a - b, yp = c ? (a - c) / c * 100 : null;
+      return `${numTdCmp(a, id, 'now')}${numTdCmp(b, id, 'last')}
+        ${crabTd(crabSigned(d), crabCls(d))}
+        ${crabTd(crabMomTxt(a, b), crabCls(d))}
+        ${numTdCmp(c, id, 'yoy')}${crabTd(c ? crabPpTxt(yp) : dash, crabCls(yp))}`;
+    };
+    const yCells = (id, a, c) => {
+      const d = a - c, yp = c ? (a - c) / c * 100 : null;
+      return `${numTdCmp(a, id, 'now')}
+        ${crabTd(crabSigned(d), crabCls(d))}
+        ${numTdCmp(c, id, 'yoy')}${crabTd(c ? crabPpTxt(yp) : dash, crabCls(yp))}`;
+    };
+    const cmpRows = [];
+    const walkCmp = (node, depth) => {
+      const kids = node.kids || [];
+      const hasKids = kids.length > 0;
+      const isOpen = cmpOpen.has(node.id);
+      const tog = hasKids
+        ? `<button type="button" class="unit-tog" data-rnpc-open="${esc(node.id)}">${isOpen ? '▾' : '▸'}</button>`
+        : `<span class="unit-tog-sp"></span>`;
+      const a = node.val(nowT) || 0;
+      const b = node.val(lastT) || 0;
+      const c = node.val(yoyT) || 0;
+      const cls = [node.id === cmpFocus ? 'on' : '', hasKids ? 'rn-cmp-exp' : ''].filter(Boolean).join(' ');
+      cmpRows.push(`<tr class="${cls}" data-rnpc-id="${esc(node.id)}">
+        <td class="unit-name" style="padding-left:${6 + depth * 14}px">${tog}<span>${esc(node.lab)}</span></td>
+        ${isYear ? yCells(node.id, a, c) : countCells(node.id, a, b, c)}
+      </tr>`);
+      if (hasKids && isOpen) kids.forEach(k => walkCmp(k, depth + 1));
+    };
+    RN_PROG_CMP.forEach(n => walkCmp(n, 0));
+    const caseInfo = state.rnProgCmpCase;
+    const caseNode = caseInfo ? rnProgFindCmp(caseInfo.id) : null;
+    const caseT = caseInfo && caseInfo.src === 'last' ? lastT : (caseInfo && caseInfo.src === 'yoy' ? yoyT : nowT);
+    const caseRows = caseNode && caseNode.rows ? caseNode.rows(caseT) : [];
+    const caseSrcLab = !caseInfo ? '' : (caseInfo.src === 'last' ? `${pm}月` : (caseInfo.src === 'yoy' ? '同期' : (isYear ? `1–${viewM}月` : `${viewM}月`)));
+    const caseHtml = caseNode ? `<div class="staff-case">
+      <div class="staff-case-head">
+        <h4>${esc(focusName)}｜${esc(caseNode.lab)}　${esc(caseSrcLab)}　案件明細　共${fmt(caseRows.length)}筆</h4>
+        <button type="button" class="tool-btn close-btn" data-close-rnpc-case>關閉</button>
+      </div>
+      <div class="staff-case-scroll">${caseRowsHtml(caseRows)}</div>
+    </div>` : '';
+    $('rnProgCmpTbl').innerHTML = (isYear
+      ? `<table class="crab-tbl"><thead><tr><th>比較項目</th><th>1–${viewM}月</th><th>累計差異</th><th>同期1–${viewM}月</th><th>同期比</th></tr></thead><tbody>
+          ${cmpRows.join('')}
+        </tbody></table>`
+      : `<table class="crab-tbl"><thead><tr><th>比較項目</th><th>${viewM}月</th><th>${pm}月</th><th>差異</th><th>上月比</th><th>同期</th><th>同期比</th></tr></thead><tbody>
+          ${cmpRows.join('')}
+        </tbody></table>`) + caseHtml;
+    $('rnProgJudge').innerHTML = `<h4>管理結論（${esc(focusName)}）</h4>
+      <p>${esc(`${viewM}月續約作業進行中 ${fmt(nowT.work)} 件（審件中 ${fmt(nowT.review)}、已派案 ${fmt(nowT.assign)}、未派案 ${fmt(nowT.unassign)}）。`)}</p>
+      <p>${esc(`到期未續約 ${fmt(nowT.miss)} 件、提前解約 ${fmt(nowT.early)} 件，未續回總件數 ${fmt(nowT.fail)} 件，占結構 ${pctOf(nowT.fail)}。`)}</p>
+      <p>${esc(`較${isYear ? '去年同期' : pm + '月'}進行中 ${nowT.work - lastT.work >= 0 ? '增' : '減'}${fmt(Math.abs(nowT.work - lastT.work))} 件，未續回 ${nowT.fail - lastT.fail >= 0 ? '增' : '減'}${fmt(Math.abs(nowT.fail - lastT.fail))} 件。`)}</p>`;
+    const months = Array.from({ length: 12 }, (_, i) => i + 1);
+    const monthTally = months.map(m => {
+      if (m > filterM) return { work: null, miss: null, early: null };
+      const rows = (isYear
+        ? uniqueById(Array.from({ length: m }, (_, i) => rnProgRowsOf(y, i + 1, metric, focusSet)).flat())
+        : rnProgRowsOf(y, m, metric, focusSet));
+      return rnProgTally(rows);
+    });
+    const workD = monthTally.map(t => t.work);
+    const missD = monthTally.map(t => t.miss);
+    const earlyD = monthTally.map(t => t.early);
+    const labels = months.map(m => `${m}月`);
+    const hide = state.rnProgHide || {};
+    $('rnProgChartTitle').textContent = isYear ? `1–${viewM}月累計案件結構` : '1–12月案件結構';
+    $('rnProgChartNote').textContent = `柱為續約作業進行中、到期未續約、提前解約堆疊；數字為件數。結構＝應續約＋包租應存續。${filterM < 12 ? `${filterM + 1}–12月尚未列入。` : ''}點柱切換月份。`;
+    const bandPlugin = {
+      id: 'rnProgBand',
+      beforeDraw(chart) {
+        if (isYear) return;
+        const meta = chart.getDatasetMeta(0);
+        const pt = meta && meta.data[viewM - 1];
+        if (!pt) return;
+        const { ctx, chartArea } = chart;
+        const bw = typeof pt.width === 'number' ? pt.width : 24;
+        ctx.save();
+        ctx.fillStyle = 'rgba(59,130,246,.07)';
+        ctx.fillRect(pt.x - (bw + 10) / 2, chartArea.top, bw + 10, chartArea.bottom - chartArea.top);
+        ctx.restore();
+      }
+    };
+    const labelPlugin = {
+      id: 'rnProgLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx, chartArea } = chart;
+        const vis = chart.data.datasets.map((ds, di) => chart.getDatasetMeta(di)).filter((m, i) => chart.isDatasetVisible(i));
+        chart.data.datasets.forEach((ds, di) => {
+          const meta = chart.getDatasetMeta(di);
+          if (!meta.visible) return;
+          meta.data.forEach((pt, i) => {
+            const v = ds.data[i];
+            if (v == null || !pt) return;
+            const base = pt.base != null ? pt.base : chartArea.bottom;
+            const h = Math.abs(base - pt.y);
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.font = '10px Arial, sans-serif';
+            if (h > 14 && v) {
+              ctx.fillStyle = '#fff';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(fmt(Math.round(v)), pt.x, (pt.y + base) / 2);
+            }
+            ctx.restore();
+          });
+        });
+        monthTally.forEach((t, i) => {
+          if (t.work == null) return;
+          const tot = (t.work || 0) + (t.miss || 0) + (t.early || 0);
+          const topDs = [...chart.data.datasets].reverse().find((ds, idx) => {
+            const di = chart.data.datasets.length - 1 - idx;
+            return chart.isDatasetVisible(di) && (ds.data[i] || 0) >= 0;
+          });
+          const di = chart.data.datasets.indexOf(topDs);
+          const meta = di >= 0 ? chart.getDatasetMeta(di) : null;
+          const pt = meta && meta.data[i];
+          if (!pt || tot == null) return;
+          ctx.save();
+          ctx.fillStyle = '#1e3a5f';
+          ctx.font = '10px Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(fmt(tot), pt.x, pt.y - 4);
+          ctx.restore();
+        });
+      }
+    };
+    upsert('rnProgChart', 'bar', labels, [
+      { label: '續約作業進行中', data: workD, hidden: !!hide['續約作業進行中'], backgroundColor: '#1e4a7a', stack: 's', borderRadius: 0, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 },
+      { label: '到期未續約', data: missD, hidden: !!hide['到期未續約'], backgroundColor: '#94a3b8', stack: 's', barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 },
+      { label: '提前解約', data: earlyD, hidden: !!hide['提前解約'], backgroundColor: '#e11d48', stack: 's', borderRadius: { topLeft: 3, topRight: 3, bottomLeft: 0, bottomRight: 0 }, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 }
+    ], {
+      clip: false,
+      layout: { padding: { top: 18, right: 8, left: 4, bottom: 2 } },
+      plugins: { legend: { display: false } },
+      interaction: { mode: 'index', intersect: false },
+      onClick: (evt, els) => {
+        if (!els.length) return;
+        const i = els[0].index + 1;
+        if (i > filterM) return;
+        state.rnProgPick = i;
+        state.rnProgGrain = 'month';
+        renderRnProg();
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 }, color: '#94a3b8' }, border: { display: false } },
+        y: { stacked: true, beginAtZero: true, grace: '18%', grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8' }, border: { display: false } }
+      }
+    }, [bandPlugin, labelPlugin]);
+    if ($('rnProgLegend')) {
+      $('rnProgLegend').querySelectorAll('[data-rnprog-ds]').forEach(b => b.classList.toggle('off', !!hide[b.dataset.rnprogDs]));
+    }
+    const distHtml = RN_PROG_GROUPS.map(g => {
+      const leaves = g.leaves.map(l => ({ lab: l.id, n: (nowT.leaves[g.id] || {})[l.id] || 0, color: l.color }));
+      const sum = leaves.reduce((s, x) => s + x.n, 0);
+      const twoCol = leaves.length > 6;
+      return `<div class="rn-prog-box rev-panel${twoCol ? ' rn-prog-wide' : ''}"><h4>${esc(g.id)}</h4>
+        ${typeShareBars(leaves, sum, leaves.map(x => x.color), { twoCol })}
+      </div>`;
+    }).join('');
+    $('rnProgDist').innerHTML = distHtml;
+    const monthMaps = months.map(m => rnBucketOffices(rnMonthPack(y, m, metric)));
+    const lastMap = rnBucketOffices(rnMonthPack(py, pm, metric));
+    const ytdMap = rnMergeMaps(monthMaps.filter((_, i) => i < viewM));
+    const decorate = (node) => {
+      const kids = (node.kids || []).map(decorate);
+      const set = unitOfficeSet(node.id);
+      const pack = isYear ? rnPackFromMap(ytdMap, set) : rnPackFromMap(monthMaps[viewM - 1], set);
+      const rows = uniqueById([...(pack.dueRows || []), ...(pack.keepRows || [])]);
+      return { ...node, kids, t: rnProgTally(rows) };
+    };
+    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.t && n.t.n) || decorate(scopedUnitTree());
+    const sortKey = state.rnProgTblSort || '';
+    if (sortKey) {
+      sortUnitTree(root, n => (sortKey === 'name' ? n.name : n.t[sortKey]), state.rnProgTblDir || 'desc');
+    }
+    const open = new Set(state.rnProgOpen || []);
+    const html = [];
+    const walk = (node, depth) => {
+      const hasKids = node.kids && node.kids.length;
+      const isOpen = node.id === '__SEL__' || open.has(node.id);
+      const tog = hasKids
+        ? `<button type="button" class="unit-tog" data-rnp-open="${node.id}">${isOpen ? '▾' : '▸'}</button>`
+        : `<span class="unit-tog-sp"></span>`;
+      const t = node.t;
+      html.push(`<tr class="${node.id === focusId ? ' on' : ''}" data-rnp-focus="${node.id}">
+        ${unitCellHtml(node, depth, tog)}
+        <td>${fmt(t.work)}</td><td>${fmt(t.review)}</td><td>${fmt(t.assign)}</td>
+        <td>${fmt(t.unassign)}</td><td>${fmt(t.miss)}</td><td>${fmt(t.early)}</td>
+      </tr>`);
+      if (hasKids && isOpen) node.kids.forEach(k => walk(k, depth + 1));
+    };
+    walk(root, 0);
+    if ($('rnProgUnitNote')) $('rnProgUnitNote').textContent = `點單位查閱｜上月為${pm}月｜數字為續約執行件數`;
+    if ($('rnProgUnitTbl')) $('rnProgUnitTbl').innerHTML = `<table class="type-tbl ana-tbl"><thead><tr>
+      ${tblTh('rnProg', 'name', '單位／擔當者')}${tblTh('rnProg', 'work', '續約進行中')}${tblTh('rnProg', 'review', '審件中')}${tblTh('rnProg', 'assign', '已派案')}${tblTh('rnProg', 'unassign', '未派案')}${tblTh('rnProg', 'miss', '到期未續')}${tblTh('rnProg', 'early', '提前解約')}
+    </tr></thead><tbody>${html.join('')}</tbody></table>`;
+    renderRnProgStaff(nowT, focusName);
+    renderRnWatch();
+  }
+  function renderRnProgStaff(tally, scopeName) {
+    const box = $('rnProgStaffBox');
+    if (!box) return;
+    bindStaffBox('rnProgStaffBox', 'rnProg');
+    box.classList.toggle('hidden', !state.rnProgStaffOpen);
+    if (!state.rnProgStaffOpen) {
+      if (state.staffCase && state.staffCase.kind === 'rnProg') state.staffCase = null;
+      box.innerHTML = '';
+      return;
+    }
+    const tag = (r) => rnCaseTag(r);
+    const map = new Map();
+    const add = (r, key) => {
+      const row = tag(r);
+      const name = row.sl || '—';
+      const office = row.so || '—';
+      const k = office + '\t' + name;
+      if (!map.has(k)) map.set(k, { office, name, work: [], review: [], assign: [], unassign: [], miss: [], early: [] });
+      map.get(k)[key].push(row);
+    };
+    (tally.workRows || []).forEach(r => add(r, 'work'));
+    (tally.reviewRows || []).forEach(r => add(r, 'review'));
+    (tally.assignRows || []).forEach(r => add(r, 'assign'));
+    (tally.unassignRows || []).forEach(r => add(r, 'unassign'));
+    (tally.missRows || []).forEach(r => add(r, 'miss'));
+    (tally.earlyRows || []).forEach(r => add(r, 'early'));
+    const people = sortStaffPeople([...map.values()].map(p => ({
+      office: p.office, name: p.name,
+      work: p.work.length, review: p.review.length, assign: p.assign.length,
+      unassign: p.unassign.length, miss: p.miss.length, early: p.early.length,
+      total: p.work.length,
+      rows: p.work, workRows: p.work, reviewRows: p.review, assignRows: p.assign,
+      unassignRows: p.unassign, missRows: p.miss, earlyRows: p.early
+    })), state.rnProgStaffSort || 'work', state.rnProgStaffDir || 'desc');
+    staffPeople.rnProg = people;
+    box.innerHTML = `
+      ${staffHead(esc(scopeName) + ' ｜ 續約執行進度明細')}
+      <p class="src-staff-k">進行中 ${fmt(people.reduce((s, p) => s + p.work, 0))} 件。點數字展開案件明細</p>
+      <div class="src-staff-scroll"><table class="src-combo"><thead><tr>
+        <th data-sort="office" class="${staffSortMark('rnProg', 'office')}">營業處</th>
+        <th data-sort="name" class="${staffSortMark('rnProg', 'name')}">代管人員</th>
+        <th data-sort="work" class="${staffSortMark('rnProg', 'work')}">續約進行中</th>
+        <th data-sort="review" class="${staffSortMark('rnProg', 'review')}">審件中</th>
+        <th data-sort="assign" class="${staffSortMark('rnProg', 'assign')}">已派案</th>
+        <th data-sort="unassign" class="${staffSortMark('rnProg', 'unassign')}">未派案</th>
+        <th data-sort="miss" class="${staffSortMark('rnProg', 'miss')}">到期未續</th>
+        <th data-sort="early" class="${staffSortMark('rnProg', 'early')}">提前解約</th>
+      </tr></thead><tbody>
+        ${people.map(p => `<tr>
+          <td>${esc(p.office)}</td><td class="name-hit">${esc(p.name)}</td>
+          ${numTd(p.work, 'work')}${numTd(p.review, 'review')}${numTd(p.assign, 'assign')}
+          ${numTd(p.unassign, 'unassign')}${numTd(p.miss, 'miss')}${numTd(p.early, 'early')}
+        </tr>`).join('') || '<tr><td colspan="8">無資料</td></tr>'}
+      </tbody></table></div>
+      ${staffCasePanel('rnProg')}`;
+  }
+  function renderRnWatch() {
+    if ($('page-renew') && $('page-renew').classList.contains('hidden')) return;
+    if (!$('rnWatchKpis')) return;
+    const y = state.end.getFullYear();
+    const filterM = state.end.getMonth() + 1;
+    const grain = state.rnWatchGrain || 'month';
+    const isYear = grain === 'year';
+    const pick = state.rnWatchPick || filterM;
+    const viewM = Math.min(isYear ? filterM : pick, filterM);
+    const pm = viewM === 1 ? 12 : viewM - 1;
+    const py = viewM === 1 ? y - 1 : y;
+    const rocY = y - 1911;
+    const tree0 = scopedUnitTree();
+    if (!findUnitNode(tree0, state.rnWatchFocus || '')) state.rnWatchFocus = tree0.id || '全公司';
+    const focusId = state.rnWatchFocus || tree0.id || '全公司';
+    const focusSet = unitOfficeSet(focusId);
+    const focusName = (findUnitNode(tree0, focusId) || tree0).name || ddLabel('office');
+    const officeLab = ddLabel('office');
+    const mode = state.rnWatchMode || 'd30';
+    const nowP = isYear ? rnWatchMerge(Array.from({ length: viewM }, (_, i) => rnWatchPack(y, i + 1, focusSet))) : rnWatchPack(y, viewM, focusSet);
+    const lastP = isYear ? rnWatchMerge(Array.from({ length: viewM }, (_, i) => rnWatchPack(y - 1, i + 1, focusSet))) : rnWatchPack(py, pm, focusSet);
+    const yoyP = isYear ? rnWatchMerge(Array.from({ length: viewM }, (_, i) => rnWatchPack(y - 1, i + 1, focusSet))) : rnWatchPack(y - 1, viewM, focusSet);
+    const lab = isYear ? `1–${viewM}月` : `${viewM}月`;
+    const pctOf = (n, d) => (d ? ((n / d) * 100).toFixed(2) : '0.00');
+    if ($('rnWatchMode')) $('rnWatchMode').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.w === mode));
+    if ($('rnWatchSeg')) $('rnWatchSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === grain));
+    if ($('rnWatchStaffBtn')) $('rnWatchStaffBtn').classList.toggle('on', !!state.rnWatchStaffOpen);
+    $('rnWatchTitle').textContent = '近三個月續約案件、未續回案件監控分析';
+    $('rnWatchMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 包租、轉租、代管 ｜ 租賃地址不重複 ｜ 營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
+    $('rnWatchKpis').innerHTML = `
+      <div class="card kpi">
+        <div class="k">當月倒數30天未續回</div>
+        <div class="v">${fmt(nowP.d30)}<span class="unit"> 件</span></div>
+        <div class="s">租約迄日在當月未續回</div>
+      </div>
+      <div class="card kpi tone-blue">
+        <div class="k">當月倒數60天可續約</div>
+        <div class="v">${fmt(nowP.d60)}<span class="unit"> 件</span></div>
+        <div class="s">下月到期可先續</div>
+      </div>
+      <div class="card kpi tone-red">
+        <div class="k">到期未續</div>
+        <div class="v">${fmt(nowP.miss)}<span class="unit"> 件</span></div>
+        <div class="s">占倒數30天 ${pctOf(nowP.miss, nowP.d30)}%</div>
+      </div>
+      <div class="card kpi tone-red">
+        <div class="k">提前解約</div>
+        <div class="v">${fmt(nowP.early)}<span class="unit"> 件</span></div>
+        <div class="s">占倒數30天 ${pctOf(nowP.early, nowP.d30)}%</div>
+      </div>`;
+    const cmpDefs = [
+      { id: 'd30', lab: '倒數30天' },
+      { id: 'd60', lab: '倒數60天' },
+      { id: 'miss', lab: '到期未續' },
+      { id: 'early', lab: '提前解約' }
+    ];
+    const cmpRows = cmpDefs.map(d => {
+      const t = rnWatchStTally(rnWatchRows(nowP, d.id));
+      const cells = RN_WATCH_ST.map(c => `<td class="num-hit" data-rnwc-case="${esc(d.id)}" data-rnwc-st="${esc(c.id)}">${fmt(t[c.id] || 0)}</td>`).join('');
+      return `<tr class="${d.id === mode ? 'mark' : ''}" data-rnwc-id="${d.id}"><td>${esc(d.lab)}</td>${cells}</tr>`;
+    }).join('');
+    const caseInfo = state.rnWatchCmpCase;
+    const caseDef = caseInfo ? cmpDefs.find(d => d.id === caseInfo.id) : null;
+    const stDef = caseInfo && caseInfo.st ? RN_WATCH_ST.find(c => c.id === caseInfo.st) : null;
+    let caseRows = caseDef ? rnWatchRows(nowP, caseDef.id) : [];
+    if (caseDef && stDef) caseRows = rnWatchStRows(caseRows, stDef.id);
+    const caseHtml = caseDef ? `<div class="staff-case">
+      <div class="staff-case-head">
+        <h4>${esc(focusName)}｜${esc(caseDef.lab)}${stDef ? '｜' + stDef.lab : ''}　${esc(lab)}　案件明細　共${fmt(caseRows.length)}筆</h4>
+        <button type="button" class="tool-btn close-btn" data-close-rnwc-case>關閉</button>
+      </div>
+      <div class="staff-case-scroll">${caseRowsHtml(caseRows)}</div>
+    </div>` : '';
+    $('rnWatchCmpTbl').innerHTML = `<table class="crab-tbl"><thead><tr>
+      <th>比較項目</th>${RN_WATCH_ST.map(c => `<th>${esc(c.lab)}</th>`).join('')}
+    </tr></thead><tbody>${cmpRows}</tbody></table>` + caseHtml;
+    const m1 = Math.max(1, viewM - 2);
+    const recent = Array.from({ length: viewM - m1 + 1 }, (_, i) => rnWatchPack(y, m1 + i, focusSet));
+    const recentDue = recent.reduce((s, p) => s + (p.due || p.d30), 0);
+    const recentMiss = recent.reduce((s, p) => s + p.miss, 0);
+    const recentEarly = recent.reduce((s, p) => s + p.early, 0);
+    $('rnWatchJudge').innerHTML = `<h4>管理結論（${esc(focusName)}）</h4>
+      <p>${esc(`${lab}倒數30天未續回 ${fmt(nowP.d30)} 件（已生效已續回 ${fmt(nowP.done)} 件不列入），續約率 ${rnPct2(nowP.rate)}。`)}</p>
+      <p>${esc(`倒數60天尚未已生效 ${fmt(nowP.d60)} 件；到期未續 ${fmt(nowP.miss)} 件，提前解約 ${fmt(nowP.early)} 件。`)}</p>
+      <p>${esc(`近三個月（${m1}–${viewM}月）應續回 ${fmt(recentDue)} 件，到期未續 ${fmt(recentMiss)}、提前解約 ${fmt(recentEarly)}。較${isYear ? '去年同期' : pm + '月'}倒數30天 ${nowP.d30 - lastP.d30 >= 0 ? '增' : '減'}${fmt(Math.abs(nowP.d30 - lastP.d30))} 件。`)}</p>`;
+    const months = Array.from({ length: 12 }, (_, i) => i + 1);
+    const monthP = months.map(m => (m > filterM ? { d30: null, d60: null, miss: null, early: null } : (isYear
+      ? rnWatchMerge(Array.from({ length: m }, (_, i) => rnWatchPack(y, i + 1, focusSet)))
+      : rnWatchPack(y, m, focusSet))));
+    const hide = state.rnWatchHide || {};
+    const modeLab = ({ d30: '倒數30天', d60: '倒數60天', miss: '到期未續', early: '提前解約' })[mode];
+    $('rnWatchChartTitle').textContent = isYear ? `1–${viewM}月累計案件結構` : '1–12月案件結構';
+    $('rnWatchChartNote').textContent = `右上4鈕預設倒數30天，切換後柱圖只顯示該項。倒數30天＝當月到期且尚未已生效（已生效＝已續回，不列入）。倒數60天＝下月到期可先續且尚未已生效。${filterM < 12 ? `${filterM + 1}–12月尚未列入。` : ''}點柱切換月份。`;
+    const vis = key => !hide[key] && (modeLab === key);
+    const bandPlugin = {
+      id: 'rnWatchBand',
+      beforeDraw(chart) {
+        if (isYear) return;
+        const meta = chart.getDatasetMeta(0);
+        const pt = meta && meta.data[viewM - 1];
+        if (!pt) return;
+        const { ctx, chartArea } = chart;
+        const bw = typeof pt.width === 'number' ? pt.width : 24;
+        ctx.save();
+        ctx.fillStyle = 'rgba(59,130,246,.07)';
+        ctx.fillRect(pt.x - (bw + 10) / 2, chartArea.top, bw + 10, chartArea.bottom - chartArea.top);
+        ctx.restore();
+      }
+    };
+    const labelPlugin = {
+      id: 'rnWatchLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((ds, di) => {
+          const meta = chart.getDatasetMeta(di);
+          if (!meta.visible) return;
+          meta.data.forEach((pt, i) => {
+            const v = ds.data[i];
+            if (v == null || !pt) return;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.font = '10px Arial, sans-serif';
+            ctx.fillStyle = '#1e3a5f';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(fmt(Math.round(v)), pt.x, pt.y - 4);
+            ctx.restore();
+          });
+        });
+      }
+    };
+    upsert('rnWatchChart', 'bar', months.map(m => `${m}月`), [
+      { label: '倒數30天', data: monthP.map(p => p.d30), hidden: !vis('倒數30天'), backgroundColor: '#1e4a7a', borderRadius: 3, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 },
+      { label: '倒數60天', data: monthP.map(p => p.d60), hidden: !vis('倒數60天'), backgroundColor: '#93c5fd', borderRadius: 3, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 },
+      { label: '到期未續', data: monthP.map(p => p.miss), hidden: !vis('到期未續'), backgroundColor: '#facc15', borderRadius: 3, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 },
+      { label: '提前解約', data: monthP.map(p => p.early), hidden: !vis('提前解約'), backgroundColor: '#f59e0b', borderRadius: 3, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 }
+    ], {
+      clip: false,
+      layout: { padding: { top: 18, right: 8, left: 4, bottom: 2 } },
+      plugins: { legend: { display: false } },
+      interaction: { mode: 'index', intersect: false },
+      onClick: (evt, els) => {
+        if (!els.length) return;
+        const i = els[0].index + 1;
+        if (i > filterM) return;
+        state.rnWatchPick = i;
+        state.rnWatchGrain = 'month';
+        renderRnWatch();
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#94a3b8' }, border: { display: false } },
+        y: { beginAtZero: true, grace: '18%', grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8' }, border: { display: false } }
+      }
+    }, [bandPlugin, labelPlugin]);
+    if ($('rnWatchLegend')) {
+      $('rnWatchLegend').querySelectorAll('[data-rnw-ds]').forEach(b => {
+        b.classList.toggle('off', b.dataset.rnwDs !== modeLab);
+      });
+    }
+    const rankTitle = ({ d30: '倒數30天未續回單位件數', d60: '倒數60天未續回單位件數', miss: '到期未續單位件數', early: '提前解約單位件數' })[mode] || '倒數30天未續回單位件數';
+    renderRnWatchRank($('rnWatchOffRank'), rnWatchRows(nowP, mode), rankTitle);
+    renderRnWatchUnits(y, viewM, isYear, pm, py, filterM, focusId, nowP);
+    renderRnWatchStaff(nowP);
+    renderRnYear();
+  }
+  function renderRnWatchUnits(y, viewM, isYear, pm, py, filterM, focusId) {
+    const note = $('rnWatchUnitNote');
+    const box = $('rnWatchUnitTbl');
+    if (!box) return;
+    const decorate = (node) => {
+      const kids = (node.kids || []).map(decorate);
+      const set = unitOfficeSet(node.id);
+      const now = isYear ? rnWatchMerge(Array.from({ length: viewM }, (_, i) => rnWatchPack(y, i + 1, set))) : rnWatchPack(y, viewM, set);
+      return { ...node, kids, c: now };
+    };
+    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.c && (n.c.d30 || n.c.d60 || n.c.done || n.c.miss || n.c.early)) || decorate(scopedUnitTree());
+    const sortKey = state.rnWatchTblSort || '';
+    if (sortKey) {
+      sortUnitTree(root, n => (sortKey === 'name' ? n.name : n.c[sortKey]), state.rnWatchTblDir || 'desc');
+    }
+    const open = new Set(state.rnWatchOpen || []);
+    const html = [];
+    const walk = (node, depth) => {
+      const hasKids = node.kids && node.kids.length;
+      const isOpen = node.id === '__SEL__' || open.has(node.id);
+      const tog = hasKids
+        ? `<button type="button" class="unit-tog" data-rnw-open="${node.id}">${isOpen ? '▾' : '▸'}</button>`
+        : `<span class="unit-tog-sp"></span>`;
+      const c = node.c;
+      html.push(`<tr class="${node.id === focusId ? ' on' : ''}" data-rnw-focus="${node.id}">
+        ${unitCellHtml(node, depth, tog)}
+        <td class="v">${fmt(c.d30)}</td>
+        <td class="v">${fmt(c.d60)}</td>
+        <td class="v">${fmt(c.done)}</td>
+        <td class="v">${fmt(c.miss)}</td>
+        <td class="v">${fmt(c.early)}</td>
+      </tr>`);
+      if (hasKids && isOpen) node.kids.forEach(k => walk(k, depth + 1));
+    };
+    walk(root, 0);
+    if (note) note.textContent = `點選單位看上月為${pm}月｜數字為簽約執行件數`;
+    box.innerHTML = `<table class="type-tbl ana-tbl"><thead><tr>
+      ${tblTh('rnWatch', 'name', '單位／擔當者')}${tblTh('rnWatch', 'd30', '倒數30天')}${tblTh('rnWatch', 'd60', '倒數60天')}${tblTh('rnWatch', 'done', '續約')}${tblTh('rnWatch', 'miss', '到期未續')}${tblTh('rnWatch', 'early', '提前解約')}
+    </tr></thead><tbody>${html.join('')}</tbody></table>`;
+  }
+  function renderRnWatchStaff(pack) {
+    const box = $('rnWatchStaffBox');
+    if (!box) return;
+    bindStaffBox('rnWatchStaffBox', 'rnWatch');
+    box.classList.toggle('hidden', !state.rnWatchStaffOpen);
+    if (!state.rnWatchStaffOpen) {
+      if (state.staffCase && state.staffCase.kind === 'rnWatch') state.staffCase = null;
+      box.innerHTML = '';
+      return;
+    }
+    const tag = (r) => rnCaseTag(r);
+    const map = new Map();
+    const add = (r, key) => {
+      const row = tag(r);
+      const name = row.sl || '—';
+      const office = row.so || '—';
+      const k = office + '\t' + name;
+      if (!map.has(k)) map.set(k, { office, name, d30: [], d60: [], done: [], miss: [], early: [] });
+      map.get(k)[key].push(row);
+    };
+    (pack.d30Rows || []).forEach(r => add(r, 'd30'));
+    (pack.d60Rows || []).forEach(r => add(r, 'd60'));
+    (pack.doneRows || []).forEach(r => add(r, 'done'));
+    (pack.missRows || []).forEach(r => add(r, 'miss'));
+    (pack.earlyRows || []).forEach(r => add(r, 'early'));
+    const people = sortStaffPeople([...map.values()].map(p => ({
+      office: p.office, name: p.name,
+      d30: uniqueById(p.d30).length, d60: uniqueById(p.d60).length, done: uniqueById(p.done).length,
+      miss: uniqueById(p.miss).length, early: uniqueById(p.early).length,
+      rows: uniqueById(p.d30), d30Rows: uniqueById(p.d30), d60Rows: uniqueById(p.d60),
+      doneRows: uniqueById(p.done), missRows: uniqueById(p.miss), earlyRows: uniqueById(p.early)
+    })), state.rnWatchStaffSort || 'd30', state.rnWatchStaffDir || 'desc');
+    staffPeople.rnWatch = people;
+    box.innerHTML = `
+      ${staffHead('近三個月監控 ｜ 案件明細')}
+      <p class="src-staff-k">倒數30天 ${fmt(people.reduce((s, p) => s + p.d30, 0))} 件。點數字展開案件明細</p>
+      <div class="src-staff-scroll"><table class="src-combo"><thead><tr>
+        <th data-sort="office" class="${staffSortMark('rnWatch', 'office')}">營業處</th>
+        <th data-sort="name" class="${staffSortMark('rnWatch', 'name')}">代管人員</th>
+        <th data-sort="d30" class="${staffSortMark('rnWatch', 'd30')}">倒數30天</th>
+        <th data-sort="d60" class="${staffSortMark('rnWatch', 'd60')}">倒數60天</th>
+        <th data-sort="done" class="${staffSortMark('rnWatch', 'done')}">續約</th>
+        <th data-sort="miss" class="${staffSortMark('rnWatch', 'miss')}">到期未續</th>
+        <th data-sort="early" class="${staffSortMark('rnWatch', 'early')}">提前解約</th>
+      </tr></thead><tbody>
+        ${people.map(p => `<tr>
+          <td>${esc(p.office)}</td><td class="name-hit">${esc(p.name)}</td>
+          ${numTd(p.d30, 'd30')}${numTd(p.d60, 'd60')}${numTd(p.done, 'done')}${numTd(p.miss, 'miss')}${numTd(p.early, 'early')}
+        </tr>`).join('') || '<tr><td colspan="7">無資料</td></tr>'}
+      </tbody></table></div>
+      ${staffCasePanel('rnWatch')}`;
+  }
+  function renderRnYear() {
+    if ($('page-renew') && $('page-renew').classList.contains('hidden')) return;
+    const box = $('rnYearTbl');
+    if (!box) return;
+    const y = state.end.getFullYear();
+    const viewM = state.end.getMonth() + 1;
+    const rocY = y - 1911;
+    const offices = selectedOffices();
+    if ($('rnYearTitle')) $('rnYearTitle').textContent = `${rocY}年當年度可續約年度總表`;
+    if ($('rnYearMeta')) $('rnYearMeta').textContent = `${rocY}年1–12月 ｜ ${ddLabel('office')} ｜ 數字為該月到期可續約件數。累計為1–${viewM}月。點列反白，點數字看案件明細`;
+    const monthRows = [null];
+    for (let m = 1; m <= 12; m++) monthRows[m] = rnPack(y, m, m, offices).dueRows || [];
+    const progRows = uniqueById(Array.from({ length: viewM }, (_, i) => rnProgRowsOf(y, i + 1, 'month', offices)).flat());
+    const progT = rnProgTally(progRows);
+    const map = new Map();
+    const personOf = (r) => {
+      const t = rnCaseTag(r);
+      return { name: t.sl || r.ag || '—', office: t.so || rnMgmtOffice(r) || '—' };
+    };
+    const ensure = (r) => {
+      const { name, office } = personOf(r);
+      const k = office + '\t' + name;
+      if (!map.has(k)) {
+        map.set(k, {
+          office, name, months: Array.from({ length: 13 }, () => []),
+          reviewRows: [], assignRows: [], unassignRows: [], missRows: [], earlyRows: []
+        });
+      }
+      return map.get(k);
+    };
+    for (let m = 1; m <= 12; m++) {
+      monthRows[m].forEach(r => ensure(r).months[m].push(r));
+    }
+    (progT.reviewRows || []).forEach(r => ensure(r).reviewRows.push(r));
+    (progT.assignRows || []).forEach(r => ensure(r).assignRows.push(r));
+    (progT.unassignRows || []).forEach(r => ensure(r).unassignRows.push(r));
+    (progT.missRows || []).forEach(r => ensure(r).missRows.push(r));
+    (progT.earlyRows || []).forEach(r => ensure(r).earlyRows.push(r));
+    const q = String(state.rnYearQ || '').trim().toLowerCase();
+    let people = [...map.values()].map(p => {
+      const months = p.months.map(arr => uniqueById(arr || []));
+      const ytdRows = uniqueById(months.slice(1, viewM + 1).flat());
+      const doneRows = ytdRows.filter(r => rnEffSt(r.st || r.raw));
+      const hr = STAFF_HR_BY_NAME.get(p.name + '\t' + p.office) || STAFF_HR_BY_NAME.get(p.name) || {};
+      return {
+        office: p.office, name: p.name, title: hr.titleName || hr.title || '',
+        months, ytd: ytdRows.length, rows: ytdRows,
+        done: doneRows.length, doneRows,
+        review: uniqueById(p.reviewRows).length, reviewRows: uniqueById(p.reviewRows),
+        assign: uniqueById(p.assignRows).length, assignRows: uniqueById(p.assignRows),
+        unassign: uniqueById(p.unassignRows).length, unassignRows: uniqueById(p.unassignRows),
+        miss: uniqueById(p.missRows).length, missRows: uniqueById(p.missRows),
+        early: uniqueById(p.earlyRows).length, earlyRows: uniqueById(p.earlyRows)
+      };
+    });
+    if (q) {
+      people = people.filter(p => (p.name + p.office + p.title).toLowerCase().includes(q));
+    }
+    people =     sortStaffPeople(people.map(p => {
+      const o = { ...p };
+      for (let m = 1; m <= 12; m++) o['m' + m] = (p.months[m] || []).length;
+      return o;
+    }), state.rnYearStaffSort || 'ytd', state.rnYearStaffDir || 'desc');
+    staffPeople.rnYear = people;
+    const nowCls = m => (m === viewM ? 'rn-year-now' : '');
+    const monthHeads = Array.from({ length: 12 }, (_, i) => {
+      const m = i + 1;
+      return `<th data-sort="m${m}" class="${staffSortMark('rnYear', 'm' + m)} ${nowCls(m)}">${m}月</th>`;
+    }).join('');
+    box.innerHTML = `<table class="rn-year-tbl"><thead><tr>
+      <th data-sort="name" class="${staffSortMark('rnYear', 'name')}">代管人員</th>
+      <th data-sort="office" class="${staffSortMark('rnYear', 'office')}">營業處</th>
+      ${monthHeads}
+      <th data-sort="ytd" class="${staffSortMark('rnYear', 'ytd')}">1–${viewM}累計</th>
+      <th data-sort="done" class="${staffSortMark('rnYear', 'done')}">已續約</th>
+      <th data-sort="review" class="${staffSortMark('rnYear', 'review')}">審件中</th>
+      <th data-sort="assign" class="${staffSortMark('rnYear', 'assign')}">已派案</th>
+      <th data-sort="unassign" class="${staffSortMark('rnYear', 'unassign')}">未派案</th>
+      <th data-sort="miss" class="${staffSortMark('rnYear', 'miss')}">到期未續</th>
+      <th data-sort="early" class="${staffSortMark('rnYear', 'early')}">提前解約</th>
+    </tr></thead><tbody>
+      ${people.map(p => {
+      const on = state.staffCase && state.staffCase.kind === 'rnYear' && state.staffCase.office === p.office && state.staffCase.name === p.name;
+      const cells = Array.from({ length: 12 }, (_, i) => {
+        const m = i + 1;
+        const n = (p.months[m] || []).length;
+        return `<td class="v num-hit ${nowCls(m)}" data-k="m${m}">${fmt(n)}</td>`;
+      }).join('');
+      return `<tr class="${on ? 'mark' : ''}" data-office="${esc(p.office)}" data-name="${esc(p.name)}">
+        <td class="name-hit">${esc(p.name)}</td>
+        <td>${esc(p.office)}</td>
+        ${cells}
+        ${['ytd','done','review','assign','unassign','miss','early'].map(k => `<td class="v num-hit" data-k="${k}">${fmt(p[k] || 0)}</td>`).join('')}
+      </tr>`;
+    }).join('') || '<tr><td colspan="21">無資料</td></tr>'}
+    </tbody></table>`;
+    const caseBox = $('rnYearCaseBox');
+    if (caseBox) caseBox.innerHTML = staffCasePanel('rnYear');
   }
   function renderNatPerf(allPeople) {
     const box = $('natPerf');
@@ -8683,7 +11971,7 @@
         <div class="rev-panel">
           <h4>指標定義（尚未串接者先標示）</h4>
           <p>年資依員工資料管理「報到日期」。證照依不動產營業員證號、租賃管理人員證號（有證號即計1張，先不看到期日）。</p>
-          <p>續約：續約明細管理。應續約＝轉租或代管、剔除已停用／暫存、迄日落在統計期間。已續約＝應續約中狀態含已生效／複審／產編（查詢當下）。包租應存續＝包租第1／2週年日落在期間且早於迄日，週年日前已有解約日者不計入。包租有效再依解約日。歸屬代管營業處。領先1M例：2026/10 的統計期間為 2025/12/1～2026/11/30。</p>
+          <p>續約：續約明細管理。應續約＝轉租或代管、剔除已停用／已刪除、含已生效與暫存、迄日落在統計期間。已續約＝應續約中狀態含已生效／複審／產編（續約明細狀態，不以前約已生效覆蓋）。包租應存續／包租有效＝續約明細轉租、迄日落在統計期間、包租3年期間覆蓋迄日所在月；已解約仍計應存續，當月解約仍計有效。歸屬代管營業處。領先1M例：2026/10 的統計期間為 2025/12/1～2026/11/30。</p>
           <p>應收：催收管理＞催收查詢。檔內有效代管＝代管且已生效、租約起日≤基準日、迄日未過；解約日落在查詢月當月仍計有效。</p>
         </div>
       </div>
@@ -9922,7 +13210,8 @@
     const sky = window.SKYFUN_PERF && window.SKYFUN_PERF.fetchedAt;
     const meta = window.CONTRACTS_META || {};
     const stamp = sky || meta.fetchedAt || meta.refreshedAt;
-    if ($('dataHint')) $('dataHint').textContent = window.MGR_REPORT_NOTICES || '';
+    if ($('updateAt')) $('updateAt').textContent = twAt(stamp);
+    if ($('dataHint')) $('dataHint').textContent = '';
   }
   function renderAll() {
     clearDashCache();
@@ -9935,6 +13224,7 @@
     renderLeaseDash('new');
     renderArDash();
     renderRnDash();
+    renderOrgDash();
   }
 
   function perfNameList() {
@@ -10153,6 +13443,239 @@
     state.revGrain = g;
     $('revSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === g));
     renderReviewAnalysis();
+  };
+  if ($('orgHrSeg')) $('orgHrSeg').onclick = e => {
+    const g = e.target.dataset.g; if (!g) return;
+    state.orgHrGrain = g;
+    $('orgHrSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === g));
+    renderOrgDash();
+  };
+  if ($('orgSeg')) $('orgSeg').onclick = e => {
+    const g = e.target.dataset.g; if (!g) return;
+    state.orgGrain = g;
+    $('orgSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === g));
+    renderOrgDash();
+  };
+  if ($('orgStaffBtn')) $('orgStaffBtn').onclick = () => {
+    state.orgStaffOpen = !state.orgStaffOpen;
+    state.orgStaffFilter = null;
+    renderOrgDash();
+  };
+  if ($('orgHrPeopleBtn')) $('orgHrPeopleBtn').onclick = () => {
+    state.orgHrPeopleOpen = !state.orgHrPeopleOpen;
+    if (state.orgHrPeopleOpen) state.orgHrPeopleKey = 'on';
+    renderOrgDash();
+    if (state.orgHrPeopleOpen && $('orgHrPeopleBox')) $('orgHrPeopleBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+  if ($('orgHrPeopleBox')) $('orgHrPeopleBox').onclick = e => {
+    if (!e.target.closest('[data-close-staff]')) return;
+    state.orgHrPeopleOpen = false;
+    renderOrgDash();
+  };
+  if ($('orgFlowSeg')) $('orgFlowSeg').onclick = e => {
+    const g = e.target.dataset.g; if (!g) return;
+    state.orgFlowGrain = g;
+    renderOrgDash();
+  };
+  if ($('orgFlowPeopleBtn')) $('orgFlowPeopleBtn').onclick = () => {
+    state.orgFlowPeopleOpen = !state.orgFlowPeopleOpen;
+    if (state.orgFlowPeopleOpen) state.orgFlowPeopleKey = 'left';
+    state.orgFlowTitle = '';
+    renderOrgDash();
+    if (state.orgFlowPeopleOpen && $('orgFlowPeopleBox')) $('orgFlowPeopleBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+  if ($('orgFlowPeopleBox')) $('orgFlowPeopleBox').onclick = e => {
+    if (!e.target.closest('[data-close-staff]')) return;
+    state.orgFlowPeopleOpen = false;
+    renderOrgDash();
+  };
+  if ($('orgFlowKpis')) $('orgFlowKpis').onclick = e => {
+    const kpi = e.target.closest('[data-org-flow-ppl]');
+    if (!kpi) return;
+    state.orgFlowPeopleKey = kpi.getAttribute('data-org-flow-ppl');
+    state.orgFlowTitle = '';
+    state.orgFlowPeopleOpen = true;
+    renderOrgDash();
+    if ($('orgFlowPeopleBox')) $('orgFlowPeopleBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+  if ($('orgFlowRankSeg')) $('orgFlowRankSeg').onclick = e => {
+    const btn = e.target.closest('[data-m]');
+    if (!btn) return;
+    state.orgFlowRankMetric = btn.dataset.m;
+    renderOrgDash();
+  };
+  const onOrgFlowTbl = e => {
+    const tog = e.target.closest('[data-org-flow-open]');
+    if (tog) {
+      const id = tog.getAttribute('data-org-flow-open');
+      const open = new Set(state.orgFlowOpen || []);
+      if (open.has(id)) open.delete(id); else open.add(id);
+      state.orgFlowOpen = [...open];
+      renderOrgDash();
+      return;
+    }
+    const hit = e.target.closest('[data-org-flow]');
+    if (hit) {
+      const tr = hit.closest('[data-org-flow-row]');
+      if (tr) state.orgFlowPick = tr.getAttribute('data-org-flow-row');
+      state.orgFlowPeopleKey = hit.getAttribute('data-org-flow');
+      state.orgFlowTitle = hit.getAttribute('data-org-flow-t') || '';
+      if (hit.getAttribute('data-org-flow-u')) state.orgFlowPick = hit.getAttribute('data-org-flow-u');
+      state.orgFlowPeopleOpen = true;
+      renderOrgDash();
+      if ($('orgFlowPeopleBox')) $('orgFlowPeopleBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    const tr = e.target.closest('[data-org-flow-row]');
+    if (!tr) return;
+    const id = tr.getAttribute('data-org-flow-row');
+    state.orgFlowPick = state.orgFlowPick === id ? '' : id;
+    renderOrgDash();
+  };
+  if ($('orgFlowUnitTbl')) $('orgFlowUnitTbl').onclick = onOrgFlowTbl;
+  if ($('orgFlowRankTbl')) $('orgFlowRankTbl').onclick = onOrgFlowTbl;
+  if ($('orgCmpTbl')) $('orgCmpTbl').onclick = e => {
+    const hit = e.target.closest('[data-org-cmp-case]');
+    if (hit) {
+      const tr = hit.closest('[data-org-cmp]');
+      if (tr) state.orgCmpPick = tr.getAttribute('data-org-cmp');
+      state.orgStaffFilter = { row: hit.getAttribute('data-org-cmp-case'), pt: hit.getAttribute('data-org-cmp-pt') || 'all' };
+      state.orgStaffOpen = true;
+      renderOrgDash();
+      const box = $('orgStaffBox');
+      if (box) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    const tr = e.target.closest('[data-org-cmp]');
+    if (!tr) return;
+    state.orgCmpPick = tr.getAttribute('data-org-cmp');
+    renderOrgDash();
+  };
+  if ($('orgMonthBars')) $('orgMonthBars').onclick = e => {
+    const col = e.target.closest('[data-org-m]');
+    if (!col) return;
+    const m = Number(col.dataset.orgM);
+    if (!m || m > state.end.getMonth() + 1) return;
+    state.orgPick = m;
+    state.orgGrain = 'month';
+    renderOrgDash();
+  };
+  if ($('orgIdleSeg')) $('orgIdleSeg').onclick = e => {
+    const btn = e.target.closest('[data-org-idle]');
+    if (!btn) return;
+    state.orgIdleBand = btn.dataset.orgIdle;
+    renderOrgDash();
+  };
+  if ($('orgMemSeg')) $('orgMemSeg').onclick = e => {
+    const btn = e.target.closest('[data-org-mem]');
+    if (!btn) return;
+    const id = btn.dataset.orgMem;
+    if (id === 'all') {
+      state.orgMemTen = 'all';
+      state.orgMemIdle = 'all';
+    } else if (['y2', 'y1', 'm3y', 'u3'].includes(id)) {
+      state.orgMemTen = state.orgMemTen === id ? 'all' : id;
+    } else {
+      state.orgMemIdle = state.orgMemIdle === id ? 'all' : id;
+    }
+    renderOrgDash();
+  };
+  if ($('orgTenTbl')) $('orgTenTbl').onclick = e => {
+    const hit = e.target.closest('[data-org-hr]');
+    if (hit) {
+      const tr = e.target.closest('[data-org-ten]');
+      if (tr) state.orgTenPick = tr.getAttribute('data-org-ten');
+      state.orgHrPeopleKey = hit.getAttribute('data-org-hr');
+      state.orgHrPeopleOpen = true;
+      renderOrgDash();
+      if ($('orgHrPeopleBox')) $('orgHrPeopleBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    const tr = e.target.closest('[data-org-ten]');
+    if (!tr) return;
+    const id = tr.getAttribute('data-org-ten');
+    state.orgTenPick = state.orgTenPick === id ? '' : id;
+    renderOrgDash();
+  };
+  if ($('orgRankTbl')) $('orgRankTbl').onclick = e => {
+    const hit = e.target.closest('[data-org-hr]');
+    if (hit) {
+      const tr = e.target.closest('[data-org-rank]');
+      if (tr) state.orgRankPick = tr.getAttribute('data-org-rank');
+      state.orgHrPeopleKey = hit.getAttribute('data-org-hr');
+      state.orgHrPeopleOpen = true;
+      renderOrgDash();
+      if ($('orgHrPeopleBox')) $('orgHrPeopleBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    const tr = e.target.closest('[data-org-rank]');
+    if (!tr) return;
+    const id = tr.getAttribute('data-org-rank');
+    state.orgRankPick = state.orgRankPick === id ? '' : id;
+    renderOrgDash();
+  };
+  if ($('orgMemTbl')) $('orgMemTbl').onclick = e => {
+    const th = e.target.closest('th[data-org-mem-sort]');
+    if (th) {
+      const key = th.dataset.orgMemSort;
+      if (state.orgMemSort === key) state.orgMemDir = state.orgMemDir === 'desc' ? 'asc' : 'desc';
+      else {
+        state.orgMemSort = key;
+        state.orgMemDir = /^(name|title|st|pt|years)$/.test(key) ? 'asc' : 'desc';
+      }
+      renderOrgDash();
+      return;
+    }
+    const tr = e.target.closest('tr[data-org-mem-row]');
+    if (!tr) return;
+    const id = tr.getAttribute('data-org-mem-row');
+    const parts = id.split('\t');
+    const office = parts[0] || '—';
+    const name = parts.slice(1).join('\t') || '—';
+    const td = e.target.closest('td.num-hit, td.name-hit');
+    if (state.orgMemPick === id) {
+      state.orgMemPick = '';
+      if (state.staffCase && state.staffCase.kind === 'orgMem' && state.staffCase.name === name) state.staffCase = null;
+      renderOrgDash();
+      return;
+    }
+    state.orgMemPick = id;
+    if (td && td.classList.contains('num-hit')) {
+      const key = td.dataset.k;
+      state.staffCase = { kind: 'orgMem', office, name, key, label: caseKeyLabel('orgMem', key) };
+    } else if (td && td.classList.contains('name-hit')) {
+      state.staffCase = { kind: 'orgMem', office, name, key: 'ytd', label: '累計' };
+    }
+    renderOrgDash();
+    const pan = $('orgMemCase');
+    if (pan && pan.querySelector('.staff-case')) pan.scrollIntoView({ block: 'nearest' });
+  };
+  if ($('orgMemSt')) $('orgMemSt').onchange = e => {
+    state.orgMemSt = e.target.value || 'on';
+    renderOrgDash();
+  };
+  if ($('orgMemQ')) $('orgMemQ').addEventListener('input', e => {
+    state.orgMemQ = e.target.value;
+    renderOrgDash();
+    const inp = $('orgMemQ');
+    if (inp) {
+      inp.focus();
+      const n = inp.value.length;
+      inp.setSelectionRange(n, n);
+    }
+  });
+  if ($('orgMemJudge')) $('orgMemJudge').onclick = e => {
+    const btn = e.target.closest('[data-org-mem-judge]');
+    if (!btn) return;
+    const k = btn.getAttribute('data-org-mem-judge');
+    state.orgMemJudgeKind = state.orgMemJudgeKind === k ? '' : k;
+    renderOrgDash();
+    if (state.orgMemJudgeKind && $('orgMemJudgeNames')) $('orgMemJudgeNames').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+  if ($('orgMemJudgeNames')) $('orgMemJudgeNames').onclick = e => {
+    if (!e.target.closest('[data-close-staff]')) return;
+    state.orgMemJudgeKind = '';
+    renderOrgDash();
   };
   $('growSeg').onclick = e => {
     const g = e.target.dataset.g; if (!g) return;
@@ -10562,6 +14085,289 @@
     }
     btn.classList.toggle('off', !!state.rnGrowHide[key]);
   };
+  if ($('rnConvMetric')) $('rnConvMetric').onclick = e => {
+    const m = e.target.dataset.m; if (!m) return;
+    state.rnConvMetric = m;
+    renderRnConv();
+  };
+  if ($('rnConvSeg')) $('rnConvSeg').onclick = e => {
+    const g = e.target.dataset.g; if (!g) return;
+    state.rnConvGrain = g;
+    renderRnConv();
+  };
+  if ($('rnConvStaffBtn')) $('rnConvStaffBtn').onclick = () => {
+    state.rnConvStaffOpen = !state.rnConvStaffOpen;
+    renderRnConv();
+  };
+  if ($('rnConvLegend')) $('rnConvLegend').onclick = e => {
+    const btn = e.target.closest('[data-rnc-ds]');
+    if (!btn) return;
+    const key = btn.dataset.rncDs;
+    state.rnConvHide = state.rnConvHide || { 代轉包: false, 包轉代: false, 三年代管: false };
+    state.rnConvHide[key] = !state.rnConvHide[key];
+    const ch = charts.rnConvChart;
+    if (ch) {
+      const vis = !state.rnConvHide[key];
+      ch.data.datasets.forEach((d, i) => {
+        if (d.label === key) ch.setDatasetVisibility(i, vis);
+      });
+      ch.update();
+    }
+    btn.classList.toggle('off', !!state.rnConvHide[key]);
+  };
+  if ($('rnConvOffRank')) $('rnConvOffRank').onclick = e => {
+    const btn = e.target.closest('[data-rk]');
+    if (!btn) return;
+    state.rnConvRank = btn.dataset.rk;
+    renderRnConv();
+  };
+  if ($('rnConvCmpTbl')) $('rnConvCmpTbl').onclick = e => {
+    if (e.target.closest('[data-close-rncc-case]')) {
+      state.rnConvCmpCase = null;
+      renderRnConv();
+      return;
+    }
+    const caseTh = e.target.closest('th[data-case-sort]');
+    if (caseTh) {
+      const key = caseTh.dataset.caseSort;
+      if (state.caseSortKey === key) state.caseSortDir = state.caseSortDir === 'desc' ? 'asc' : 'desc';
+      else { state.caseSortKey = key; state.caseSortDir = 'asc'; }
+      renderRnConv();
+      return;
+    }
+    const td = e.target.closest('[data-rncc-case]');
+    if (td) {
+      state.rnConvCmpFocus = td.dataset.rnccCase || 'toLease';
+      state.rnConvCmpCase = { id: td.dataset.rnccCase, src: td.dataset.rnccSrc || 'now' };
+      renderRnConv();
+      return;
+    }
+    const tr = e.target.closest('tr[data-rncc-id]');
+    if (!tr) return;
+    state.rnConvCmpFocus = tr.getAttribute('data-rncc-id') || 'toLease';
+    renderRnConv();
+  };
+  if ($('rnConvUnitTbl')) $('rnConvUnitTbl').onclick = e => {
+    const sortTh = e.target.closest('th[data-tbl-sort]');
+    if (sortTh) {
+      setTblSort('rnConv', sortTh.dataset.tblSort);
+      renderRnConv();
+      return;
+    }
+    const openBtn = e.target.closest('[data-rnc-open]');
+    if (openBtn) {
+      const id = openBtn.dataset.rncOpen;
+      const next = new Set(state.rnConvOpen || []);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      state.rnConvOpen = [...next];
+      renderRnConv();
+      return;
+    }
+    const monthTd = e.target.closest('[data-rnc-months]');
+    if (monthTd) {
+      const id = monthTd.dataset.rncMonths;
+      const next = new Set(state.rnConvMonthOpen || []);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      state.rnConvMonthOpen = [...next];
+      renderRnConv();
+      return;
+    }
+    const row = e.target.closest('[data-rnc-focus]');
+    if (!row) return;
+    state.rnConvFocus = row.dataset.rncFocus;
+    renderRnConv();
+  };
+  if ($('rnProgMetric')) $('rnProgMetric').onclick = e => {
+    const m = e.target.dataset.m; if (!m) return;
+    state.rnProgMetric = m;
+    renderRnProg();
+  };
+  if ($('rnProgSeg')) $('rnProgSeg').onclick = e => {
+    const g = e.target.dataset.g; if (!g) return;
+    state.rnProgGrain = g;
+    renderRnProg();
+  };
+  if ($('rnProgStaffBtn')) $('rnProgStaffBtn').onclick = () => {
+    state.rnProgStaffOpen = !state.rnProgStaffOpen;
+    renderRnProg();
+  };
+  if ($('rnProgCmpTbl')) $('rnProgCmpTbl').onclick = e => {
+    if (e.target.closest('[data-close-rnpc-case]')) {
+      state.rnProgCmpCase = null;
+      renderRnProg();
+      return;
+    }
+    const caseTh = e.target.closest('th[data-case-sort]');
+    if (caseTh) {
+      const key = caseTh.dataset.caseSort;
+      if (state.caseSortKey === key) state.caseSortDir = state.caseSortDir === 'desc' ? 'asc' : 'desc';
+      else { state.caseSortKey = key; state.caseSortDir = 'asc'; }
+      renderRnProg();
+      return;
+    }
+    const num = e.target.closest('[data-rnpc-case]');
+    if (num) {
+      const id = num.dataset.rnpcCase;
+      const src = num.dataset.rnpcSrc || 'now';
+      state.rnProgCmpFocus = id;
+      if (state.rnProgCmpCase && state.rnProgCmpCase.id === id && state.rnProgCmpCase.src === src) state.rnProgCmpCase = null;
+      else state.rnProgCmpCase = { id, src };
+      renderRnProg();
+      return;
+    }
+    const openBtn = e.target.closest('[data-rnpc-open]');
+    if (openBtn) {
+      const id = openBtn.dataset.rnpcOpen;
+      const next = new Set(state.rnProgCmpOpen || []);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      state.rnProgCmpOpen = [...next];
+      state.rnProgCmpFocus = id;
+      renderRnProg();
+      return;
+    }
+    const row = e.target.closest('tr[data-rnpc-id]');
+    if (!row) return;
+    state.rnProgCmpFocus = row.dataset.rnpcId;
+    renderRnProg();
+  };
+  if ($('rnProgLegend')) $('rnProgLegend').onclick = e => {
+    const btn = e.target.closest('[data-rnprog-ds]');
+    if (!btn) return;
+    const key = btn.dataset.rnprogDs;
+    state.rnProgHide = state.rnProgHide || { 續約作業進行中: false, 到期未續約: false, 提前解約: false };
+    state.rnProgHide[key] = !state.rnProgHide[key];
+    const ch = charts.rnProgChart;
+    if (ch) {
+      const vis = !state.rnProgHide[key];
+      ch.data.datasets.forEach((d, i) => {
+        if (d.label === key) ch.setDatasetVisibility(i, vis);
+      });
+      ch.update();
+    }
+    btn.classList.toggle('off', !!state.rnProgHide[key]);
+  };
+  if ($('rnProgUnitTbl')) $('rnProgUnitTbl').onclick = e => {
+    const sortTh = e.target.closest('th[data-tbl-sort]');
+    if (sortTh) {
+      setTblSort('rnProg', sortTh.dataset.tblSort);
+      renderRnProg();
+      return;
+    }
+    const openBtn = e.target.closest('[data-rnp-open]');
+    if (openBtn) {
+      const id = openBtn.dataset.rnpOpen;
+      const next = new Set(state.rnProgOpen || []);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      state.rnProgOpen = [...next];
+      renderRnProg();
+      return;
+    }
+    const row = e.target.closest('[data-rnp-focus]');
+    if (!row) return;
+    state.rnProgFocus = row.dataset.rnpFocus;
+    renderRnProg();
+  };
+  if ($('rnWatchMode')) $('rnWatchMode').onclick = e => {
+    const w = e.target.dataset.w; if (!w) return;
+    state.rnWatchMode = w;
+    state.rnWatchCmpCase = null;
+    renderRnWatch();
+  };
+  if ($('rnWatchSeg')) $('rnWatchSeg').onclick = e => {
+    const g = e.target.dataset.g; if (!g) return;
+    state.rnWatchGrain = g;
+    renderRnWatch();
+  };
+  if ($('rnWatchStaffBtn')) $('rnWatchStaffBtn').onclick = () => {
+    state.rnWatchStaffOpen = !state.rnWatchStaffOpen;
+    renderRnWatch();
+  };
+  if ($('rnWatchLegend')) $('rnWatchLegend').onclick = e => {
+    const btn = e.target.closest('[data-rnw-ds]');
+    if (!btn) return;
+    const key = btn.dataset.rnwDs;
+    const map = { '倒數30天': 'd30', '倒數60天': 'd60', '到期未續': 'miss', '提前解約': 'early' };
+    if (map[key]) {
+      state.rnWatchMode = map[key];
+      state.rnWatchCmpCase = null;
+      renderRnWatch();
+    }
+  };
+  if ($('rnWatchCmpTbl')) $('rnWatchCmpTbl').onclick = e => {
+    if (e.target.closest('[data-close-rnwc-case]')) {
+      state.rnWatchCmpCase = null;
+      renderRnWatch();
+      return;
+    }
+    const td = e.target.closest('[data-rnwc-case]');
+    if (td) {
+      state.rnWatchCmpCase = { id: td.dataset.rnwcCase, st: td.dataset.rnwcSt || '' };
+      state.rnWatchMode = td.dataset.rnwcCase || state.rnWatchMode;
+      renderRnWatch();
+      return;
+    }
+    const tr = e.target.closest('tr[data-rnwc-id]');
+    if (!tr) return;
+    state.rnWatchMode = tr.getAttribute('data-rnwc-id') || 'd30';
+    state.rnWatchCmpCase = null;
+    renderRnWatch();
+  };
+  if ($('rnWatchUnitTbl')) $('rnWatchUnitTbl').onclick = e => {
+    const sortTh = e.target.closest('th[data-tbl-sort]');
+    if (sortTh) {
+      setTblSort('rnWatch', sortTh.dataset.tblSort);
+      renderRnWatch();
+      return;
+    }
+    const openBtn = e.target.closest('[data-rnw-open]');
+    if (openBtn) {
+      const id = openBtn.dataset.rnwOpen;
+      const next = new Set(state.rnWatchOpen || []);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      state.rnWatchOpen = [...next];
+      renderRnWatch();
+      return;
+    }
+    const row = e.target.closest('[data-rnw-focus]');
+    if (!row) return;
+    state.rnWatchFocus = row.dataset.rnwFocus;
+    renderRnWatch();
+  };
+  if ($('rnYearQ')) $('rnYearQ').oninput = e => {
+    state.rnYearQ = e.target.value || '';
+    renderRnYear();
+  };
+  const onRnYearClick = e => {
+    if (e.target.closest('[data-close-case]')) {
+      if (state.staffCase && state.staffCase.kind === 'rnYear') state.staffCase = null;
+      renderRnYear();
+      return;
+    }
+    const caseTh = e.target.closest('th[data-case-sort]');
+    if (caseTh) {
+      const key = caseTh.dataset.caseSort;
+      if (state.caseSortKey === key) state.caseSortDir = state.caseSortDir === 'desc' ? 'asc' : 'desc';
+      else { state.caseSortKey = key; state.caseSortDir = 'asc'; }
+      renderRnYear();
+      return;
+    }
+    const th = e.target.closest('th[data-sort]');
+    if (th) {
+      setStaffSort('rnYear', th.dataset.sort);
+      renderRnYear();
+      return;
+    }
+    const tr = e.target.closest('tr[data-name]');
+    if (!tr || !tr.closest('tbody')) return;
+    const office = tr.getAttribute('data-office') || '—';
+    const name = tr.getAttribute('data-name') || '—';
+    const td = e.target.closest('td.num-hit');
+    const key = td && td.dataset.k ? td.dataset.k : 'ytd';
+    state.staffCase = { kind: 'rnYear', office, name, key, label: caseKeyLabel('rnYear', key) };
+    renderRnYear();
+  };
+  if ($('rnYearTbl')) $('rnYearTbl').onclick = onRnYearClick;
+  if ($('rnYearCaseBox')) $('rnYearCaseBox').onclick = onRnYearClick;
   $('crabSeg').onclick = e => {
     const g = e.target.dataset.g; if (!g) return;
     state.crabGrain = g;
@@ -10828,13 +14634,11 @@
   $('btnQuery').onclick = () => { state.page = 1; renderAll(); };
   function dashApiBases() {
     const here = location.origin;
-    const extra = [];
-    if (here.indexOf(':8768') < 0) extra.push('http://127.0.0.1:8768');
-    if (here.indexOf(':8765') < 0) extra.push('http://127.0.0.1:8765');
-    return extra.concat([here]);
+    if (/:8765|:8768/.test(here)) return [here];
+    return [here, 'http://127.0.0.1:8765'];
   }
   function skyfunPullSnippet() {
-    return "(function(){var a=['http://127.0.0.1:8768/skyfun-pull.js','http://127.0.0.1:8765/skyfun-pull.js'];(function n(i){if(i>=a.length)return;fetch(a[i]+'?t='+Date.now()).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){eval(t)}).catch(function(){n(i+1)})})(0)})();";
+    return "(function(){var a=['http://127.0.0.1:8765/skyfun-pull.js'];(function n(i){if(i>=a.length)return;fetch(a[i]+'?t='+Date.now()).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){eval(t)}).catch(function(){n(i+1)})})(0)})();";
   }
   async function dashApi(path, opts) {
     const o = opts || {};
@@ -10849,24 +14653,128 @@
     }
     throw last || new Error('儀表板服務未開啟');
   }
+  function fmtWait(ms) {
+    const s = Math.max(0, Math.round(ms / 1000));
+    if (s < 60) return s + ' 秒';
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    if (m < 60) return r ? (m + ' 分 ' + r + ' 秒') : (m + ' 分鐘');
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    return mm ? (h + ' 小時 ' + mm + ' 分') : (h + ' 小時');
+  }
+  function showUpdateProg(job, t0) {
+    const box = $('updateProg');
+    if (!box) return;
+    const pct = Math.max(0, Math.min(99, Number(job && job.pct) || 0));
+    const stage = (job && job.stage) || '';
+    const start = t0 || (job && job.requestedAt ? Date.parse(job.requestedAt) : Date.now());
+    const elapsed = Date.now() - (start || Date.now());
+    const liveAt = Date.parse((window.SKYFUN_PERF && window.SKYFUN_PERF.fetchedAt) || '') || 0;
+    const dataIn = !!(liveAt && start && liveAt + 5000 >= start);
+    let waiting = !stage || stage === 'waiting' || pct < 2;
+    if (dataIn && waiting) waiting = false;
+    let etaTxt = '';
+    if (dataIn && (!stage || stage === 'waiting' || pct < 2)) {
+      etaTxt = '。續約與契約已寫入本機，正在收尾（催收／標記完成）。請不要重整星鴻頁，以免重跑';
+    } else if (waiting) {
+      etaTxt = elapsed > 12000
+        ? '。星鴻還沒連上本機。請用 Chrome 打開已登入的星鴻合約頁 → chrome://extensions 重新載入「社宅儀表板星鴻擷取」→ 再重整星鴻頁'
+        : '。還沒開始抓；開始後大約 8–15 分鐘';
+    } else if (pct >= 6) {
+      const remain = elapsed * (100 - pct) / pct;
+      etaTxt = '，預估還要約 ' + fmtWait(remain);
+    } else {
+      etaTxt = '。已開始抓取，續約改為按年下載';
+    }
+    box.hidden = false;
+    box.classList.remove('hidden');
+    box.classList.toggle('wait', waiting);
+    if ($('updateProgLabel')) {
+      $('updateProgLabel').textContent = (dataIn && waiting === false && (!job || !job.label || job.label === '等待星鴻開始擷取'))
+        ? '資料已寫入，正在收尾'
+        : ((job && job.label) || (waiting ? '等待星鴻開始擷取' : '更新中'));
+    }
+    if ($('updateProgPct')) $('updateProgPct').textContent = waiting ? '準備中' : ((dataIn && pct < 2) ? '收尾中' : (pct + '%'));
+    if ($('updateProgFill')) $('updateProgFill').style.width = (waiting ? 28 : pct) + '%';
+    if ($('updateProgSub')) {
+      const detail = (job && job.detail) || '';
+      $('updateProgSub').textContent = (detail ? detail + '。' : '') + '已過 ' + fmtWait(elapsed) + etaTxt + '。請保持星鴻分頁已登入。';
+    }
+  }
+  function hideUpdateProg() {
+    const box = $('updateProg');
+    if (!box) return;
+    box.hidden = true;
+    box.classList.add('hidden');
+    box.classList.remove('wait');
+  }
   async function runDashUpdate() {
     const btn = $('btnUpdate');
     if (!btn || btn.disabled) return;
-    if (typeof window.mgrReportRefresh !== 'function') {
-      toast('更新服務尚未就緒', 4000);
-      return;
-    }
     btn.disabled = true;
     const prev = btn.textContent;
     btn.textContent = '更新中…';
+    const t0 = Date.now();
+    showUpdateProg({ stage: 'waiting', label: '等待星鴻開始擷取', pct: 0, detail: '還沒開始抓資料' }, t0);
+    toast('正在重抓契約、續約、催收、員工與業績預估…請保持星鴻已登入', 4000);
     try {
-      const res = await window.mgrReportRefresh();
-      toast((res && res.message) || '已排入更新，完成前仍顯示上一版', 5000);
+      try { await navigator.clipboard.writeText(skyfunPullSnippet()); } catch (_) {}
+      try { window.open('https://skyfunsystem.com/Contrat/Contrat_Index', 'skyfunDashSync'); } catch (_) {}
+      const startRes = await dashApi('/api/skyfun-refresh', { method: 'POST' });
+      const ct = (startRes.headers.get('content-type') || '');
+      if (!ct.includes('json')) throw new Error('本機更新服務不是最新版，請改用「啟動儀表板.bat」開啟 http://127.0.0.1:8765/');
+      const start = await startRes.json();
+      if (!startRes.ok || !start.ok) throw new Error((start && start.error) || '無法啟動星鴻擷取');
+      const jobId = start.id;
+      const deadline = t0 + 3600000;
+      let job = null;
+      let warned = false;
+      while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 1500));
+        const stRes = await dashApi('/api/skyfun-job', { cache: 'no-store' });
+        job = await stRes.json();
+        showUpdateProg(job || {}, t0);
+        if (job && job.id === jobId && job.done) break;
+        if (!warned && Date.now() - t0 > 12000 && job && job.pull && !job.done && (!job.stage || job.stage === 'waiting')) {
+          warned = true;
+          toast('星鴻尚未開始傳資料。請到已登入的星鴻分頁按 Ctrl+Shift+I（不要按 F12），切到 Console 貼上後 Enter（指令已複製）', 9000);
+        }
+      }
+      if (!job || job.id !== jobId || !job.done) {
+        throw new Error('等待星鴻資料逾時。請先登入星鴻；必要時在星鴻分頁按 Ctrl+Shift+I，Console 貼上已複製的擷取指令');
+      }
+      if (job.jobOk === false) throw new Error(job.error || '星鴻擷取失敗');
+      toast('已從星鴻重抓 ' + (job.n || '') + ' 筆，重新載入畫面');
+      const url = new URL(location.href);
+      url.searchParams.set('v', String(Date.now()));
+      location.replace(url.toString());
     } catch (err) {
-      toast((err && err.message) || '更新失敗', 5000);
+      hideUpdateProg();
+      toast((err && err.message) || '更新失敗。請先登入星鴻合約頁，並用「啟動儀表板.bat」開啟本機服務', 6000);
+      if (btn) { btn.disabled = false; btn.textContent = prev; }
     }
-    if (btn) { btn.disabled = false; btn.textContent = prev; }
   }
   if ($('btnUpdate')) $('btnUpdate').onclick = runDashUpdate;
+  (async function watchUpdateProg() {
+    let sawPull = false;
+    for (;;) {
+      await new Promise(r => setTimeout(r, 1500));
+      const btn = $('btnUpdate');
+      if (btn && btn.disabled) continue;
+      try {
+        const stRes = await dashApi('/api/skyfun-job', { cache: 'no-store' });
+        const job = await stRes.json();
+        if (job && job.pull && !job.done) {
+          sawPull = true;
+          showUpdateProg(job);
+        } else if (sawPull && job && job.done) {
+          sawPull = false;
+          hideUpdateProg();
+          if (job.jobOk !== false) location.reload();
+        } else if (!sawPull) hideUpdateProg();
+      } catch (_) {}
+    }
+  })();
   renderAll();
 })();

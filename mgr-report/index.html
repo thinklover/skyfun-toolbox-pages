@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>社宅管報儀表板｜星鴻包租代管系統</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="styles.css?v=158" />
+  <link rel="stylesheet" href="styles.css?v=202611171313" />
 </head>
 <body>
   <aside class="side">
@@ -24,11 +24,20 @@
       <div class="top-actions">
         <a id="mgrBack" href="#" class="update-btn" style="text-decoration:none">← 返回業務主管專區</a>
         <div class="update-wrap">
-          <button type="button" class="update-btn" id="btnUpdate" title="向公司系統重建快照">更新</button>
+          <span class="update-at" id="updateAt"></span>
+          <button type="button" class="update-btn" id="btnUpdate" title="更新星鴻實績">更新</button>
         </div>
         <button type="button" class="query-btn" id="btnQuery">查詢</button>
       </div>
     </header>
+    <div id="updateProg" class="update-prog hidden" hidden>
+      <div class="update-prog-top">
+        <span id="updateProgLabel">等待星鴻開始擷取</span>
+        <span id="updateProgPct">0%</span>
+      </div>
+      <div class="update-prog-bar" aria-hidden="true"><i id="updateProgFill"></i></div>
+      <div class="update-prog-sub" id="updateProgSub">等待星鴻開始擷取。開始後大約 8–15 分鐘，請保持星鴻已登入。</div>
+    </div>
     <section class="page" id="page-cases">
       <div class="period-title">社宅業績總覽</div>
       <p class="hint" id="dataHint"></p>
@@ -1131,7 +1140,7 @@
     </section>
     <section class="page hidden" id="page-renew">
       <div class="period-title">續約管理總覽</div>
-      <section class="kpi-row kpi-5" id="rnKpiRow"></section>
+      <section class="kpi-row kpi-6" id="rnKpiRow"></section>
       <section class="dash-body">
         <article class="card trend-card">
           <div class="trend-head">
@@ -1251,6 +1260,156 @@
         <div class="rev-panel rn-audit" id="rnGrowAudit"></div>
         <div id="rnGrowStaffBox" class="src-staff hidden"></div>
       </article>
+      <article class="card grow-card rn-conv-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="rnConvTitle">應續租約轉包租案件分析</h3>
+            <p class="note" id="rnConvMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="rnConvMetric">
+              <button type="button" data-m="month" class="on">當月續約</button>
+              <button type="button" data-m="lead1">領先1M續約</button>
+              <button type="button" data-m="lead2">領先2M續約</button>
+            </div>
+            <div class="seg" id="rnConvSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="rnConvStaffBtn">案件明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="rnConvKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="rnConvChartTitle">1–12月案件結構</h4>
+                <div class="grow-legend" id="rnConvLegend">
+                  <button type="button" data-rnc-ds="代轉包"><i class="lg-act"></i>代轉包</button>
+                  <button type="button" data-rnc-ds="包轉代"><i class="lg-tomgmt"></i>包轉代</button>
+                  <button type="button" data-rnc-ds="三年代管"><i class="lg-yr3"></i>三年代管</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="rnConvChart"></canvas></div>
+              <p class="note" id="rnConvChartNote"></p>
+            </div>
+            <div class="rev-panel" id="rnConvOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="rnConvCmpTbl"></div>
+            <div class="rev-panel" id="rnConvJudge"></div>
+            <p class="note" id="rnConvUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="rnConvUnitTbl"></div>
+          </div>
+        </div>
+        <div id="rnConvStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card rn-prog-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="rnProgTitle">續約執行進度分析</h3>
+            <p class="note" id="rnProgMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="rnProgMetric">
+              <button type="button" data-m="month" class="on">當月續約</button>
+              <button type="button" data-m="lead1">領先1M續約</button>
+              <button type="button" data-m="lead2">領先2M續約</button>
+            </div>
+            <div class="seg" id="rnProgSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="rnProgStaffBtn">案件明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="rnProgKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="rnProgChartTitle">1-12月案件結構</h4>
+                <div class="grow-legend" id="rnProgLegend">
+                  <button type="button" data-rnprog-ds="續約作業進行中"><i class="lg-act"></i>進行中</button>
+                  <button type="button" data-rnprog-ds="到期未續約"><i class="lg-miss"></i>到期未續約</button>
+                  <button type="button" data-rnprog-ds="提前解約"><i class="lg-early"></i>提前解約</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="rnProgChart"></canvas></div>
+              <p class="note" id="rnProgChartNote"></p>
+            </div>
+            <div class="rn-prog-mix" id="rnProgDist"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="rnProgCmpTbl"></div>
+            <div class="rev-panel" id="rnProgJudge"></div>
+            <p class="note" id="rnProgUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="rnProgUnitTbl"></div>
+          </div>
+        </div>
+        <div id="rnProgStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card rn-watch-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="rnWatchTitle">近三個月續約案件、未續回案件監控分析</h3>
+            <p class="note" id="rnWatchMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="rnWatchMode">
+              <button type="button" data-w="d30" class="on">倒數30天</button>
+              <button type="button" data-w="d60">倒數60天</button>
+              <button type="button" data-w="miss">到期未續</button>
+              <button type="button" data-w="early">提前解約</button>
+            </div>
+            <div class="seg" id="rnWatchSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="rnWatchStaffBtn">案件明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="rnWatchKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="rnWatchChartTitle">1–12月案件結構</h4>
+                <div class="grow-legend" id="rnWatchLegend">
+                  <button type="button" data-rnw-ds="倒數30天"><i class="lg-act"></i>倒數30天</button>
+                  <button type="button" data-rnw-ds="倒數60天"><i class="lg-d60"></i>倒數60天</button>
+                  <button type="button" data-rnw-ds="到期未續"><i class="lg-miss"></i>到期未續</button>
+                  <button type="button" data-rnw-ds="提前解約"><i class="lg-early"></i>提前解約</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="rnWatchChart"></canvas></div>
+              <p class="note" id="rnWatchChartNote"></p>
+            </div>
+            <div class="rev-panel" id="rnWatchOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="rnWatchCmpTbl"></div>
+            <div class="rev-panel" id="rnWatchJudge"></div>
+            <p class="note" id="rnWatchUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="rnWatchUnitTbl"></div>
+          </div>
+        </div>
+        <div id="rnWatchStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card rn-year-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="rnYearTitle">當年度可續約年度總表</h3>
+            <p class="note" id="rnYearMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <input type="search" class="rn-year-q" id="rnYearQ" placeholder="搜尋姓名或職稱" autocomplete="off" />
+          </div>
+        </div>
+        <div class="table-scroll unit-detail-scroll" id="rnYearTbl"></div>
+        <div id="rnYearCaseBox"></div>
+      </article>
     </section>
     <section class="page hidden" id="page-ar">
       <div class="period-title">應收帳款管理總覽</div>
@@ -1314,6 +1473,154 @@
         </div>
       </article>
     </section>
+    <section class="page hidden" id="page-org">
+      <div class="period-title">組織管理總覽</div>
+      <article class="card grow-card org-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="orgTitle">組織管理分析</h3>
+            <p class="note" id="orgMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="orgSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="orgStaffBtn">案件明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="orgKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="orgChartTitle">1-12月新媒合趨勢</h4>
+              </div>
+              <div id="orgMonthBars"></div>
+              <p class="note" id="orgChartNote"></p>
+            </div>
+            <div class="rev-panel" id="orgOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="orgCmpTbl"></div>
+            <div class="rev-panel" id="orgJudge"></div>
+            <div class="org-idle-box">
+              <div class="org-idle-head">
+                <h4>連續未產件警示</h4>
+                <div class="seg" id="orgIdleSeg"></div>
+              </div>
+              <div class="table-scroll org-idle-scroll" id="orgIdleTbl"></div>
+            </div>
+          </div>
+        </div>
+        <div id="orgStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card org-mem-card">
+        <div class="org-mem-box">
+          <div class="org-idle-head">
+            <div>
+              <h4>組織成員明細</h4>
+            </div>
+            <div class="org-mem-tools">
+              <select id="orgMemSt" aria-label="狀態">
+                <option value="all">全選</option>
+                <option value="on" selected>在職</option>
+                <option value="left">離職</option>
+              </select>
+              <input id="orgMemQ" type="search" autocomplete="off" placeholder="搜尋姓名或職稱" />
+              <div class="seg" id="orgMemSeg"></div>
+            </div>
+          </div>
+          <div class="table-scroll org-mem-scroll" id="orgMemTbl"></div>
+          <div class="rev-panel" id="orgMemJudge"></div>
+          <div id="orgMemJudgeNames" class="src-staff hidden"></div>
+          <div id="orgMemCase"></div>
+        </div>
+      </article>
+      <article class="card grow-card org-hr-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="orgHrTitle">組織人員分析</h3>
+            <p class="note" id="orgHrMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="orgHrSeg">
+              <button type="button" data-g="month" class="on">當月</button>
+              <button type="button" data-g="ytd">累計至當月</button>
+            </div>
+            <button type="button" class="tool-btn" id="orgHrPeopleBtn">人員明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="orgHrKpis"></div>
+            <div class="org-tree-wrap">
+              <div class="org-idle-head">
+                <h4>營業組織圖</h4>
+                <p class="note" id="orgTreeNote"></p>
+              </div>
+              <div id="orgTree"></div>
+            </div>
+            <div class="rev-panel" id="orgHrJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="org-idle-head">
+              <h4>年資分布與留任</h4>
+            </div>
+            <div class="table-scroll" id="orgTenTbl"></div>
+            <div class="org-idle-head" style="margin-top:14px">
+              <h4>職級異動</h4>
+            </div>
+            <div class="table-scroll" id="orgRankTbl"></div>
+          </div>
+        </div>
+        <div id="orgHrPeopleBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card org-flow-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="orgFlowTitle">組織人員流動監控分析</h3>
+            <p class="note" id="orgFlowMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="orgFlowSeg">
+              <button type="button" data-g="month" class="on">當月</button>
+              <button type="button" data-g="ytd">累計至當月</button>
+            </div>
+            <button type="button" class="tool-btn" id="orgFlowPeopleBtn">人員明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="orgFlowKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4>近6個月員工人數變化</h4>
+              </div>
+              <div class="org-flow-chart-wrap"><canvas id="orgFlowChart"></canvas></div>
+            </div>
+            <div class="rev-panel" id="orgFlowJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="org-idle-head">
+              <h4>單位離職率</h4>
+            </div>
+            <p class="note" id="orgFlowUnitNote"></p>
+            <div class="table-scroll" id="orgFlowUnitTbl"></div>
+            <div class="org-idle-head" style="margin-top:14px">
+              <h4>職級人數狀態</h4>
+              <div class="seg" id="orgFlowRankSeg">
+                <button type="button" data-m="in">到職人數</button>
+                <button type="button" data-m="out">離職人數</button>
+                <button type="button" data-m="on" class="on">在職人數</button>
+              </div>
+            </div>
+            <div class="table-scroll" id="orgFlowRankTbl"></div>
+          </div>
+        </div>
+        <div id="orgFlowPeopleBox" class="src-staff hidden"></div>
+      </article>
+    </section>
     <section class="page hidden" id="page-perf">
       <div class="period-title">業務績效表</div>
       <article class="card nat-perf-page">
@@ -1330,9 +1637,9 @@
     </section>
   </main>
   <div id="toast" class="toast hidden"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js"></script>
   <script src="../js/toolbox-auth.js"></script>
-  <script src="loader.js?v=20261111-iframefix"></script>
+  <script src="loader.js?v=202611171313"></script>
 </body>
 </html>

@@ -133,7 +133,7 @@
 
   async function loadLocalLookup() {
     try {
-      var res = await fetch('./lookup-data.json?v=20261111');
+      var res = await fetch('./lookup-data.json?v=202611171313');
       if (!res.ok) return null;
       return await res.json();
     } catch (err) {
@@ -236,8 +236,29 @@
 
   function startApp() {
     var s = document.createElement('script');
-    s.src = 'app.js?v=20261111-noimport';
+    s.src = 'app.js?v=202611171313';
+    s.onload = function () { mgrReportBindUpdate(); };
     document.body.appendChild(s);
+  }
+
+  function mgrReportBindUpdate() {
+    var btn = $('btnUpdate');
+    if (!btn) return;
+    btn.title = '向公司系統重建快照';
+    btn.onclick = async function () {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      var old = btn.textContent;
+      btn.textContent = '更新中…';
+      try {
+        await window.mgrReportRefresh();
+        location.reload();
+      } catch (err) {
+        alert((err && err.message) || '更新失敗');
+        btn.disabled = false;
+        btn.textContent = old || '更新';
+      }
+    };
   }
 
   window.mgrReportRefresh = async function () {
