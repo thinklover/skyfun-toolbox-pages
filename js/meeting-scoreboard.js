@@ -1506,8 +1506,12 @@
         const hasScoreEntry = scoreVal != null && scoreVal !== 0;
         const bonusInput = $('msb-bonus');
         const bonusRaw = String(bonusInput?.value || '').trim();
-        const bonusChanged = !bonusInput?.disabled
+        const bonusEnabled = !!(bonusInput && !bonusInput.disabled);
+        const bonusChanged = bonusEnabled
           && bonusRaw !== String(state.entryBonusBaseline || '').trim();
+        /* 分數 0 且欄位有填獎金即可存（不必獎金有變動） */
+        const bonusOnly = !hasScoreEntry && bonusEnabled && bonusRaw !== '';
+        const shouldSaveBonus = bonusChanged || bonusOnly;
         if (state.deptTarget) {
           if (!hasScoreEntry) throw new Error('部門加減分請填非 0 分數');
           const deptRes = await rpc('msb_dept_entry_save', {
@@ -1527,8 +1531,11 @@
           await reload();
           return;
         }
-        if (!hasScoreEntry && !bonusChanged) {
-          throw new Error('請填非 0 分數，或填寫／修改獎金');
+        if (!hasScoreEntry && !shouldSaveBonus) {
+          if (bonusInput?.disabled) {
+            throw new Error('分數為 0 時請切到該月份再填獎金，或填非 0 分數');
+          }
+          throw new Error('請填非 0 分數，或填寫獎金');
         }
         if (hasScoreEntry) {
           if (!projectId) throw new Error('尚無可寫入的專案，請稍後再試或通知管理員');
@@ -1548,19 +1555,21 @@
           });
           if (!res?.ok) throw new Error(res?.error || '儲存失敗');
         }
-        if (bonusChanged && entryPersonId) {
+        if (shouldSaveBonus && entryPersonId) {
           const person = (state.people || []).find((p) => String(p.id) === String(entryPersonId));
           const period = periodFromDate($('msb-date')?.value);
+          const keepScore = person ? personDisplayScore(person) : null;
+          const formNote = String($('msb-note')?.value || '').trim();
           const bonusRes = await rpc('msb_month_score_upsert', {
             p_token: token(),
             p_data: {
               board: writeBoardForPersonId(entryPersonId),
               personId: entryPersonId,
               periodMonth: period,
-              score: person && numOrNull(person.score) != null ? String(person.score) : '',
+              score: keepScore != null ? String(keepScore) : '',
               bonus: bonusRaw,
               bonusStatus: person ? (person.bonusStatus || '') : '',
-              note: person ? (person.monthNote || '') : ''
+              note: bonusOnly && formNote ? formNote : (person ? (person.monthNote || '') : '')
             }
           });
           if (!bonusRes?.ok) throw new Error(bonusRes?.error || '獎金儲存失敗');
@@ -1570,8 +1579,8 @@
         closeModal(true);
         let okMsg = '已新增';
         if (wasEdit) okMsg = '已更新';
-        else if (!hasScoreEntry && bonusChanged) okMsg = '已更新獎金';
-        else if (hasScoreEntry && bonusChanged) okMsg = '已新增，獎金已更新';
+        else if (!hasScoreEntry && shouldSaveBonus) okMsg = '已更新獎金';
+        else if (hasScoreEntry && shouldSaveBonus) okMsg = '已新增，獎金已更新';
         setMsg(okMsg, 'ok');
         await reload();
       } catch (err) {
