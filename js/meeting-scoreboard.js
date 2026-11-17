@@ -524,7 +524,7 @@
   function rankList(people, limit) {
     return (people || [])
       .map((p) => ({ p, score: personDisplayScore(p) }))
-      .filter((x) => x.score != null)
+      .filter((x) => x.score != null && x.score > 0)
       .sort((a, b) => b.score - a.score || String(a.p.name || '').localeCompare(String(b.p.name || ''), 'zh-Hant'))
       .slice(0, limit);
   }
@@ -556,7 +556,7 @@
     const allTop = rankList(list, 5);
     box.innerHTML = `<div class="msb-rank-head">
         <h3 class="msb-rank-title">排名儀表板</h3>
-        <p class="msb-rank-sub">${esc(period)}｜依系統分數由高到低（僅顯示有分數者）</p>
+        <p class="msb-rank-sub">${esc(period)}｜依系統分數由高到低（僅正分）</p>
       </div>
       <div class="msb-rank-grid">
         <article class="msb-rank-col">
