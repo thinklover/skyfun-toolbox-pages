@@ -1412,7 +1412,14 @@
         syncProjectToPerson(entryPersonId);
         const projectId = Number($('msb-project')?.value || defaultProjectId(entryPersonId) || 0) || null;
         const item = String($('msb-item')?.value || $('msb-note')?.value || '加減分').trim() || '加減分';
+        const scoreVal = numOrNull($('msb-score')?.value);
+        const hasScoreEntry = scoreVal != null && scoreVal !== 0;
+        const bonusInput = $('msb-bonus');
+        const bonusRaw = String(bonusInput?.value || '').trim();
+        const bonusChanged = !bonusInput?.disabled
+          && bonusRaw !== String(state.entryBonusBaseline || '').trim();
         if (state.deptTarget) {
+          if (!hasScoreEntry) throw new Error('部門加減分請填非 0 分數');
           const deptRes = await rpc('msb_dept_entry_save', {
             p_token: token(),
             p_data: {
@@ -1430,26 +1437,27 @@
           await reload();
           return;
         }
-        if (!projectId) throw new Error('尚無可寫入的專案，請稍後再試或通知管理員');
-        const res = await rpc('msb_entry_save', {
-          p_token: token(),
-          p_data: {
-            id: state.editId,
-            board: writeBoardForPersonId(entryPersonId),
-            personId: entryPersonId,
-            projectId,
-            scoreDate: $('msb-date')?.value || '',
-            score: $('msb-score')?.value || '',
-            item,
-            note: $('msb-note')?.value || '',
-            sessionLabel: ''
-          }
-        });
-        if (!res?.ok) throw new Error(res?.error || '儲存失敗');
-        const bonusInput = $('msb-bonus');
-        const bonusRaw = String(bonusInput?.value || '').trim();
-        const bonusChanged = !bonusInput?.disabled
-          && bonusRaw !== String(state.entryBonusBaseline || '').trim();
+        if (!hasScoreEntry && !bonusChanged) {
+          throw new Error('請填非 0 分數，或填寫／修改獎金');
+        }
+        if (hasScoreEntry) {
+          if (!projectId) throw new Error('尚無可寫入的專案，請稍後再試或通知管理員');
+          const res = await rpc('msb_entry_save', {
+            p_token: token(),
+            p_data: {
+              id: state.editId,
+              board: writeBoardForPersonId(entryPersonId),
+              personId: entryPersonId,
+              projectId,
+              scoreDate: $('msb-date')?.value || '',
+              score: $('msb-score')?.value || '',
+              item,
+              note: $('msb-note')?.value || '',
+              sessionLabel: ''
+            }
+          });
+          if (!res?.ok) throw new Error(res?.error || '儲存失敗');
+        }
         if (bonusChanged && entryPersonId) {
           const person = (state.people || []).find((p) => String(p.id) === String(entryPersonId));
           const period = periodFromDate($('msb-date')?.value);
@@ -1470,7 +1478,11 @@
         const wasEdit = !!state.editId;
         markFormClean();
         closeModal(true);
-        setMsg(wasEdit ? '已更新' : (bonusChanged ? '已新增，獎金已更新' : '已新增'), 'ok');
+        let okMsg = '已新增';
+        if (wasEdit) okMsg = '已更新';
+        else if (!hasScoreEntry && bonusChanged) okMsg = '已更新獎金';
+        else if (hasScoreEntry && bonusChanged) okMsg = '已新增，獎金已更新';
+        setMsg(okMsg, 'ok');
         await reload();
       } catch (err) {
         setMsg(err.message || String(err), 'err', 'msb-form-msg');
