@@ -56,6 +56,7 @@ declare
   v_nodes_txt text := '';
   v_msg text;
   v_line json := json_build_object('recipients', 0);
+  v_line2 json := json_build_object('recipients', 0);
   v_ok boolean := false;
   v_extra jsonb := coalesce(p_extra, '{}'::jsonb);
   v_deposit boolean := false;
@@ -106,8 +107,7 @@ begin
       where a.status = 'active'
         and trim(coalesce(a.team, '')) = '行政管理部'
         and trim(coalesce(nullif(a.name, ''), a.username)) = v_admin
-        and trim(coalesce(nullif(a.name, ''), a.username)) <> '黃怡婷'
-        and trim(coalesce(nullif(a.name, ''), a.username)) <> '邱奕棋'
+        and trim(coalesce(nullif(a.name, ''), a.username)) not in ('黃怡婷', '簡為倢', '邱奕棋')
         and trim(coalesce(a.job_title, '')) not in ('工讀生')
     ) into v_ok;
     if not v_ok then
@@ -215,7 +215,7 @@ begin
        and trim(v_row.handler_admin_name) <> v_name then
       return json_build_object('ok', false, 'error', '僅被指派的行政可轉給管理員');
     end if;
-    v_note := format('行政轉管理員｜%s → 黃怡婷｜%s', v_name, to_char(timezone('Asia/Taipei', now()), 'YYYY/MM/DD HH24:MI'));
+    v_note := format('行政轉管理員｜%s → 黃怡婷、簡為倢｜%s', v_name, to_char(timezone('Asia/Taipei', now()), 'YYYY/MM/DD HH24:MI'));
     update public.biz_system_change
        set handler_level = 'super',
            handler_admin_name = '黃怡婷',
@@ -229,7 +229,7 @@ begin
     select string_agg(x, '、') into v_nodes_txt
     from jsonb_array_elements_text(coalesce(v_row.nodes, '[]'::jsonb)) t(x);
     v_msg := format(
-      E'🛠️ 系統欄位需管理員處理\n%s（%s）已轉單給您（黃怡婷）\n地址：%s\n媒合編號：%s\n節點：%s\n內容：%s\n※ 可能含預設租金／押金月份／押金金額等需進階權限項目\n%s',
+      E'🛠️ 系統欄位需管理員處理\n%s（%s）已轉單給管理員（黃怡婷、簡為倢）\n地址：%s\n媒合編號：%s\n節點：%s\n內容：%s\n※ 可能含預設租金／押金月份／押金金額等需進階權限項目\n%s',
       v_name,
       coalesce(nullif(v_role->>'team', ''), '行政'),
       v_row.address,
@@ -239,6 +239,11 @@ begin
       public.biz_system_change_admin_url()
     );
     v_line := public.admin_points_line_push('黃怡婷', v_msg);
+    v_line2 := public.admin_points_line_push('簡為倢', v_msg);
+    v_line := json_build_object(
+      'recipients', coalesce((v_line->>'recipients')::int, 0) + coalesce((v_line2->>'recipients')::int, 0),
+      'error', nullif(concat_ws('；', nullif(v_line->>'error', ''), nullif(v_line2->>'error', '')), '')
+    );
   end if;
 
   return json_build_object(

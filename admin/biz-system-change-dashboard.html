@@ -119,7 +119,7 @@
       <h1>系統欄位更改通報後台</h1>
       <a class="back" href="../index.html">← 回工具箱</a>
     </div>
-    <p class="lead">地區可篩台中、台南、桃園等（依物件地址）。層級：業務 → 處長 → 行政 → 管理員黃怡婷。</p>
+    <p class="lead">地區可篩台中、台南、桃園等（依物件地址）。層級：業務 → 處長 → 行政 → 管理員（黃怡婷、簡為倢）。</p>
   </header>
 
   <section class="card p-4 space-y-3 max-w-xl" id="login-panel">
@@ -291,7 +291,7 @@
         const lv = r.handlerLevel || 'manager';
         let text = LEVEL[lv] || lv;
         if (lv === 'admin' && r.handlerAdminName) text += '｜' + r.handlerAdminName;
-        if (lv === 'super') text += '｜黃怡婷';
+        if (lv === 'super') text += '｜黃怡婷／簡為倢';
         if (r.status === 'done' && r.handledBy) text = '完成｜' + r.handledBy;
         if (r.status === 'rejected') text = '已退回';
         return '<span class="lv lv-' + esc(lv) + '">' + esc(text) + '</span>';

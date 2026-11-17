@@ -1199,7 +1199,7 @@
       openXferModal(id);
       return;
     }
-    if (!confirm('確定轉交管理員黃怡婷？適用於預設租金、押金月份、押金金額等需進階權限的項目。')) return;
+    if (!confirm('確定轉交管理員（黃怡婷、簡為倢）？適用於預設租金、押金月份、押金金額等需進階權限的項目。')) return;
     state.busy = true;
     const btn = document.querySelector(`[data-bsc-xfer="${to}"][data-id="${id}"]`);
     if (btn) { btn.disabled = true; btn.textContent = '轉交中…'; }
@@ -1211,7 +1211,7 @@
         p_admin_name: null
       });
       if (!res?.ok) throw new Error(res?.error || '轉單失敗');
-      setMsg(lineNote(res.line, '已轉交管理員黃怡婷，並已 LINE 通知', '已轉交管理員黃怡婷，但 LINE 未送出'), 'ok');
+      setMsg(lineNote(res.line, '已轉交管理員（黃怡婷、簡為倢），並已 LINE 通知', '已轉交管理員（黃怡婷、簡為倢），但 LINE 未送出'), 'ok');
       await Promise.all([loadInbox(), loadMine()]);
     } catch (e) {
       setMsg(e.message || String(e), 'err');
