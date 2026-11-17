@@ -15,6 +15,8 @@
     { key: 'repair', label: '修繕', points: 1 },
     { key: 'mterm', label: '代管解約', points: 1 },
     { key: 'term', label: '包租解約', points: 3 },
+    { key: 'mrenew', label: '代管續約', points: 1 },
+    { key: 'renew', label: '包租續約', points: 3 },
     { key: 'lvr', label: '實價登錄', points: 1 }
   ];
   /** 行政QA 由組長依核定點數填 1～4 點，計入「行政QA」欄；其餘計入「手填」欄 */
@@ -125,6 +127,8 @@
   }
   /** 解約依合約類型分欄：包租、轉租→包租解約（3 點）；代管→代管解約（1 點） */
   const TERM_ITEM_OF = { 包租: 'term', 轉租: 'term', 代管: 'mterm' };
+  /** 續約依委託形式分欄：包租、轉租→包租續約（3 點）；代管→代管續約（1 點） */
+  const RENEW_ITEM_OF = { 包租: 'renew', 轉租: 'renew', 代管: 'mrenew' };
   /**
    * 月累計以表單為準的業績月（key：start|end）：各項件數仍是系統爬取，
    * 跟表單的差額記在 month.adjust（表單校正），只調月合計，不分配到每天。
@@ -384,6 +388,7 @@
       opinions: o.opinions || [],
       expenses: o.expenses || [],
       terminations: o.terminations || [],
+      renewals: o.renewals || [],
       disableCredits: o.disableCredits || [],
       disableSuppressIds: Array.isArray(o.disableSuppressIds) ? o.disableSuppressIds : [],
       lvrBackfill: o.lvrBackfill || []
@@ -429,6 +434,8 @@
    * @param auditRows  rowsFromPayload 結果
    * @param opts { start, end, staff:[{name,status,kind}], manual:[{date,name,item,qty,points}],
    *               expenses: 補助審核 rowsFromPayload 結果（已生效五類費用，date 為審核日期）,
+   *               terminations: 解約 rowsFromPayload 結果,
+   *               renewals: 續約 rowsFromPayload 結果（續約狀態已生效、派案人員認列、date＝租約迄日）,
    *               disableCredits: /admin-points/disable-credits 的 rowsFromPayload 結果,
    *               exclude: 不列入統計的姓名（staff 裡的駐府人員也會自動排除） }
    */
@@ -513,6 +520,26 @@
         points: itemPoints(termItem, r.date),
         type: 'contract',
         status: `${r.contractType || ''}解約 → 已解約生效`
+      });
+    }
+
+    const renewals = dropExcludedRows(opts.renewals, excluded)
+      .filter((r) => r.date >= start && r.date <= end && r.auditor)
+      .slice()
+      .sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : a.id - b.id));
+    const seenRenew = new Set();
+    for (const r of renewals) {
+      const rid = String(r.id ?? '').trim();
+      if (!rid || seenRenew.has(rid)) continue;
+      seenRenew.add(rid);
+      const renewItem = RENEW_ITEM_OF[String(r.contractType || '').trim()];
+      if (!renewItem || skipResigned(r.auditor)) continue;
+      scored.push({
+        ...r,
+        item: renewItem,
+        points: itemPoints(renewItem, r.date),
+        type: 'renewal',
+        status: `${r.contractType || ''}續約 → 已生效`
       });
     }
 

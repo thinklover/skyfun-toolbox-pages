@@ -137,6 +137,15 @@
     }
   }
 
+  /** 續約讀取失敗不影響其他點數，只在畫面提示 */
+  async function fetchRenewals(range, refresh) {
+    try {
+      return await fetchWorker('/admin-points/renewals', '續約', range, refresh);
+    } catch (err) {
+      return { ok: false, fields: [], rows: [], pending: 0, error: String(err.message || err) };
+    }
+  }
+
   /** 同租期停用＋最終已生效：失敗不擋其他點數 */
   async function fetchDisableCredits(range, refresh) {
     try {
@@ -150,6 +159,12 @@
     if (!term) return '';
     if (term.error) return `解約資料暫時讀不到（${term.error}），解約點數先不計`;
     if (term.pending) return `解約還有 ${term.pending} 件審核記錄在補抓中，稍後重新整理會再增加`;
+    return '';
+  }
+
+  function renewNote(renew) {
+    if (!renew) return '';
+    if (renew.error) return `續約資料暫時讀不到（${renew.error}），續約點數先不計`;
     return '';
   }
 
@@ -227,10 +242,11 @@
     $('apt-lvr-backfill')?.setAttribute('disabled', '');
     setMsg(`讀取 ${range.month} 月業績（${range.start}～${range.end}）…第一次約需 5～10 秒`);
     try {
-      const [audit, expenses, term, dis, sb, lvrBf] = await Promise.all([
+      const [audit, expenses, term, renew, dis, sb, lvrBf] = await Promise.all([
         fetchWorker('/admin-points/audit-log', '審核時間紀錄', range, refresh),
         fetchWorker('/admin-points/expenses', '補助審核', range, refresh),
         fetchTerminations(range, refresh),
+        fetchRenewals(range, refresh),
         fetchDisableCredits(range, refresh),
         fetchSupabase(range),
         fetchLvrBackfill(range).catch(() => ({ ok: true, credits: [], empty: true }))
@@ -238,6 +254,7 @@
       state.auditRows = auditRowsOf(audit);
       state.expenseRows = auditRowsOf(expenses);
       state.termRows = auditRowsOf(term);
+      state.renewRows = auditRowsOf(renew);
       state.disableRows = auditRowsOf(dis);
       state.disableSuppressIds = Array.isArray(dis.suppressIds) ? dis.suppressIds : [];
       state.lvrBackfillRows = Core.dropExcludedRows(Core.lvrBackfillRows(lvrBf), excludedStaff);
@@ -253,10 +270,11 @@
         opinions: sb.opinions || [],
         expenses: state.expenseRows,
         terminations: state.termRows,
+        renewals: state.renewRows,
         lvrBackfill: state.lvrBackfillRows,
         ...Core.disableCreditOpts(dis, sb.excluded)
       });
-      state.termNote = mergeNotes(termNote(term), disableNote(dis));
+      state.termNote = mergeNotes(termNote(term), renewNote(renew), disableNote(dis));
       state.meta = { range, fetchedAt: audit.fetchedAt, total: audit.total, staffCount: (sb.staff || []).length };
       state.sb = sb;
       const today = Core.isoDate(new Date());
@@ -1338,10 +1356,11 @@
           sb = state.sb;
           result = state.result;
         } else {
-          const [audit, expenses, term, dis, sbData] = await Promise.all([
+          const [audit, expenses, term, renew, dis, sbData] = await Promise.all([
             fetchWorker('/admin-points/audit-log', `${mr.month} 月審核時間紀錄`, mr, false),
             fetchWorker('/admin-points/expenses', `${mr.month} 月補助審核`, mr, false),
             fetchTerminations(mr, false),
+            fetchRenewals(mr, false),
             fetchDisableCredits(mr, false),
             fetchSupabase(mr)
           ]);
@@ -1356,6 +1375,7 @@
             opinions: sb.opinions || [],
             expenses: auditRowsOf(expenses),
             terminations: auditRowsOf(term),
+            renewals: auditRowsOf(renew),
             ...Core.disableCreditOpts(dis, sb.excluded)
           });
         }
@@ -2255,10 +2275,11 @@
     state.prev = { key, loading: true };
     const pr = prevRange(range);
     try {
-      const [audit, expenses, term, dis, sb] = await Promise.all([
+      const [audit, expenses, term, renew, dis, sb] = await Promise.all([
         fetchWorker('/admin-points/audit-log', '上月審核時間紀錄', pr, false),
         fetchWorker('/admin-points/expenses', '上月補助審核', pr, false),
         fetchTerminations(pr, false),
+        fetchRenewals(pr, false),
         fetchDisableCredits(pr, false),
         fetchSupabase(pr)
       ]);
@@ -2271,6 +2292,7 @@
         opinions: sb.opinions || [],
         expenses: auditRowsOf(expenses),
         terminations: auditRowsOf(term),
+        renewals: auditRowsOf(renew),
         ...Core.disableCreditOpts(dis, sb.excluded)
       });
       state.prev = { key, totals: new Map(res.people.map((p) => [p.name, p.month.total])) };
@@ -8759,10 +8781,11 @@
       const saved = JSON.parse(sessionStorage.getItem(TOP_KEY) || 'null');
       if (saved?.key === key && Date.now() - saved.at < 10 * 60 * 1000) return saved.top;
     } catch { /* 沒存過就重算 */ }
-    const [audit, expenses, term, dis, sb, lvrBf] = await Promise.all([
+    const [audit, expenses, term, renew, dis, sb, lvrBf] = await Promise.all([
       fetchWorker('/admin-points/audit-log', '審核時間紀錄', range, false),
       fetchWorker('/admin-points/expenses', '補助審核', range, false),
       fetchTerminations(range, false),
+      fetchRenewals(range, false),
       fetchDisableCredits(range, false),
       fetchSupabase(range),
       fetchLvrBackfill(range).catch(() => ({ ok: true, credits: [], empty: true }))
@@ -8776,6 +8799,7 @@
       opinions: sb.opinions || [],
       expenses: auditRowsOf(expenses),
       terminations: auditRowsOf(term),
+      renewals: auditRowsOf(renew),
       lvrBackfill: Core.dropExcludedRows(Core.lvrBackfillRows(lvrBf), excludedStaff),
       ...Core.disableCreditOpts(dis, sb.excluded)
     });
