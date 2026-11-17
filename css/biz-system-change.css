@@ -1066,6 +1066,23 @@ body > .bsc-modal .bsc-req {
   font-size: 0.78rem;
   color: #64748b;
 }
+#page-business-system-change .bsc-xfer-chain {
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.45rem;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+#page-business-system-change .bsc-xfer-chain-lab {
+  font-weight: 800;
+  margin-right: 0.25rem;
+}
+#page-business-system-change .bsc-xfer-now {
+  font-weight: 800;
+  color: #b91c1c;
+}
 #page-business-system-change .bsc-item-body {
   margin-top: 0.4rem;
   font-size: 0.88rem;

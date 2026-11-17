@@ -45,6 +45,7 @@
     rejectId: null,
     editId: null,
     editRow: null,
+    editMode: 'resubmit', // resubmit | patch
     editKept: [],
     editNewFiles: [],
     detailKey: '', // sales: sent | returned | done｜handler: sent | pending | done | transferred
@@ -423,6 +424,12 @@
     if ((role === 'admin' && level === 'admin' && isAssignedAdmin) || (role === 'super' && level === 'admin')) {
       btns.push(`<button type="button" class="bsc-xfer-btn" data-bsc-xfer="super" data-id="${esc(r.id)}">轉交管理員</button>`);
     }
+    const canPatch =
+      (role === 'admin' && level === 'admin' && isAssignedAdmin) ||
+      (role === 'super' && (level === 'admin' || level === 'super'));
+    if (canPatch) {
+      btns.push(`<button type="button" class="bsc-done-btn" data-bsc-patch="${esc(r.id)}">編輯／補件</button>`);
+    }
     if (!btns.length) return '';
     return `<div class="bsc-item-actions">${btns.join('')}</div>`;
   }
@@ -441,24 +448,57 @@
         return;
       }
       // 轉單人改在卡片 meta「轉單人」顯示，這裡不重複列歷程
-      if (/^(處長轉行政｜|行政轉管理員｜|行政轉處長｜)/.test(t) || t === '修改人已標記完成') return;
+      if (/^(處長轉行政｜|行政轉管理員｜|行政轉處長｜|行政補件｜|管理員補件｜)/.test(t) || t === '修改人已標記完成') return;
       rest.push(t);
     });
     return { reasons, rest };
   }
 
+  /** 從 admin_note 取出符合 pattern 的最後一位姓名 */
+  function lastNoteName(note, re) {
+    let m;
+    let last = '';
+    const src = String(note || '');
+    while ((m = re.exec(src))) last = String(m[1] || '').trim();
+    return last;
+  }
   /** 從 admin_note 取出「轉到目前層級」的最後一位轉單人 */
   function lastTransferBy(r) {
     const note = String((r && r.adminNote) || '');
     const level = levelOf(r);
-    let re = null;
-    if (level === 'super') re = /行政轉管理員｜([^｜]+?) →/g;
-    else if (level === 'admin') re = /處長轉行政｜([^｜]+?) →/g;
-    else return '';
-    let m;
-    let last = '';
-    while ((m = re.exec(note))) last = String(m[1] || '').trim();
-    return last;
+    if (level === 'super') return lastNoteName(note, /行政轉管理員｜([^｜]+?) →/g);
+    if (level === 'admin') return lastNoteName(note, /處長轉行政｜([^｜]+?) →/g);
+    return '';
+  }
+  /** 完整轉單鏈：處長 → 轉行政 → 轉管理員（有才列） */
+  function transferChainParts(r) {
+    const note = String((r && r.adminNote) || '');
+    const parts = [];
+    const mgr = String((r && r.modifierName) || '').trim();
+    if (mgr) parts.push('處長 ' + mgr);
+    const toAdmin = lastNoteName(note, /處長轉行政｜([^｜]+?) →/g);
+    if (toAdmin) parts.push('轉行政 ' + toAdmin);
+    const toSuper = lastNoteName(note, /行政轉管理員｜([^｜]+?) →/g);
+    if (toSuper) parts.push('轉管理員 ' + toSuper);
+    return parts;
+  }
+  function transferChainHtml(r, opts) {
+    const showPending = !!(opts && opts.showDone);
+    const showTransferred = !!(opts && opts.showTransferred);
+    if (!showPending && !showTransferred) return '';
+    const parts = transferChainParts(r);
+    if (!parts.length) return '';
+    const level = levelOf(r);
+    const highlight = level === 'super'
+      ? lastTransferBy(r)
+      : '';
+    const text = parts.map((p) => {
+      if (highlight && p.indexOf('轉管理員 ' + highlight) === 0) {
+        return `<strong class="bsc-xfer-now">${esc(p)}</strong>`;
+      }
+      return esc(p);
+    }).join(' → ');
+    return `<div class="bsc-item-meta bsc-xfer-chain"><span class="bsc-xfer-chain-lab">轉單</span> ${text}</div>`;
   }
 
   function notesHtml(note) {
@@ -502,7 +542,6 @@
     const pendingClass = showPending
       ? (level === 'author' ? 'rejected' : 'pending')
       : tagClass;
-    const transferBy = (showPending || showTransferred) ? lastTransferBy(r) : '';
     return `<article class="bsc-item">
       <div class="bsc-item-top">
         <div class="bsc-item-addr">${esc(r.address)}</div>
@@ -512,7 +551,8 @@
         (showPending || showTransferred || showCompleted)
           ? ` · 填寫人 ${esc(r.authorName)}${r.team ? `（${esc(r.team)}）` : ''}`
           : (mod ? ` · 處長 ${esc(mod)}` : '')
-      }${transferBy ? ` · 轉單人 ${esc(transferBy)}` : ''}</div>
+      }</div>
+      ${transferChainHtml(r, opts)}
       <div><span class="bsc-level bsc-level--${esc(showCompleted ? 'manager' : level)}">${esc(levelText)}</span></div>
       ${Array.isArray(r.nodes) && r.nodes.length ? `<div class="bsc-node-tags">${r.nodes.map((n) => `<span class="bsc-node-tag">${esc(n)}</span>`).join('')}</div>` : ''}
       <div class="bsc-item-body">${esc(r.content)}</div>
@@ -813,22 +853,48 @@
     box.innerHTML = kept.concat(added).join('') || '<p class="bsc-hint">尚未選擇圖片／檔案</p>';
   }
 
-  function openEditModal(id) {
-    const row = state.inbox.find((r) => String(r.id) === String(id)) || state.rows.find((r) => String(r.id) === String(id));
-    if (!row || !isMyReturned(row)) {
+  function openEditModal(id, mode) {
+    const patchMode = mode === 'patch';
+    const row = state.inbox.find((r) => String(r.id) === String(id))
+      || state.rows.find((r) => String(r.id) === String(id));
+    if (!row) {
+      setMsg(patchMode ? '找不到可補件的案件' : '找不到可修改的退回案件', 'err');
+      return;
+    }
+    if (!patchMode && !isMyReturned(row)) {
       setMsg('找不到可修改的退回案件', 'err');
       return;
     }
+    if (patchMode) {
+      const role = myRoleKey();
+      const level = levelOf(row);
+      const me = myDisplayName();
+      const assigned = String(row.handlerAdminName || '').trim();
+      const ok =
+        (role === 'admin' && level === 'admin' && (!assigned || assigned === me)) ||
+        (role === 'super' && (level === 'admin' || level === 'super'));
+      if (!ok || row.status !== 'pending') {
+        setMsg('此案件目前無法編輯／補件', 'err');
+        return;
+      }
+    }
     state.editId = id;
     state.editRow = row;
+    state.editMode = patchMode ? 'patch' : 'resubmit';
     state.editKept = Array.isArray(row.attachments) ? row.attachments.slice() : [];
     state.editNewFiles = [];
     const modal = $('bsc-edit-modal');
+    const title = $('bsc-edit-title');
     const addr = $('bsc-edit-address');
     const match = $('bsc-edit-match');
     const content = $('bsc-edit-content');
     const hint = $('bsc-edit-hint');
     const fileInput = $('bsc-edit-files');
+    const modWrap = $('bsc-edit-modifier-wrap');
+    const confirmBtn = $('bsc-edit-confirm');
+    if (title) title.textContent = patchMode ? '編輯內容／補上傳' : '修改並重新送出';
+    if (confirmBtn) confirmBtn.textContent = patchMode ? '儲存補件' : '確認重新送出';
+    if (modWrap) modWrap.hidden = patchMode;
     if (addr) addr.value = row.address || '';
     if (match) match.value = row.matchNo || '';
     if (content) content.value = row.content || '';
@@ -838,12 +904,16 @@
       el.checked = nodes.includes(el.value);
     });
     if (hint) {
-      hint.textContent = row.adminNote ? ('退回紀錄：' + row.adminNote) : '請依退回原因修改後重新送出';
+      hint.textContent = patchMode
+        ? '可修改內容與節點，並補上傳照片（最多 5 個）'
+        : (row.adminNote ? ('退回紀錄：' + row.adminNote) : '請依退回原因修改後重新送出');
       hint.classList.remove('is-err');
     }
-    const showModifier = () => fillEditModifier(row.modifierName, row.modifierTeam);
-    if (state.managers.length) showModifier();
-    else loadManagers().then(showModifier);
+    if (!patchMode) {
+      const showModifier = () => fillEditModifier(row.modifierName, row.modifierTeam);
+      if (state.managers.length) showModifier();
+      else loadManagers().then(showModifier);
+    }
     renderEditFiles();
     if (modal) {
       modal.hidden = false;
@@ -854,11 +924,14 @@
   function closeEditModal() {
     state.editId = null;
     state.editRow = null;
+    state.editMode = 'resubmit';
     state.editKept = [];
     state.editNewFiles = [];
     const modal = $('bsc-edit-modal');
     const fileInput = $('bsc-edit-files');
+    const modWrap = $('bsc-edit-modifier-wrap');
     if (fileInput) fileInput.value = '';
+    if (modWrap) modWrap.hidden = false;
     if (modal) {
       modal.hidden = true;
       modal.classList.add('hidden');
@@ -903,16 +976,17 @@
   async function confirmResubmit() {
     const id = state.editId;
     const row = state.editRow;
+    const patchMode = state.editMode === 'patch';
     if (!id || !row || state.busy) return;
     const address = String($('bsc-edit-address')?.value || '').trim();
     const matchNo = String($('bsc-edit-match')?.value || '').trim();
     const content = String($('bsc-edit-content')?.value || '').trim();
-    const mod = parseMod($('bsc-edit-modifier')?.value);
+    const mod = patchMode ? { name: '', team: '' } : parseMod($('bsc-edit-modifier')?.value);
     const nodes = Array.from(document.querySelectorAll('#bsc-edit-modal input[name="bsc-edit-nodes"]:checked'))
       .map((el) => el.value)
       .filter((v) => NODE_OPTIONS.includes(v));
     const hint = $('bsc-edit-hint');
-    if (!mod.name) {
+    if (!patchMode && !mod.name) {
       if (hint) {
         hint.textContent = '請選擇營業處經理';
         hint.classList.add('is-err');
@@ -936,31 +1010,42 @@
     }
     state.busy = true;
     const btn = $('bsc-edit-confirm');
-    if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
+    if (btn) { btn.disabled = true; btn.textContent = patchMode ? '儲存中…' : '送出中…'; }
     try {
       const uploaded = await uploadSelected(state.editNewFiles);
       const attachments = state.editKept.concat(uploaded).slice(0, MAX_FILES);
-      const res = await window.skyfunAuth.rpc('biz_system_change_resubmit', {
-        p_token: token(),
-        p_id: Number(id),
-        p_data: {
-          address,
-          matchNo,
-          content,
-          nodes,
-          attachments,
-          modifierName: mod.name,
-          modifierTeam: mod.team
+      if (patchMode) {
+        const res = await window.skyfunAuth.rpc('biz_system_change_handler_patch', {
+          p_token: token(),
+          p_id: Number(id),
+          p_data: { address, matchNo, content, nodes, attachments }
+        });
+        if (!res?.ok) throw new Error(res?.error || '補件儲存失敗');
+        closeEditModal();
+        setMsg('已儲存編輯／補件', 'ok');
+      } else {
+        const res = await window.skyfunAuth.rpc('biz_system_change_resubmit', {
+          p_token: token(),
+          p_id: Number(id),
+          p_data: {
+            address,
+            matchNo,
+            content,
+            nodes,
+            attachments,
+            modifierName: mod.name,
+            modifierTeam: mod.team
+          }
+        });
+        if (!res?.ok) throw new Error(res?.error || '重新送出失敗');
+        closeEditModal();
+        {
+          const who = String(res.notifyName || '').trim() || '退件處理人';
+          setMsg(
+            lineNote(res.line, `已重新送出，並已通知 ${who} 重新審核`, `已重新送出給 ${who}，但 LINE 未送出`),
+            'ok'
+          );
         }
-      });
-      if (!res?.ok) throw new Error(res?.error || '重新送出失敗');
-      closeEditModal();
-      {
-        const who = String(res.notifyName || '').trim() || '退件處理人';
-        setMsg(
-          lineNote(res.line, `已重新送出，並已通知 ${who} 重新審核`, `已重新送出給 ${who}，但 LINE 未送出`),
-          'ok'
-        );
       }
       await Promise.all([loadInbox(), loadMine()]);
     } catch (e) {
@@ -971,7 +1056,10 @@
       setMsg(e.message || String(e), 'err');
     } finally {
       state.busy = false;
-      if (btn) { btn.disabled = false; btn.textContent = '確認重新送出'; }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = patchMode ? '儲存補件' : '確認重新送出';
+      }
     }
   }
 
@@ -1506,7 +1594,12 @@
       }
       const edit = e.target.closest('[data-bsc-edit]');
       if (edit) {
-        openEditModal(edit.getAttribute('data-bsc-edit'));
+        openEditModal(edit.getAttribute('data-bsc-edit'), 'resubmit');
+        return;
+      }
+      const patch = e.target.closest('[data-bsc-patch]');
+      if (patch) {
+        openEditModal(patch.getAttribute('data-bsc-patch'), 'patch');
         return;
       }
       const rej = e.target.closest('[data-bsc-reject]');

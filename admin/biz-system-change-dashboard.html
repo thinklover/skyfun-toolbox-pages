@@ -266,7 +266,7 @@
       /** 轉單／系統列不重複顯示；畫面只留當前狀態與人工備註 */
       function isSystemNoteLine(t) {
         const s = String(t || '').trim();
-        return /^(處長轉行政｜|行政轉管理員｜|行政轉處長｜|退回填寫人｜)/.test(s)
+        return /^(處長轉行政｜|行政轉管理員｜|行政轉處長｜|行政補件｜|管理員補件｜|退回填寫人｜)/.test(s)
           || s === '修改人已標記完成';
       }
       function splitAdminNote(note) {
@@ -296,18 +296,32 @@
         if (r.status === 'rejected') text = '已退回';
         return '<span class="lv lv-' + esc(lv) + '">' + esc(text) + '</span>';
       }
+      function lastNoteName(note, re) {
+        let m;
+        let last = '';
+        const src = String(note || '');
+        while ((m = re.exec(src))) last = String(m[1] || '').trim();
+        return last;
+      }
       /** 轉到目前層級的最後一位轉單人（處長→行政／行政→管理員） */
       function lastTransferBy(r) {
         const note = String(r.adminNote || '');
         const lv = String(r.handlerLevel || 'manager');
-        let re = null;
-        if (lv === 'super') re = /行政轉管理員｜([^｜]+?) →/g;
-        else if (lv === 'admin') re = /處長轉行政｜([^｜]+?) →/g;
-        else return '';
-        let m;
-        let last = '';
-        while ((m = re.exec(note))) last = String(m[1] || '').trim();
-        return last;
+        if (lv === 'super') return lastNoteName(note, /行政轉管理員｜([^｜]+?) →/g);
+        if (lv === 'admin') return lastNoteName(note, /處長轉行政｜([^｜]+?) →/g);
+        return '';
+      }
+      /** 完整轉單鏈文字 */
+      function transferChainText(r) {
+        const note = String(r.adminNote || '');
+        const parts = [];
+        const mgr = String(r.modifierName || '').trim();
+        if (mgr) parts.push('處長 ' + mgr);
+        const toAdmin = lastNoteName(note, /處長轉行政｜([^｜]+?) →/g);
+        if (toAdmin) parts.push('轉行政 ' + toAdmin);
+        const toSuper = lastNoteName(note, /行政轉管理員｜([^｜]+?) →/g);
+        if (toSuper) parts.push('轉管理員 ' + toSuper);
+        return parts.join(' → ');
       }
 
       function stageOf(r) {
@@ -421,7 +435,8 @@
           const city = cityOf(r);
           const split = splitAdminNote(r.adminNote);
           const userNote = split.user.join('\n');
-          const xferBy = lastTransferBy(r);
+          const xferChain = transferChainText(r);
+          const xferNow = lastTransferBy(r);
           const history = split.rejects.length
             ? '<div class="case-history">' + esc(split.rejects.join('\n')) + '</div>'
             : '';
@@ -440,7 +455,8 @@
             '<div class="case-meta">' +
               '<span><em>填寫</em>' + esc(r.authorName || '—') + '（' + esc(r.team || '—') + '）</span>' +
               '<span><em>處長</em>' + esc(r.modifierName || '—') + '（' + esc(officeOf(r)) + '）</span>' +
-              (xferBy ? ('<span><em>轉單</em>' + esc(xferBy) + '</span>') : '') +
+              (xferChain ? ('<span><em>轉單鏈</em>' + esc(xferChain) + '</span>') : '') +
+              (xferNow ? ('<span><em>轉給本層</em>' + esc(xferNow) + '</span>') : '') +
               '<span><em>狀態</em>' + currentLevelHtml(r) + '</span>' +
               '<span><em>媒合</em>' + esc(r.matchNo || '—') + '</span>' +
               '<span><em>節點</em>' + nodes + '</span>' +
