@@ -228,8 +228,8 @@
         const cmp = String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant') * mul;
         if (cmp) return cmp;
       } else if (key === 'score' || key === 'bonus') {
-        const av = key === 'score' ? numOrNull(a.score) : bonusAmount(a.bonus);
-        const bv = key === 'score' ? numOrNull(b.score) : bonusAmount(b.bonus);
+        const av = key === 'score' ? personDisplayScore(a) : bonusAmount(a.bonus);
+        const bv = key === 'score' ? personDisplayScore(b) : bonusAmount(b.bonus);
         const aEmpty = av == null;
         const bEmpty = bv == null;
         if (aEmpty && bEmpty) { /* fall through */ }
@@ -283,6 +283,22 @@
       if (yearMode) return d.slice(0, 4) === year;
       return !month || d.slice(0, 7) === month;
     }).sort((a, b) => String(b.scoreDate || '').localeCompare(String(a.scoreDate || '')));
+  }
+  /** 總表分數：有加減分紀錄就用合計，否則用手動月份分數 */
+  function personDisplayScore(p) {
+    const list = personEntries(p && p.id);
+    if (list.length) {
+      let sum = 0;
+      let any = false;
+      list.forEach((e) => {
+        const n = numOrNull(e.score);
+        if (n == null) return;
+        sum += n;
+        any = true;
+      });
+      if (any) return sum;
+    }
+    return numOrNull(p?.score);
   }
   function detailRowHtml(p, cols) {
     const list = personEntries(p.id);
@@ -398,9 +414,10 @@
     const acts = `<td class="act">
           <button type="button" class="msb-act-btn is-plus" data-msb-add="${esc(p.id)}">加減分</button>
         </td>`;
+    const showScore = personDisplayScore(p);
     const scoreCell = yearMode
-      ? scoreCellHtml(p.score)
-      : `<button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${scoreCellHtml(p.score)}</button>`;
+      ? scoreCellHtml(showScore)
+      : `<button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${scoreCellHtml(showScore)}</button>`;
     const bonusCell = yearMode
       ? bonusCellHtml(p)
       : `<button type="button" class="msb-cell-btn" data-msb-score-person="${esc(p.id)}" ${edit ? '' : 'disabled'}>${bonusCellHtml(p)}</button>`;
@@ -506,7 +523,7 @@
   }
   function rankList(people, limit) {
     return (people || [])
-      .map((p) => ({ p, score: numOrNull(p.score) }))
+      .map((p) => ({ p, score: personDisplayScore(p) }))
       .filter((x) => x.score != null)
       .sort((a, b) => b.score - a.score || String(a.p.name || '').localeCompare(String(b.p.name || ''), 'zh-Hant'))
       .slice(0, limit);
@@ -564,8 +581,8 @@
     const month = state.scoreMonth || state.month || currentMonth();
     if (note) {
       note.textContent = state.span === 'year'
-        ? ('分數與獎金為 ' + (state.year || month.slice(0, 4)) + ' 年各月加總。')
-        : ('分數與獎金為 ' + month + ' 手動輸入。');
+        ? ('分數為 ' + (state.year || month.slice(0, 4)) + ' 年加減分合計；獎金為各月加總。')
+        : ('分數為 ' + month + ' 加減分合計（無紀錄時顯示手動分數）；獎金為手動輸入。');
     }
     if (selfBox) {
       selfBox.hidden = true;
