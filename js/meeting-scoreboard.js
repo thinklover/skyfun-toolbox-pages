@@ -54,6 +54,8 @@
     expandedPersonId: '',
     deptScores: {},
     deptTarget: '',
+    entryBonusBaseline: '',
+    reloadSeq: 0,
     peopleSort: {
       office: { key: '', dir: 'desc' },
       'biz-north': { key: '', dir: 'desc' },
@@ -792,10 +794,44 @@
   }
   function renderAll() {
     applyAccess();
-    fillSelects();
-    renderPeopleTable();
-    renderRecords();
-    renderSettings();
+    /* 選單只在開彈窗時填，避免每次重載重寫大量 option 造成卡頓 */
+    if (state.view === 'dash') renderPeopleTable();
+    if (state.view === 'records') renderRecords();
+    if (state.view === 'settings') renderSettings();
+  }
+  function periodFromDate(dateStr) {
+    const s = String(dateStr || '').slice(0, 7);
+    return /^\d{4}-\d{2}$/.test(s) ? s : (state.scoreMonth || state.month || currentMonth());
+  }
+  function personMonthBonusValue(personId, periodMonth) {
+    const person = (state.people || []).find((p) => String(p.id) === String(personId));
+    if (!person) return '';
+    const viewMonth = state.scoreMonth || state.month || currentMonth();
+    if (periodMonth && periodMonth !== viewMonth) return '';
+    const n = bonusAmount(person.bonus);
+    return n != null ? String(person.bonus) : '';
+  }
+  function syncEntryBonusField(personId) {
+    const field = $('msb-bonus-field');
+    const input = $('msb-bonus');
+    if (!field || !input) return;
+    const dept = !!state.deptTarget;
+    const period = periodFromDate($('msb-date')?.value);
+    const viewMonth = state.scoreMonth || state.month || currentMonth();
+    const canEditBonus = !dept && state.span !== 'year' && period === viewMonth;
+    field.hidden = dept;
+    input.disabled = !canEditBonus;
+    input.placeholder = canEditBonus
+      ? '選填，寫入當月獎金'
+      : (dept ? '部門加減分不寫獎金' : '請切到該月份後再改獎金');
+    if (!canEditBonus) {
+      input.value = '';
+      state.entryBonusBaseline = '';
+      return;
+    }
+    const val = personMonthBonusValue(personId || $('msb-person')?.value || '', period);
+    input.value = val;
+    state.entryBonusBaseline = val;
   }
   async function loadYearEntries(year) {
     try {
@@ -824,12 +860,14 @@
   }
   async function reload() {
     if (!token()) { setMsg('請先登入工具箱', 'err'); return; }
+    const seq = ++state.reloadSeq;
     setMsg('載入中…');
     try {
       const yearMode = state.span === 'year';
       const year = state.year || currentMonth().slice(0, 4);
       const month = yearMode ? (year + '-01') : (state.month || currentMonth());
       const dash = await fetchList(month);
+      if (seq !== state.reloadSeq) return;
       state.serverScoped = Object.prototype.hasOwnProperty.call(dash, 'canViewAll');
       const me = window.skyfunAuth?.getUser?.() || {};
       state.canViewAll = state.serverScoped ? !!dash.canViewAll : !!window.skyfunAuth?.canViewAllScores?.(me);
@@ -839,6 +877,7 @@
       state.people = dash.people || [];
       if (yearMode) {
         const yr = await rpc('msb_year_scores', { p_token: token(), p_board: state.board, p_year: year });
+        if (seq !== state.reloadSeq) return;
         if (!yr?.ok) throw new Error(yr?.error || '年度分數讀不到');
         const byId = new Map((yr.people || []).map((row) => [String(row.id), row]));
         state.people = state.people.map((p) => {
@@ -871,6 +910,7 @@
       }
       if (state.view === 'records') {
         const all = await fetchList(month + '|all');
+        if (seq !== state.reloadSeq) return;
         state.recordsEntries = (!state.serverScoped && !state.canViewAll) ? [] : (all.entries || []);
       } else {
         state.recordsEntries = state.entries.slice();
@@ -885,9 +925,11 @@
           scopeNote.textContent = '';
         }
       }
+      if (seq !== state.reloadSeq) return;
       setMsg('');
       renderAll();
     } catch (err) {
+      if (seq !== state.reloadSeq) return;
       setMsg(err.message || String(err), 'err');
     }
   }
@@ -897,6 +939,7 @@
       project: $('msb-project')?.value || '',
       date: $('msb-date')?.value || '',
       score: $('msb-score')?.value || '',
+      bonus: $('msb-bonus')?.value || '',
       item: $('msb-item')?.value || '',
       note: $('msb-note')?.value || '',
       session: $('msb-session')?.value || '',
@@ -944,6 +987,7 @@
       if ($('msb-note')) $('msb-note').value = e.note || '';
       if ($('msb-session')) $('msb-session').value = '';
       if ($('msb-form-title')) $('msb-form-title').textContent = '編輯加減分';
+      syncEntryBonusField(e.personId);
     } else {
       $('msb-entry-form')?.reset();
       if ($('msb-date')) $('msb-date').value = todayStr();
@@ -957,11 +1001,11 @@
           ? ('部門加減分｜' + state.deptTarget)
           : '加減分';
       }
-      fillSelects(personId);
       if (personId && $('msb-person')) $('msb-person').value = String(personId);
       syncProjectToPerson(personId || $('msb-person')?.value || '');
       if ($('msb-item')) $('msb-item').value = '加減分';
       setDeptMode(state.deptTarget);
+      syncEntryBonusField(personId || $('msb-person')?.value || '');
     }
     setMsg('', '', 'msb-form-msg');
     const modal = $('msb-modal');
@@ -1125,8 +1169,16 @@
       }
       const viewBtn = e.target.closest('[data-msb-view]');
       if (viewBtn) {
-        setView(viewBtn.getAttribute('data-msb-view'));
-        await reload();
+        const next = viewBtn.getAttribute('data-msb-view');
+        const same = state.view === next;
+        setView(next);
+        if (same) {
+          if (next === 'settings') renderSettings();
+          else if (next === 'records') renderRecords();
+          else renderPeopleTable();
+        } else {
+          await reload();
+        }
         return;
       }
       if (e.target.closest('[data-msb-close]')) { closeModal(false); return; }
@@ -1342,6 +1394,11 @@
     $('msb-entry-form')?.addEventListener('change', () => { checkDirty(); });
     $('msb-person')?.addEventListener('change', () => {
       syncProjectToPerson($('msb-person')?.value || '');
+      syncEntryBonusField($('msb-person')?.value || '');
+      checkDirty();
+    });
+    $('msb-date')?.addEventListener('change', () => {
+      syncEntryBonusField($('msb-person')?.value || '');
       checkDirty();
     });
     $('msb-entry-form')?.addEventListener('submit', async (ev) => {
@@ -1389,10 +1446,31 @@
           }
         });
         if (!res?.ok) throw new Error(res?.error || '儲存失敗');
+        const bonusInput = $('msb-bonus');
+        const bonusRaw = String(bonusInput?.value || '').trim();
+        const bonusChanged = !bonusInput?.disabled
+          && bonusRaw !== String(state.entryBonusBaseline || '').trim();
+        if (bonusChanged && entryPersonId) {
+          const person = (state.people || []).find((p) => String(p.id) === String(entryPersonId));
+          const period = periodFromDate($('msb-date')?.value);
+          const bonusRes = await rpc('msb_month_score_upsert', {
+            p_token: token(),
+            p_data: {
+              board: writeBoardForPersonId(entryPersonId),
+              personId: entryPersonId,
+              periodMonth: period,
+              score: person && numOrNull(person.score) != null ? String(person.score) : '',
+              bonus: bonusRaw,
+              bonusStatus: person ? (person.bonusStatus || '') : '',
+              note: person ? (person.monthNote || '') : ''
+            }
+          });
+          if (!bonusRes?.ok) throw new Error(bonusRes?.error || '獎金儲存失敗');
+        }
         const wasEdit = !!state.editId;
         markFormClean();
         closeModal(true);
-        setMsg(wasEdit ? '已更新' : '已新增', 'ok');
+        setMsg(wasEdit ? '已更新' : (bonusChanged ? '已新增，獎金已更新' : '已新增'), 'ok');
         await reload();
       } catch (err) {
         setMsg(err.message || String(err), 'err', 'msb-form-msg');
