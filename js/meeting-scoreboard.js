@@ -33,6 +33,7 @@
     projects: [],
     entries: [],
     recordsEntries: [],
+    bonusRecords: [],
     editId: null,
     busy: false,
     formDirty: false,
@@ -616,14 +617,49 @@
     });
     syncPeopleSortHeaders();
   }
+  function bonusRecordRows() {
+    return (state.bonusRecords || []).map((r) => {
+      const period = String(r.periodMonth || '').slice(0, 7);
+      const updated = String(r.updatedAt || '').slice(0, 10);
+      return {
+        kind: 'bonus',
+        id: 'b-' + r.id,
+        monthScoreId: r.id,
+        scoreDate: updated || (period ? period + '-01' : ''),
+        periodMonth: period,
+        personId: r.personId,
+        personName: r.personName || '',
+        projectId: '',
+        projectName: '當月獎金',
+        item: '獎金',
+        score: null,
+        bonus: r.bonus,
+        bonusStatus: r.bonusStatus || '',
+        note: r.note || '',
+        sessionLabel: ''
+      };
+    });
+  }
+  function allRecordRows() {
+    const scores = (state.recordsEntries || []).map((e) => Object.assign({}, e, { kind: 'score', bonus: null }));
+    return scores.concat(bonusRecordRows()).sort((a, b) => {
+      const da = String(a.scoreDate || '');
+      const db = String(b.scoreDate || '');
+      return db.localeCompare(da) || String(b.id).localeCompare(String(a.id));
+    });
+  }
   function filteredRecords() {
     const q = String(state.filter.q || '').trim().toLowerCase();
-    return (state.recordsEntries || []).filter((e) => {
-      if (state.filter.projectId && String(e.projectId) !== String(state.filter.projectId)) return false;
+    return allRecordRows().filter((e) => {
+      if (state.filter.projectId) {
+        if (e.kind === 'bonus') return false;
+        if (String(e.projectId) !== String(state.filter.projectId)) return false;
+      }
       if (state.filter.from && String(e.scoreDate || '').slice(0, 10) < state.filter.from) return false;
       if (state.filter.to && String(e.scoreDate || '').slice(0, 10) > state.filter.to) return false;
       if (!q) return true;
-      const blob = [e.personName, e.projectName, e.item, e.note, e.sessionLabel].join(' ').toLowerCase();
+      const blob = [e.personName, e.projectName, e.item, e.note, e.sessionLabel, e.bonus, e.bonusStatus, e.periodMonth]
+        .join(' ').toLowerCase();
       return blob.includes(q);
     });
   }
@@ -634,20 +670,30 @@
     if ($('msb-records-count')) $('msb-records-count').textContent = '共 ' + list.length + ' 筆';
     const edit = state.canEdit;
     table.innerHTML = `<thead><tr>
-      <th>日期</th><th>人員</th><th>專案</th><th>項目</th><th class="num">分數</th><th>備註</th>${edit ? '<th></th>' : ''}
+      <th>日期</th><th>人員</th><th>專案</th><th>項目</th><th class="num">分數</th><th class="num">獎金</th><th>備註</th>${edit ? '<th></th>' : ''}
     </tr></thead><tbody>` + (list.length ? list.map((e) => {
+      const isBonus = e.kind === 'bonus';
       const score = Number(e.score);
-      const cls = score > 0 ? 'pos' : (score < 0 ? 'neg' : '');
-      return `<tr>
-        <td>${esc(fmtDate(e.scoreDate))}</td>
+      const cls = !isBonus && score > 0 ? 'pos' : (!isBonus && score < 0 ? 'neg' : '');
+      const bonusTxt = bonusAmount(e.bonus) != null
+        ? (Number(e.bonus).toLocaleString('zh-TW') + (e.bonusStatus ? '（' + e.bonusStatus + '）' : ''))
+        : '—';
+      const acts = edit
+        ? (isBonus
+          ? `<td class="act"><button type="button" class="msb-link" data-msb-score-person="${esc(e.personId)}">編獎金</button></td>`
+          : `<td class="act"><button type="button" class="msb-link" data-msb-edit="${esc(e.id)}">編</button> <button type="button" class="msb-link" data-msb-del="${esc(e.id)}">刪</button></td>`)
+        : '';
+      return `<tr class="${isBonus ? 'msb-row-bonus' : ''}">
+        <td>${esc(isBonus && e.periodMonth ? e.periodMonth.replace('-', '/') : fmtDate(e.scoreDate))}</td>
         <td>${esc(e.personName)}</td>
         <td>${esc(e.projectName)}</td>
         <td>${esc(e.item)}</td>
-        <td class="num ${cls}">${esc(manualScoreText(e.score))}</td>
+        <td class="num ${cls}">${isBonus ? '—' : esc(manualScoreText(e.score))}</td>
+        <td class="num">${esc(bonusTxt)}</td>
         <td>${esc(e.note || '')}</td>
-        ${edit ? `<td class="act"><button type="button" class="msb-link" data-msb-edit="${esc(e.id)}">編</button> <button type="button" class="msb-link" data-msb-del="${esc(e.id)}">刪</button></td>` : ''}
+        ${acts}
       </tr>`;
-    }).join('') : '<tr><td colspan="7" class="msb-empty">尚無紀錄</td></tr>') + '</tbody>';
+    }).join('') : '<tr><td colspan="8" class="msb-empty">尚無紀錄</td></tr>') + '</tbody>';
   }
   function renderSettings() {
     const peopleBox = $('msb-people-list');
@@ -915,6 +961,18 @@
       } else {
         state.recordsEntries = state.entries.slice();
       }
+      try {
+        const bonusRes = await rpc('msb_bonus_list', { p_token: token() });
+        if (seq !== state.reloadSeq) return;
+        if (!state.serverScoped && !state.canViewAll) {
+          state.bonusRecords = [];
+        } else {
+          state.bonusRecords = bonusRes?.ok ? (bonusRes.rows || []) : [];
+        }
+      } catch (_) {
+        if (seq !== state.reloadSeq) return;
+        state.bonusRecords = [];
+      }
       const scopeNote = $('msb-scope-note');
       if (scopeNote) {
         if (!state.serverScoped) {
@@ -1114,9 +1172,21 @@
     if ($('msb-modal')?.hidden && $('msb-month-modal')?.hidden) document.body.classList.remove('msb-modal-open');
   }
   function exportCsv(list) {
-    const rows = [['計分日期', '人員', '專案', '場次', '加減分項目', '分數', '備註']];
+    const rows = [['計分日期', '人員', '專案', '場次', '加減分項目', '分數', '獎金', '備註']];
     (list || []).forEach((e) => {
-      rows.push([fmtDate(e.scoreDate), e.personName, e.projectName, e.sessionLabel || '', e.item, e.score, e.note || '']);
+      const dateLabel = e.kind === 'bonus' && e.periodMonth
+        ? e.periodMonth
+        : fmtDate(e.scoreDate);
+      rows.push([
+        dateLabel,
+        e.personName,
+        e.projectName,
+        e.sessionLabel || '',
+        e.item,
+        e.kind === 'bonus' ? '' : e.score,
+        bonusAmount(e.bonus) != null ? e.bonus : '',
+        e.note || ''
+      ]);
     });
     const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
