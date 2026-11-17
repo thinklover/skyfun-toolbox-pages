@@ -1106,7 +1106,10 @@
     const person = (state.people || []).find((p) => String(p.id) === String(personId));
     if ($('msb-month-person')) $('msb-month-person').value = person ? String(person.id) : '';
     if ($('msb-month-period')) $('msb-month-period').value = state.scoreMonth || state.month || currentMonth();
-    if ($('msb-month-score')) $('msb-month-score').value = person && numOrNull(person.score) != null ? String(person.score) : '';
+    if ($('msb-month-score')) {
+      const ds = person ? personDisplayScore(person) : null;
+      $('msb-month-score').value = ds != null ? String(ds) : '';
+    }
     if ($('msb-month-bonus')) $('msb-month-bonus').value = person && bonusAmount(person.bonus) != null ? String(person.bonus) : '';
     if ($('msb-month-status')) $('msb-month-status').value = person ? (person.bonusStatus || '') : '';
     if ($('msb-month-note')) $('msb-month-note').value = person ? (person.monthNote || '') : '';
