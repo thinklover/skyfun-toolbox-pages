@@ -124,8 +124,12 @@
   gap: 0.55rem;
   position: relative;
 }
+#page-business-system-change .bsc-steps.bsc-steps--rentmgr {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 @media (max-width: 640px) {
-  #page-business-system-change .bsc-steps {
+  #page-business-system-change .bsc-steps,
+  #page-business-system-change .bsc-steps.bsc-steps--rentmgr {
     grid-template-columns: 1fr;
   }
 }
@@ -140,6 +144,9 @@
   border: 1px solid #ede9fe;
   box-shadow: 0 6px 16px rgba(91, 33, 182, 0.05);
   min-width: 0;
+}
+#page-business-system-change .bsc-step[hidden] {
+  display: none !important;
 }
 #page-business-system-change .bsc-step-num {
   flex: none;

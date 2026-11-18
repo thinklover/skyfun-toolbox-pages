@@ -231,6 +231,8 @@
 
   function syncRouteUi() {
     const rent = isRentmgrEntry();
+    const steps = document.querySelector('#page-business-system-change .bsc-steps');
+    if (steps) steps.classList.toggle('bsc-steps--rentmgr', !!rent);
     const flowTitle = $('bsc-flow-title-small');
     if (flowTitle) flowTitle.textContent = rent ? '兩個步驟，清楚知道案件現在到哪裡' : '三個步驟，清楚知道案件現在到哪裡';
     const s1 = $('bsc-step1-desc');
@@ -238,7 +240,10 @@
       ? '租管師填寫後，送交該地區租賃管理部行政'
       : '業務／租管師填寫後，送交營業處經理';
     const step2 = $('bsc-step2');
-    if (step2) step2.hidden = !!rent;
+    if (step2) {
+      step2.hidden = !!rent;
+      step2.setAttribute('aria-hidden', rent ? 'true' : 'false');
+    }
     const s2t = $('bsc-step2-title');
     if (s2t) s2t.textContent = '行政協辦';
     const s2 = $('bsc-step2-desc');
