@@ -233,12 +233,22 @@
         'admin-handover': true,
         petition: true
     };
+    const RENTMANAGER_ZONE_SEARCH_PAGES = {
+        rentmanager: true,
+        'rentmanager-links': true,
+        'rentmanager-crossarea-bonus': true,
+        'rentmanager-perf': true,
+        'rentmanager-line-endorse': true
+    };
 
     function adminZoneSearchOk(item) {
         const page = item && item.page;
         const cat = String((item && item.category) || '');
         if (page === 'ai-tingting') {
             return !!(window.skyfunAuth?.canEnterAdminZone?.() || window.skyfunAuth?.canEnterBizSupervisor?.());
+        }
+        if (RENTMANAGER_ZONE_SEARCH_PAGES[page] || cat.indexOf('租管師專區') >= 0) {
+            return window.skyfunAuth?.canEnterRentmanagerZone?.() === true;
         }
         if (!ADMIN_ZONE_SEARCH_PAGES[page] && cat.indexOf('行政專區') < 0) return true;
         return window.skyfunAuth?.canEnterAdminZone?.() === true;

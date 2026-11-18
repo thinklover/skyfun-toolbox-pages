@@ -986,6 +986,22 @@
     return false;
   }
 
+  /** 租管師專區：租賃管理部、行政、儲備處經理以上（含營業處經理、區協理、總經理室） */
+  function canEnterRentmanagerZone() {
+    if (hasFullToolboxAccess()) return true;
+    const u = session?.supabaseUser || session?.user || {};
+    const team = String(u.team || '').trim();
+    const title = String(u.jobTitle || u.job_title || '').trim();
+    if (title === '工讀生') return false;
+    if (team === '租賃管理部') return true;
+    if (team === '行政管理部' || team === '總經理室') return true;
+    if (title.indexOf('行政') >= 0) return true;
+    if (title === '儲備處經理' || title === '儲備營業處經理') return true;
+    if (title === '營業處經理') return true;
+    if (title === '營業區協理' || title === '區協理') return true;
+    return false;
+  }
+
   function syncAdminZoneEntry() {
     const loggedIn = !!session?.user;
     const adminOk = loggedIn && canEnterAdminZone();
@@ -1002,6 +1018,11 @@
     document.querySelectorAll('.home-card-finance, .home-card-hr').forEach((el) => {
       el.classList.toggle('hidden', !finHrOk);
       el.toggleAttribute('aria-hidden', !finHrOk);
+    });
+    const rentmgrOk = loggedIn && canEnterRentmanagerZone();
+    document.querySelectorAll('.home-card-rentmgr').forEach((el) => {
+      el.classList.toggle('hidden', !rentmgrOk);
+      el.toggleAttribute('aria-hidden', !rentmgrOk);
     });
   }
 
@@ -1312,6 +1333,7 @@
     canEnterAdminZone,
     canEnterBizSupervisor,
     canEnterFinanceHr,
+    canEnterRentmanagerZone,
     canViewAllScores,
     canEditScores,
     hasFullToolboxAccess,

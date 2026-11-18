@@ -4928,7 +4928,7 @@
                     <span class="hc-desc">包租／轉租（代租代管）解約退還金額試算。</span>
                 </div>
 
-                <div class="home-feature-card home-card-rentmgr" role="button" tabindex="0" onclick="showPage('rentmanager')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('rentmanager');}">
+                <div class="home-feature-card home-card-rentmgr hidden" role="button" tabindex="0" onclick="showPage('rentmanager')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('rentmanager');}">
                     <span class="hc-btn"><span class="hc-ico" aria-hidden="true">🧑</span><span class="hc-name">租管師專區</span><span class="hc-go" aria-hidden="true">→</span></span>
                     <span class="hc-desc">路線圖、教材、快篩與任務板；依業務或租管師專線學習。</span>
                 </div>
@@ -14531,7 +14531,7 @@
         <script src="./js/equip-depreciation.js?v=20261005-1"></script>
         <script src="./js/skyfun-job-titles.js"></script>
         <script src="./js/skyfun-departments.js"></script>
-        <script src="./js/toolbox-auth.js?v=20261110-n45"></script>
+        <script src="./js/toolbox-auth.js?v=20261118-rentmgr-gate"></script>
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20261030-1"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
@@ -16393,7 +16393,7 @@
             { external: 'https://www.etax.nat.gov.tw/etwmain/etw113w1/address/query', title: '營登查詢系統', category: '外部連結', keywords: '營登 營業登記' },
         ];
         </script>
-        <script src="./js/home-search.js?v=20261114-ait"></script>
+        <script src="./js/home-search.js?v=20261118-rentmgr-gate"></script>
         <script>
         const PAGE_ROUTE_MAP = {
             landlord: 'page-landlord',
@@ -16610,6 +16610,13 @@
             'hr-onboard': true,
             'hr-resign': true
         };
+        const RENTMANAGER_ZONE_PAGES = {
+            rentmanager: true,
+            'rentmanager-links': true,
+            'rentmanager-crossarea-bonus': true,
+            'rentmanager-perf': true,
+            'rentmanager-line-endorse': true
+        };
 
         function showPage(pageName, opts = {}) {
             if (pageName === 'business-591-listing' && !isSf591PreviewHost()) {
@@ -16632,6 +16639,10 @@
             }
             if (FINANCE_HR_PAGES[pageName] && !window.skyfunAuth?.canEnterFinanceHr?.()) {
                 window.alert('財會／人資專區僅限行政、財務部與授權人員使用。');
+                pageName = 'home';
+            }
+            if (RENTMANAGER_ZONE_PAGES[pageName] && !window.skyfunAuth?.canEnterRentmanagerZone?.()) {
+                window.alert('租管師專區僅限租賃管理部、行政與儲備處經理以上使用。');
                 pageName = 'home';
             }
             /* LINE 照會表單在一般流程下方留白，舊連結改轉導並捲到地址欄 */
