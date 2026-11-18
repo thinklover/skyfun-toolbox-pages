@@ -65,9 +65,9 @@
     ...TRAINING_PROJECTS.map((key) => trainingNode(key, { project: true }))
   ];
   /** 有教學影片的課程（含僅影片、考題尚未上架者） */
-  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p4', 'p5', 'lvr', 'weekly', 'repair', 'guild', 'hr', 'contract'];
+  const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p4', 'p5', 'lvr', 'weekly', 'repair', 'guild', 'hr', 'contract', 'term', 'bonus'];
   /** 已開放線上考試的課程；未列入者看完影片即可，考試步驟顯示準備中 */
-  const EXAM_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p4', 'p5', 'lvr', 'weekly', 'repair', 'guild', 'hr', 'contract'];
+  const EXAM_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p4', 'p5', 'lvr', 'weekly', 'repair', 'guild', 'hr', 'contract', 'term', 'bonus'];
   /** 已開放模擬系統實作的課程；其他課程的模擬環境還在建置，實作一律顯示準備中 */
   const PRACTICE_COURSES = ['obj', 'tenant', 'pre'];
   /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */
