@@ -1,4 +1,4 @@
--- AI婷婷後台：以 admin_secret 查看全部對話紀錄
+-- AI婷婷後台：以 admin_secret 查看全部對話紀錄（含 AI 回覆與人工回覆）
 create or replace function public.ai_tingting_admin_list(
   p_secret text,
   p_limit int default 200,
@@ -45,7 +45,9 @@ begin
             'status', q.status,
             'question', q.question,
             'answer', coalesce(q.answer, ''),
-            'staffRepliedBy', coalesce(q.staff_replied_by, '')
+            'staffAnswer', coalesce(q.staff_answer, ''),
+            'staffRepliedBy', coalesce(q.staff_replied_by, ''),
+            'staffRepliedAt', q.staff_replied_at
           ) as obj
         from public.ai_tingting_questions q
         where (v_status is null or q.status = v_status)
@@ -55,6 +57,7 @@ begin
             or q.user_name ilike '%' || v_q || '%'
             or q.question ilike '%' || v_q || '%'
             or coalesce(q.answer, '') ilike '%' || v_q || '%'
+            or coalesce(q.staff_answer, '') ilike '%' || v_q || '%'
             or coalesce(q.staff_replied_by, '') ilike '%' || v_q || '%'
           )
         order by q.created_at desc, q.id desc
