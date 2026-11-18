@@ -40,21 +40,34 @@
 .adz-quick { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
 @media (min-width: 640px) { .adz-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .adz-quick.adz-quick--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-/* 1+3：上排績效全寬；下排行政問答｜AI婷婷｜系統欄位（筆電自動改欄數） */
+/* 二加二：績效中心｜AI婷婷／欄位通報｜行政問答（窄螢幕改一欄） */
 .adz-quick.adz-quick--solo {
     grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem;
 }
 .adz-quick.adz-quick--featured {
     grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem;
 }
-@media (min-width: 720px) {
-    .adz-quick.adz-quick--featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.adz-quick.adz-quick--2x2,
+.adz-quick.adz-quick--featured.adz-quick--2x2 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
-@media (min-width: 980px) {
-    .adz-quick.adz-quick--featured { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (min-width: 760px) {
+    .adz-quick.adz-quick--2x2,
+    .adz-quick.adz-quick--featured.adz-quick--2x2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
+    }
 }
-.adz-quick.adz-quick--featured > .apt-entry {
+.adz-quick.adz-quick--featured > .apt-entry,
+.adz-quick.adz-quick--2x2 > .apt-entry {
     min-width: 0;
+}
+@media (min-width: 760px) {
+    #page-administration .adz-quick--2x2 > .adz-hero {
+        min-height: 11.5rem;
+    }
 }
 .adz-quick.adz-quick--points {
     grid-template-columns: 1fr; gap: 1rem; margin-bottom: 0.85rem;
@@ -75,13 +88,13 @@
 .apt-entry .adz-top-item b { color: #4338ca; }
 .adz-top-empty { font-size: 0.74rem; color: #94a3b8; }
 
-/* 行政問答／AI：白底淡暈，標題中性 */
-.aqa-entry { border-color: #fde68a; background: linear-gradient(135deg, #ffffff, #fffbeb); box-shadow: 0 4px 14px rgba(217, 119, 6, 0.08); }
-.aqa-entry:hover { border-color: #fcd34d; box-shadow: 0 6px 18px rgba(217, 119, 6, 0.14); }
+/* 行政問答／AI：舊入口樣式（行政專區主卡改走 adz-hero--*） */
+.aqa-entry { border-color: #f9a8d4; background: linear-gradient(135deg, #ffffff, #fdf2f8); box-shadow: 0 4px 14px rgba(190, 24, 93, 0.08); }
+.aqa-entry:hover { border-color: #f472b6; box-shadow: 0 6px 18px rgba(190, 24, 93, 0.14); }
 .aqa-entry .apt-entry-text strong { color: #0f172a; }
 
-.ait-entry { border-color: #dbeafe; background: linear-gradient(135deg, #ffffff, #eff6ff); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08); }
-.ait-entry:hover { border-color: #bfdbfe; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.14); }
+.ait-entry { border-color: #7dd3fc; background: linear-gradient(135deg, #ffffff, #e0f2fe); box-shadow: 0 4px 14px rgba(3, 105, 161, 0.08); }
+.ait-entry:hover { border-color: #38bdf8; box-shadow: 0 6px 18px rgba(3, 105, 161, 0.14); }
 .ait-entry .apt-entry-text strong { color: #0f172a; }
 .ait-admin-link { grid-column: 1 / -1; margin: 0.15rem 0 0; font-size: 0.82rem; font-weight: 700; }
 .ait-admin-link a { color: #0284c7; text-decoration: none; }
@@ -617,42 +630,42 @@
     --hero-sub: #64748b;
 }
 :is(#page-administration, #page-newbie) .adz-hero--points {
-    --hero-accent: #0d9488; --hero-line: #ccfbf1;
-    --hero-shadow: rgba(13, 148, 136, 0.28); --hero-num: #0f766e;
-    background: linear-gradient(145deg, #ffffff 0%, #f7fffc 55%, #f0fdfa 100%);
-}
-:is(#page-administration, #page-newbie) .adz-hero--qa {
-    --hero-accent: #d97706; --hero-line: #fde68a;
-    --hero-shadow: rgba(217, 119, 6, 0.26); --hero-num: #b45309;
-    background: linear-gradient(145deg, #ffffff 0%, #fffdf8 55%, #fffbeb 100%);
+    --hero-accent: #0f766e; --hero-line: #99f6e4;
+    --hero-shadow: rgba(15, 118, 110, 0.32); --hero-num: #115e59;
+    background: linear-gradient(145deg, #ffffff 0%, #ecfdf8 48%, #d1fae5 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--ait {
-    --hero-accent: #2563eb; --hero-line: #dbeafe;
-    --hero-shadow: rgba(37, 99, 235, 0.26); --hero-num: #1d4ed8;
-    background: linear-gradient(145deg, #ffffff 0%, #f8fbff 55%, #eff6ff 100%);
+    --hero-accent: #0369a1; --hero-line: #7dd3fc;
+    --hero-shadow: rgba(3, 105, 161, 0.3); --hero-num: #075985;
+    background: linear-gradient(145deg, #ffffff 0%, #e0f2fe 48%, #bae6fd 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero--sys {
-    --hero-accent: #475569; --hero-line: #e2e8f0;
-    --hero-shadow: rgba(71, 85, 105, 0.26); --hero-num: #334155;
-    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
+    --hero-accent: #b45309; --hero-line: #fdba74;
+    --hero-shadow: rgba(180, 83, 9, 0.28); --hero-num: #9a3412;
+    background: linear-gradient(145deg, #ffffff 0%, #fff7ed 48%, #ffedd5 100%);
+}
+:is(#page-administration, #page-newbie) .adz-hero--qa {
+    --hero-accent: #be185d; --hero-line: #f9a8d4;
+    --hero-shadow: rgba(190, 24, 93, 0.28); --hero-num: #9d174d;
+    background: linear-gradient(145deg, #ffffff 0%, #fdf2f8 48%, #fce7f3 100%);
 }
 :is(#page-administration, #page-newbie) .adz-hero::before {
     content: ''; position: absolute; z-index: -1; width: 20rem; height: 20rem; right: -7rem; top: -9rem; border-radius: 50%;
     background: radial-gradient(circle, var(--hero-glow, rgba(255, 255, 255, 0.9)), rgba(255, 255, 255, 0) 70%);
 }
-:is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(45, 212, 191, 0.28); }
-:is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(251, 191, 36, 0.28); }
-:is(#page-administration, #page-newbie) .adz-hero--ait::before { --hero-glow: rgba(96, 165, 250, 0.28); }
-:is(#page-administration, #page-newbie) .adz-hero--sys::before { --hero-glow: rgba(148, 163, 184, 0.32); }
+:is(#page-administration, #page-newbie) .adz-hero--points::before { --hero-glow: rgba(45, 212, 191, 0.38); }
+:is(#page-administration, #page-newbie) .adz-hero--ait::before { --hero-glow: rgba(56, 189, 248, 0.4); }
+:is(#page-administration, #page-newbie) .adz-hero--sys::before { --hero-glow: rgba(251, 146, 60, 0.36); }
+:is(#page-administration, #page-newbie) .adz-hero--qa::before { --hero-glow: rgba(244, 114, 182, 0.36); }
 :is(#page-administration, #page-newbie) .adz-hero::after {
     content: ''; position: absolute; z-index: -1; inset: 0;
     background-image: radial-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px); background-size: 16px 16px;
     -webkit-mask-image: linear-gradient(115deg, transparent 45%, #000 100%); mask-image: linear-gradient(115deg, transparent 45%, #000 100%);
 }
-:is(#page-administration, #page-newbie) .adz-hero--points::after { background-image: radial-gradient(rgba(13, 148, 136, 0.1) 1px, transparent 1px); }
-:is(#page-administration, #page-newbie) .adz-hero--qa::after { background-image: radial-gradient(rgba(217, 119, 6, 0.1) 1px, transparent 1px); }
-:is(#page-administration, #page-newbie) .adz-hero--ait::after { background-image: radial-gradient(rgba(37, 99, 235, 0.1) 1px, transparent 1px); }
-:is(#page-administration, #page-newbie) .adz-hero--sys::after { background-image: radial-gradient(rgba(100, 116, 139, 0.12) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--points::after { background-image: radial-gradient(rgba(15, 118, 110, 0.12) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--ait::after { background-image: radial-gradient(rgba(3, 105, 161, 0.12) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--sys::after { background-image: radial-gradient(rgba(180, 83, 9, 0.12) 1px, transparent 1px); }
+:is(#page-administration, #page-newbie) .adz-hero--qa::after { background-image: radial-gradient(rgba(190, 24, 93, 0.12) 1px, transparent 1px); }
 :is(#page-administration, #page-newbie) .adz-hero--points .apt-entry-arrow,
 :is(#page-administration, #page-newbie) .adz-hero--qa .apt-entry-arrow,
 :is(#page-administration, #page-newbie) .adz-hero--ait .apt-entry-arrow,
@@ -695,6 +708,12 @@
 @media (max-width: 979px) {
     :is(#page-administration, #page-newbie) .adz-hero .apt-entry-text strong { font-size: 1.28rem; }
     :is(#page-administration, #page-newbie) .adz-hero .apt-entry-text small { font-size: 0.8rem; }
+}
+@media (max-width: 1100px) {
+    :is(#page-administration, #page-newbie) .adz-quick--2x2 .adz-hero .adz-top {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+    }
 }
 @media (max-width: 900px) {
     :is(#page-administration, #page-newbie) .adz-hero .adz-top {

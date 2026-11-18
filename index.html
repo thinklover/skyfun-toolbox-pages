@@ -4605,7 +4605,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261109-spotmonth">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261118-adz-3col">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261118-adz-2x2">
 <link rel="stylesheet" href="./css/ai-tingting.css?v=20261118-staff-bubble">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
@@ -5090,7 +5090,7 @@
                 </div>
             </header>
 
-            <div class="adz-quick adz-quick--solo">
+            <div class="adz-quick adz-quick--featured adz-quick--2x2">
             <button type="button" class="apt-entry adz-hero adz-hero--points" onclick="showPage('admin-points')">
                 <span class="apt-entry-icon" aria-hidden="true">📊</span>
                 <span class="apt-entry-text">
@@ -5103,9 +5103,25 @@
                     <span class="adz-top" id="apt-card-top"></span>
                 </span>
             </button>
-            </div>
 
-            <div class="adz-quick adz-quick--featured">
+            <button type="button" class="apt-entry ait-entry adz-hero adz-hero--ait" id="adz-ai-tingting-hero" onclick="window.aiTingtingOpen && window.aiTingtingOpen('admin')">
+                <span class="apt-entry-icon" aria-hidden="true">🤖</span>
+                <span class="apt-entry-text">
+                    <strong>AI婷婷 問答</strong>
+                    <small>行政規定、進件、期數、獎金補助；特殊個案仍請找婷婷本人確認</small>
+                </span>
+                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+            </button>
+
+            <button type="button" class="apt-entry adz-hero adz-hero--sys" id="adz-system-change-hero" onclick="sessionStorage.setItem('bsc-back','administration'); showPage('business-system-change')">
+                <span class="apt-entry-icon" aria-hidden="true">🛠️</span>
+                <span class="apt-entry-text">
+                    <strong>系統欄位更改通報</strong>
+                    <small>秘書／行政處理待改案件；業務與租管師也可從各專區送件</small>
+                </span>
+                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+            </button>
+
             <button type="button" class="apt-entry aqa-entry adz-hero adz-hero--qa" id="aqa-entry" onclick="showPage('admin-qa')">
                 <span class="apt-entry-icon" aria-hidden="true">💬</span>
                 <span class="apt-entry-text">
@@ -5117,23 +5133,6 @@
                     <span class="adz-top-label">本業績月 排行榜前三名</span>
                     <span class="adz-top" id="aqa-card-top"></span>
                 </span>
-            </button>
-
-            <button type="button" class="apt-entry ait-entry adz-hero adz-hero--ait" id="adz-ai-tingting-hero" onclick="window.aiTingtingOpen && window.aiTingtingOpen('admin')">
-                <span class="apt-entry-icon" aria-hidden="true">🤖</span>
-                <span class="apt-entry-text">
-                    <strong>AI婷婷 問答</strong>
-                    <small>行政規定、進件、期數、獎金補助；特殊個案仍請找婷婷本人確認</small>
-                </span>
-                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
-            </button>
-            <button type="button" class="apt-entry adz-hero adz-hero--sys" id="adz-system-change-hero" onclick="sessionStorage.setItem('bsc-back','administration'); showPage('business-system-change')">
-                <span class="apt-entry-icon" aria-hidden="true">🛠️</span>
-                <span class="apt-entry-text">
-                    <strong>系統欄位更改通報</strong>
-                    <small>秘書／行政處理待改案件；業務與租管師也可從各專區送件</small>
-                </span>
-                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
             </button>
             </div>
 
