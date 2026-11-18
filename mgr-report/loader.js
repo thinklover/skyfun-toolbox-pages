@@ -236,7 +236,7 @@
 
   function startApp() {
     var s = document.createElement('script');
-    s.src = 'app.js?v=202611181252';
+    s.src = 'app.js?v=202611182300';
     s.onload = function () { mgrReportBindUpdate(); };
     document.body.appendChild(s);
   }
@@ -262,7 +262,22 @@
   }
 
   window.mgrReportRefresh = async function () {
-    var data = await getJson('/api/mgr-report/refresh');
+    var base = apiBase();
+    if (!base) throw new Error('管報服務網址尚未設定');
+    var res = await fetch(base + '/api/mgr-report/refresh', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      cache: 'no-store',
+      body: '{}'
+    });
+    var data = null;
+    try { data = await res.json(); } catch (e) { data = null; }
+    if (res.status === 401 || res.status === 403) {
+      throw new Error((data && data.error) || '業務主管專區僅限儲備處經理以上使用。');
+    }
+    if (!res.ok || !data || data.ok === false) {
+      throw new Error((data && data.error) || ('更新失敗 ' + res.status));
+    }
     return data;
   };
 

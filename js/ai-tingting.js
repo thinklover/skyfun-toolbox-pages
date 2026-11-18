@@ -267,14 +267,14 @@
 
   function makeMsg(role, text, meta, opts) {
     const row = document.createElement('div');
-    row.className = 'ait-msg ait-msg--' + role;
+    row.className = 'ait-msg ait-msg--' + role + (opts && opts.staff ? ' ait-msg--staff' : '');
     if (opts && opts.id) row.dataset.id = opts.id;
     if (opts && opts.pending) row.dataset.pending = '1';
 
     const face = document.createElement('span');
     face.className = 'ait-msg-face';
     face.setAttribute('aria-hidden', 'true');
-    face.textContent = role === 'user' ? '我' : '🤖';
+    face.textContent = role === 'user' ? '我' : (opts && opts.staff ? '👤' : '🤖');
 
     const bubble = document.createElement('div');
     bubble.className = 'ait-bubble';
@@ -344,8 +344,9 @@
         if (staffAns) {
           const who = String(it.staffRepliedBy || '人工').trim() || '人工';
           thread.appendChild(
-            makeMsg('bot', staffAns, who + ' · ' + fmtTime(it.staffRepliedAt || it.answeredAt || it.createdAt), {
+            makeMsg('bot', staffAns, '人工回覆｜' + who + ' · ' + fmtTime(it.staffRepliedAt || it.answeredAt || it.createdAt), {
               id: it.id + '-staff',
+              staff: true,
             })
           );
         }

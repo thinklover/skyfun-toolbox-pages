@@ -283,6 +283,21 @@
   border-top-left-radius: 0.35rem;
 }
 
+#page-ai-tingting .ait-msg--staff .ait-msg-face {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+#page-ai-tingting .ait-msg--staff .ait-bubble {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+#page-ai-tingting .ait-msg--staff .ait-bubble-meta {
+  color: #b45309;
+  opacity: 1;
+}
+
 #page-ai-tingting .ait-msg--user .ait-bubble {
   background: #0f766e;
   border: 1px solid #0f766e;
