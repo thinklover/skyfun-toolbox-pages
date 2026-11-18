@@ -869,12 +869,21 @@
 }
 #page-rentmanager .adz-title { font-size: 1.7rem; letter-spacing: 0.03em; color: var(--az-ink); }
 #page-rentmanager .adz-sub { color: var(--az-sub); }
-#page-rentmanager .adz-quick { gap: 1rem; }
+/* 上二下三：上排 featured 兩欄、下排 --3 三欄；兩排卡片高度／按鈕樣式一致 */
+#page-rentmanager .adz-quick { gap: 1rem; margin-bottom: 1rem; }
+#page-rentmanager .adz-quick.adz-quick--featured {
+    grid-template-columns: 1fr;
+}
+#page-rentmanager .adz-quick.adz-quick--3 {
+    grid-template-columns: 1fr;
+}
 @media (min-width: 720px) {
-    #page-rentmanager .adz-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #page-rentmanager .adz-quick.adz-quick--featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #page-rentmanager .adz-quick.adz-quick--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (min-width: 1100px) {
-    #page-rentmanager .adz-quick { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #page-rentmanager .adz-quick.adz-quick--featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #page-rentmanager .adz-quick.adz-quick--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 #page-rentmanager .adz-hero {
     position: relative; overflow: hidden; isolation: isolate;
@@ -890,6 +899,11 @@
     --hero-shadow: rgba(99, 102, 241, 0.45);
     background: linear-gradient(135deg, #ffffff 0%, #f1f0ff 45%, #e6edff 100%);
 }
+#page-rentmanager .rdz-hero--sys {
+    --hero-ink: #334155; --hero-sub: #64748b; --hero-accent: #475569; --hero-line: #e2e8f0;
+    --hero-shadow: rgba(71, 85, 105, 0.35);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #f1f5f9 100%);
+}
 #page-rentmanager .adz-hero--qa,
 #page-rentmanager .rdz-hero--links {
     --hero-ink: #0c4a6e; --hero-sub: #4f7390; --hero-accent: #0284c7; --hero-line: #bae6fd;
@@ -901,6 +915,12 @@
     --hero-shadow: rgba(217, 119, 6, 0.42);
     background: linear-gradient(135deg, #ffffff 0%, #fff8e8 45%, #ffeed4 100%);
 }
+#page-rentmanager .rdz-hero--ait,
+#page-rentmanager .adz-hero--ait {
+    --hero-ink: #1e3a8a; --hero-sub: #5b6b8c; --hero-accent: #2563eb; --hero-line: #dbeafe;
+    --hero-shadow: rgba(37, 99, 235, 0.4);
+    background: linear-gradient(135deg, #ffffff 0%, #f5f8ff 45%, #eff6ff 100%);
+}
 #page-rentmanager .rdz-hero--line {
     --hero-ink: #0f766e; --hero-sub: #4f7c78; --hero-accent: #0d9488; --hero-line: #99f6e4;
     --hero-shadow: rgba(13, 148, 136, 0.42);
@@ -911,16 +931,22 @@
     background: radial-gradient(circle, var(--hero-glow, rgba(255, 255, 255, 0.9)), rgba(255, 255, 255, 0) 70%);
 }
 #page-rentmanager .rdz-hero--perf::before { --hero-glow: rgba(165, 180, 252, 0.45); }
+#page-rentmanager .rdz-hero--sys::before { --hero-glow: rgba(148, 163, 184, 0.4); }
 #page-rentmanager .rdz-hero--links::before { --hero-glow: rgba(125, 211, 252, 0.45); }
 #page-rentmanager .rdz-hero--bonus::before { --hero-glow: rgba(252, 211, 77, 0.45); }
+#page-rentmanager .rdz-hero--ait::before,
+#page-rentmanager .adz-hero--ait::before { --hero-glow: rgba(96, 165, 250, 0.4); }
 #page-rentmanager .rdz-hero--line::before { --hero-glow: rgba(45, 212, 191, 0.45); }
 #page-rentmanager .adz-hero::after {
     content: ''; position: absolute; z-index: -1; inset: 0;
     background-image: radial-gradient(rgba(99, 102, 241, 0.09) 1px, transparent 1px); background-size: 16px 16px;
     -webkit-mask-image: linear-gradient(115deg, transparent 45%, #000 100%); mask-image: linear-gradient(115deg, transparent 45%, #000 100%);
 }
+#page-rentmanager .rdz-hero--sys::after { background-image: radial-gradient(rgba(100, 116, 139, 0.12) 1px, transparent 1px); }
 #page-rentmanager .rdz-hero--links::after { background-image: radial-gradient(rgba(2, 132, 199, 0.1) 1px, transparent 1px); }
 #page-rentmanager .rdz-hero--bonus::after { background-image: radial-gradient(rgba(217, 119, 6, 0.1) 1px, transparent 1px); }
+#page-rentmanager .rdz-hero--ait::after,
+#page-rentmanager .adz-hero--ait::after { background-image: radial-gradient(rgba(37, 99, 235, 0.12) 1px, transparent 1px); }
 #page-rentmanager .rdz-hero--line::after { background-image: radial-gradient(rgba(13, 148, 136, 0.12) 1px, transparent 1px); }
 #page-rentmanager .adz-hero:hover {
     transform: translateY(-2px); border-color: var(--hero-line);
