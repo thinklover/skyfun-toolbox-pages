@@ -81,8 +81,24 @@ window.AdminTrainingContent = {
     ],
     links: []
   },
-  term: { summary: '', sections: [], links: [] },
-  bonus: { summary: '', sections: [], links: [] },
+  term: {
+    summary: '先看完代管解約教學影片；解約流程、文件與系統操作以影片為準，特殊個案請再向組長確認。',
+    videos: [{
+      title: '代管解約教學影片',
+      url: 'https://drive.google.com/file/d/1945a63UaPXiwWIp9iIUmAJZDcgkQF33Q/view'
+    }],
+    sections: [],
+    links: []
+  },
+  bonus: {
+    summary: '先看完獎金教學影片；媒合費獎金計算與請款流程以影片為準，正式核發仍以公司辦法與主管認定為準。',
+    videos: [{
+      title: '獎金教學影片',
+      url: 'https://drive.google.com/file/d/1L50zbTWd4ZzRdAwvGTIeXiyDHqafKUxN/view'
+    }],
+    sections: [],
+    links: []
+  },
   hr: {
     summary: '先看完「人員到職與離職資料輸入」教學影片（系統會記錄觀看進度），再點上方「線上考試」考試（20 題，全部答對才通過）；答錯的題目會標示影片時間點。',
     videos: [{ title: '人員到職與離職資料輸入教學影片', length: '約 5 分鐘', course: 'hr' }],
