@@ -11652,27 +11652,27 @@
                 </header>
 
                 <section class="bsc-block bsc-block--flow" aria-label="處理流程">
-                    <h3 class="bsc-sec-title">處理流程<small>三個步驟，清楚知道案件現在到哪裡</small></h3>
+                    <h3 class="bsc-sec-title">處理流程<small id="bsc-flow-title-small">三個步驟，清楚知道案件現在到哪裡</small></h3>
                     <ol class="bsc-steps">
                         <li class="bsc-step">
                             <span class="bsc-step-num" aria-hidden="true">1</span>
                             <div class="bsc-step-body">
                                 <strong>提出通報</strong>
-                                <span>業務／租管師填寫後，送交營業處經理</span>
+                                <span id="bsc-step1-desc">業務／租管師填寫後，送交營業處經理</span>
                             </div>
                         </li>
-                        <li class="bsc-step">
+                        <li class="bsc-step" id="bsc-step2">
                             <span class="bsc-step-num" aria-hidden="true">2</span>
                             <div class="bsc-step-body">
-                                <strong>行政協辦</strong>
-                                <span>處長處理不了時，再指定行政協助</span>
+                                <strong id="bsc-step2-title">行政協辦</strong>
+                                <span id="bsc-step2-desc">處長處理不了時，再指定行政協助</span>
                             </div>
                         </li>
                         <li class="bsc-step">
                             <span class="bsc-step-num" aria-hidden="true">3</span>
                             <div class="bsc-step-body">
-                                <strong>進階權限</strong>
-                                <span>行政仍無法處理時，再轉交管理員</span>
+                                <strong id="bsc-step3-title">進階權限</strong>
+                                <span id="bsc-step3-desc">行政仍無法處理時，再轉交管理員</span>
                             </div>
                         </li>
                     </ol>
@@ -11697,7 +11697,7 @@
                 </section>
 
                 <section class="bsc-block bsc-block--form" aria-label="提出通報">
-                    <h3 class="bsc-sec-title">提出通報<small>填寫後送交營業處經理</small></h3>
+                    <h3 class="bsc-sec-title">提出通報<small id="bsc-form-title-small">填寫後送交營業處經理</small></h3>
                     <form id="bsc-form" class="bsc-form" autocomplete="off">
                         <div class="bsc-row2">
                             <div class="bsc-field">
@@ -11705,7 +11705,7 @@
                                 <input id="bsc-author" name="authorDisplay" type="text" readonly tabindex="-1" placeholder="登入後自動帶入" />
                             </div>
                             <div class="bsc-field">
-                                <label for="bsc-modifier">修改人（營業處經理） <span class="bsc-req">*</span></label>
+                                <label id="bsc-modifier-label" for="bsc-modifier">修改人（營業處經理） <span class="bsc-req">*</span></label>
                                 <select id="bsc-modifier" name="modifier" required>
                                     <option value="">請選擇營業處經理</option>
                                 </select>
@@ -11828,7 +11828,7 @@
                     <div class="bsc-modal-body bsc-xfer-body">
                         <p id="bsc-edit-hint" class="bsc-xfer-hint"></p>
                         <div id="bsc-edit-modifier-wrap">
-                            <label class="bsc-xfer-label" for="bsc-edit-modifier">修改人（營業處經理） <span class="bsc-req">*</span></label>
+                            <label class="bsc-xfer-label" id="bsc-edit-modifier-label" for="bsc-edit-modifier">修改人（營業處經理） <span class="bsc-req">*</span></label>
                             <select id="bsc-edit-modifier">
                                 <option value="">請選擇營業處經理</option>
                             </select>
@@ -14490,7 +14490,7 @@
         <script src="./js/handover-core.js?v=20261107-sop"></script>
         <script src="./js/biz-handover.js?v=20261107-sop"></script>
         <script src="./js/admin-handover.js?v=20261107-sop"></script>
-        <script src="./js/biz-system-change.js?v=20261118-multi-zone"></script>
+        <script src="./js/biz-system-change.js?v=20261118-rentmgr-route"></script>
         <script src="./js/biz-bonus-data.js?v=20261105-layout"></script>
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261115-sheet"></script>

@@ -26,6 +26,30 @@
   }
   window.bscGoBack = goBack;
 
+  function entryZone() {
+    let key = '';
+    try { key = sessionStorage.getItem(BACK_KEY) || ''; } catch (_) { key = ''; }
+    return BACK_LABEL[key] ? key : 'business';
+  }
+  function isRentmgrEntry() {
+    return entryZone() === 'rentmanager';
+  }
+  function isRentmgrCase(r) {
+    const extra = (r && r.transferExtra) || {};
+    return String(extra.route || '') === 'rentmgr' || isRentmgrEntry();
+  }
+  function modifierList() {
+    return isRentmgrEntry() ? (state.rentmgrAdmins || []) : (state.managers || []);
+  }
+  function modifierPlaceholder() {
+    return isRentmgrEntry() ? '請選擇租賃管理部行政' : '請選擇營業處經理';
+  }
+  function modifierLabelText() {
+    return isRentmgrEntry()
+      ? '修改人（租賃管理部行政）'
+      : '修改人（營業處經理）';
+  }
+
   const MAX_FILES = 5;
   const MAX_SIZE = 10 * 1024 * 1024;
   const RING_LEN = 2 * Math.PI * 42;
@@ -34,6 +58,12 @@
   const LEVEL_LABEL = {
     manager: '待營業處經理',
     admin: '待行政協辦',
+    super: '待管理員',
+    author: '已退回・待你修改重送'
+  };
+  const LEVEL_LABEL_RENTMGR = {
+    manager: '待租管行政',
+    admin: '待租管行政',
     super: '待管理員',
     author: '已退回・待你修改重送'
   };
@@ -56,6 +86,7 @@
     transferred: [],
     completed: [],
     managers: [],
+    rentmgrAdmins: [],
     admins: [],
     msg: '',
     msgType: '',
@@ -190,11 +221,48 @@
   }
 
   function preferredModifierValue() {
+    if (isRentmgrEntry()) return '';
     const team = String(meUser()?.team || '').trim();
     const want = DEFAULT_MODIFIER_BY_TEAM[team];
     if (!want) return '';
     const hit = (state.managers || []).find((m) => String(m?.name || '').trim() === want);
     return hit ? modValue(hit) : '';
+  }
+
+  function syncRouteUi() {
+    const rent = isRentmgrEntry();
+    const flowTitle = $('bsc-flow-title-small');
+    if (flowTitle) flowTitle.textContent = rent ? '兩個步驟，清楚知道案件現在到哪裡' : '三個步驟，清楚知道案件現在到哪裡';
+    const s1 = $('bsc-step1-desc');
+    if (s1) s1.textContent = rent
+      ? '租管師填寫後，送交該地區租賃管理部行政'
+      : '業務／租管師填寫後，送交營業處經理';
+    const step2 = $('bsc-step2');
+    if (step2) step2.hidden = !!rent;
+    const s2t = $('bsc-step2-title');
+    if (s2t) s2t.textContent = '行政協辦';
+    const s2 = $('bsc-step2-desc');
+    if (s2) s2.textContent = '處長處理不了時，再指定行政協助';
+    const step3 = document.querySelector('#page-business-system-change .bsc-steps .bsc-step:last-child .bsc-step-num');
+    if (step3) step3.textContent = rent ? '2' : '3';
+    const s3 = $('bsc-step3-desc');
+    if (s3) s3.textContent = rent
+      ? '租管行政仍無法處理時，再轉交管理員'
+      : '行政仍無法處理時，再轉交管理員';
+    const formSmall = $('bsc-form-title-small');
+    if (formSmall) formSmall.textContent = rent
+      ? '填寫後送交該地區租賃管理部行政'
+      : '填寫後送交營業處經理';
+    const modLab = $('bsc-modifier-label');
+    if (modLab) {
+      modLab.innerHTML = `${esc(modifierLabelText())} <span class="bsc-req">*</span>`;
+    }
+    const search = $('bsc-search');
+    if (search) {
+      search.placeholder = rent
+        ? '快速搜尋：地址／媒合編號／內容／租管行政…'
+        : '快速搜尋：地址／媒合編號／內容／處長…';
+    }
   }
 
   function myRoleKey() {
@@ -260,9 +328,10 @@
     const sel = $('bsc-modifier');
     if (!sel) return;
     const prev = keepValue != null ? keepValue : sel.value;
-    const opts = ['<option value="">請選擇營業處經理</option>'].concat(
-      state.managers.map((m) => {
-        const label = m.team ? `${m.team}｜${m.name}` : m.name;
+    const list = modifierList();
+    const opts = [`<option value="">${esc(modifierPlaceholder())}</option>`].concat(
+      list.map((m) => {
+        const label = m.team || m.dept ? `${m.team || m.dept}｜${m.name}` : m.name;
         return `<option value="${esc(modValue(m))}">${esc(label)}</option>`;
       })
     );
@@ -275,12 +344,14 @@
     }
   }
 
-  function fillEditModifier(name, team) {
+  function fillEditModifier(name, team, rentmgr) {
     const sel = $('bsc-edit-modifier');
     if (!sel) return;
-    const opts = ['<option value="">請選擇營業處經理</option>'].concat(
-      state.managers.map((m) => {
-        const label = m.team ? `${m.team}｜${m.name}` : m.name;
+    const list = rentmgr ? (state.rentmgrAdmins || []) : (state.managers || []);
+    const ph = rentmgr ? '請選擇租賃管理部行政' : '請選擇營業處經理';
+    const opts = [`<option value="">${esc(ph)}</option>`].concat(
+      list.map((m) => {
+        const label = m.team || m.dept ? `${m.team || m.dept}｜${m.name}` : m.name;
         return `<option value="${esc(modValue(m))}">${esc(label)}</option>`;
       })
     );
@@ -290,14 +361,14 @@
       sel.value = want;
       return;
     }
-    const byName = state.managers.find((m) => String(m.name || '').trim() === String(name || '').trim());
+    const byName = list.find((m) => String(m.name || '').trim() === String(name || '').trim());
     if (byName) sel.value = modValue(byName);
   }
 
   async function loadManagers() {
     if (!token() || !window.skyfunAuth?.rpc) {
       state.managers = [];
-      renderManagers('');
+      if (!isRentmgrEntry()) renderManagers('');
       return;
     }
     try {
@@ -306,9 +377,26 @@
       state.managers = sortManagers(Array.isArray(res.managers) ? res.managers : []);
     } catch (e) {
       state.managers = [];
-      setMsg('營業處經理名單讀取失敗：' + (e.message || e), 'err');
+      if (!isRentmgrEntry()) setMsg('營業處經理名單讀取失敗：' + (e.message || e), 'err');
     }
-    renderManagers();
+    if (!isRentmgrEntry()) renderManagers();
+  }
+
+  async function loadRentmgrAdmins() {
+    if (!token() || !window.skyfunAuth?.rpc) {
+      state.rentmgrAdmins = [];
+      if (isRentmgrEntry()) renderManagers('');
+      return;
+    }
+    try {
+      const res = await window.skyfunAuth.rpc('biz_system_change_rentmgr_admins', { p_token: token() });
+      if (!res?.ok) throw new Error(res?.error || '租管行政名單讀取失敗');
+      state.rentmgrAdmins = sortManagers(Array.isArray(res.admins) ? res.admins : []);
+    } catch (e) {
+      state.rentmgrAdmins = [];
+      if (isRentmgrEntry()) setMsg('租管行政名單讀取失敗：' + (e.message || e), 'err');
+    }
+    if (isRentmgrEntry()) renderManagers();
   }
 
   function renderAdminSelect(keepValue) {
@@ -492,10 +580,18 @@
     if (level === 'admin') return lastNoteName(note, /處長轉行政｜([^｜]+?) →/g);
     return '';
   }
-  /** 完整轉單鏈：處長 → 轉行政 → 轉管理員（有才列） */
+  /** 完整轉單鏈：處長 → 轉行政 → 轉管理員（租管案：行政 → 轉管理員） */
   function transferChainParts(r) {
     const note = String((r && r.adminNote) || '');
     const parts = [];
+    const rent = String((r && r.transferExtra && r.transferExtra.route) || '') === 'rentmgr';
+    if (rent) {
+      const admin = String((r && (r.handlerAdminName || r.modifierName)) || '').trim();
+      if (admin) parts.push('租管行政 ' + admin);
+      const toSuper = lastNoteName(note, /行政轉管理員｜([^｜]+?) →/g);
+      if (toSuper) parts.push('轉管理員 ' + toSuper);
+      return parts;
+    }
     const mgr = String((r && r.modifierName) || '').trim();
     if (mgr) parts.push('處長 ' + mgr);
     const toAdmin = lastNoteName(note, /處長轉行政｜([^｜]+?) →/g);
@@ -551,13 +647,15 @@
     const tagText = showPending ? '待處理' : (showTransferred && r.status === 'pending' ? '已轉出' : st);
     const tagClass = showPending ? 'pending' : (showTransferred && r.status === 'pending' ? 'pending' : r.status);
     const doneAt = r.handledAt ? `｜${when(r.handledAt)}` : '';
+    const rentCase = String((r.transferExtra && r.transferExtra.route) || '') === 'rentmgr';
+    const levelMap = rentCase ? LEVEL_LABEL_RENTMGR : LEVEL_LABEL;
     const levelText = (r.status === 'done' || (showCompleted && level === 'author'))
       ? (level === 'author'
         ? `已退回填寫人${doneAt}`
         : (iHandled(r)
           ? `已由我修改完畢${doneAt}`
-          : `已由${String(r.handledBy || r.modifierName || '處長').trim()}完成${doneAt}`))
-      : `${LEVEL_LABEL[level] || level}${level === 'admin' && r.handlerAdminName ? `｜${r.handlerAdminName}` : ''}`;
+          : `已由${String(r.handledBy || r.modifierName || (rentCase ? '租管行政' : '處長')).trim()}完成${doneAt}`))
+      : `${levelMap[level] || level}${level === 'admin' && r.handlerAdminName ? `｜${r.handlerAdminName}` : ''}`;
     const pendingTag = showPending
       ? (level === 'author' ? '待你修改' : '待處理')
       : tagText;
@@ -572,7 +670,7 @@
       <div class="bsc-item-meta">媒合編號 ${esc(r.matchNo)} · ${esc(when(r.createdAt))}${
         (showPending || showTransferred || showCompleted)
           ? ` · 填寫人 ${esc(r.authorName)}${r.team ? `（${esc(r.team)}）` : ''}`
-          : (mod ? ` · 處長 ${esc(mod)}` : '')
+          : (mod ? ` · ${rentCase ? '租管行政' : '處長'} ${esc(mod)}` : '')
       }</div>
       ${transferChainHtml(r, opts)}
       <div><span class="bsc-level bsc-level--${esc(showCompleted ? 'manager' : level)}">${esc(levelText)}</span></div>
@@ -932,9 +1030,22 @@
       hint.classList.remove('is-err');
     }
     if (!patchMode) {
-      const showModifier = () => fillEditModifier(row.modifierName, row.modifierTeam);
-      if (state.managers.length) showModifier();
-      else loadManagers().then(showModifier);
+      const rent = String((row.transferExtra && row.transferExtra.route) || '') === 'rentmgr';
+      const editLab = $('bsc-edit-modifier-label');
+      if (editLab) {
+        editLab.innerHTML = rent
+          ? '修改人（租賃管理部行政） <span class="bsc-req">*</span>'
+          : '修改人（營業處經理） <span class="bsc-req">*</span>';
+      }
+      const showModifier = () => fillEditModifier(row.modifierName, row.modifierTeam, rent);
+      if (rent) {
+        if (state.rentmgrAdmins.length) showModifier();
+        else loadRentmgrAdmins().then(showModifier);
+      } else if (state.managers.length) {
+        showModifier();
+      } else {
+        loadManagers().then(showModifier);
+      }
     }
     renderEditFiles();
     if (modal) {
@@ -1010,7 +1121,8 @@
     const hint = $('bsc-edit-hint');
     if (!patchMode && !mod.name) {
       if (hint) {
-        hint.textContent = '請選擇營業處經理';
+        const rent = String((row.transferExtra && row.transferExtra.route) || '') === 'rentmgr';
+        hint.textContent = rent ? '請選擇租賃管理部行政' : '請選擇營業處經理';
         hint.classList.add('is-err');
       }
       $('bsc-edit-modifier')?.focus();
@@ -1046,6 +1158,7 @@
         closeEditModal();
         setMsg('已儲存編輯／補件', 'ok');
       } else {
+        const rent = String((row.transferExtra && row.transferExtra.route) || '') === 'rentmgr';
         const res = await window.skyfunAuth.rpc('biz_system_change_resubmit', {
           p_token: token(),
           p_id: Number(id),
@@ -1056,7 +1169,8 @@
             nodes,
             attachments,
             modifierName: mod.name,
-            modifierTeam: mod.team
+            modifierTeam: mod.team,
+            ...(rent ? { route: 'rentmgr' } : {})
           }
         });
         if (!res?.ok) throw new Error(res?.error || '重新送出失敗');
@@ -1383,7 +1497,15 @@
 
   async function refreshPage() {
     fillAuthor();
-    await Promise.all([loadManagers(), loadAdmins(), loadMine(), loadInbox()]);
+    syncBackBtn();
+    syncRouteUi();
+    await Promise.all([
+      loadManagers(),
+      loadRentmgrAdmins(),
+      loadAdmins(),
+      loadMine(),
+      loadInbox()
+    ]);
   }
 
   async function uploadSelected(fileList) {
@@ -1497,11 +1619,11 @@
       .map((el) => el.value)
       .filter((v) => NODE_OPTIONS.includes(v));
     if (!form.elements.modifier.value) {
-      setMsg('請選擇營業處經理', 'err');
+      setMsg(modifierPlaceholder(), 'err');
       form.elements.modifier.focus();
       return;
     }
-    if (!mod.name) { setMsg('請選擇營業處經理', 'err'); form.elements.modifier.focus(); return; }
+    if (!mod.name) { setMsg(modifierPlaceholder(), 'err'); form.elements.modifier.focus(); return; }
     if (!address) { setMsg('請填物件地址', 'err'); form.elements.address.focus(); return; }
     if (!matchNo) { setMsg('請填媒合編號', 'err'); form.elements.matchNo.focus(); return; }
     if (!nodes.length) { setMsg('請至少勾選一個需修改節點', 'err'); return; }
@@ -1526,6 +1648,7 @@
       content,
       modifierName: mod.name,
       modifierTeam: mod.team,
+      ...(isRentmgrEntry() ? { route: 'rentmgr' } : {}),
       ...issue
     });
   }
