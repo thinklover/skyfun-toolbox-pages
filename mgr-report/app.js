@@ -449,7 +449,7 @@
     orgMemDir: 'asc',
     orgMemQ: '',
     orgMemSt: 'on',
-    orgTenPick: '',
+    orgTenPick: 'm0',
     orgRankPick: '',
     orgMemPick: '',
     orgMemJudgeKind: '',
@@ -464,7 +464,8 @@
     orgFlowRankMetric: 'on',
     orgFlowPeopleOpen: false,
     orgFlowPeopleKey: 'left',
-    orgFlowTitle: ''
+    orgFlowTitle: '',
+    orgFlowYm: null
   };
   const draft = {};
   let charts = {};
@@ -517,6 +518,12 @@
   STAFF_HR.forEach(s => {
     STAFF_HR_BY_NAME.set(s.name, s);
     if (s.officeName) STAFF_HR_BY_NAME.set(s.name + '\t' + s.officeName, s);
+  });
+  const STAFF_BY_ID = new Map(STAFF.map(s => [s.id, s]));
+  const STAFF_BY_NAME = new Map();
+  STAFF.forEach(s => {
+    STAFF_BY_NAME.set(s.name, s);
+    if (s.officeName) STAFF_BY_NAME.set(s.name + '\t' + s.officeName, s);
   });
   const ARREARS = (window.ARREARS && window.ARREARS.rows) || [];
   const AR_AGE = [
@@ -702,6 +709,14 @@
     const st = String(r.st || '');
     if (/已停用|暫存/.test(st)) return false;
     return /已生效|已到期|已解約|審|產編/.test(st);
+  }
+  function isNewMatchCt(r) {
+    return isSubletCt(r) || isMgmtCt(r);
+  }
+  function isCasePerf(r) {
+    if (!isCyclePerf(r)) return false;
+    if (isNewMatchFt(r.ft)) return isNewMatchCt(r);
+    return true;
   }
   function submitDateOf(r) {
     const extra = r && r.id != null ? MATCH_EXTRA_BY_ID.get(r.id) : null;
@@ -932,7 +947,7 @@
   }
 
   function perfRows(start, end) {
-    const pool = cachedPool('perfCycle', () => ROWS.filter(r => passFilters(r) && isCyclePerf(r)));
+    const pool = cachedPool('perfCase', () => ROWS.filter(r => passFilters(r) && isCasePerf(r)));
     return uniqueByLeaseAddr(sliceByRange(pool, start, end, null));
   }
 
@@ -1802,7 +1817,7 @@
     const stl = settleOf(y, m);
     const start = stl && stl.leaseStart ? parseIso(stl.leaseStart) : new Date(y, m - 1, 1);
     const end = stl && stl.leaseEnd ? parseIso(stl.leaseEnd) : monthEnd(new Date(y, m - 1, 1));
-    return uniqueByLeaseAddr(ROWS.filter(r => passFilters(r) && startIn(r, start, end) && isCyclePerf(r)));
+    return uniqueByLeaseAddr(ROWS.filter(r => passFilters(r) && startIn(r, start, end) && isCasePerf(r)));
   }
   function bucketWeeks(rows, weeks) {
     const counts = weeks.map(() => 0);
@@ -2046,7 +2061,7 @@
     return uniqueByLeaseAddr(ROWS.filter(r => {
       if (!passFilters(r)) return false;
       if (!officeSetHasRow(offices, r, r.so)) return false;
-      return startIn(r, start, end) && isCyclePerf(r);
+      return startIn(r, start, end) && isCasePerf(r);
     }));
   }
   function unitStaff(offices) {
@@ -4464,7 +4479,7 @@
       rateName: '包租率', piece: '包租', pieceShort: '包租', pieceN: '包租件數',
       offN: '有業績營業處數', tgtName: '目標包租率',
       formula: null,
-      monthRows: monthPerf,
+      monthRows: (y, m) => leaseNewRows(new Date(y, m - 1, 1), monthEnd(new Date(y, m - 1, 1)), null, 'lease'),
       isHit: isLeaseCt,
       officeSet: salesOfficeSet,
       card4: 'yr3', yMax: 70, staffKind: 'lzGrow',
@@ -5029,6 +5044,7 @@
     { t: '63', lab: '業務助理' },
     { t: '99', lab: '工讀生' }
   ];
+  const ORG_FLOW_RANKS = ORG_MOVE_RANKS.filter(r => r.t !== '99');
   const ORG_TEN_BANDS = [
     { id: 'y2', lab: '滿2年', test: m => m >= 24 },
     { id: 'y1', lab: '滿1年至未滿2年', test: m => m >= 12 && m < 24 },
@@ -5050,6 +5066,33 @@
     const months = orgTenureMonths(hire, asOf);
     if (months == null) return '—';
     return `${Math.floor(months / 12)}年${months % 12}月`;
+  }
+  function orgStaffMeta(s) {
+    if (!s) return {};
+    if (s.supervisor) return s;
+    if (s.id != null && STAFF_BY_ID.has(s.id)) return STAFF_BY_ID.get(s.id);
+    const office = s.officeName || s.office || '';
+    return STAFF_BY_NAME.get((s.name || '') + '\t' + office) || STAFF_BY_NAME.get(s.name) || s;
+  }
+  function orgSupervisor(s) {
+    const v = (s && s.supervisor) || orgStaffMeta(s).supervisor || '';
+    return v || '—';
+  }
+  function orgPersonPieceStats(p, asOf) {
+    const name = fcstNameKey(p.name);
+    const hire = p.hire;
+    const leave = p.leave;
+    const end = (leave && (!asOf || leave < asOf)) ? leave : (asOf || taiwanNow());
+    const start = hire || new Date(2011, 0, 1);
+    const rows = uniqueByLeaseAddr(ROWS.filter(r => {
+      if (fcstNameKey(r.sl) !== name) return false;
+      if (!isNewMatchFt(r.ft) || !isCasePerf(r)) return false;
+      return startIn(r, start, end);
+    }));
+    const n = rows.length;
+    const months = orgTenureMonths(hire, end);
+    const avg = n && months != null ? n / Math.max(months, 1) : (n ? n : 0);
+    return { n, avg, months };
   }
   function orgMonthSlot(y, m, n, hire, leave) {
     const start = new Date(y, m - 1, 1);
@@ -5109,6 +5152,9 @@
       });
     }
     return rows;
+  }
+  function orgFlowRoster(offices) {
+    return orgHrRoster(offices).filter(p => String(p.title) !== '99');
   }
   function orgRateTxt(on, left) {
     const den = on + left;
@@ -5250,6 +5296,8 @@
     const mid = ORG_TEN_BANDS.find(b => b.id === 'm3');
     const midOn = bandOf(on, mid).length;
     const midLeft = bandOf(left, mid).length;
+    const m0 = ORG_TEN_BANDS.find(b => b.id === 'm0');
+    const m0On = bandOf(on, m0).length;
     const mgr = orgUnitMgr(tree, offices);
     if ($('orgHrTitle')) $('orgHrTitle').textContent = '組織人員分析';
     if ($('orgHrSeg')) $('orgHrSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === (ytd ? 'ytd' : 'month')));
@@ -5317,8 +5365,9 @@
       ${judgeP('年資', watch
         ? `${watch.lab}留任率${watch.rate}（在職${fmt(watch.onN)}、離職${fmt(watch.outN)}），為需關注區間。`
         : '本期無年資分布資料。')}
-      ${judgeP('異動', `${rangeLab}新進${fmt(hired.length)}人、離職${fmt(left.length)}人${leftTop ? '；離職最多為' + leftTop.lab + fmt(leftTop.n) + '人' : ''}。`)}`;
-    const tenPick = state.orgTenPick || '';
+      ${judgeP('異動', `${rangeLab}新進${fmt(hired.length)}人、離職${fmt(left.length)}人${leftTop ? '；離職最多為' + leftTop.lab + fmt(leftTop.n) + '人' : ''}。`)}
+      ${judgeP('增員', (hired.length ? `${rangeLab}新進${fmt(hired.length)}人。` : '組織無增加新人為重要警訊。') + `未滿3個月人數實績為${fmt(m0On)}人。`)}`;
+    const tenPick = state.orgTenPick || 'm0';
     if ($('orgTenTbl')) $('orgTenTbl').innerHTML = `<table class="crab-tbl org-hr-tbl org-ten-tbl"><thead><tr>
       <th>年資</th><th>在職</th><th>離職</th><th>留任率</th>
     </tr></thead><tbody>
@@ -5328,7 +5377,7 @@
         ${orgHrTd(r.outN, 'ten|' + r.id + '|out', r.outN ? 'left' : '')}
         <td>${r.rate}</td>
       </tr>`).join('')}
-    </tbody><tfoot><tr data-org-ten="sum" class="${tenPick === 'sum' ? 'on' : ''}">
+    </tbody><tfoot><tr data-org-ten="sum">
       <td>合計</td>
       ${orgHrTd(totOn, 'ten|sum|on')}
       ${orgHrTd(totLeft, 'ten|sum|out', totLeft ? 'left' : '')}
@@ -5393,12 +5442,18 @@
   }
   function renderOrgFlow(tree, offices, y, viewM, rocY) {
     if (!$('orgFlowKpis')) return;
+    const pickYm = state.orgFlowYm;
+    const pickIdx = pickYm ? pickYm.y * 12 + pickYm.m : 0;
+    const dashIdx = y * 12 + viewM;
+    const flowY = pickYm && pickIdx <= dashIdx ? pickYm.y : y;
+    const flowM = pickYm && pickIdx <= dashIdx ? pickYm.m : viewM;
+    const flowRoc = flowY - 1911;
     const ytd = (state.orgFlowGrain || 'month') === 'ytd';
-    const rangeLab = ytd ? `1–${viewM}月` : `${viewM}月`;
-    const asOf = monthEnd(new Date(y, viewM - 1, 1));
-    const roster = orgHrRoster(offices);
-    const snap = orgPeriodSnap(roster, y, viewM, ytd);
-    const ytdSnap = orgPeriodSnap(roster, y, viewM, true);
+    const rangeLab = ytd ? `1–${flowM}月` : `${flowM}月`;
+    const asOf = monthEnd(new Date(flowY, flowM - 1, 1));
+    const roster = orgFlowRoster(offices);
+    const snap = orgPeriodSnap(roster, flowY, flowM, ytd);
+    const ytdSnap = orgPeriodSnap(roster, flowY, flowM, true);
     const on = snap.onEnd;
     const left = snap.left;
     const hired = snap.hired;
@@ -5414,7 +5469,7 @@
     const midLeft = bandLeft(mid);
     const mgr = orgUnitMgr(tree, offices);
     if ($('orgFlowSeg')) $('orgFlowSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === (ytd ? 'ytd' : 'month')));
-    if ($('orgFlowMeta')) $('orgFlowMeta').textContent = `${rocY}年${viewM}月 ｜ ${tree.name}${mgr ? ' ｜ 主管 ' + mgr : ''} ｜ ${ytd ? '累計至當月' : '當月'} ｜ 離職率＝期間離職÷期間平均在職`;
+    if ($('orgFlowMeta')) $('orgFlowMeta').textContent = `${flowRoc}年${flowM}月 ｜ ${tree.name}${mgr ? ' ｜ 主管 ' + mgr : ''} ｜ ${ytd ? '累計至當月' : '當月'} ｜ 點柱狀月份切換圖卡與人員明細 ｜ 離職率＝期間離職÷期間平均在職`;
     if ($('orgFlowPeopleBtn')) $('orgFlowPeopleBtn').classList.toggle('on', !!state.orgFlowPeopleOpen);
     $('orgFlowKpis').innerHTML = `
       <div class="card kpi" data-org-flow-ppl="left">
@@ -5435,7 +5490,7 @@
       <div class="card kpi" data-org-flow-ppl="ytdLeft">
         <div class="k">累計離職</div>
         <div class="v">${fmt(ytdSnap.left.length)}<span class="unit"> 人</span></div>
-        <div class="s">1–${viewM}月職級異動</div>
+        <div class="s">1–${flowM}月職級異動</div>
       </div>`;
     const hist = [];
     for (let i = 5; i >= 0; i--) {
@@ -5443,6 +5498,7 @@
       while (mm <= 0) { mm += 12; yy -= 1; }
       const s = orgMonthSnap(roster, yy, mm);
       hist.push({
+        y: yy, m: mm,
         lab: mm + '月',
         start: s.onStart.length,
         on: s.onEnd.length,
@@ -5459,8 +5515,10 @@
     const last = hist[hist.length - 1];
     if (last) {
       const nextM = viewM === 12 ? 1 : viewM + 1;
-      steps.push({ kind: 'on', lab: nextM + '月', start: last.on, on: last.on, inn: 0, out: 0 });
+      const nextY = viewM === 12 ? y + 1 : y;
+      steps.push({ y: nextY, m: nextM, kind: 'on', lab: nextM + '月', start: last.on, on: last.on, inn: 0, out: 0 });
     }
+    const isFlowSel = s => s && s.y === flowY && s.m === flowM;
     const barLab = {
       id: 'orgFlowBarLab',
       afterDatasetsDraw(chart) {
@@ -5490,7 +5548,7 @@
       {
         label: '在職',
         data: steps.map(s => s.kind === 'on' ? s.start : null),
-        backgroundColor: '#1e3a5f',
+        backgroundColor: steps.map(s => s.kind === 'on' && isFlowSel(s) ? '#0f2744' : '#1e3a5f'),
         borderColor: '#1e3a5f',
         borderWidth: 0,
         borderRadius: 2,
@@ -5500,7 +5558,7 @@
       {
         label: '新進',
         data: steps.map(s => s.kind === 'in' && s.inn ? [s.start, s.start + s.inn] : null),
-        backgroundColor: '#60a5fa',
+        backgroundColor: steps.map(s => s.kind === 'in' && isFlowSel(s) ? '#2563eb' : '#60a5fa'),
         borderColor: '#60a5fa',
         borderWidth: 0,
         borderRadius: 2,
@@ -5510,7 +5568,7 @@
       {
         label: '離職',
         data: steps.map(s => s.kind === 'out' && s.out ? [s.start + s.inn - s.out, s.start + s.inn] : null),
-        backgroundColor: '#9e1a32',
+        backgroundColor: steps.map(s => s.kind === 'out' && isFlowSel(s) ? '#7f1d1d' : '#9e1a32'),
         borderColor: '#9e1a32',
         borderWidth: 0,
         borderRadius: 2,
@@ -5521,6 +5579,24 @@
       layout: { padding: { top: 14, left: 4, right: 8 } },
       plugins: { legend: { display: false } },
       datasets: { bar: { categoryPercentage: 0.88, barPercentage: 0.96 } },
+      interaction: { mode: 'index', intersect: false },
+      onHover: (evt, els) => {
+        const t = evt && (evt.native && evt.native.target || evt.chart && evt.chart.canvas);
+        if (t && t.style) t.style.cursor = els && els.length ? 'pointer' : 'default';
+      },
+      onClick: (evt, els) => {
+        if (!els.length) return;
+        const s = steps[els[0].index];
+        if (!s || !s.m) return;
+        if (s.y * 12 + s.m > y * 12 + viewM) return;
+        state.orgFlowYm = { y: s.y, m: s.m };
+        state.orgFlowGrain = 'month';
+        state.orgFlowPeopleKey = s.kind === 'out' ? 'left' : (s.kind === 'in' ? 'hired' : 'on');
+        state.orgFlowTitle = '';
+        state.orgFlowPeopleOpen = true;
+        renderOrgDash();
+        if ($('orgFlowPeopleBox')) $('orgFlowPeopleBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      },
       scales: {
         x: {
           stacked: false,
@@ -5553,15 +5629,15 @@
     const pick = state.orgFlowPick || '';
     const metricsOf = id => {
       const set = unitOfficeSet(id);
-      const rs = orgHrRoster(set);
-      const now = orgPeriodSnap(rs, y, viewM, ytd);
+      const rs = orgFlowRoster(set);
+      const now = orgPeriodSnap(rs, flowY, flowM, ytd);
       const byT = t => ({
         on: now.onEnd.filter(p => p.title === t).length,
         inn: now.hired.filter(p => p.title === t).length,
         out: now.left.filter(p => p.title === t).length
       });
       const ranks = {};
-      ORG_MOVE_RANKS.forEach(rk => { ranks[rk.t] = byT(rk.t); });
+      ORG_FLOW_RANKS.forEach(rk => { ranks[rk.t] = byT(rk.t); });
       return {
         start: now.onStart.length, end: now.onEnd.length, out: now.left.length, inn: now.hired.length, rate: now.rate,
         ranks, now
@@ -5608,11 +5684,11 @@
       const isOpen = node.id === '__SEL__' || open.has(node.id);
       const m = node.m;
       const onCls = pick === node.id || (!pick && node.id === root.id) ? ' on' : '';
-      const cells = ORG_MOVE_RANKS.map(rk => {
+      const cells = ORG_FLOW_RANKS.map(rk => {
         const n = (m.ranks[rk.t] || {})[rankKey] || 0;
         return `<td class="v num-hit" data-org-flow="${esc(metric === 'in' ? 'hired' : (metric === 'out' ? 'left' : 'on'))}" data-org-flow-u="${esc(node.id)}" data-org-flow-t="${esc(rk.t)}">${fmt(n)}</td>`;
       }).join('');
-      const sum = ORG_MOVE_RANKS.reduce((s, rk) => s + ((m.ranks[rk.t] || {})[rankKey] || 0), 0);
+      const sum = ORG_FLOW_RANKS.reduce((s, rk) => s + ((m.ranks[rk.t] || {})[rankKey] || 0), 0);
       rankRows.push(`<tr class="${onCls}" data-org-flow-row="${esc(node.id)}">
         ${nameCell(node, depth)}
         ${cells}
@@ -5622,7 +5698,7 @@
     };
     walkR(root, 0);
     if ($('orgFlowRankTbl')) $('orgFlowRankTbl').innerHTML = `<table class="unit-cmp org-flow-tbl"><thead><tr>
-      <th>單位／擔當者</th>${ORG_MOVE_RANKS.map(rk => `<th>${esc(rk.lab)}</th>`).join('')}<th>合計</th>
+      <th>單位／擔當者</th>${ORG_FLOW_RANKS.map(rk => `<th>${esc(rk.lab)}</th>`).join('')}<th>合計</th>
     </tr></thead><tbody>${rankRows.join('')}</tbody></table>`;
     const pbox = $('orgFlowPeopleBox');
     if (pbox) {
@@ -5633,12 +5709,12 @@
         const key = state.orgFlowPeopleKey || 'left';
         const uid = state.orgFlowPick && state.orgFlowPick !== root.id ? state.orgFlowPick : tree.id;
         const set = unitOfficeSet(uid);
-        const rs = orgHrRoster(set);
-        const sn = orgPeriodSnap(rs, y, viewM, ytd);
+        const rs = orgFlowRoster(set);
+        const sn = orgPeriodSnap(rs, flowY, flowM, ytd);
         const title = state.orgFlowTitle || '';
         let list = sn.onEnd;
         let lab = '月末在職';
-        if (key === 'left' || key === 'ytdLeft') { list = key === 'ytdLeft' ? orgPeriodSnap(rs, y, viewM, true).left : sn.left; lab = '離職'; }
+        if (key === 'left' || key === 'ytdLeft') { list = key === 'ytdLeft' ? orgPeriodSnap(rs, flowY, flowM, true).left : sn.left; lab = '離職'; }
         else if (key === 'hired') { list = sn.hired; lab = '到職'; }
         else if (key === 'start') { list = sn.onStart; lab = '月初在職'; }
         else if (key === 'on') { list = sn.onEnd; lab = '月末在職'; }
@@ -5646,16 +5722,23 @@
         const rk = ORG_MOVE_RANKS.find(r => r.t === title);
         list = [...list].sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-Hant'));
         pbox.classList.remove('hidden');
-        pbox.innerHTML = `${staffHead('人員明細 ｜ ' + lab + (rk ? '｜' + rk.lab : '') + ' ｜ ' + fmt(list.length) + '人')}
-          <div class="src-staff-scroll"><table class="src-combo org-hr-people-tbl">
-            <thead><tr><th>業務</th><th>職稱</th><th>到職日</th><th>離職日</th><th>年資</th></tr></thead>
-            <tbody>${list.length ? list.map(p => `<tr>
+        pbox.innerHTML = `${staffHead('人員明細 ｜ ' + flowM + '月 ｜ ' + lab + (rk ? '｜' + rk.lab : '') + ' ｜ ' + fmt(list.length) + '人')}
+          <div class="src-staff-scroll"><table class="src-combo org-flow-people-tbl">
+            <thead><tr><th>業務</th><th>職稱</th><th>到職日</th><th>離職日</th><th>年資</th><th>累計總件數</th><th>月均件數</th><th>直屬主管</th></tr></thead>
+            <tbody>${list.length ? list.map(p => {
+              const tenEnd = p.leave && p.leave < asOf ? p.leave : asOf;
+              const st = orgPersonPieceStats(p, tenEnd);
+              return `<tr>
               <td>${esc(p.name)}</td>
               <td>${esc(p.titleName || orgTitleOf(p.staff || p))}</td>
               <td>${orgHrDay(p.hire)}</td>
               <td>${orgHrDay(p.leave)}</td>
-              <td>${esc(orgTenure(p.hire, p.leave && p.leave < asOf ? p.leave : asOf))}</td>
-            </tr>`).join('') : `<tr><td colspan="5" class="muted">無符合人員</td></tr>`}</tbody>
+              <td>${esc(orgTenure(p.hire, tenEnd))}</td>
+              <td>${fmt(st.n)}</td>
+              <td>${st.n ? st.avg.toFixed(1) : '0.0'}</td>
+              <td>${esc(orgSupervisor(p.staff || p))}</td>
+            </tr>`;
+            }).join('') : `<tr><td colspan="8" class="muted">無符合人員</td></tr>`}</tbody>
           </table></div>`;
       }
     }
@@ -5715,7 +5798,7 @@
     const set = offices instanceof Set ? offices : (offices ? new Set(offices) : selectedOffices());
     return uniqueByLeaseAddr(ROWS.filter(r => {
       if (!isNewMatchFt(r.ft)) return false;
-      if (!isCyclePerf(r)) return false;
+      if (!isCasePerf(r)) return false;
       if (!startIn(r, start, end)) return false;
       if (state.cities.length !== CITIES.length && !state.cities.includes(normCity(r.city))) return false;
       if (state.periods.length !== PERIODS.length && !state.periods.includes(r.p)) return false;
@@ -6696,7 +6779,7 @@
   ];
   const RN_CASE_COLS = [
     { id: 'sl', label: '代管人員' },
-    { id: 'so', label: '營業處' },
+    { id: 'so', label: '代管營業處' },
     { id: 'ft', label: '案件類型' },
     { id: 'ct', label: '契約型式' },
     { id: 'st', label: '狀態' },
@@ -6901,9 +6984,10 @@
         if (!isPolicyCt(r) || !isWeakId(r)) return false;
       } else if (opts.onlyFresh) {
         if (!isNewCasePerf(r) || !isFreshNew(r)) return false;
+      } else if (opts.onlyLease) {
+        if (!isLeaseMgmt(r) || !isLeaseCt(r)) return false;
       } else {
-        if (!isLeaseMgmt(r)) return false;
-        if (opts.onlyLease && !isLeaseCt(r)) return false;
+        if (!isNewMatchCt(r)) return false;
       }
       if (opts.onlyNew && !isNewMatchFt(r.ft)) return false;
       return !!reviewOf(r);
@@ -6927,7 +7011,7 @@
       if (opts.onlyLease && !isLeaseCt(r)) return false;
       if (opts.onlyWeak) return isWeakId(r) && isPolicyPerf(r);
       if (opts.onlyFresh) return isFreshNew(r) && isNewCasePerf(r);
-      return isPerf(r);
+      return isCasePerf(r);
     })));
     return sliceByRange(pool, start, end, offices);
   }
@@ -7635,7 +7719,7 @@
       charts.chartRevPie.destroy();
       delete charts.chartRevPie;
     }
-    $('revPeriod').textContent = `統計期間：${slash(start)}～${slash(end)}　${typeFilterNote()}　僅計包租、代管(不含轉租)`;
+    $('revPeriod').textContent = `統計期間：${slash(start)}～${slash(end)}　${typeFilterNote()}　僅計轉租、代管`;
     const ownerOf = (id, name) => {
       if (id === '__SEL__') return '—';
       return LOOKUP.owners[id] || LOOKUP.owners[name] || ownerName(unitOfficeSet(id), name) || '—';
@@ -7811,7 +7895,7 @@
         return isFinite(n) ? n : 0;
       }
       if (key === 'll' || key === 'tn') return casePartyOf(r)[key] || '';
-      if (key === 'sl' && isRnCaseView()) return r.eu || r.ag || r.sl || '';
+      if (key === 'sl' && isRnCaseView()) return rnMgmtAgent(r) || r.eu || r.ag || '';
       if (key === 'so' && isRnCaseView()) return rnMgmtOffice(r);
       return r[key] == null ? '' : r[key];
     };
@@ -7933,6 +8017,7 @@
     if (kind === 'rnYear') {
       const mm = /^m(\d+)$/.exec(String(k));
       if (mm) return (p.months && p.months[Number(mm[1])]) || [];
+      if (k === 'year') return p.yearRows || [];
       if (k === 'ytd' || k === 'total') return p.rows || [];
       if (k === 'done') return p.doneRows || [];
       if (k === 'review') return p.reviewRows || [];
@@ -7992,6 +8077,7 @@
     }
     if (kind === 'rnYear') {
       if (k === 'ytd') return '1–' + (state.end.getMonth() + 1) + '累計';
+      if (k === 'year') return '1–12月';
       if (k === 'done') return '已續約';
       if (k === 'review') return '審件中';
       if (k === 'assign') return '已派案';
@@ -8047,7 +8133,7 @@
     const cols = rn ? RN_CASE_COLS : CASE_COLS;
     const cell = (r, id) => {
       if (id === 'so' && rn) return esc(rnMgmtOffice(r));
-      if (id === 'sl' && rn) return esc(r.eu || r.ag || r.sl || '');
+      if (id === 'sl' && rn) return esc(rnMgmtAgent(r) || r.eu || r.ag || '');
       if (id === 'city') return esc(normCity(r.city || (rnContract(r) || {}).city || ''));
       if (id === 'ls' || id === 'le') return esc(showDate(r[id] || (rnContract(r) || {})[id]));
       if (id === 'addr') return esc(r.addr || r.a || (rnContract(r) || {}).addr || '');
@@ -8077,16 +8163,28 @@
       ${sorted.map(r => `<tr>${cols.map(c => `<td>${cell(r, c.id)}</td>`).join('')}</tr>`).join('')}
     </tbody></table>`;
   }
+  function rnYearCaseMonthBar(c, p) {
+    if (!c || !p) return '';
+    const viewM = state.end.getMonth() + 1;
+    const btn = (key, lab, n) => `<button type="button" class="tool-btn${c.key === key ? ' on' : ''}" data-rn-year-case-k="${esc(key)}">${esc(lab)} ${fmt(n)}</button>`;
+    const monthBtns = Array.from({ length: 12 }, (_, i) => {
+      const m = i + 1;
+      return btn('m' + m, m + '月', (p.months && p.months[m] || []).length);
+    }).join('');
+    return `<div class="rn-year-case-seg">${monthBtns}${btn('ytd', '1–' + viewM + '累計', (p.rows || []).length)}${btn('year', '1–12月', (p.yearRows || []).length)}</div>`;
+  }
   function staffCasePanel(kind) {
     const c = state.staffCase;
     if (!c || c.kind !== kind) return '';
     const p = (staffPeople[kind] || []).find(x => x.office === c.office && x.name === c.name);
     const rows = filterStaffCases(p, kind, c.key);
+    const monthBar = kind === 'rnYear' ? rnYearCaseMonthBar(c, p) : '';
     return `<div class="staff-case">
       <div class="staff-case-head">
         <h4>${esc(c.name)}（${esc(c.office)}）｜${esc(c.label)}　業務案件明細　共${fmt(rows.length)}筆</h4>
         <button type="button" class="tool-btn close-btn" data-close-case>關閉</button>
       </div>
+      ${monthBar}
       <div class="staff-case-scroll">${caseRowsHtml(rows)}</div>
     </div>`;
   }
@@ -8237,7 +8335,7 @@
     const maxP = Math.max(1, ...people.map(p => p.pre));
     box.innerHTML = `
       ${staffHead(esc(scopeName) + ' ｜ ' + cfg.title)}
-      <p class="src-staff-k">包租／代管（不含轉租）共${fmt(total)}件，${fmt(people.length)}位業務；已生效${fmt(doneN)}件，占整體${total ? (doneN / total * 100).toFixed(1) : '0.0'}%${top && top.done ? `，已生效最高業務${esc(top.name)}${fmt(top.done)}件` : ''}</p>
+      <p class="src-staff-k">${cfg.kind === 'lzRev' ? '包租／代管（不含轉租）' : '轉租／代管'}共${fmt(total)}件，${fmt(people.length)}位業務；已生效${fmt(doneN)}件，占整體${total ? (doneN / total * 100).toFixed(1) : '0.0'}%${top && top.done ? `，已生效最高業務${esc(top.name)}${fmt(top.done)}件` : ''}</p>
       <p class="src-staff-k">點表頭排序；點業務姓名展開案件明細。右側列出該進度全部狀態與件數</p>
       <div class="src-staff-scroll"><table class="src-combo rev-combo"><colgroup>
         <col style="width:9em"><col>
@@ -9103,11 +9201,16 @@
   }
   function rnMgmtOffice(r) {
     if (r._rnSo) return r._rnSo;
-    const c = rnContract(r) || r;
+    const c = rnContract(r) || {};
     const extra = matchExtraOf(c) || matchExtraOf(r) || {};
-    const so = crabNormSo(c.so || extra.so || r.so || extra.eo || r.eo || r.of || '');
-    r._rnSo = so;
-    return so;
+    const raw = r.of || extra.eo || r.eo || c.eo || extra.of || c.of || '';
+    r._rnSo = crabNormSo(raw);
+    return r._rnSo;
+  }
+  function rnMgmtAgent(r) {
+    const c = rnContract(r) || {};
+    const extra = matchExtraOf(c) || matchExtraOf(r) || {};
+    return r.eu || extra.eu || r.ag || c.eu || extra.ag || '';
   }
   function rnCaseTag(r) {
     const c = rnContract(r) || {};
@@ -9115,8 +9218,8 @@
     return {
       ...c,
       ...r,
-      sl: r.ag || c.sl || r.sl || '',
-      so: rnMgmtOffice({ ...c, ...r }),
+      sl: rnMgmtAgent(r) || '',
+      so: rnMgmtOffice(r),
       city: r.city || c.city || '',
       addr: r.addr || r.a || c.addr || c.a || '',
       p: r.p || c.p || '',
@@ -10257,6 +10360,7 @@
       const s = rnPackRange(start, end, offices);
       const last = rnPackRange(lastStart, lastEnd, offices);
       const yoy = rnPackRange(yoyStart, yoyEnd, offices);
+      const conv = rnConvRange(start, end, offices);
       return {
         due: s.due, keep: s.keep, done: s.done, valid: s.valid,
         n: s.den, num: s.num, rate: s.rate,
@@ -10264,6 +10368,8 @@
         yoyRate: yoy.rate, lastRate: last.rate,
         yoyPp: (s.rate - yoy.rate) * 100,
         lastPp: (s.rate - last.rate) * 100,
+        toLease: conv.toLease || 0,
+        yr3: conv.yr3 || 0,
         tgt: tgt * 100
       };
     };
@@ -10298,6 +10404,7 @@
         <td class="col-diff">${dpp(m.gap)}</td>
         <td>${(m.yoyRate * 100).toFixed(1)}%</td><td>${cmpChg(m.rate, m.yoyRate)}</td>
         <td>${(m.lastRate * 100).toFixed(1)}%</td><td>${cmpChg(m.rate, m.lastRate)}</td>
+        <td>${fmt(m.toLease)}</td><td>${fmt(m.yr3)}</td>
       </tr>`);
       if (hasKids && isOpen) node.kids.forEach(k => walk(k, depth + 1));
     };
@@ -10307,13 +10414,14 @@
       ${rnCmpTh('name', '單位')}${rnCmpTh('owner', '擔當者')}${rnCmpTh('due', '應續約')}${rnCmpTh('keep', '包租應存續')}${rnCmpTh('done', '已續約')}${rnCmpTh('valid', '包租有效件')}
       ${rnCmpTh('tgt', '續約率目標', 'col-tgt')}${rnCmpTh('rate', '續約率', 'rate-h')}${rnCmpTh('gap', '差異%', 'col-diff')}
       ${rnCmpTh('yoyRate', '同期續約%')}${rnCmpTh('yoyPp', '同期比')}${rnCmpTh('lastRate', '上月續約%')}${rnCmpTh('lastPp', '上月比')}
+      ${rnCmpTh('toLease', '續約代轉包件數')}${rnCmpTh('yr3', '簽三年代管件數')}
     </tr></thead><tbody>${rows.join('')}</tbody></table>`;
     const m = focusNode.m || {};
     const name = focusNode.name || '所選單位';
     if ($('rnCmpJudge')) $('rnCmpJudge').innerHTML = `<h4>智慧分析（${esc(name)}）</h4>
       <p>${esc(`${name}續約率 ${(m.rate * 100).toFixed(1)}%（${fmt(m.num)}／${fmt(m.n)}），目標 ${Math.round(tgt * 100)}%，差異 ${(m.gap > 0 ? '+' : '')}${(m.gap || 0).toFixed(1)}%。`)}</p>
       <p>${esc(`應續約 ${fmt(m.due)}、已續約 ${fmt(m.done)}；包租應存續 ${fmt(m.keep)}、包租有效 ${fmt(m.valid)}。`)}</p>
-      <p>${esc(`去年同期 ${(m.yoyRate * 100).toFixed(1)}%，上月 ${(m.lastRate * 100).toFixed(1)}%。歸屬代管營業處，案件類型為全部類別。`)}</p>`;
+      <p>${esc(`去年同期 ${(m.yoyRate * 100).toFixed(1)}%，上月 ${(m.lastRate * 100).toFixed(1)}%。續約代轉包 ${fmt(m.toLease || 0)} 件、簽三年代管 ${fmt(m.yr3 || 0)} 件。歸屬代管營業處，案件類型為全部類別。`)}</p>`;
     const kids = (focusNode.kids || []).filter(k => k.m && k.m.n);
     const hi = [...kids].sort((a, b) => b.m.rate - a.m.rate)[0];
     if ($('rnCmpFocusNote')) $('rnCmpFocusNote').innerHTML = `<h4>單位觀察：下層結構</h4>${
@@ -10719,7 +10827,7 @@
       ${staffHead('續約明細 ｜ 應到期可續約案件')}
       <p class="src-staff-k">應續約 ${fmt(dueN)} 件。點數字展開案件明細</p>
       <div class="src-staff-scroll"><table class="src-combo"><thead><tr>
-        <th data-sort="office" class="${staffSortMark('rnGrow', 'office')}">營業處</th>
+        <th data-sort="office" class="${staffSortMark('rnGrow', 'office')}">代管營業處</th>
         <th data-sort="name" class="${staffSortMark('rnGrow', 'name')}">代管人員</th>
         <th data-sort="due" class="${staffSortMark('rnGrow', 'due')}">應續約</th>
         <th data-sort="keep" class="${staffSortMark('rnGrow', 'keep')}">包租應存續</th>
@@ -10796,7 +10904,7 @@
     if ($('rnConvSeg')) $('rnConvSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === grain));
     if ($('rnConvStaffBtn')) $('rnConvStaffBtn').classList.toggle('on', !!state.rnConvStaffOpen);
     $('rnConvTitle').textContent = `${rnMetricPrefix(metric)}應續租約轉包租案件分析`;
-    $('rnConvMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 包租、轉租、代管 ｜ 租賃地址不重複 ｜ 營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
+    $('rnConvMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 包租、轉租、代管 ｜ 租賃地址不重複 ｜ 代管營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
     $('rnConvKpis').innerHTML = `
       <div class="card kpi">
         <div class="k">已續約</div>
@@ -11090,7 +11198,7 @@
       ${staffHead('應續租約轉包租 ｜ 案件明細')}
       <p class="src-staff-k">應續約 ${fmt(people.reduce((s, p) => s + p.due, 0))} 件。點數字展開案件明細</p>
       <div class="src-staff-scroll"><table class="src-combo"><thead><tr>
-        <th data-sort="office" class="${staffSortMark('rnConv', 'office')}">營業處</th>
+        <th data-sort="office" class="${staffSortMark('rnConv', 'office')}">代管營業處</th>
         <th data-sort="name" class="${staffSortMark('rnConv', 'name')}">代管人員</th>
         <th data-sort="due" class="${staffSortMark('rnConv', 'due')}">應續約</th>
         <th data-sort="done" class="${staffSortMark('rnConv', 'done')}">已續約</th>
@@ -11147,7 +11255,7 @@
     $('rnProgTitle').textContent = `${rnMetricPrefix(metric)}續約執行進度分析`;
     const dueN = (packNow.dueRows || []).length;
     const effN = (packNow.dueRows || []).filter(r => rnEffSt(r.st)).length;
-    $('rnProgMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 全部案件類型 ｜ 營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
+    $('rnProgMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 全部案件類型 ｜ 代管營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
     $('rnProgKpis').innerHTML = `
       <div class="card kpi">
         <div class="k">應續約</div>
@@ -11415,7 +11523,7 @@
       ${staffHead(esc(scopeName) + ' ｜ 續約執行進度明細')}
       <p class="src-staff-k">進行中 ${fmt(people.reduce((s, p) => s + p.work, 0))} 件。點數字展開案件明細</p>
       <div class="src-staff-scroll"><table class="src-combo"><thead><tr>
-        <th data-sort="office" class="${staffSortMark('rnProg', 'office')}">營業處</th>
+        <th data-sort="office" class="${staffSortMark('rnProg', 'office')}">代管營業處</th>
         <th data-sort="name" class="${staffSortMark('rnProg', 'name')}">代管人員</th>
         <th data-sort="work" class="${staffSortMark('rnProg', 'work')}">續約進行中</th>
         <th data-sort="review" class="${staffSortMark('rnProg', 'review')}">審件中</th>
@@ -11460,7 +11568,7 @@
     if ($('rnWatchSeg')) $('rnWatchSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === grain));
     if ($('rnWatchStaffBtn')) $('rnWatchStaffBtn').classList.toggle('on', !!state.rnWatchStaffOpen);
     $('rnWatchTitle').textContent = '近三個月續約案件、未續回案件監控分析';
-    $('rnWatchMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 包租、轉租、代管 ｜ 租賃地址不重複 ｜ 營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
+    $('rnWatchMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ 包租、轉租、代管 ｜ 租賃地址不重複 ｜ 代管營業處 ｜ 目前單位：${focusName} ｜ 點線切換月份`;
     $('rnWatchKpis').innerHTML = `
       <div class="card kpi">
         <div class="k">當月倒數30天未續回</div>
@@ -11673,7 +11781,7 @@
       ${staffHead('近三個月監控 ｜ 案件明細')}
       <p class="src-staff-k">倒數30天 ${fmt(people.reduce((s, p) => s + p.d30, 0))} 件。點數字展開案件明細</p>
       <div class="src-staff-scroll"><table class="src-combo"><thead><tr>
-        <th data-sort="office" class="${staffSortMark('rnWatch', 'office')}">營業處</th>
+        <th data-sort="office" class="${staffSortMark('rnWatch', 'office')}">代管營業處</th>
         <th data-sort="name" class="${staffSortMark('rnWatch', 'name')}">代管人員</th>
         <th data-sort="d30" class="${staffSortMark('rnWatch', 'd30')}">倒數30天</th>
         <th data-sort="d60" class="${staffSortMark('rnWatch', 'd60')}">倒數60天</th>
@@ -11730,11 +11838,12 @@
     let people = [...map.values()].map(p => {
       const months = p.months.map(arr => uniqueById(arr || []));
       const ytdRows = uniqueById(months.slice(1, viewM + 1).flat());
+      const yearRows = uniqueById(months.slice(1, 13).flat());
       const doneRows = ytdRows.filter(r => rnEffSt(r.st || r.raw));
       const hr = STAFF_HR_BY_NAME.get(p.name + '\t' + p.office) || STAFF_HR_BY_NAME.get(p.name) || {};
       return {
         office: p.office, name: p.name, title: hr.titleName || hr.title || '',
-        months, ytd: ytdRows.length, rows: ytdRows,
+        months, ytd: ytdRows.length, rows: ytdRows, year: yearRows.length, yearRows,
         done: doneRows.length, doneRows,
         review: uniqueById(p.reviewRows).length, reviewRows: uniqueById(p.reviewRows),
         assign: uniqueById(p.assignRows).length, assignRows: uniqueById(p.assignRows),
@@ -11759,7 +11868,7 @@
     }).join('');
     box.innerHTML = `<table class="rn-year-tbl"><thead><tr>
       <th data-sort="name" class="${staffSortMark('rnYear', 'name')}">代管人員</th>
-      <th data-sort="office" class="${staffSortMark('rnYear', 'office')}">營業處</th>
+      <th data-sort="office" class="${staffSortMark('rnYear', 'office')}">代管營業處</th>
       ${monthHeads}
       <th data-sort="ytd" class="${staffSortMark('rnYear', 'ytd')}">1–${viewM}累計</th>
       <th data-sort="done" class="${staffSortMark('rnYear', 'done')}">已續約</th>
@@ -11984,7 +12093,7 @@
     if ($('salesNatSeg')) $('salesNatSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === grain));
     const { start, end } = salesRankRange(grain);
     const span = grain === 'year' ? (end.getMonth() - start.getMonth() + 1) : 1;
-    const rows = uniqueById(ROWS.filter(r => passFilters(r) && isPerf(r) && startIn(r, start, end) && NEW_CHILDREN.includes(r.ft)));
+    const rows = uniqueByLeaseAddr(ROWS.filter(r => passFilters(r) && isCasePerf(r) && startIn(r, start, end) && NEW_CHILDREN.includes(r.ft)));
     const firstSeen = natFirstSeen();
     const asOf = end;
     const map = new Map();
@@ -12640,6 +12749,7 @@
         yoyPp: (s.rate - yoy.rate) * 100,
         lastPp: (s.rate - last.rate) * 100,
         yr3: nowRows.filter(r => isMgmtCt(r) && isThreeYearTerm(r)).length,
+        toLease: kind === 'lease' ? rnConvFtRows('代管轉包租', start, end, offices).length : 0,
         tgt: dashTarget(kind) * 100
       };
     };
@@ -12675,6 +12785,7 @@
         <td class="col-diff">${dpp(m.gap)}</td>
         <td>${(m.yoyRate * 100).toFixed(1)}%</td><td>${cmpChg(m.rate, m.yoyRate)}</td>
         <td>${(m.lastRate * 100).toFixed(1)}%</td><td>${cmpChg(m.rate, m.lastRate)}</td>
+        ${kind === 'lease' ? `<td>${fmt(m.toLease)}</td>` : ''}
         ${kind === 'weak' || kind === 'new' ? '' : `<td>${fmt(m.yr3)}</td>`}
       </tr>`);
       if (hasKids && isOpen) node.kids.forEach(k => walk(k, depth + 1));
@@ -12684,12 +12795,13 @@
     const yoyH = lab.yoyH;
     const lastH = lab.lastH;
     const genTh = kind === 'new' ? '' : cmpTh(kind, 'mgmt', lab.gen, 'col-gen');
+    const toLeaseTh = kind === 'lease' ? cmpTh(kind, 'toLease', '續約代轉包件數') : '';
     const yr3Th = kind === 'weak' || kind === 'new' ? '' : cmpTh(kind, 'yr3', '簽三年代管件數');
     $d(kind, 'CmpTable').innerHTML = `<table class="unit-cmp lz-cmp lz-kind-${kind}"><thead><tr>
       ${cmpTh(kind, 'name', '單位')}${cmpTh(kind, 'owner', '擔當者')}${cmpTh(kind, 'n', '總件數')}${cmpTh(kind, 'lease', lab.piece)}${genTh}
       ${cmpTh(kind, 'tgt', '目標%', 'col-tgt')}${cmpTh(kind, 'rate', lab.rate, 'rate-h')}${cmpTh(kind, 'gap', '差異%', 'col-diff')}
       ${cmpTh(kind, 'yoyRate', yoyH)}${cmpTh(kind, 'yoyPp', '同期比')}${cmpTh(kind, 'lastRate', lastH)}${cmpTh(kind, 'lastPp', '上月比')}
-      ${yr3Th}
+      ${toLeaseTh}${yr3Th}
     </tr></thead><tbody>${rows.join('')}</tbody></table>`;
     renderLeaseCmpIntel(focusNode, kind);
   }
@@ -12709,7 +12821,7 @@
     } else if (kind === 'new') {
       lines.push(`新件 ${fmt(m.lease)} 件（是否帶租約＝新件），分母為轉租＋代管 ${fmt(m.n)} 件；已停用、暫存與包租未列入。`);
     } else {
-      lines.push(`包租 ${fmt(m.lease)} 件、代管 ${fmt(m.mgmt)} 件；簽三年代管 ${fmt(m.yr3)} 件。`);
+      lines.push(`包租 ${fmt(m.lease)} 件、代管 ${fmt(m.mgmt)} 件；續約代轉包 ${fmt(m.toLease || 0)} 件；簽三年代管 ${fmt(m.yr3)} 件。`);
     }
     return lines;
   }
@@ -13584,7 +13696,8 @@
     const hit = e.target.closest('[data-org-hr]');
     if (hit) {
       const tr = e.target.closest('[data-org-ten]');
-      if (tr) state.orgTenPick = tr.getAttribute('data-org-ten');
+      const id = tr && tr.getAttribute('data-org-ten');
+      if (id && id !== 'sum') state.orgTenPick = id;
       state.orgHrPeopleKey = hit.getAttribute('data-org-hr');
       state.orgHrPeopleOpen = true;
       renderOrgDash();
@@ -13594,7 +13707,8 @@
     const tr = e.target.closest('[data-org-ten]');
     if (!tr) return;
     const id = tr.getAttribute('data-org-ten');
-    state.orgTenPick = state.orgTenPick === id ? '' : id;
+    if (id === 'sum') return;
+    state.orgTenPick = state.orgTenPick === id ? 'm0' : id;
     renderOrgDash();
   };
   if ($('orgRankTbl')) $('orgRankTbl').onclick = e => {
@@ -14340,6 +14454,13 @@
   const onRnYearClick = e => {
     if (e.target.closest('[data-close-case]')) {
       if (state.staffCase && state.staffCase.kind === 'rnYear') state.staffCase = null;
+      renderRnYear();
+      return;
+    }
+    const mk = e.target.closest('[data-rn-year-case-k]');
+    if (mk && state.staffCase && state.staffCase.kind === 'rnYear') {
+      const key = mk.getAttribute('data-rn-year-case-k');
+      state.staffCase = { ...state.staffCase, key, label: caseKeyLabel('rnYear', key) };
       renderRnYear();
       return;
     }
