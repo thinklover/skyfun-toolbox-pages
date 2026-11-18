@@ -65,7 +65,7 @@
 
   function backPage() {
     const b = sessionStorage.getItem(BACK_KEY);
-    if (b === 'biz-supervisor' || b === 'administration') return b;
+    if (b === 'biz-supervisor' || b === 'administration' || b === 'rentmanager') return b;
     return zone() === 'supervisor' ? 'biz-supervisor' : 'administration';
   }
 
@@ -256,7 +256,9 @@
     const back = $('ait-back-btn');
     if (back) {
       const bp = backPage();
-      back.textContent = bp === 'biz-supervisor' ? '← 返回業務主管專區' : '← 返回行政專區';
+      back.textContent = bp === 'biz-supervisor'
+        ? '← 返回業務主管專區'
+        : (bp === 'rentmanager' ? '← 返回租管師專區' : '← 返回行政專區');
       back.onclick = function () {
         if (typeof showPage === 'function') showPage(bp);
       };
@@ -711,7 +713,11 @@
   function openFrom(zoneName) {
     const z = zoneName === 'supervisor' ? 'supervisor' : 'admin';
     sessionStorage.setItem(ZONE_KEY, z);
-    sessionStorage.setItem(BACK_KEY, z === 'supervisor' ? 'biz-supervisor' : 'administration');
+    sessionStorage.setItem(
+      BACK_KEY,
+      zoneName === 'supervisor' ? 'biz-supervisor'
+        : (zoneName === 'rentmgr' ? 'rentmanager' : 'administration')
+    );
     if (typeof showPage === 'function') showPage('ai-tingting');
   }
 

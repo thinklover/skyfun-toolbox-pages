@@ -5127,6 +5127,14 @@
                 </span>
                 <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
             </button>
+            <button type="button" class="apt-entry adz-hero" id="adz-system-change-hero" onclick="sessionStorage.setItem('bsc-back','administration'); showPage('business-system-change')">
+                <span class="apt-entry-icon" aria-hidden="true">🛠️</span>
+                <span class="apt-entry-text">
+                    <strong>系統欄位更改通報</strong>
+                    <small>秘書／行政處理待改案件；業務與租管師也可從各專區送件</small>
+                </span>
+                <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+            </button>
             </div>
 
             <div class="adz-folds adz-folds--row3">
@@ -9523,7 +9531,7 @@
                         </span>
                         <span class="bz-go" aria-hidden="true">進入 →</span>
                     </button>
-                    <button type="button" class="bz-card bz-card--lg bz-card--sys" onclick="showPage('business-system-change')">
+                    <button type="button" class="bz-card bz-card--lg bz-card--sys" onclick="sessionStorage.setItem('bsc-back','business'); showPage('business-system-change')">
                         <span class="bz-ico" aria-hidden="true">🛠️</span>
                         <span class="bz-copy">
                             <span class="bz-name">系統欄位更改通報</span>
@@ -11633,10 +11641,10 @@
         <script src="./js/notice-ack-data.js?v=20261110-nodup"></script>
         <script src="./js/notice-ack.js?v=20261111-ackwm"></script>
 
-        <!-- 業務專區：系統欄位更改通報 -->
+        <!-- 系統欄位更改通報（業務／租管師／行政共用） -->
         <div id="page-business-system-change" class="hidden max-w-4xl mx-auto space-y-4">
-            <button type="button" onclick="showPage('business')" class="mb-2 btn btn-sm tone-slate-soft">
-                ← 返回業務專區
+            <button type="button" id="bsc-back-btn" onclick="window.bscGoBack && window.bscGoBack()" class="mb-2 btn btn-sm tone-slate-soft">
+                ← 返回
             </button>
             <div class="bsc-card" id="bsc-root">
                 <header class="bsc-hero">
@@ -11651,7 +11659,7 @@
                             <span class="bsc-step-num" aria-hidden="true">1</span>
                             <div class="bsc-step-body">
                                 <strong>提出通報</strong>
-                                <span>業務填寫後，送交營業處經理</span>
+                                <span>業務／租管師填寫後，送交營業處經理</span>
                             </div>
                         </li>
                         <li class="bsc-step">
@@ -11937,6 +11945,25 @@
                     <p class="adz-sub">績效中心、會議表單、獎金辦法與日常流程</p>
                 </div>
             </header>
+
+            <div class="adz-quick adz-quick--featured">
+                <button type="button" class="apt-entry ait-entry adz-hero adz-hero--ait" onclick="window.aiTingtingOpen && window.aiTingtingOpen('rentmgr')">
+                    <span class="apt-entry-icon" aria-hidden="true">🤖</span>
+                    <span class="apt-entry-text">
+                        <strong>AI婷婷 問答</strong>
+                        <small>行政規定、進件、期數、獎金補助；特殊個案仍請找婷婷本人確認</small>
+                    </span>
+                    <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                </button>
+                <button type="button" class="apt-entry adz-hero" onclick="sessionStorage.setItem('bsc-back','rentmanager'); showPage('business-system-change')">
+                    <span class="apt-entry-icon" aria-hidden="true">🛠️</span>
+                    <span class="apt-entry-text">
+                        <strong>系統欄位更改通報</strong>
+                        <small>發現系統資料有誤時提出申請，送交營業處經理處理</small>
+                    </span>
+                    <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                </button>
+            </div>
 
             <div class="adz-quick">
                 <button type="button" class="apt-entry adz-hero adz-hero--points rdz-hero--perf" onclick="showPage('rentmanager-perf')">
@@ -14454,7 +14481,7 @@
         <script src="./js/rentmgr-perf.js?v=20261028-abn-auth"></script>
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
-        <script src="./js/ai-tingting.js?v=20261115-scroll"></script>
+        <script src="./js/ai-tingting.js?v=20261118-rentmgr"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
         <script src="./js/admin-points-core.js?v=20261117-renew"></script>
         <script src="./js/admin-points-charts.js?v=20261109-zoom"></script>
@@ -14465,7 +14492,7 @@
         <script src="./js/handover-core.js?v=20261107-sop"></script>
         <script src="./js/biz-handover.js?v=20261107-sop"></script>
         <script src="./js/admin-handover.js?v=20261107-sop"></script>
-        <script src="./js/biz-system-change.js?v=20261117-xfer-patch"></script>
+        <script src="./js/biz-system-change.js?v=20261118-multi-zone"></script>
         <script src="./js/biz-bonus-data.js?v=20261105-layout"></script>
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261115-sheet"></script>

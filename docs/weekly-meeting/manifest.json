@@ -1,8 +1,22 @@
 {
   "title": "業務周會檔案",
   "description": "管理部週會簡報與相關表單，依日期整理；每週更新後請將 PDF 放入 files 資料夾並更新此清單。",
-  "updatedAt": "2026-11-09",
+  "updatedAt": "2026-11-18",
   "sections": [
+    {
+      "id": "announcements",
+      "title": "公告",
+      "items": [
+        {
+          "sortDate": "2026-11-18",
+          "dateLabel": "公告",
+          "title": "星華轉星鴻｜應備資料與注意事項",
+          "subtitle": "星華包租到期 → 星鴻包租續約：到期點交單備註、星華退押領款收據、星鴻續約領款收據",
+          "keywords": "星華 星鴻 轉約 續約 包租到期 點交 水電 退押 領款收據 應備資料 公告",
+          "file": "./files/星華轉星鴻_應備資料與注意事項.jpg"
+        }
+      ]
+    },
     {
       "id": "weekly-slides",
       "title": "週會簡報",

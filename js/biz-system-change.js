@@ -1,8 +1,30 @@
 /**
- * 業務專區 › 系統欄位更改通報
+ * 系統欄位更改通報（業務／租管師／行政共用）
  */
 (function () {
   'use strict';
+
+  const BACK_KEY = 'bsc-back';
+  const BACK_LABEL = {
+    business: '業務專區',
+    administration: '行政專區',
+    rentmanager: '租管師專區'
+  };
+  function syncBackBtn() {
+    const btn = $('bsc-back-btn');
+    if (!btn) return;
+    let key = '';
+    try { key = sessionStorage.getItem(BACK_KEY) || ''; } catch (_) { key = ''; }
+    if (!BACK_LABEL[key]) key = 'business';
+    btn.textContent = '← 返回' + BACK_LABEL[key];
+  }
+  function goBack() {
+    let key = '';
+    try { key = sessionStorage.getItem(BACK_KEY) || ''; } catch (_) { key = ''; }
+    if (!BACK_LABEL[key]) key = 'business';
+    if (typeof showPage === 'function') showPage(key);
+  }
+  window.bscGoBack = goBack;
 
   const MAX_FILES = 5;
   const MAX_SIZE = 10 * 1024 * 1024;
@@ -1743,9 +1765,13 @@
     const page = $('page-business-system-change');
     if (page) {
       new MutationObserver(() => {
-        if (!page.classList.contains('hidden')) refreshPage();
+        if (!page.classList.contains('hidden')) {
+          syncBackBtn();
+          refreshPage();
+        }
       }).observe(page, { attributes: true, attributeFilter: ['class'] });
     }
+    syncBackBtn();
     fillAuthor();
     renderLists();
     if (token()) refreshPage();

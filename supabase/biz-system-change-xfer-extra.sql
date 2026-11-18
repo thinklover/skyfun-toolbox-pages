@@ -196,14 +196,14 @@ begin
     select string_agg(x, '、') into v_nodes_txt
     from jsonb_array_elements_text(coalesce(v_row.nodes, '[]'::jsonb)) t(x);
     v_msg := format(
-      E'🛠️ 系統欄位更改通報（行政協辦）\n%s（處長）已轉交案件給您\n地址：%s\n媒合編號：%s\n節點：%s\n內容：%s%s\n%s',
+      E'🛠️ 系統欄位更改通報（行政協辦）\n%s（處長）已轉交案件給您\n請至工具箱「行政專區 → 系統欄位更改通報」處理\n地址：%s\n媒合編號：%s\n節點：%s\n內容：%s%s\n%s',
       v_name,
       v_row.address,
       v_row.match_no,
       coalesce(v_nodes_txt, ''),
       left(v_row.content, 800),
       case when v_flags = '' then '' else E'\n類型：' || v_flags || '（詳細資料請至工具箱查看）' end,
-      public.biz_system_change_page_url()
+      public.biz_system_change_admin_work_url()
     );
     v_line := public.admin_points_line_push(v_admin, v_msg);
   else
