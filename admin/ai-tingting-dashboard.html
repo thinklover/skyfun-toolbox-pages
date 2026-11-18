@@ -36,7 +36,27 @@
     }
     .q-box { background: #f5f3ff; border: 1px solid #ddd6fe; margin-bottom: 0.45rem; }
     .a-box { background: #f8fafc; border: 1px solid #e2e8f0; }
+    .a-box.is-staff { background: #ecfdf5; border-color: #a7f3d0; }
     .lbl { font-size: 0.7rem; font-weight: 800; color: #64748b; margin-bottom: 0.25rem; }
+    .badge-staff { background: #d1fae5; color: #047857; }
+    .reply-box {
+      margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px dashed #e2e8f0;
+    }
+    .reply-box textarea {
+      width: 100%; min-height: 5.5rem; border: 1px solid #c4b5fd; border-radius: 0.65rem;
+      padding: 0.55rem 0.7rem; font-size: 0.88rem; line-height: 1.5; resize: vertical;
+    }
+    .reply-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-top: 0.45rem; }
+    .reply-hint { font-size: 0.72rem; color: #64748b; font-weight: 700; }
+    .reply-msg { font-size: 0.78rem; font-weight: 700; min-height: 1.1rem; }
+    .reply-msg.is-ok { color: #047857; }
+    .reply-msg.is-err { color: #b91c1c; }
+    .staff-banner {
+      background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 0.75rem;
+      padding: 0.55rem 0.75rem; font-size: 0.8rem; color: #5b21b6; font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .staff-banner.is-off { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
     .empty { color: #64748b; font-size: 0.88rem; padding: 0.75rem 0; }
     .summary { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.75rem; }
     .summary .chip {
@@ -116,6 +136,7 @@
       </div>
       <button type="button" id="btn-refresh" class="btn btn-ghost">重新整理</button>
     </div>
+    <div id="staff-banner" class="staff-banner hidden"></div>
     <div class="summary" id="summary"></div>
     <p id="msg" class="text-sm text-slate-500 min-h-[1.25rem]"></p>
     <div id="list"></div>
@@ -124,6 +145,8 @@
   <script>
     (function () {
       const SECRET_KEY = 'skyfun-ai-tingting-admin';
+      const STAFF_REPLY_NAMES = ['黃怡婷', '簡為倢', '邱奕棋'];
+      const AUTH_STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
       let client = null;
       let secret = '';
       let rows = [];
@@ -156,6 +179,24 @@
           return String(iso);
         }
       }
+      function toolboxSession() {
+        try {
+          return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+        } catch {
+          return null;
+        }
+      }
+      function toolboxName() {
+        const s = toolboxSession();
+        return String(s?.user?.name || s?.supabaseUser?.name || '').trim();
+      }
+      function toolboxToken() {
+        const s = toolboxSession();
+        return String(s?.supabaseToken || s?.token || '').trim();
+      }
+      function canStaffReply() {
+        return STAFF_REPLY_NAMES.includes(toolboxName());
+      }
       function statusBadge(st) {
         if (st === 'answered') return '<span class="badge badge-answered">已回覆</span>';
         if (st === 'failed') return '<span class="badge badge-failed">失敗</span>';
@@ -169,6 +210,23 @@
         el.textContent = t || '';
         el.classList.toggle('err', !!isErr);
       }
+      function renderStaffBanner() {
+        const el = document.getElementById('staff-banner');
+        if (!el) return;
+        const name = toolboxName();
+        const token = toolboxToken();
+        el.classList.remove('hidden', 'is-off');
+        if (canStaffReply() && token) {
+          el.textContent = '目前以「' + name + '」登入：可直接人工回覆，送出後會 LINE 通知填寫人。';
+          return;
+        }
+        el.classList.add('is-off');
+        if (!token || !name) {
+          el.textContent = '人工回覆需先在同瀏覽器登入工具箱（黃怡婷／簡為倢／邱奕棋）。';
+        } else {
+          el.textContent = '目前登入為「' + name + '」，僅黃怡婷／簡為倢／邱奕棋可人工回覆。';
+        }
+      }
       function renderSummary() {
         const total = rows.length;
         const answered = rows.filter((r) => r.status === 'answered').length;
@@ -180,13 +238,26 @@
           '<span class="chip"><strong>' + pending + '</strong>回覆中</span>' +
           '<span class="chip"><strong>' + failed + '</strong>失敗</span>';
       }
+      function replyFormHtml(r) {
+        if (!canStaffReply() || !toolboxToken()) return '';
+        const staff = String(r.staffRepliedBy || '').trim();
+        return '<div class="reply-box">' +
+          '<div class="lbl">人工回覆' + (staff ? '（將覆蓋並再通知）' : '（送出後 LINE 通知填寫人）') + '</div>' +
+          '<textarea data-reply-input="' + esc(r.id) + '" placeholder="輸入要回覆給 ' + esc(r.userName || '填寫人') + ' 的內容" maxlength="4000"></textarea>' +
+          '<div class="reply-actions">' +
+            '<button type="button" class="btn btn-main" data-reply-send="' + esc(r.id) + '">送出回覆並 LINE 通知</button>' +
+            '<span class="reply-hint">限黃怡婷／簡為倢／邱奕棋</span>' +
+          '</div>' +
+          '<p class="reply-msg" data-reply-msg="' + esc(r.id) + '"></p>' +
+        '</div>';
+      }
       function renderList() {
         const q = String(document.getElementById('search').value || '').trim().toLowerCase();
         const filtered = rows.filter((r) => {
           if (statusFilter && r.status !== statusFilter) return false;
           if (zoneFilter && r.zone !== zoneFilter) return false;
           if (!q) return true;
-          const blob = [r.userName, r.question, r.answer, r.zone, r.status].join(' ').toLowerCase();
+          const blob = [r.userName, r.question, r.answer, r.zone, r.status, r.staffRepliedBy].join(' ').toLowerCase();
           return blob.indexOf(q) >= 0;
         });
         const box = document.getElementById('list');
@@ -195,20 +266,78 @@
           return;
         }
         box.innerHTML = filtered.map((r) => {
-          return '<article class="item">' +
+          const staff = String(r.staffRepliedBy || '').trim();
+          const answerLabel = staff ? ('人工回覆（' + staff + '）') : 'AI婷婷回覆';
+          return '<article class="item" data-id="' + esc(r.id) + '">' +
             '<div class="item-top">' +
               '<span class="item-who">' + esc(r.userName || '（未填姓名）') + '</span>' +
               statusBadge(r.status) +
+              (staff ? '<span class="badge badge-staff">人工 · ' + esc(staff) + '</span>' : '') +
               '<span class="badge badge-zone">' + esc(zoneLabel(r.zone)) + '</span>' +
               '<span class="item-meta">' + esc(fmt(r.createdAt)) + '</span>' +
               (r.answeredAt ? '<span class="item-meta">回覆 ' + esc(fmt(r.answeredAt)) + '</span>' : '') +
             '</div>' +
             '<div class="lbl">問題</div><div class="q-box">' + esc(r.question) + '</div>' +
-            '<div class="lbl">AI婷婷回覆</div><div class="a-box">' +
+            '<div class="lbl">' + esc(answerLabel) + '</div><div class="a-box' + (staff ? ' is-staff' : '') + '">' +
               esc(r.answer || (r.status === 'pending' ? '（回覆中）' : r.status === 'failed' ? '（失敗）' : '（無內容）')) +
             '</div>' +
+            replyFormHtml(r) +
           '</article>';
         }).join('');
+      }
+      async function sendStaffReply(id) {
+        const ta = document.querySelector('[data-reply-input="' + id + '"]');
+        const msgEl = document.querySelector('[data-reply-msg="' + id + '"]');
+        const btn = document.querySelector('[data-reply-send="' + id + '"]');
+        const answer = String(ta?.value || '').trim();
+        const token = toolboxToken();
+        if (msgEl) {
+          msgEl.classList.remove('is-ok', 'is-err');
+          msgEl.textContent = '';
+        }
+        if (!token) {
+          if (msgEl) {
+            msgEl.textContent = '請先回工具箱登入';
+            msgEl.classList.add('is-err');
+          }
+          return;
+        }
+        if (!answer) {
+          if (msgEl) {
+            msgEl.textContent = '請輸入回覆內容';
+            msgEl.classList.add('is-err');
+          }
+          return;
+        }
+        if (btn) btn.disabled = true;
+        try {
+          const data = await rpc('ai_tingting_staff_reply', {
+            p_token: token,
+            p_question_id: id,
+            p_answer: answer
+          });
+          if (!data?.ok) throw new Error(data?.error || '回覆失敗');
+          const line = data.line || {};
+          const recipients = Number(line.recipients || 0);
+          const lineOk = recipients > 0;
+          const note = lineOk
+            ? '已回覆，並已 LINE 通知填寫人'
+            : ('已回覆，但 LINE 未送出' + (line.error ? '：' + line.error : ''));
+          if (msgEl) {
+            msgEl.textContent = note;
+            msgEl.classList.add(lineOk ? 'is-ok' : 'is-err');
+          }
+          setMsg(note, !lineOk);
+          await load();
+        } catch (e) {
+          if (msgEl) {
+            msgEl.textContent = e.message || '回覆失敗';
+            msgEl.classList.add('is-err');
+          }
+          setMsg(e.message || '回覆失敗', true);
+        } finally {
+          if (btn) btn.disabled = false;
+        }
       }
       async function load() {
         setMsg('載入中…');
@@ -222,11 +351,13 @@
           });
           if (!data?.ok) throw new Error(data?.error || '載入失敗');
           rows = Array.isArray(data.rows) ? data.rows : [];
+          renderStaffBanner();
           renderSummary();
           renderList();
           setMsg('共 ' + rows.length + ' 筆');
         } catch (e) {
           rows = [];
+          renderStaffBanner();
           renderSummary();
           renderList();
           setMsg(e.message || '載入失敗', true);
@@ -235,6 +366,7 @@
       function showMain() {
         document.getElementById('login-panel').classList.add('hidden');
         document.getElementById('main-panel').classList.remove('hidden');
+        renderStaffBanner();
       }
       document.getElementById('btn-login').addEventListener('click', async () => {
         const input = document.getElementById('admin-secret');
@@ -265,6 +397,12 @@
       });
       document.getElementById('btn-refresh').addEventListener('click', () => { void load(); });
       document.getElementById('search').addEventListener('input', () => renderList());
+      document.getElementById('list').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-reply-send]');
+        if (!btn) return;
+        const id = btn.getAttribute('data-reply-send') || '';
+        if (id) void sendStaffReply(id);
+      });
       document.getElementById('status-chips').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-st]');
         if (!btn) return;
@@ -294,30 +432,14 @@
       } catch (_) {}
 
       /* —— 知識庫後台門禁（獨立於對話紀錄後台密碼） —— */
-      const KB_ALLOWED_NAMES = ['簡為倢', '黃怡婷', '邱奕棋'];
+      const KB_ALLOWED_NAMES = STAFF_REPLY_NAMES;
       const KB_ADMIN_URL = 'https://tingting-admin.dahwork123.workers.dev';
       const KB_GATE_API = 'https://skyfun-tingting-kb-gate.dahwork123.workers.dev/api/tingting-kb-gate';
       const KB_GATE_OK_KEY = 'skyfun-tingting-kb-gate-ok';
       const KB_GATE_LOCK_KEY = 'skyfun-tingting-kb-gate-lock';
-      const AUTH_STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
       const KB_MAX_FAILS = 5;
       const KB_LOCK_MS = 10 * 60 * 1000;
 
-      function toolboxSession() {
-        try {
-          return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
-        } catch {
-          return null;
-        }
-      }
-      function toolboxName() {
-        const s = toolboxSession();
-        return String(s?.user?.name || s?.supabaseUser?.name || '').trim();
-      }
-      function toolboxToken() {
-        const s = toolboxSession();
-        return String(s?.supabaseToken || s?.token || '').trim();
-      }
       function kbAllowed() {
         return KB_ALLOWED_NAMES.includes(toolboxName());
       }

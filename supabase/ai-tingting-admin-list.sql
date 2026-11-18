@@ -44,7 +44,8 @@ begin
             'zone', q.zone,
             'status', q.status,
             'question', q.question,
-            'answer', coalesce(q.answer, '')
+            'answer', coalesce(q.answer, ''),
+            'staffRepliedBy', coalesce(q.staff_replied_by, '')
           ) as obj
         from public.ai_tingting_questions q
         where (v_status is null or q.status = v_status)
@@ -54,6 +55,7 @@ begin
             or q.user_name ilike '%' || v_q || '%'
             or q.question ilike '%' || v_q || '%'
             or coalesce(q.answer, '') ilike '%' || v_q || '%'
+            or coalesce(q.staff_replied_by, '') ilike '%' || v_q || '%'
           )
         order by q.created_at desc, q.id desc
         limit v_lim
