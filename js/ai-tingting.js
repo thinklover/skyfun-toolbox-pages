@@ -379,7 +379,7 @@
     const list = store.sessions.filter(function (s) {
       if (!q) return true;
       const blob = [s.title].concat((s.items || []).map(function (it) {
-        return String(it.question || '') + ' ' + String(it.answer || '');
+        return String(it.question || '') + ' ' + String(it.answer || '') + ' ' + String(it.staffAnswer || '');
       })).join(' ').toLowerCase();
       return blob.indexOf(q) >= 0;
     });
@@ -464,37 +464,87 @@
     return session;
   }
 
-  async function migrateFromServerIfEmpty() {
-    if (migratedOnce) return;
-    migratedOnce = true;
+  function mapServerItem(it) {
+    return {
+      id: it.id,
+      question: it.question || '',
+      answer: it.answer || '',
+      staffAnswer: it.staffAnswer || '',
+      staffRepliedBy: it.staffRepliedBy || '',
+      staffRepliedAt: it.staffRepliedAt || null,
+      status: it.status || 'answered',
+      createdAt: it.createdAt,
+      answeredAt: it.answeredAt,
+    };
+  }
+
+  /** 把伺服器最新的 AI／人工回覆併回本機對話（人工回覆多半是事後補上） */
+  function mergeServerItems(serverItems) {
+    const byId = new Map();
+    (serverItems || []).forEach(function (it) {
+      if (it && it.id != null) byId.set(String(it.id), mapServerItem(it));
+    });
+    if (!byId.size) return false;
+    let changed = false;
+    store.sessions.forEach(function (session) {
+      (session.items || []).forEach(function (local, idx) {
+        const remote = byId.get(String(local.id));
+        if (!remote) return;
+        const next = Object.assign({}, local, {
+          question: remote.question || local.question,
+          answer: remote.answer || local.answer,
+          staffAnswer: remote.staffAnswer || '',
+          staffRepliedBy: remote.staffRepliedBy || '',
+          staffRepliedAt: remote.staffRepliedAt || null,
+          status: remote.status || local.status,
+          answeredAt: remote.answeredAt || local.answeredAt,
+        });
+        if (
+          next.answer !== local.answer ||
+          next.staffAnswer !== (local.staffAnswer || '') ||
+          next.staffRepliedBy !== (local.staffRepliedBy || '') ||
+          String(next.staffRepliedAt || '') !== String(local.staffRepliedAt || '') ||
+          next.status !== local.status
+        ) {
+          session.items[idx] = next;
+          changed = true;
+        }
+        byId.delete(String(local.id));
+      });
+    });
+    // 本機完全沒有對話時，把伺服器紀錄一次灌進目前／新聊天
     const hasLocalMsgs = store.sessions.some(function (s) { return s.items && s.items.length; });
-    if (hasLocalMsgs) return;
-    try {
-      const data = await api({ action: 'list' });
-      const items = Array.isArray(data.items) ? data.items.slice() : [];
-      if (!items.length) return;
-      items.sort(function (a, b) {
+    if (!hasLocalMsgs && byId.size) {
+      const items = Array.from(byId.values()).sort(function (a, b) {
         return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
       });
       const session = activeSession() || store.sessions[0];
-      session.items = items.map(function (it) {
-        return {
-          id: it.id,
-          question: it.question || '',
-          answer: it.answer || '',
-          staffAnswer: it.staffAnswer || '',
-          staffRepliedBy: it.staffRepliedBy || '',
-          staffRepliedAt: it.staffRepliedAt || null,
-          status: it.status || 'answered',
-          createdAt: it.createdAt,
-          answeredAt: it.answeredAt,
-        };
-      });
-      session.title = titleFromText(session.items[0] && session.items[0].question) || '先前對話';
-      touchSession(session);
-    } catch (_) {
-      /* 首次遷移失敗就略過，仍用空白新聊天 */
+      if (session) {
+        session.items = items;
+        session.title = titleFromText(items[0] && items[0].question) || '先前對話';
+        touchSession(session);
+        return true;
+      }
     }
+    if (changed) saveStore();
+    return changed;
+  }
+
+  async function syncFromServer() {
+    try {
+      const data = await api({ action: 'list' });
+      const items = Array.isArray(data.items) ? data.items.slice() : [];
+      if (!items.length) return false;
+      return mergeServerItems(items);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function migrateFromServerIfEmpty() {
+    if (migratedOnce) return;
+    migratedOnce = true;
+    await syncFromServer();
   }
 
   async function pollOnce() {
@@ -722,7 +772,9 @@
     setStatus('', false);
     loadStore();
     await migrateFromServerIfEmpty();
-    /* 每次進入都開空白新聊天；歷史仍在側欄可點回去 */
+    await syncFromServer();
+    renderHistList();
+    /* 每次進入都開空白新聊天；歷史仍在側欄可點回去（點進去會看到已同步的人工回覆） */
     newChat();
   }
 
