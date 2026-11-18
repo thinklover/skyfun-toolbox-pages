@@ -340,6 +340,15 @@
             id: it.id + '-a',
           })
         );
+        const staffAns = String(it.staffAnswer || '').trim();
+        if (staffAns) {
+          const who = String(it.staffRepliedBy || '人工').trim() || '人工';
+          thread.appendChild(
+            makeMsg('bot', staffAns, who + ' · ' + fmtTime(it.staffRepliedAt || it.answeredAt || it.createdAt), {
+              id: it.id + '-staff',
+            })
+          );
+        }
       } else if (it.status === 'failed') {
         thread.appendChild(
           makeMsg('bot', '回覆失敗，請稍後再問或直接問行政。', 'AI婷婷', { id: it.id + '-a' })
@@ -472,6 +481,9 @@
           id: it.id,
           question: it.question || '',
           answer: it.answer || '',
+          staffAnswer: it.staffAnswer || '',
+          staffRepliedBy: it.staffRepliedBy || '',
+          staffRepliedAt: it.staffRepliedAt || null,
           status: it.status || 'answered',
           createdAt: it.createdAt,
           answeredAt: it.answeredAt,
@@ -509,6 +521,9 @@
           id: qid,
           question: data.question || undefined,
           answer: data.answer || '',
+          staffAnswer: data.staffAnswer || '',
+          staffRepliedBy: data.staffRepliedBy || '',
+          staffRepliedAt: data.staffRepliedAt || null,
           status: 'answered',
           answeredAt: data.answeredAt || new Date().toISOString(),
         });

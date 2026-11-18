@@ -1,7 +1,20 @@
--- AI婷婷後台：黃怡婷／簡為倢／邱奕棋可人工回覆，並 LINE 通知填寫人
+-- 人工回覆改寫入 staff_answer，保留 AI 的 answer；後台兩者都顯示
 
 alter table public.ai_tingting_questions
-  add column if not exists staff_replied_by text not null default '';
+  add column if not exists staff_answer text not null default '';
+
+alter table public.ai_tingting_questions
+  add column if not exists staff_replied_at timestamptz;
+
+-- 已覆蓋的測試資料：把目前 answer 挪到 staff_answer，並還原 AI 回覆（依當日後台截圖）
+update public.ai_tingting_questions
+   set staff_answer = answer,
+       staff_replied_at = coalesce(answered_at, now()),
+       answer = E'到期點交相關文件可至公司系統下載：\n\n契約列表 → 租賃解約與文件\n可下載「解約申請表」、「解約點交／終止協議書」等表單。\n\n參考：KB-382、KB-247'
+ where id = '0b3e31f0-2100-4a07-ab59-d700eaf4eb2e'
+   and staff_replied_by = '簡為倢'
+   and answer = '測試後台回復'
+   and coalesce(staff_answer, '') = '';
 
 create or replace function public.ai_tingting_staff_reply(
   p_token text,
@@ -16,7 +29,7 @@ as $$
 declare
   v_uid uuid := public.admin_qa_user_id(p_token);
   v_me text;
-  v_answer text := left(trim(coalesce(p_answer, '')), 4000);
+  v_staff text := left(trim(coalesce(p_answer, '')), 4000);
   v_row public.ai_tingting_questions%rowtype;
   v_line json;
   v_msg text;
@@ -43,7 +56,7 @@ begin
     return json_build_object('ok', false, 'error', '缺少 questionId');
   end if;
 
-  if v_answer = '' then
+  if v_staff = '' then
     return json_build_object('ok', false, 'error', '請輸入回覆內容');
   end if;
 
@@ -55,16 +68,18 @@ begin
     return json_build_object('ok', false, 'error', '找不到這筆問答');
   end if;
 
+  -- 只更新人工回覆欄位，不覆蓋 AI answer
   update public.ai_tingting_questions
-     set answer = v_answer,
+     set staff_answer = v_staff,
+         staff_replied_by = v_me,
+         staff_replied_at = now(),
          status = 'answered',
-         answered_at = now(),
-         staff_replied_by = v_me
+         answered_at = coalesce(answered_at, now())
    where id = p_question_id
   returning * into v_row;
 
   v_q_snip := left(trim(coalesce(v_row.question, '')), 200);
-  v_a_snip := left(v_answer, 800);
+  v_a_snip := left(v_staff, 800);
   v_msg := format(
     E'💬 AI婷婷｜人工回覆\n%s 您好：\n您問的問題已由 %s 回覆。\n\n問題：%s\n\n回覆：%s\n\n請至工具箱「AI婷婷 問答」查看。\nhttps://toolbox.skyfunsystem.com/?page=ai-tingting',
     coalesce(nullif(trim(v_row.user_name), ''), '同仁'),
@@ -78,9 +93,11 @@ begin
     'ok', true,
     'id', v_row.id,
     'status', v_row.status,
-    'answer', v_row.answer,
+    'answer', coalesce(v_row.answer, ''),
+    'staffAnswer', coalesce(v_row.staff_answer, ''),
     'answeredAt', v_row.answered_at,
     'staffRepliedBy', v_row.staff_replied_by,
+    'staffRepliedAt', v_row.staff_replied_at,
     'line', coalesce(v_line, json_build_object('recipients', 0))
   );
 end;
@@ -89,7 +106,6 @@ $$;
 revoke all on function public.ai_tingting_staff_reply(text, uuid, text) from public;
 grant execute on function public.ai_tingting_staff_reply(text, uuid, text) to anon, authenticated;
 
--- 後台列表一併回傳 staffRepliedBy
 create or replace function public.ai_tingting_admin_list(
   p_secret text,
   p_limit int default 200,
@@ -136,7 +152,9 @@ begin
             'status', q.status,
             'question', q.question,
             'answer', coalesce(q.answer, ''),
-            'staffRepliedBy', coalesce(q.staff_replied_by, '')
+            'staffAnswer', coalesce(q.staff_answer, ''),
+            'staffRepliedBy', coalesce(q.staff_replied_by, ''),
+            'staffRepliedAt', q.staff_replied_at
           ) as obj
         from public.ai_tingting_questions q
         where (v_status is null or q.status = v_status)
@@ -146,6 +164,7 @@ begin
             or q.user_name ilike '%' || v_q || '%'
             or q.question ilike '%' || v_q || '%'
             or coalesce(q.answer, '') ilike '%' || v_q || '%'
+            or coalesce(q.staff_answer, '') ilike '%' || v_q || '%'
             or coalesce(q.staff_replied_by, '') ilike '%' || v_q || '%'
           )
         order by q.created_at desc, q.id desc

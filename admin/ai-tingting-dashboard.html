@@ -241,9 +241,12 @@
       function replyFormHtml(r) {
         if (!canStaffReply() || !toolboxToken()) return '';
         const staff = String(r.staffRepliedBy || '').trim();
+        const staffAns = String(r.staffAnswer || '').trim();
         return '<div class="reply-box">' +
-          '<div class="lbl">人工回覆' + (staff ? '（將覆蓋並再通知）' : '（送出後 LINE 通知填寫人）') + '</div>' +
-          '<textarea data-reply-input="' + esc(r.id) + '" placeholder="輸入要回覆給 ' + esc(r.userName || '填寫人') + ' 的內容" maxlength="4000"></textarea>' +
+          '<div class="lbl">人工回覆' + (staffAns ? '（將更新人工回覆並再通知，不影響上方 AI 回覆）' : '（加在 AI 回覆下方，送出後 LINE 通知填寫人）') + '</div>' +
+          '<textarea data-reply-input="' + esc(r.id) + '" placeholder="輸入要回覆給 ' + esc(r.userName || '填寫人') + ' 的內容" maxlength="4000">' +
+            esc(staffAns) +
+          '</textarea>' +
           '<div class="reply-actions">' +
             '<button type="button" class="btn btn-main" data-reply-send="' + esc(r.id) + '">送出回覆並 LINE 通知</button>' +
             '<span class="reply-hint">限黃怡婷／簡為倢／邱奕棋</span>' +
@@ -257,7 +260,7 @@
           if (statusFilter && r.status !== statusFilter) return false;
           if (zoneFilter && r.zone !== zoneFilter) return false;
           if (!q) return true;
-          const blob = [r.userName, r.question, r.answer, r.zone, r.status, r.staffRepliedBy].join(' ').toLowerCase();
+          const blob = [r.userName, r.question, r.answer, r.staffAnswer, r.zone, r.status, r.staffRepliedBy].join(' ').toLowerCase();
           return blob.indexOf(q) >= 0;
         });
         const box = document.getElementById('list');
@@ -267,20 +270,23 @@
         }
         box.innerHTML = filtered.map((r) => {
           const staff = String(r.staffRepliedBy || '').trim();
-          const answerLabel = staff ? ('人工回覆（' + staff + '）') : 'AI婷婷回覆';
+          const staffAns = String(r.staffAnswer || '').trim();
+          const aiText = r.answer || (r.status === 'pending' ? '（回覆中）' : r.status === 'failed' ? '（失敗）' : '（無內容）');
           return '<article class="item" data-id="' + esc(r.id) + '">' +
             '<div class="item-top">' +
               '<span class="item-who">' + esc(r.userName || '（未填姓名）') + '</span>' +
               statusBadge(r.status) +
-              (staff ? '<span class="badge badge-staff">人工 · ' + esc(staff) + '</span>' : '') +
+              (staffAns ? '<span class="badge badge-staff">人工 · ' + esc(staff || '已回覆') + '</span>' : '') +
               '<span class="badge badge-zone">' + esc(zoneLabel(r.zone)) + '</span>' +
               '<span class="item-meta">' + esc(fmt(r.createdAt)) + '</span>' +
-              (r.answeredAt ? '<span class="item-meta">回覆 ' + esc(fmt(r.answeredAt)) + '</span>' : '') +
+              (r.answeredAt ? '<span class="item-meta">AI ' + esc(fmt(r.answeredAt)) + '</span>' : '') +
+              (r.staffRepliedAt ? '<span class="item-meta">人工 ' + esc(fmt(r.staffRepliedAt)) + '</span>' : '') +
             '</div>' +
             '<div class="lbl">問題</div><div class="q-box">' + esc(r.question) + '</div>' +
-            '<div class="lbl">' + esc(answerLabel) + '</div><div class="a-box' + (staff ? ' is-staff' : '') + '">' +
-              esc(r.answer || (r.status === 'pending' ? '（回覆中）' : r.status === 'failed' ? '（失敗）' : '（無內容）')) +
-            '</div>' +
+            '<div class="lbl">AI婷婷回覆</div><div class="a-box">' + esc(aiText) + '</div>' +
+            (staffAns
+              ? ('<div class="lbl">人工回覆' + (staff ? '（' + esc(staff) + '）' : '') + '</div><div class="a-box is-staff">' + esc(staffAns) + '</div>')
+              : '') +
             replyFormHtml(r) +
           '</article>';
         }).join('');

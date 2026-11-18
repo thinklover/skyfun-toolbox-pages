@@ -175,7 +175,9 @@ async function handleGet(req: Request, body: Record<string, unknown>) {
 
   const { data, error } = await sb
     .from("ai_tingting_questions")
-    .select("id, status, answer, question, zone, created_at, answered_at")
+    .select(
+      "id, status, answer, staff_answer, staff_replied_by, staff_replied_at, question, zone, created_at, answered_at",
+    )
     .eq("id", questionId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -187,6 +189,9 @@ async function handleGet(req: Request, body: Record<string, unknown>) {
     id: data.id,
     status: data.status,
     answer: data.answer || "",
+    staffAnswer: data.staff_answer || "",
+    staffRepliedBy: data.staff_replied_by || "",
+    staffRepliedAt: data.staff_replied_at,
     question: data.question,
     zone: data.zone,
     createdAt: data.created_at,
@@ -201,7 +206,9 @@ async function handleList(req: Request, body: Record<string, unknown> = {}) {
 
   const { data, error } = await sb
     .from("ai_tingting_questions")
-    .select("id, status, answer, question, zone, created_at, answered_at")
+    .select(
+      "id, status, answer, staff_answer, staff_replied_by, staff_replied_at, question, zone, created_at, answered_at",
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -213,6 +220,9 @@ async function handleList(req: Request, body: Record<string, unknown> = {}) {
       id: r.id,
       status: r.status,
       answer: r.answer || "",
+      staffAnswer: r.staff_answer || "",
+      staffRepliedBy: r.staff_replied_by || "",
+      staffRepliedAt: r.staff_replied_at,
       question: r.question,
       zone: r.zone,
       createdAt: r.created_at,
