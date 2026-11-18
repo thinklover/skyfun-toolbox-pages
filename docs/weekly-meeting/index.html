@@ -266,6 +266,9 @@
       function itemHaystack(it, secTitle) {
         const href = it.file || '';
         const name = href.split('/').pop() || '';
+        const related = Array.isArray(it.related)
+          ? it.related.map(function (r) { return [r.title, r.subtitle, r.keywords, r.file].join(' '); }).join(' ')
+          : '';
         return [
           it.title,
           it.subtitle,
@@ -273,7 +276,8 @@
           it.sortDate,
           it.keywords,
           secTitle,
-          name
+          name,
+          related
         ].filter(Boolean).join(' ').toLowerCase();
       }
 
@@ -336,6 +340,35 @@
         return false;
       }
 
+      function relatedMatches(rel, tokens) {
+        if (!tokens.length) return true;
+        const hay = [rel.title, rel.subtitle, rel.keywords, rel.file].join(' ').toLowerCase();
+        return tokens.some(function (t) { return hay.indexOf(t) !== -1; });
+      }
+
+      function renderRelated(rel, it, tokens) {
+        const href = rel.file || '#';
+        const name = (href.split('/').pop() || 'download');
+        const title = highlightText(rel.title || name, tokens);
+        const sub = rel.subtitle ? '<div class="topic-text" style="color:#64748b;font-size:0.86rem;margin-top:0.2rem">' + highlightText(rel.subtitle, tokens) + '</div>' : '';
+        const canPv = canPreview(href);
+        const allowDl = rel.download !== false;
+        const noDlAttr = allowDl ? '' : ' data-no-dl="1"';
+        let go = '';
+        if (canPv) {
+          go = '<button type="button" class="topic-jump' + (tokens.length ? ' is-hit' : '') + '" data-pv="' + escAttr(href) + '" data-title="' + escAttr(rel.title || it.title || name) + '" data-date="' + escAttr(it.dateLabel || '') + '" data-page="1"' + noDlAttr + '>' +
+            '<span class="topic-text"><b>' + title + '</b>' + sub + '</span>' +
+            '<span class="go">預覽 ›</span></button>';
+        } else {
+          go = '<div class="topic-line"><span class="topic-text"><b>' + title + '</b>' + sub + '</span></div>';
+        }
+        if (allowDl && href && href !== '#') {
+          go += '<a class="topic-jump" href="' + escAttr(href) + '" download="' + escAttr(name) + '" target="_blank" rel="noopener" style="margin-top:0.25rem">' +
+            '<span class="topic-text">下載附件</span><span class="go">⬇</span></a>';
+        }
+        return go;
+      }
+
       function renderItem(it, sec, tokens) {
         const secTitle = (sec && sec.title) || '';
         const noDl = isMeetingNoDownload(sec, it);
@@ -343,19 +376,38 @@
         const name = (href.split('/').pop() || 'download.pdf');
         const title = highlightText(it.title || name, tokens);
         const lines = topicLines(it.subtitle);
-        const count = lines.length;
-        const anyLineHit = tokens.length > 0 && lines.some(function (line) { return lineHits(line, tokens); });
+        const related = Array.isArray(it.related) ? it.related : [];
+        const relatedHtmlParts = related.filter(function (rel) {
+          return relatedMatches(rel, tokens);
+        }).map(function (rel) {
+          return renderRelated(rel, it, tokens);
+        });
+        const count = lines.length + relatedHtmlParts.length;
+        const anyLineHit = tokens.length > 0 && (
+          lines.some(function (line) { return lineHits(line, tokens); }) ||
+          related.some(function (rel) { return relatedMatches(rel, tokens); })
+        );
         const autoOpen = tokens.length > 0 && count > 0;
         const openClass = autoOpen ? ' is-open' : '';
         const noDlAttr = noDl ? ' data-no-dl="1"' : '';
         let topicsHtml = '';
-        if (count) {
+        if (lines.length) {
           topicsHtml = lines.map(function (line, i) {
             const hit = lineHits(line, tokens);
             if (anyLineHit && !hit) return '';
             const exact = hasExactSlidePage(it, i);
             const page = topicPage(it, i);
             const body = highlightText(line, tokens);
+            // 星華轉星鴻議題：改開附件圖，不開簡報 PDF
+            const relHit = related.find(function (rel) {
+              return /星華轉星鴻/.test(line) && /星華轉星鴻/.test(String(rel.title || ''));
+            });
+            if (relHit && canPreview(relHit.file)) {
+              const allowDl = relHit.download !== false;
+              return '<button type="button" class="topic-jump' + (hit ? ' is-hit' : '') + '" data-pv="' + escAttr(relHit.file) + '" data-title="' + escAttr(relHit.title || it.title) + '" data-date="' + escAttr(it.dateLabel || '') + '" data-page="1"' + (allowDl ? '' : ' data-no-dl="1"') + (hit ? ' data-first-hit="1"' : '') + '>' +
+                '<span class="topic-text">' + body + '</span>' +
+                '<span class="go">預覽 ›</span></button>';
+            }
             if (page && canPreview(href)) {
               const goLabel = hit
                 ? (exact ? '開啟這張' : '開啟簡報')
@@ -366,6 +418,10 @@
             }
             return '<div class="topic-line' + (hit ? ' is-hit' : '') + '"><span class="topic-text">' + body + '</span></div>';
           }).join('');
+        }
+        // related 已透過議題列開圖時，不再重複列一張卡
+        if (relatedHtmlParts.length && !lines.some(function (line) { return /星華轉星鴻/.test(line); })) {
+          topicsHtml += relatedHtmlParts.join('');
         }
         let mainHtml = '<div class="item-main"><div class="item-title">' + title + '</div>';
         if (topicsHtml) {
