@@ -192,6 +192,90 @@
   padding: 0.5rem 0.7rem;
   line-height: 1.45;
 }
+#page-business-system-change .bsc-block--perm {
+  border-color: #c7d2fe;
+  background: linear-gradient(180deg, #f8faff 0%, #ffffff 55%);
+}
+#page-business-system-change .bsc-perm-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+@media (min-width: 768px) {
+  #page-business-system-change .bsc-perm-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+#page-business-system-change .bsc-perm-card {
+  margin: 0;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.9rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+#page-business-system-change .bsc-perm-card--self {
+  border-color: #bbf7d0;
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 70%);
+}
+#page-business-system-change .bsc-perm-card--admin {
+  border-color: #fdba74;
+  background: linear-gradient(180deg, #fff7ed 0%, #fff 70%);
+}
+#page-business-system-change .bsc-perm-card h4 {
+  margin: 0 0 0.55rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+}
+#page-business-system-change .bsc-perm-lead {
+  margin: 0.35rem 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+}
+#page-business-system-change .bsc-perm-tags {
+  list-style: none;
+  margin: 0 0 0.55rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+#page-business-system-change .bsc-perm-tags li {
+  margin: 0;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+#page-business-system-change .bsc-perm-list,
+#page-business-system-change .bsc-perm-ol {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: #334155;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+#page-business-system-change .bsc-perm-list li,
+#page-business-system-change .bsc-perm-ol > li {
+  margin: 0.2rem 0;
+}
+#page-business-system-change .bsc-perm-ol > li + li {
+  margin-top: 0.55rem;
+}
+#page-business-system-change .bsc-perm-ol strong {
+  color: #9a3412;
+  font-weight: 800;
+}
+#page-business-system-change .bsc-perm-ol ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.05rem;
+  color: #475569;
+  font-size: 0.8rem;
+}
 #page-business-system-change .bsc-xfer-panel {
   max-width: 26rem;
 }
