@@ -598,6 +598,64 @@
         return y + ' 年 ' + Number(mm) + ' 月';
     }
 
+    const DASH_COLORS = ['#4f46e5', '#0ea5e9', '#14b8a6', '#f59e0b', '#f43f5e', '#a855f7', '#22c55e', '#f97316', '#ec4899', '#64748b'];
+
+    function dashDeptPie(pairs, total) {
+        const CH = window.AdminPointsCharts;
+        if (!CH?.pie || !total || !pairs.length) return '<p class="apt-gpie-none">尚無申請處所資料</p>';
+        const parts = pairs.map(([label, value], i) => ({
+            label,
+            value,
+            color: DASH_COLORS[i % DASH_COLORS.length]
+        }));
+        const top = parts[0];
+        const pct = (n) => ((n / total) * 100).toFixed(1) + '%';
+        return '<div class="apt-gpie apt-gpie--lvr">' +
+            '<div class="apt-gpie-chart">' + CH.pie({ parts, center: total, sub: '件申請' }) + '</div>' +
+            '<div class="apt-gpie-side"><div class="apt-gpie-hl">' +
+            '<p><span>申請最多的處所</span><b style="color:' + top.color + '">' + esc(top.label) + '</b><em>' + top.value + ' 件・占 ' + pct(top.value) + '</em></p>' +
+            '<p><span>處所數</span><b>' + parts.length + '</b><em>有出現在本月註銷申請</em></p>' +
+            '</div></div>' +
+            '<div class="apt-gpie-body"><ul class="apt-gpie-list" style="--rows:' + Math.ceil(parts.length / 2) + '">' +
+            parts.map((p, i) => {
+                const inner = '<i style="background:' + p.color + '"></i><span title="' + esc(p.label) + '">' + esc(p.label) + '</span>' +
+                    '<b>' + p.value + '</b><em>' + pct(p.value) + '</em>' +
+                    '<s><u style="width:' + ((p.value / Math.max(top.value, 1)) * 100) + '%;background:' + p.color + '"></u></s>';
+                return '<li' + (i < 3 ? ' class="is-top"' : '') + '><div class="apt-lvr-office-hit">' + inner + '</div></li>';
+            }).join('') +
+            '</ul></div></div>';
+    }
+
+    function dashPolicyList(pairs, emptyText) {
+        const medals = ['🥇', '🥈', '🥉'];
+        if (!pairs.length) return '<p class="apt-lvr-rk-empty">' + esc(emptyText) + '</p>';
+        return '<div class="apt-lvr-rk-list">' + pairs.slice(0, 8).map(([name, n], i) =>
+            '<div class="apt-lvr-rk-item apt-lvr-rk-item--' + (i + 1) + '">' +
+            '<span class="apt-lvr-rk-medal">' + (medals[i] || (i + 1)) + '</span>' +
+            '<div class="apt-lvr-rk-main"><div class="apt-lvr-rk-who">' + esc(name) + '</div>' +
+            '<div class="apt-lvr-rk-sub">占本月申請</div></div>' +
+            '<div class="apt-lvr-rk-total"><strong>' + n + '</strong><span>件</span></div></div>'
+        ).join('') + '</div>';
+    }
+
+    function dashRankTable(title, note, pairs, total) {
+        if (!pairs.length) {
+            return '<section class="apt-lvr-ana-card"><h4 class="apt-sec-title">' + esc(title) + '</h4><p class="apt-empty">尚無資料</p></section>';
+        }
+        const top = pairs[0][1] || 1;
+        const pct = (n) => (total ? ((n / total) * 100).toFixed(1) + '%' : '—');
+        return '<section class="apt-lvr-ana-card"><h4 class="apt-sec-title">' + esc(title) +
+            (note ? '<small>' + esc(note) + '</small>' : '') + '</h4>' +
+            '<div class="apt-table-wrap"><table class="apt-table apt-lvr-ana-table">' +
+            '<thead><tr><th class="num">#</th><th>名稱</th><th class="num">件數</th><th class="num">占比</th><th>分布</th></tr></thead><tbody>' +
+            pairs.map(([name, n], i) =>
+                '<tr class="' + (i < 3 ? 'is-top' : '') + '"><td class="num">' + (i + 1) + '</td><td>' + esc(name) +
+                '</td><td class="num"><b>' + n + '</b></td><td class="num">' + pct(n) +
+                '</td><td class="apt-lvr-ana-bar"><span style="width:' + ((n / top) * 100) + '%"></span></td></tr>'
+            ).join('') +
+            '</tbody></table></div></section>';
+    }
+
     function renderDash() {
         const chips = $('acf-dash-chips');
         const insight = $('acf-dash-insight');
@@ -623,28 +681,28 @@
         }
         if (tab.loading && !tab.loaded) {
             chips.innerHTML = '';
-            insight.innerHTML = '讀取解編統計中…';
-            ranks.innerHTML = '';
+            insight.innerHTML = '';
+            ranks.innerHTML = '<p class="acf-dash-empty">讀取解編統計中…</p>';
             return;
         }
         if (tab.error) {
             chips.innerHTML = '';
-            insight.innerHTML = esc(tab.error);
-            ranks.innerHTML = '';
+            insight.innerHTML = '';
+            ranks.innerHTML = '<p class="acf-dash-empty">' + esc(tab.error) + '</p>';
             return;
         }
         if (!all.length) {
             chips.innerHTML = '';
-            insight.innerHTML = '尚無註銷／解編申請。';
-            ranks.innerHTML = '';
+            insight.innerHTML = '';
+            ranks.innerHTML = '<p class="acf-dash-empty">尚無註銷／解編申請。</p>';
             return;
         }
         const rows = sel === 'all' ? all : all.filter((r) => dashYm(r.createdAt) === sel);
         const total = rows.length;
         if (!total) {
             chips.innerHTML = '';
-            insight.innerHTML = esc(dashMonthLabel(sel)) + '尚無申請。';
-            ranks.innerHTML = '';
+            insight.innerHTML = '';
+            ranks.innerHTML = '<p class="acf-dash-empty">' + esc(dashMonthLabel(sel)) + '尚無申請。</p>';
             return;
         }
         const n = (st) => rows.filter((r) => (r.status || 'pending') === st).length;
@@ -660,31 +718,38 @@
         const topDept = byDept[0];
         const topTaker = byTaker[0];
         chips.innerHTML =
-            '<span class="acf-dash-chip"><strong>' + total + '</strong>申請</span>' +
-            '<span class="acf-dash-chip is-warn"><strong>' + pending + '</strong>未審核</span>' +
-            '<span class="acf-dash-chip is-ok"><strong>' + done + '</strong>同意解編</span>' +
-            '<span class="acf-dash-chip"><strong>' + rejected + '</strong>不同意</span>' +
-            '<span class="acf-dash-chip"><strong>' + rate + '</strong>同意率</span>';
-        insight.innerHTML = '<strong>' + esc(dashMonthLabel(sel)) + '</strong>共 <strong>' + total + '</strong> 件' +
-            (topDept ? '，最多處所「<strong>' + esc(topDept[0]) + '</strong>」（' + topDept[1] + '）' : '') +
-            (topTaker ? '，最常承接「<strong>' + esc(topTaker[0]) + '</strong>」（' + topTaker[1] + '）' : '') + '。';
-        const rankCard = (title, pairs) => {
-            if (!pairs.length) return '<section class="acf-dash-card"><h4>' + esc(title) + '</h4><p class="acf-dash-empty">尚無資料</p></section>';
-            const top = pairs[0][1] || 1;
-            return '<section class="acf-dash-card"><h4>' + esc(title) + '</h4><table><thead><tr><th>#</th><th>名稱</th><th class="num">件</th><th>分布</th></tr></thead><tbody>' +
-                pairs.slice(0, 8).map(([name, c], i) =>
-                    '<tr class="' + (i < 3 ? 'is-top' : '') + '"><td>' + (i + 1) + '</td><td>' + esc(name) +
-                    '</td><td class="num"><b>' + c + '</b></td><td><span class="acf-dash-bar" style="width:' +
-                    ((c / top) * 100) + '%"></span></td></tr>'
-                ).join('') +
-                '</tbody></table></section>';
-        };
+            '<span class="apt-chip"><strong>' + total + '</strong>申請</span>' +
+            '<span class="apt-chip apt-chip--warn"><strong>' + pending + '</strong>未審核</span>' +
+            '<span class="apt-chip apt-chip--ok"><strong>' + done + '</strong>同意解編</span>' +
+            '<span class="apt-chip"><strong>' + rejected + '</strong>不同意</span>' +
+            '<span class="apt-chip"><strong>' + rate + '</strong>同意率</span>' +
+            (topDept ? '<span class="apt-chip apt-chip--warn"><strong>' + esc(topDept[0]) + '</strong>申請最多處所（' + topDept[1] + '）</span>' : '') +
+            (topTaker ? '<span class="apt-chip"><strong>' + esc(topTaker[0]) + '</strong>最常承接（' + topTaker[1] + '）</span>' : '');
+        insight.innerHTML = '';
         ranks.innerHTML =
-            rankCard('申請處所', byDept) +
-            rankCard('物件區域', byRegion) +
-            rankCard('物件型態', byType) +
-            rankCard('註銷原因', byReason) +
-            rankCard('承接業者', byTaker);
+            '<section class="apt-block apt-block--charts">' +
+            '<h4 class="apt-sec-title">解編排行<small>同意／不同意解編後才算結案</small></h4>' +
+            dashDeptPie(byDept, total) +
+            '<p class="apt-sub-note">' + esc(dashMonthLabel(sel)) + '共 ' + total + ' 件；下方為原因與承接業者排行。</p>' +
+            '<div class="apt-lvr-policy-pair">' +
+            '<div class="apt-lvr-policy apt-lvr-policy--reason">' +
+            '<div class="apt-lvr-rk-head"><h5 class="apt-lvr-rk-title">📋 註銷原因排行</h5>' +
+            '<div class="apt-lvr-rk-pills"><span class="apt-lvr-rk-pill">依合約狀態歸類</span></div></div>' +
+            dashPolicyList(byReason, '尚無原因資料') +
+            '</div>' +
+            '<div class="apt-lvr-policy apt-lvr-policy--taker">' +
+            '<div class="apt-lvr-rk-head"><h5 class="apt-lvr-rk-title">🏢 承接業者排行</h5>' +
+            '<div class="apt-lvr-rk-pills"><span class="apt-lvr-rk-pill apt-lvr-rk-pill--gold">本月承接</span></div></div>' +
+            dashPolicyList(byTaker, '尚無承接業者') +
+            '</div></div>' +
+            '<details class="apt-lvr-rank-fold">' +
+            '<summary>排行明細<small>物件區域／物件型態／申請處所表</small></summary>' +
+            '<div class="apt-lvr-ana-grid">' +
+            dashRankTable('物件區域', '縣市分布', byRegion, total) +
+            dashRankTable('物件型態', '代管／包租', byType, total) +
+            dashRankTable('申請處所', '送件處所明細', byDept, total) +
+            dashRankTable('承接業者', '承接公司明細', byTaker, total) +
+            '</div></details></section>';
     }
 
     async function loadDash(force) {

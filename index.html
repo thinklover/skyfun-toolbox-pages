@@ -1185,33 +1185,27 @@
         .acf-msg { margin: 0.6rem 0 0; font-size: 0.84rem; font-weight: 700; min-height: 1.2em; }
         .acf-msg.is-ok { color: #047857; }
         .acf-msg.is-err { color: #dc2626; }
-        .acf-dash { border: 1px solid #fda4af; background: #fff1f2; border-radius: 0.85rem; padding: 0.75rem 0.85rem; margin-bottom: 0.85rem; }
-        .acf-dash-head { display: flex; flex-wrap: wrap; gap: 0.55rem 1rem; align-items: flex-start; justify-content: space-between; margin-bottom: 0.55rem; }
-        .acf-dash-title { margin: 0; font-size: 0.98rem; font-weight: 900; color: #9f1239; }
-        .acf-dash-sub { margin: 0.15rem 0 0; font-size: 0.74rem; color: #9f1239; opacity: 0.85; }
-        .acf-dash-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
-        .acf-dash-month { font-size: 0.74rem; font-weight: 800; color: #9f1239; display: inline-flex; align-items: center; gap: 0.3rem; }
-        .acf-dash-month select { font-size: 0.78rem; border: 1px solid #fda4af; border-radius: 0.45rem; padding: 0.25rem 0.4rem; background: #fff; }
-        .acf-dash-btn { border: 1px solid #fda4af; background: #fff; color: #be123c; border-radius: 0.5rem; padding: 0.3rem 0.7rem; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
-        .acf-dash-btn:hover { background: #ffe4e6; }
-        .acf-dash-btn:disabled { opacity: 0.6; cursor: wait; }
-        .acf-dash-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.45rem; }
-        .acf-dash-chip { display: inline-flex; align-items: baseline; gap: 0.25rem; background: #fff; border: 1px solid #fecdd3; border-radius: 999px; padding: 0.2rem 0.65rem; font-size: 0.72rem; color: #64748b; font-weight: 700; }
-        .acf-dash-chip strong { font-size: 0.92rem; color: #9f1239; font-weight: 900; }
-        .acf-dash-chip.is-ok strong { color: #047857; }
-        .acf-dash-chip.is-warn strong { color: #b45309; }
-        .acf-dash-insight { font-size: 0.8rem; line-height: 1.55; color: #4c0519; background: #fff; border: 1px solid #fecdd3; border-radius: 0.65rem; padding: 0.55rem 0.7rem; margin-bottom: 0.55rem; }
-        .acf-dash-insight strong { color: #be123c; }
-        .acf-dash-ranks { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.5rem; }
-        .acf-dash-card { background: #fff; border: 1px solid #fecdd3; border-radius: 0.65rem; padding: 0.5rem 0.6rem 0.55rem; }
-        .acf-dash-card h4 { margin: 0 0 0.35rem; font-size: 0.78rem; font-weight: 900; color: #9f1239; }
-        .acf-dash-card table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
-        .acf-dash-card th, .acf-dash-card td { padding: 0.2rem 0.15rem; border-bottom: 1px solid #fce7f3; text-align: left; }
-        .acf-dash-card th { color: #94a3b8; font-weight: 700; }
-        .acf-dash-card td.num, .acf-dash-card th.num { text-align: right; }
-        .acf-dash-card tr.is-top td { font-weight: 800; color: #9f1239; }
-        .acf-dash-bar { display: block; height: 0.35rem; border-radius: 999px; background: linear-gradient(90deg, #fb7185, #e11d48); min-width: 0.25rem; }
-        .acf-dash-empty { margin: 0; font-size: 0.78rem; color: #94a3b8; }
+        /* 解編儀表板：對齊實價登錄稽核（apt-gpie / apt-lvr-policy） */
+        #cancel-obj-zone .acf-dash { border: 1px solid #e2e8f0; background: #fff; border-radius: 1rem; padding: 0.85rem 0.95rem 1rem; margin-bottom: 0.85rem; box-shadow: 0 8px 24px -18px rgba(15, 23, 42, 0.35); }
+        #cancel-obj-zone .acf-dash-head { display: flex; flex-wrap: wrap; gap: 0.55rem 1rem; align-items: flex-start; justify-content: space-between; margin-bottom: 0.65rem; }
+        #cancel-obj-zone .acf-dash-title { margin: 0; font-size: 1.05rem; font-weight: 900; color: #312e81; }
+        #cancel-obj-zone .acf-dash-sub { margin: 0.2rem 0 0; font-size: 0.76rem; color: #64748b; }
+        #cancel-obj-zone .acf-dash-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+        #cancel-obj-zone .acf-dash-month { font-size: 0.74rem; font-weight: 800; color: #475569; display: inline-flex; align-items: center; gap: 0.3rem; }
+        #cancel-obj-zone .acf-dash-month select { font-size: 0.78rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.28rem 0.45rem; background: #fff; color: #0f172a; }
+        #cancel-obj-zone .acf-dash-btn { border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3; border-radius: 0.55rem; padding: 0.32rem 0.75rem; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
+        #cancel-obj-zone .acf-dash-btn:hover { background: #e0e7ff; }
+        #cancel-obj-zone .acf-dash-btn:disabled { opacity: 0.6; cursor: wait; }
+        #cancel-obj-zone .acf-dash-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.75rem; }
+        #cancel-obj-zone .acf-dash-insight { margin: 0 0 0.55rem; }
+        #cancel-obj-zone .acf-dash-insight:empty { display: none; }
+        #cancel-obj-zone .acf-dash-ranks { display: block; }
+        #cancel-obj-zone .acf-dash-empty { margin: 0; padding: 0.85rem; border-radius: 0.8rem; background: #f8fafc; text-align: center; font-size: 0.84rem; font-weight: 700; color: #64748b; }
+        #cancel-obj-zone .acf-dash .apt-lvr-policy--reason { border-color: #c7d2fe; border-top-color: #6366f1; box-shadow: 0 6px 18px -12px rgba(67, 56, 202, 0.35); }
+        #cancel-obj-zone .acf-dash .apt-lvr-policy--reason .apt-lvr-rk-title { color: #3730a3; }
+        #cancel-obj-zone .acf-dash .apt-lvr-policy--taker { border-color: #bbf7d0; border-top-color: #10b981; box-shadow: 0 6px 18px -12px rgba(4, 120, 87, 0.35); }
+        #cancel-obj-zone .acf-dash .apt-lvr-policy--taker .apt-lvr-rk-title { color: #047857; }
+        #cancel-obj-zone .acf-dash .apt-lvr-policy--taker .apt-lvr-rk-total strong { color: #047857; }
         #page-business-receipt-print .rcp-shell { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem 1.1rem 1.15rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
         #page-business-receipt-print .rcp-head { margin-bottom: 0.85rem; }
         #page-business-receipt-print .rcp-title { margin: 0; font-size: 1.35rem; font-weight: 900; color: #312e81; }
@@ -14735,7 +14729,7 @@
         <script src="./js/newbie-exam.js?v=20261030-1"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
         <script src="./js/subsidy-petition.js?v=20261001-3"></script>
-        <script src="./js/admin-cancel-form.js?v=20261119-dash"></script>
+        <script src="./js/admin-cancel-form.js?v=20261119-dash-lvr"></script>
         <script src="./js/admin-calendar-sheet.js?v=20261011-1"></script>
         <script src="./js/admin-calendar.js?v=20261011-5"></script>
         <script src="./js/admin-org.js?v=20261024-orgdoc"></script>
