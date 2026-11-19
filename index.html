@@ -10185,7 +10185,7 @@
             <section class="rcp-shell">
                 <header class="rcp-head">
                     <h2 class="rcp-title">星華／星鴻領款收據套印</h2>
-                    <p class="rcp-lead">輸入媒合編號自動帶入門牌、押金與租管人員；畫面上只選「媒合版」或「解約版」，星鴻／星華由合約自動判斷。簽名欄留白給現場簽。</p>
+                    <p class="rcp-lead">輸入媒合編號自動帶入門牌、出租人、次承租人、押金與租管人員；畫面上只選「媒合版」或「解約版」，星鴻／星華由合約自動判斷。簽名欄留白給現場簽；套印字級與範本內文相同。</p>
                 </header>
                 <div class="rcp-lookup">
                     <label class="rcp-field rcp-field--grow">
@@ -10208,6 +10208,16 @@
                     <label class="rcp-field">
                         <span class="rcp-label">租賃標的門牌</span>
                         <input type="text" id="rcp-address" class="rcp-input" maxlength="200">
+                    </label>
+                    <label class="rcp-field">
+                        <span class="rcp-label">出租人</span>
+                        <input type="text" id="rcp-landlord" class="rcp-input" maxlength="40" autocomplete="name">
+                        <span class="rcp-hint">媒合版會套印在「出租人簽名蓋章」列（字級同內文）</span>
+                    </label>
+                    <label class="rcp-field">
+                        <span class="rcp-label">次承租人</span>
+                        <input type="text" id="rcp-tenant" class="rcp-input" maxlength="40" autocomplete="name">
+                        <span class="rcp-hint">解約版會套印在「次承租人簽名蓋章」列</span>
                     </label>
                     <label class="rcp-field">
                         <span class="rcp-label">租賃住宅管理人員</span>
