@@ -245,7 +245,11 @@
         const page = item && item.page;
         const cat = String((item && item.category) || '');
         if (page === 'ai-tingting') {
-            return !!(window.skyfunAuth?.canEnterAdminZone?.() || window.skyfunAuth?.canEnterBizSupervisor?.());
+            return !!(
+                window.skyfunAuth?.canEnterAdminZone?.()
+                || window.skyfunAuth?.canEnterBizSupervisor?.()
+                || window.skyfunAuth?.canEnterRentmanagerZone?.()
+            );
         }
         if (RENTMANAGER_ZONE_SEARCH_PAGES[page] || cat.indexOf('租管師專區') >= 0) {
             return window.skyfunAuth?.canEnterRentmanagerZone?.() === true;

@@ -779,6 +779,7 @@
   }
 
   function openFrom(zoneName) {
+    /* 後端 zone 僅 admin／supervisor；租管師入口仍走 admin 知識庫，返回鍵回租管師專區 */
     const z = zoneName === 'supervisor' ? 'supervisor' : 'admin';
     sessionStorage.setItem(ZONE_KEY, z);
     sessionStorage.setItem(

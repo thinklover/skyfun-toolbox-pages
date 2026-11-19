@@ -5395,7 +5395,7 @@
             <div id="admin-handover-root"></div>
         </div>
 
-        <!-- AI婷婷 問答（行政／業務主管專區共用） -->
+        <!-- AI婷婷 問答（行政／業務主管／租管師專區共用） -->
         <div id="page-ai-tingting" class="hidden max-w-6xl mx-auto space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <button type="button" id="ait-back-btn" class="mb-1 btn btn-sm tone-slate-soft">← 返回行政專區</button>
@@ -16448,7 +16448,7 @@
             { external: 'https://www.etax.nat.gov.tw/etwmain/etw113w1/address/query', title: '營登查詢系統', category: '外部連結', keywords: '營登 營業登記' },
         ];
         </script>
-        <script src="./js/home-search.js?v=20261118-rentmgr-gate"></script>
+        <script src="./js/home-search.js?v=20261119-ait-rentmgr"></script>
         <script>
         const PAGE_ROUTE_MAP = {
             landlord: 'page-landlord',
@@ -16678,9 +16678,13 @@
                 pageName = 'business';
             }
             if (pageName === 'ai-tingting') {
-                const aitOk = !!(window.skyfunAuth?.canEnterAdminZone?.() || window.skyfunAuth?.canEnterBizSupervisor?.());
+                const aitOk = !!(
+                    window.skyfunAuth?.canEnterAdminZone?.()
+                    || window.skyfunAuth?.canEnterBizSupervisor?.()
+                    || window.skyfunAuth?.canEnterRentmanagerZone?.()
+                );
                 if (!aitOk) {
-                    window.alert('AI婷婷問答僅限行政專區或業務主管專區權限使用。');
+                    window.alert('AI婷婷問答僅限行政、業務主管或租管師專區權限使用。');
                     pageName = 'home';
                 }
             }
