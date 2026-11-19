@@ -1,4 +1,4 @@
-# 簽呈 AI 一鍵整理（獨立 Render 服務；建立 Blueprint 時檔案路徑填 services/petition-ai/render.yaml）
+# 簽呈／註銷備註 AI（獨立 Render 服務；建立 Blueprint 時檔案路徑填 services/petition-ai/render.yaml）
 services:
   - type: web
     name: skyfun-petition-ai
@@ -12,11 +12,13 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22.13.0"
-      - key: CURSOR_API_KEY
+      - key: GEMINI_API_KEY
         sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
       - key: SUPABASE_URL
         value: https://xpbownhiedurytlyqszu.supabase.co
       - key: SUPABASE_ANON_KEY
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYm93bmhpZWR1cnl0bHlxc3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNzM1NTYsImV4cCI6MjEwMTg0OTU1Nn0.UsrQ042IYFNwPn31LfkpYGAZP6Gg4blf2O0JSMUvk5Q
-      - key: CURSOR_MODEL
-        value: claude-haiku-5-5
+      - key: ALLOWED_ORIGINS
+        value: https://toolbox.skyfunsystem.com,https://thinklover.github.io,https://skyfun-toolbox-preview.pages.dev
