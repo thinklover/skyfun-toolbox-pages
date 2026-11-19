@@ -756,10 +756,12 @@
         '#toolbox-line-gate h2{margin:0;font-size:1.15rem;font-weight:900}',
         '#toolbox-line-gate .lg-sub{margin:.15rem 0 0;font-size:.8rem;color:#64748b}',
         '#toolbox-line-gate .lg-why{margin:0 0 .9rem;padding:.7rem .8rem;border-radius:.8rem;background:#f0fdf4;border:1px solid #bbf7d0;font-size:.85rem;line-height:1.55;color:#14532d}',
+        '#toolbox-line-gate .lg-why ul{margin:.35rem 0 0;padding-left:1.1rem}',
+        '#toolbox-line-gate .lg-why li{display:list-item;margin:.2rem 0;font-size:.85rem;line-height:1.55}',
         '#toolbox-line-gate ol{margin:0;padding:0;list-style:none;display:grid;gap:.55rem}',
-        '#toolbox-line-gate li{display:flex;gap:.6rem;align-items:flex-start;font-size:.9rem;line-height:1.5}',
-        '#toolbox-line-gate li > b{flex:0 0 auto;width:1.55rem;height:1.55rem;border-radius:999px;display:grid;place-items:center;font-size:.8rem;color:#fff;background:#0f766e}',
-        '#toolbox-line-gate li.is-done > b{background:#06c755}',
+        '#toolbox-line-gate ol>li{display:flex;gap:.6rem;align-items:flex-start;font-size:.9rem;line-height:1.5}',
+        '#toolbox-line-gate ol>li>b{flex:0 0 auto;width:1.55rem;height:1.55rem;border-radius:999px;display:grid;place-items:center;font-size:.8rem;color:#fff;background:#0f766e}',
+        '#toolbox-line-gate ol>li.is-done>b{background:#06c755}',
         '#toolbox-line-gate .lg-add{display:inline-block;margin-top:.3rem;padding:.4rem .85rem;border-radius:.7rem;background:#06c755;color:#fff;font-weight:800;text-decoration:none}',
         '#toolbox-line-gate .lg-id{font-size:.78rem;color:#64748b}',
         '#toolbox-line-gate .lg-code{display:inline-block;margin-top:.3rem;padding:.3rem .8rem;border-radius:.7rem;background:#0f172a;color:#fff;font:900 1.5rem/1.2 ui-monospace,Consolas,monospace;letter-spacing:.25em}',
@@ -795,7 +797,7 @@
       ? '管理員要求你必須完成綁定後才能繼續使用'
       : '行政管理部同仁都要完成，約 1 分鐘';
     const why = lineGate.forced
-      ? '後台已開啟「強制綁定 LINE」。請加入官方帳號並完成綁定後，才能繼續使用工具箱。'
+      ? '為什麼要綁定？綁定後才能繼續使用工具箱，並用 LINE 即時收到：<ul><li>公會／案件<strong>退件通知</strong></li><li>案件相關提醒與重要公告</li></ul>請加入官方帳號「星鴻萬能小幫手」並完成綁定。'
       : '之後抽查結果、考試、績效與公告等通知會用 LINE 傳給你，請先加入官方帳號並完成綁定。';
     const skipBtn = lineGate.forced
       ? ''

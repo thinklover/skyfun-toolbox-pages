@@ -360,6 +360,7 @@
               <label><input type="checkbox" id="sync-overwrite" class="w-auto" />同步時覆蓋已有職稱</label>
             </div>
             <button type="button" class="act-btn act-save" id="btn-sync-titles" title="用姓名／帳號向公司系統人事查職稱並寫回">同步公司系統職稱</button>
+            <button type="button" class="act-btn act-line" id="btn-force-line-business" title="對所有未綁 LINE 的業務處帳號設為下次強制綁定">強制業務綁 LINE</button>
           </div>
         </div>
       </div>
@@ -1153,6 +1154,14 @@
         await loadList();
       }
 
+      async function forceLineBindBusiness() {
+        if (!confirm('確定要對所有「未綁 LINE 的業務」設為下次登入強制綁定嗎？已綁過的與後勤單位不會異動。')) return;
+        const data = await rpc('toolbox_admin_force_line_bind_business', { p_secret: secret });
+        if (!data?.ok) throw new Error(data?.error || '批次強制失敗');
+        document.getElementById('msg').textContent = data.message || '已完成';
+        await loadList();
+      }
+
       function toggleRowDetail(id) {
         const key = String(id);
         if (expandedIds.has(key)) expandedIds.delete(key);
@@ -1209,6 +1218,11 @@
             /failed to fetch|networkerror|load failed/i.test(raw)
               ? '無法連上職稱同步服務（網路或 CORS）。請重新整理後再試；若仍失敗請回報工程。'
               : raw;
+        });
+      });
+      document.getElementById('btn-force-line-business')?.addEventListener('click', () => {
+        forceLineBindBusiness().catch((e) => {
+          document.getElementById('msg').textContent = e.message || String(e);
         });
       });
       document.getElementById('btn-refresh').addEventListener('click', () => loadList().catch((e) => {
