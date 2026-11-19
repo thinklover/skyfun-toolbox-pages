@@ -2,14 +2,12 @@
   "name": "skyfun-petition-ai",
   "private": true,
   "type": "module",
-  "description": "工具箱簽呈 AI 一鍵整理（Cursor SDK，純文字模式）",
+  "description": "工具箱簽呈／註銷備註 AI 整理（Gemini）",
   "engines": {
-    "node": ">=22.13"
+    "node": ">=20"
   },
   "scripts": {
     "start": "node server.mjs"
   },
-  "dependencies": {
-    "@cursor/sdk": "^1.0.37"
-  }
+  "dependencies": {}
 }

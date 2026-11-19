@@ -1,11 +1,10 @@
-// 簽呈 AI 一鍵整理服務：工具箱登入者送來口述或表單內容，交給 Cursor（純文字、不開任何工具）整理成簽呈欄位；
+// 簽呈 AI 一鍵整理服務：工具箱登入者送來口述或表單內容，交給 Gemini 整理成簽呈欄位；
 // 另提供 /api/cancel-note/polish：星鴻註銷物件申請的業務備註條列＋潤飾；
 // /api/improve-plan/polish：行政改善計畫的「本期要改善的項目」「具體做法」潤飾（具體做法 300 字內；改善項目不限）；
 // /api/mediation-summary/polish：調解聲請書「事件概要與願接受條件」潤飾。
-// 環境變數：CURSOR_API_KEY（必填）、CURSOR_MODEL、ALLOWED_ORIGINS、PETITION_AI_MOCK=1（不呼叫 AI，只回假資料供畫面測試）
+// 環境變數：GEMINI_API_KEY（必填）、GEMINI_MODEL、ALLOWED_ORIGINS、PETITION_AI_MOCK=1（不呼叫 AI，只回假資料供畫面測試）
 import http from 'node:http';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,17 +12,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 10000;
 const HOST = process.env.BIND_HOST || '0.0.0.0';
 const MOCK = process.env.PETITION_AI_MOCK === '1';
-const API_KEY = (process.env.CURSOR_API_KEY || '').trim();
-const MODEL = (process.env.CURSOR_MODEL || 'claude-haiku-5-5').trim();
-// 例：thinking=false,reasoning_effort=low；參數名稱與可用值依 Cursor.models.list() 為準
-const MODEL_PARAMS = String(process.env.CURSOR_MODEL_PARAMS ?? (MODEL === 'claude-haiku-5-5' ? 'thinking=false,reasoning_effort=low' : ''))
-  .split(',').map((s) => s.split('=').map((x) => x.trim())).filter(([id, value]) => id && value)
-  .map(([id, value]) => ({ id, value }));
+const API_KEY = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '').trim();
+const MODEL = (process.env.GEMINI_MODEL || 'gemini-2.0-flash').trim();
 const MAX_BUSY = Math.max(1, Number(process.env.PETITION_AI_CONCURRENCY) || 3);
 const TIMEOUT_MS = 120000;
 const MAX_BODY = 64 * 1024;
 const MAX_INPUT_CHARS = 20000;
-const ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://toolbox.skyfunsystem.com,https://thinklover.github.io')
+const ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://toolbox.skyfunsystem.com,https://thinklover.github.io,https://skyfun-toolbox-preview.pages.dev')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
 const CATEGORIES = ['人事相關', '獎金辦法', '賠償案件', '薪資出勤', '其他'];
@@ -310,27 +305,57 @@ function withTimeout(promise, ms) {
   ]).finally(() => clearTimeout(timer));
 }
 
-export async function askCursor(prompt) {
-  const { Agent, CursorAgentError } = await import('@cursor/sdk');
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'petition-ai-'));
-  try {
-    const result = await withTimeout(Agent.prompt(prompt, {
-      apiKey: API_KEY,
-      model: MODEL_PARAMS.length ? { id: MODEL, params: MODEL_PARAMS } : { id: MODEL },
-      tools: [],
-      local: { cwd }
-    }), TIMEOUT_MS);
-    if (result.status !== 'finished') throw new Error('AI 整理失敗，請再按一次');
-    return { text: result.result || '', usage: result.usage || null };
-  } catch (err) {
-    if (CursorAgentError && err instanceof CursorAgentError) {
-      console.error('cursor startup failed:', err.message, 'retryable=', err.isRetryable);
-      throw new Error('暫時連不上 AI，請稍後再試');
-    }
-    throw err;
-  } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+function geminiUsage(data) {
+  const u = data?.usageMetadata || {};
+  return {
+    promptTokens: Number(u.promptTokenCount || 0) || 0,
+    candidatesTokens: Number(u.candidatesTokenCount || 0) || 0,
+    totalTokens: Number(u.totalTokenCount || 0) || 0
+  };
+}
+
+function geminiText(data) {
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts) || !parts.length) return '';
+  return parts.map((p) => String(p?.text || '')).join('').trim();
+}
+
+export async function askGemini(prompt) {
+  if (!API_KEY) throw new Error('AI 服務尚未設定金鑰');
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent?key=${encodeURIComponent(API_KEY)}`;
+  const res = await withTimeout(fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 4096,
+        responseMimeType: 'application/json'
+      }
+    })
+  }), TIMEOUT_MS);
+  let data = null;
+  try { data = await res.json(); } catch { /* non-JSON */ }
+  if (!res.ok) {
+    const msg = String(data?.error?.message || data?.error?.status || ('Gemini HTTP ' + res.status)).slice(0, 180);
+    console.error('gemini failed:', res.status, msg);
+    if (res.status === 429) throw new Error('AI 額度忙碌中，請稍後再試');
+    if (res.status === 400 || res.status === 403) throw new Error('AI 金鑰或模型設定有誤，請聯絡管理員');
+    throw new Error('暫時連不上 AI，請稍後再試');
   }
+  const text = geminiText(data);
+  if (!text) {
+    const block = data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || '';
+    console.error('gemini empty reply:', block || 'no-text');
+    throw new Error('AI 整理失敗，請再按一次');
+  }
+  return { text, usage: geminiUsage(data) };
+}
+
+/** @deprecated 舊名稱，改呼叫 Gemini */
+export async function askCursor(prompt) {
+  return askGemini(prompt);
 }
 
 async function organize(req, res, origin) {
@@ -353,7 +378,7 @@ async function organize(req, res, origin) {
     const gate = await beginUsage(token, mode, chars);
     if (!gate.ok) { send(res, 403, { ok: false, error: gate.error || '無法使用' }, origin); return; }
     const prompt = buildPrompt(mode, text, fields);
-    const reply = MOCK ? { text: mockReply(mode, text, fields), usage: null } : await askCursor(prompt);
+    const reply = MOCK ? { text: mockReply(mode, text, fields), usage: null } : await askGemini(prompt);
     const out = parseReply(reply.text);
     console.log(JSON.stringify({ at: new Date().toISOString(), mode, chars, ms: Date.now() - started, ok: true, model: MODEL, usage: reply.usage }));
     send(res, 200, { ok: true, mode, remaining: gate.remaining, ...out }, origin);
@@ -383,7 +408,7 @@ async function cancelNote(req, res, origin) {
     if (!gate.ok) { send(res, 403, { ok: false, error: gate.error || '無法使用' }, origin); return; }
     const reply = MOCK
       ? { text: JSON.stringify({ points: ['（測試）' + text.slice(0, 60)], hasReason: true, hasCare: false }), usage: null }
-      : await askCursor(buildNotePrompt(text));
+      : await askGemini(buildNotePrompt(text));
     const out = parseNoteReply(reply.text);
     console.log(JSON.stringify({ at: new Date().toISOString(), mode: 'cancel-note', chars: text.length, ms: Date.now() - started, ok: true, model: MODEL, usage: reply.usage }));
     send(res, 200, { ok: true, remaining: gate.remaining, ...out }, origin);
@@ -451,7 +476,7 @@ async function mediationSummaryPolish(req, res, origin) {
     if (!gate.ok) { send(res, 403, { ok: false, error: gate.error || '無法使用' }, origin); return; }
     const reply = MOCK
       ? { text: JSON.stringify({ text: '（測試）' + text }), usage: null }
-      : await askCursor(buildMediationSummaryPrompt(text));
+      : await askGemini(buildMediationSummaryPrompt(text));
     const out = parseMediationSummaryReply(reply.text);
     console.log(JSON.stringify({ at: new Date().toISOString(), mode: 'med-summary', chars: text.length, ms: Date.now() - started, ok: true, model: MODEL, usage: reply.usage }));
     send(res, 200, { ok: true, remaining: gate.remaining, ...out }, origin);
@@ -484,7 +509,7 @@ async function planPolish(req, res, origin) {
     if (!gate.ok) { send(res, 403, { ok: false, error: gate.error || '無法使用' }, origin); return; }
     const reply = MOCK
       ? { text: JSON.stringify({ text: '（測試）' + text }), usage: null }
-      : await askCursor(buildPlanPrompt(field, text));
+      : await askGemini(buildPlanPrompt(field, text));
     const out = parsePlanReply(reply.text, field);
     console.log(JSON.stringify({ at: new Date().toISOString(), mode: 'plan-polish', field, chars: text.length, ms: Date.now() - started, ok: true, model: MODEL, usage: reply.usage }));
     send(res, 200, { ok: true, remaining: gate.remaining, ...out }, origin);
@@ -541,6 +566,6 @@ const server = http.createServer(async (req, res) => {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   server.listen(PORT, HOST, () => {
     console.log('petition-ai listening on ' + HOST + ':' + PORT + (MOCK ? '（測試模式，不呼叫 AI）' : '') +
-      '；模型 ' + MODEL + '；Supabase 設定' + (SB.url && SB.key ? '已讀取' : '缺少') + '；AI 金鑰' + (API_KEY ? '已設定' : '未設定'));
+      '；Gemini 模型 ' + MODEL + '；Supabase 設定' + (SB.url && SB.key ? '已讀取' : '缺少') + '；GEMINI_API_KEY' + (API_KEY ? '已設定' : '未設定'));
   });
 }
