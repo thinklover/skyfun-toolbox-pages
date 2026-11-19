@@ -15,16 +15,13 @@
     term_xinghua: './docs/forms/解約-領款收據_1151016版_星華.pdf'
   };
 
-  /** PDF 座標（pdf-lib 原點在左下；字級 14＝範本內文標楷體） */
+  /** PDF 座標（pdf-lib 原點在左下；字級 14＝範本內文標楷體；不改範本文案） */
   const LAYOUT = {
     pageH: 841.92,
-    /** 蓋掉範本「包租業:公司(統編)」後改寫「茲收到出租人:姓名 (身分證)」 */
-    partyMask: { x: 90, top: 126, w: 278, h: 17 },
-    party: { x: 90, top: 128, size: 14 },
     amount: { x: 292, top: 174, size: 14 },
     address: { x: 224, top: 414, size: 14 },
     manager: { x: 224, top: 450, size: 14 },
-    /** 媒合＝出租人簽名蓋章；解約＝次承租人簽名蓋章 */
+    /** 媒合＝出租人簽名蓋章；解約＝次承租人簽名蓋章（只帶姓名，不改「包租業」首行） */
     signer: { x: 224, top: 486, size: 14 },
     year: { x: 230, top: 602, size: 14 },
     month: { x: 345, top: 602, size: 14 },
@@ -152,7 +149,6 @@
     if ($('rcp-brand-show')) $('rcp-brand-show').textContent = brandLabel(row.brand) + '（' + (row.companyName || '') + '）';
     if ($('rcp-address')) $('rcp-address').value = row.address || '';
     if ($('rcp-landlord')) $('rcp-landlord').value = row.landlordName || '';
-    if ($('rcp-landlord-id')) $('rcp-landlord-id').value = row.landlordIdNo || '';
     if ($('rcp-tenant')) $('rcp-tenant').value = row.tenantName || '';
     if ($('rcp-manager')) $('rcp-manager').value = resolveManagerName(row.matchNo, row.managerName);
     if ($('rcp-amount')) $('rcp-amount').value = row.depositAmount || row.rent * (row.depositMonths || 2) || '';
@@ -210,7 +206,6 @@
     if (kind !== 'match' && kind !== 'term') throw new Error('請選擇媒合版或解約版');
     const address = String($('rcp-address')?.value || '').trim();
     const landlord = String($('rcp-landlord')?.value || '').trim();
-    const landlordId = String($('rcp-landlord-id')?.value || '').trim().toUpperCase();
     const tenant = String($('rcp-tenant')?.value || '').trim();
     const manager = resolveManagerName(state.row.matchNo, String($('rcp-manager')?.value || '').trim());
     const amount = Math.round(Number(String($('rcp-amount')?.value || '').replace(/[,，]/g, '')) || 0);
@@ -218,14 +213,13 @@
     const month = Number($('rcp-month')?.value || 0);
     const day = Number($('rcp-day')?.value || 0);
     if (!address) throw new Error('請填門牌');
-    if (!landlord) throw new Error('請填出租人');
+    if (kind === 'match' && !landlord) throw new Error('請填出租人');
     if (kind === 'term' && !tenant) throw new Error('解約版請填次承租人');
     if (!manager) throw new Error('請填租賃住宅管理人員');
     if (!amount) throw new Error('請填押金金額');
     if (!year || !month || !day) throw new Error('請填日期（年／月／日）');
     const brand = state.row.brand === 'xinghua' ? 'xinghua' : 'xinghong';
     const key = (kind === 'term' ? 'term_' : 'match_') + brand;
-    const partyLine = '茲收到出租人:' + landlord + (landlordId ? ' (' + landlordId + ')' : ' (　　　　)') + ' ';
     return {
       template: TEMPLATES[key],
       kind,
@@ -233,10 +227,8 @@
       matchNo: state.row.matchNo,
       address,
       landlord,
-      landlordId,
       tenant,
-      partyLine,
-      /** 簽名列：媒合印出租人、解約印次承租人 */
+      /** 簽名列：媒合印出租人、解約印次承租人；首行「包租業」維持範本原文 */
       signer: kind === 'term' ? tenant : landlord,
       manager,
       amount,
@@ -282,26 +274,8 @@
       pdf.registerFontkit(window.fontkit);
       const font = await pdf.embedFont(kaiBytes, { subset: true });
       const ink = rgb(0.08, 0.1, 0.14);
-      const white = rgb(1, 1, 1);
       const pages = pdf.getPages();
       for (const page of pages) {
-        /* 蓋掉範本預印的「包租業:公司(統編)」，改套出租人姓名＋身分證 */
-        page.drawRectangle({
-          x: LAYOUT.partyMask.x,
-          y: LAYOUT.pageH - LAYOUT.partyMask.top - LAYOUT.partyMask.h,
-          width: LAYOUT.partyMask.w,
-          height: LAYOUT.partyMask.h,
-          color: white,
-          borderWidth: 0
-        });
-        page.drawText(pack.partyLine, {
-          x: LAYOUT.party.x,
-          y: pdfY(LAYOUT.party.top, LAYOUT.party.size),
-          size: LAYOUT.party.size,
-          font,
-          color: ink,
-          maxWidth: 275
-        });
         page.drawText(pack.amountText, {
           x: LAYOUT.amount.x,
           y: pdfY(LAYOUT.amount.top, LAYOUT.amount.size),
