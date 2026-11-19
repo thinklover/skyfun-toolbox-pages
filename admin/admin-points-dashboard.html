@@ -357,6 +357,7 @@
       <button type="button" class="tab-btn" data-tab="check">🔍 審件抽查</button>
       <button type="button" class="tab-btn" data-tab="incident">⚠️ 客訴／懲處</button>
       <button type="button" class="tab-btn" data-tab="lvraudit">📝 實登稽核</button>
+      <button type="button" class="tab-btn" data-tab="cancel">🗑️ 解編</button>
       <h6>訓練與考試</h6>
       <button type="button" class="tab-btn" data-tab="training">🎓 教育訓練</button>
       <button type="button" class="tab-btn" data-tab="exam">📝 執行要點考試</button>
@@ -687,6 +688,34 @@
       </table></div>
     </div>
 
+    <div id="tab-cancel" class="space-y-4 hidden">
+      <div class="page-head"><h2>解編</h2><p>行政專區「星鴻註銷物件申請」；同意／不同意解編後會 LINE 通知送件人</p></div>
+      <details class="help"><summary>說明</summary>
+        <p>此頁可快速審核未結案申請。完整圖表總覽、期間篩選、承接業者排行與 CSV 匯出請開「完整解編儀表板」。前台行政績效中心也有解編統計分頁（與實價登錄稽核同款分析）。</p>
+      </details>
+      <div class="toolbar">
+        <div class="field"><label>關鍵字</label><input type="search" id="cancel-a-q" placeholder="地址、申請人、業務、處所、承接業者…" style="min-width:14rem" /></div>
+        <div class="field"><label>狀態</label>
+          <select id="cancel-a-status">
+            <option value="pending">未審核</option>
+            <option value="">全部</option>
+            <option value="done">同意解編</option>
+            <option value="rejected">不同意解編</option>
+          </select>
+        </div>
+        <div class="push">
+          <a class="btn btn-main" href="./object-cancel-dashboard.html" target="_blank" rel="noopener">完整解編儀表板 ↗</a>
+          <button type="button" class="btn btn-ghost" id="btn-cancel-a-reload">重新讀取</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="cancel-a-stats"></div>
+      <h3 class="list-title">申請明細<span class="muted" id="cancel-a-count"></span></h3>
+      <div class="overflow-x-auto"><table>
+        <thead><tr><th>送出時間</th><th>處所</th><th>申請人</th><th>業務</th><th>地址</th><th>型態</th><th>合約狀況</th><th>承接業者</th><th>狀態</th><th>管理部回覆</th><th></th></tr></thead>
+        <tbody id="cancel-a-list"></tbody>
+      </table></div>
+    </div>
+
     <div id="tab-lvraudit" class="space-y-4 hidden">
       <div class="page-head"><h2>實登稽核</h2><p>同仁填的實價登錄稽核；後台通過後才算查錯獎 300 元／處長停權統計</p></div>
       <details class="help"><summary>說明</summary>
@@ -923,7 +952,7 @@
       const TAB_KEY = 'skyfun-admin-points-tab';
       const AUTH_STORAGE_KEY = 'skyfun-toolbox-auth-supabase-v1';
       const RPA_BASE = 'https://skyfun-arrears-rpa.dahwork123.workers.dev';
-      const TABS = ['boss', 'wprog', 'takeup', 'report', 'kpiyear', 'kpi', 'eff', 'tarea', 'manual', 'opinion', 'check', 'incident', 'lvraudit', 'training', 'exam', 'sim', 'plan', 'staff', 'org'];
+      const TABS = ['boss', 'wprog', 'takeup', 'report', 'kpiyear', 'kpi', 'eff', 'tarea', 'manual', 'opinion', 'check', 'incident', 'lvraudit', 'cancel', 'training', 'exam', 'sim', 'plan', 'staff', 'org'];
       const PLAN_CYCLE_DAYS = 14;
       const DAY_MS = 86400000;
       let secret = '';
@@ -5137,6 +5166,122 @@
         }
       });
 
+      /* ---------- 解編（註銷物件申請）後台 ---------- */
+      const cancelA = { loaded: false, rows: [], busy: false };
+      const CANCEL_ST = { pending: '未審核', done: '同意解編', rejected: '不同意解編' };
+
+      function renderCancelAdmin() {
+        const q = String($('cancel-a-q')?.value || '').trim().toLowerCase();
+        const st = String($('cancel-a-status')?.value || '').trim();
+        const all = cancelA.rows || [];
+        const n = (s) => all.filter((r) => (r.status || 'pending') === s).length;
+        const stats = $('cancel-a-stats');
+        if (stats) {
+          stats.innerHTML = [
+            ['申請件數', all.length],
+            ['未審核', n('pending')],
+            ['同意解編', n('done')],
+            ['不同意解編', n('rejected')]
+          ].map(([label, v]) => `<div class="stat"><b>${v}</b><span>${label}</span></div>`).join('');
+        }
+        const rows = all.filter((r) => {
+          if (st && String(r.status || 'pending') !== st) return false;
+          if (!q) return true;
+          const blob = [r.address, r.dept, r.applicant, r.agentName, r.takerCompany, r.contractStatus, r.adminNote, r.objectType]
+            .map((x) => String(x || '').toLowerCase()).join(' ');
+          return blob.includes(q);
+        });
+        $('cancel-a-count').textContent = `共 ${rows.length} 筆` + ((q || st) && rows.length !== all.length ? `（篩自 ${all.length}）` : '');
+        const tb = $('cancel-a-list');
+        if (!rows.length) {
+          tb.innerHTML = `<tr><td colspan="11" class="muted">${all.length ? '沒有符合條件的申請' : '尚無註銷／解編申請'}</td></tr>`;
+          return;
+        }
+        tb.innerHTML = rows.map((r) => {
+          const id = Number(r.id);
+          const status = String(r.status || 'pending');
+          return `<tr data-cancel-a-id="${id}">
+            <td>${esc(fmtTime(r.createdAt))}</td>
+            <td>${esc(r.dept || '')}</td>
+            <td>${esc(r.applicant || '')}</td>
+            <td>${esc(r.agentName || '')}</td>
+            <td style="white-space:normal;min-width:10rem">${esc(r.address || '')}</td>
+            <td>${esc(r.objectType || '')}</td>
+            <td style="white-space:normal;max-width:12rem">${esc(r.contractStatus || '')}</td>
+            <td>${esc(r.takerCompany || '')}${r.takerAgent ? `<div class="muted">${esc(r.takerAgent)}</div>` : ''}</td>
+            <td>${esc(CANCEL_ST[status] || status)}</td>
+            <td><textarea class="cancel-a-note" rows="2" style="min-width:9rem" maxlength="2000" placeholder="不同意原因／備註">${esc(r.adminNote || '')}</textarea></td>
+            <td style="white-space:nowrap">
+              ${status === 'pending' ? `
+                <button type="button" class="btn btn-main btn-sm" data-cancel-a-act="done" data-id="${id}">同意解編</button>
+                <button type="button" class="btn btn-del" data-cancel-a-act="rejected" data-id="${id}">不同意</button>
+              ` : `
+                <button type="button" class="btn btn-ghost btn-sm" data-cancel-a-act="pending" data-id="${id}">撤銷決定</button>
+              `}
+            </td>
+          </tr>`;
+        }).join('');
+      }
+
+      async function loadCancelAdmin(force) {
+        if (cancelA.busy) return;
+        if (cancelA.loaded && !force) {
+          renderCancelAdmin();
+          return;
+        }
+        cancelA.busy = true;
+        $('cancel-a-list').innerHTML = '<tr><td colspan="11" class="muted">讀取中…</td></tr>';
+        try {
+          const res = await rpc('object_cancel_admin_list', { p_query: '', p_status: '', p_limit: 2000 });
+          cancelA.rows = Array.isArray(res?.items) ? res.items : [];
+          cancelA.loaded = true;
+          renderCancelAdmin();
+        } catch (err) {
+          $('cancel-a-list').innerHTML = `<tr><td colspan="11" class="err">${esc(err.message || err)}</td></tr>`;
+          say(err.message || String(err));
+        } finally {
+          cancelA.busy = false;
+        }
+      }
+
+      $('btn-cancel-a-reload')?.addEventListener('click', () => loadCancelAdmin(true));
+      $('cancel-a-q')?.addEventListener('input', () => renderCancelAdmin());
+      $('cancel-a-status')?.addEventListener('change', () => renderCancelAdmin());
+      $('cancel-a-list')?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-cancel-a-act]');
+        if (!btn) return;
+        const id = Number(btn.dataset.id);
+        const kind = btn.dataset.cancelAAct;
+        const tr = e.target.closest('tr[data-cancel-a-id]');
+        if (!id || !tr || !kind) return;
+        const note = String(tr.querySelector('.cancel-a-note')?.value || '').trim();
+        if (kind === 'rejected' && !note) {
+          say('不同意解編請先填原因');
+          tr.querySelector('.cancel-a-note')?.focus();
+          return;
+        }
+        const labels = { done: '同意解編', rejected: '不同意解編', pending: '撤銷決定回到未審核' };
+        if (!confirm('確定' + (labels[kind] || kind) + '？')) return;
+        btn.disabled = true;
+        try {
+          await rpc('object_cancel_admin_update', { p_id: id, p_status: kind, p_admin_note: note });
+          const row = cancelA.rows.find((r) => Number(r.id) === id);
+          if (row) {
+            row.status = kind;
+            row.adminNote = note;
+            if (kind === 'pending') {
+              row.handledAt = null;
+              row.doneByName = '';
+            }
+          }
+          renderCancelAdmin();
+          say(kind === 'pending' ? '已撤銷，回到未審核' : '已更新', true);
+        } catch (err) {
+          btn.disabled = false;
+          say(err.message || String(err));
+        }
+      });
+
       /* ---------- 頁籤與登入 ---------- */
 
       function showTab(name) {
@@ -5145,8 +5290,8 @@
         if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
         document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tab));
         for (const t of TABS) $(`tab-${t}`).classList.toggle('hidden', t !== tab);
-        $('month-wrap').classList.toggle('hidden', ['training', 'exam', 'sim', 'kpi', 'kpiyear', 'org', 'opinion', 'lvraudit'].includes(tab));
-        document.body.classList.toggle('is-op-wide', tab === 'opinion' || tab === 'lvraudit');
+        $('month-wrap').classList.toggle('hidden', ['training', 'exam', 'sim', 'kpi', 'kpiyear', 'org', 'opinion', 'lvraudit', 'cancel'].includes(tab));
+        document.body.classList.toggle('is-op-wide', tab === 'opinion' || tab === 'lvraudit' || tab === 'cancel');
         say('');
         if (tab === 'boss' && !boss.slides) fillBossWeeks();
         if (tab === 'wprog') makeWprog(false);
@@ -5167,6 +5312,7 @@
           if (!gm.loaded) loadGm();
         }
         if (tab === 'lvraudit') loadLvrAuditAdmin(false);
+        if (tab === 'cancel') loadCancelAdmin(false);
       }
 
       $('nav').addEventListener('click', (e) => {

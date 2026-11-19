@@ -4604,7 +4604,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<link rel="stylesheet" href="./css/admin-points.css?v=20261109-spotmonth">
+<link rel="stylesheet" href="./css/admin-points.css?v=20261119-cancel">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261118-adz-2x2">
 <link rel="stylesheet" href="./css/ai-tingting.css?v=20261118-staff-bubble">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
@@ -5580,6 +5580,7 @@
                     <button type="button" class="apt-tab" data-tab="duration">耗時</button>
                     <button type="button" class="apt-tab" data-tab="spot" hidden>小組長抽查</button>
                     <button type="button" class="apt-tab" data-tab="lvraudit">實價登錄稽核</button>
+                    <button type="button" class="apt-tab" data-tab="cancel">解編</button>
                     <span class="apt-op-btns">
                         <button type="button" class="apt-op-open" data-op-open="case">📝 填寫案件意見</button>
                         <button type="button" class="apt-op-open apt-op-open--roster" data-op-open="roster">📝 填寫清冊意見</button>
@@ -14559,7 +14560,7 @@
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261117-renew"></script>
+        <script src="./js/admin-points.js?v=20261119-cancel"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
@@ -16361,7 +16362,8 @@
             { file: './admin/newbie-exam-dashboard.html', title: '財補考試成績後台', category: '管理工具', keywords: '後台 admin 財補 考試 成績 考卷 A卷 B卷 結訓考 新人' },
             { file: './admin/admin-points-dashboard.html', title: '行政績效中心後台（報表、組長登錄、考試成績、改善計畫）', category: '管理工具', keywords: '後台 admin 行政績效中心 行政點數表 每月進度報表 手填點數 審件抽查 客訴 教育訓練 執行要點 考試 成績 補考 改善計畫 人力明細' },
             { file: './admin/rentmgr-report-dashboard.html', title: '租賃管理部月報一鍵產出', category: '管理工具', keywords: '後台 admin 租管 月報 PPT 簡報 不續約 催收 績效 租賃管理部 租管部月報 各地區KPI 週報 週月報' },
-            { file: './admin/object-cancel-dashboard.html', title: '註銷物件申請後台', category: '管理工具', keywords: '後台 admin 註銷 註銷物件 註銷物件申請 物件註銷 行政 管理部 承接業者' },
+            { file: './admin/object-cancel-dashboard.html', title: '註銷物件申請後台', category: '管理工具', keywords: '後台 admin 註銷 註銷物件 註銷物件申請 物件註銷 行政 管理部 承接業者 解編 同意解編' },
+            { page: 'admin-points', title: '行政績效中心・解編儀表板', category: '行政專區', keywords: '解編 解編儀表板 註銷 同意解編 不同意解編 承接業者 行政績效' },
             { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳 簽呈 展延' },
             { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 公證費 租賃公證 119條' },
             { page: 'business-forms', title: '各式表單', category: '業務專區', keywords: '表單 場勘 押金讓渡 領款收據 切結書 300億切結 115Y 自願撤案 帳戶變更 租金補貼 複審 檢核 還款 協議 欠租' },

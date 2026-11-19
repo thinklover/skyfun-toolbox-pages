@@ -351,6 +351,7 @@
 .apt-chip--ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
 .apt-lvr-page { display: flex; flex-direction: column; gap: 1rem; }
 .apt-lvr-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.apt-lvr-split--single { grid-template-columns: minmax(0, 1fr); }
 .apt-lvr-split .apt-lvr-form-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .apt-lvr-rec { display: flex; flex-direction: column; gap: 0.6rem; max-height: 52rem; overflow-y: auto; }
 .apt-lvr-rec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.45rem 0.75rem; }
