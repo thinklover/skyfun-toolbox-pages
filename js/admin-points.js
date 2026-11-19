@@ -37,13 +37,6 @@
     lvrOfficeOpen: '',
     lvrPicked: {},
     lvrDeck: null,
-    cancelTab: { loading: false, loaded: false, rows: [], error: '', counts: {} },
-    cancelMonth: '',
-    cancelRecMonth: '',
-    cancelDeptOpen: '',
-    cancelPicked: {},
-    cancelDeck: null,
-    cancelRankOpen: false,
     durBy: 'all',
     durView: 'rank',
     durPerson: '',
@@ -6203,14 +6196,12 @@
     else if (state.tab === 'duration') box.innerHTML = renderDuration();
     else if (state.tab === 'spot') box.innerHTML = renderSpot();
     else if (state.tab === 'lvraudit') box.innerHTML = renderLvrAuditTab();
-    else if (state.tab === 'cancel') box.innerHTML = renderCancelTab();
     else box.innerHTML = renderMonth();
     $('apt-warnings').innerHTML = renderWarnings();
     if (state.tab === 'lvraudit') {
       mountLvrAuditInlineForm();
       ensureLvrAuditTabLoaded();
     }
-    if (state.tab === 'cancel') ensureCancelTabLoaded();
     if (state.tab === 'person' && window.GuideExam) {
       window.GuideExam.loadOverview();
       const gx = $('guide-exam-root');
@@ -7497,421 +7488,6 @@
     </div>`;
   }
 
-  /* ---------- 解編儀表板（註銷物件申請統計；不算點；全員可見） ---------- */
-  function cancelReasonOf(it) {
-    const s = String(it?.contractStatus || '');
-    if (/不續約|到期/.test(s)) return '到期不續約';
-    if (/解約|終止/.test(s)) return '提前解約';
-    return '其他';
-  }
-
-  function cancelStatusLabel(st) {
-    if (st === 'done') return ['is-ok', '同意解編'];
-    if (st === 'rejected') return ['is-err', '不同意解編'];
-    return ['is-wait', '未審核'];
-  }
-
-  function cancelRowMonth(r) {
-    return lvrAuditYm(r?.createdAt);
-  }
-
-  function cancelDeptPie(pairs, total, clickable) {
-    const CH = window.AdminPointsCharts;
-    const list = Array.isArray(pairs) ? pairs : [];
-    if (!CH?.pie || !total || !list.length) return '<p class="apt-gpie-none">尚無解編申請資料</p>';
-    const parts = list.map(([label, value], i) => ({
-      label,
-      value,
-      color: GCAT_COLORS[i % GCAT_COLORS.length]
-    }));
-    const top = parts[0];
-    if (!top) return '<p class="apt-gpie-none">尚無解編申請資料</p>';
-    const pct = (n) => `${((n / total) * 100).toFixed(1)}%`;
-    return `<div class="apt-gpie apt-gpie--lvr">
-      <div class="apt-gpie-chart">${CH.pie({ parts, center: total, sub: '件解編' })}</div>
-      <div class="apt-gpie-side">
-        <div class="apt-gpie-hl">
-          <p><span>申請最多的處所</span><b style="color:${top.color}">${esc(top.label)}</b><em>${top.value} 件・占 ${pct(top.value)}</em></p>
-          <p><span>處所數</span><b>${parts.length}</b><em>有出現在申請紀錄</em></p>
-        </div>
-      </div>
-      <div class="apt-gpie-body">
-        <ul class="apt-gpie-list" style="--rows:${Math.ceil(parts.length / 2)}">${parts
-          .map((p, i) => {
-            const inner = `<i style="background:${p.color}"></i><span title="${esc(p.label)}">${esc(p.label)}</span>
-                <b>${p.value}</b><em>${pct(p.value)}</em>
-                <s><u style="width:${(p.value / Math.max(top.value, 1)) * 100}%;background:${p.color}"></u></s>`;
-            const hit = clickable === false
-              ? `<div class="apt-lvr-office-hit">${inner}</div>`
-              : `<button type="button" class="apt-lvr-office-hit${state.cancelDeptOpen === p.label ? ' is-on' : ''}" data-cancel-dept="${esc(p.label)}">${inner}</button>`;
-            return `<li${i < 3 ? ' class="is-top"' : ''}>${hit}</li>`;
-          })
-          .join('')}</ul>
-      </div>
-    </div>`;
-  }
-
-  function cancelDeptDrillHtml(rows, dept) {
-    const list = (rows || []).filter((r) => (r.dept || '（未填）') === dept);
-    if (!list.length) return '';
-    const byAgent = lvrAuditCountMap(list, (r) => r.agentName);
-    const byTaker = lvrAuditCountMap(list, (r) => String(r.takerCompany || '').trim() || '（未填）');
-    const byReason = lvrAuditCountMap(list, cancelReasonOf);
-    return `<section class="apt-lvr-office-drill">
-      <h4 class="apt-sec-title">${esc(dept)}<small>${list.length} 件</small></h4>
-      <div class="apt-lvr-ana-grid">
-        ${lvrAuditRankTable('星鴻業務', '', byAgent, list.length)}
-        ${lvrAuditRankTable('承接業者', '', byTaker, list.length)}
-        ${lvrAuditRankTable('註銷原因', '依合約狀況判斷', byReason, list.length)}
-      </div>
-      <div class="apt-lvr-audit-list">${list.slice(0, 12).map((r) => {
-        const st = cancelStatusLabel(r.status || 'pending');
-        return `<article class="apt-lvr-audit-card apt-lvr-audit-card--simple">
-          <h4>${esc(r.address || '')}<span class="apt-lvr-status ${st[0]}">${st[1]}</span><span class="apt-lvr-month-tag">${esc(cancelRowMonth(r))}</span></h4>
-          <p class="apt-lvr-audit-meta">${esc(r.applicant || '')} · 業務 ${esc(r.agentName || '')} · ${esc(r.objectType || '')} · 轉 ${esc(r.takerCompany || '')}</p>
-          <p class="apt-lvr-audit-reason">${esc(r.contractStatus || '')}</p>
-        </article>`;
-      }).join('')}</div>
-    </section>`;
-  }
-
-  function invalidateCancelTab() {
-    state.cancelTab = { loading: false, loaded: false, rows: [], error: '', counts: {} };
-  }
-
-  async function ensureCancelTabLoaded(force) {
-    const tab = state.cancelTab || (state.cancelTab = { loading: false, loaded: false, rows: [], error: '', counts: {} });
-    if (tab.loading && !force) return;
-    if (tab.loaded && !force) return;
-    if (!token()) {
-      tab.loading = false;
-      tab.error = '請先登入工具箱';
-      tab.loaded = true;
-      if (state.tab === 'cancel') refreshCancelAnalysis();
-      return;
-    }
-    const seq = (tab._seq = (tab._seq || 0) + 1);
-    tab.loading = true;
-    tab.error = '';
-    if (state.tab === 'cancel') refreshCancelAnalysis();
-    try {
-      const res = await window.skyfunAuth.rpc('object_cancel_list', { p_token: token(), p_query: '', p_status: '', p_limit: 2000 });
-      if (seq !== tab._seq) return;
-      if (!res?.ok) throw new Error(res?.error || '讀取失敗');
-      tab.rows = Array.isArray(res.items) ? res.items : [];
-      tab.counts = res.counts || {};
-      tab.loaded = true;
-    } catch (err) {
-      if (seq !== tab._seq) return;
-      tab.error = String(err.message || err);
-      tab.loaded = true;
-      tab.rows = [];
-    } finally {
-      if (seq === tab._seq) tab.loading = false;
-      if (state.tab === 'cancel') refreshCancelAnalysis();
-    }
-  }
-
-  function cancelPickedCount() {
-    return Object.keys(state.cancelPicked || {}).length;
-  }
-
-  function cancelPickLabel(r) {
-    const id = String(r.id ?? '');
-    const on = !!state.cancelPicked[id];
-    return `<label class="apt-lvr-pick"><input type="checkbox" data-cancel-pick="${esc(id)}" ${on ? 'checked' : ''}> 列入簡報</label>`;
-  }
-
-  function cancelAnalysisHtml() {
-    const tab = state.cancelTab || { loading: false, loaded: false, rows: [], error: '' };
-    const allRows = tab.rows || [];
-    const nowYm = lvrAuditYm();
-    const dataMonths = [...new Set(allRows.map(cancelRowMonth).filter(Boolean))];
-    const months = [...new Set([nowYm, ...dataMonths])].sort().reverse();
-    let selMonth = state.cancelMonth;
-    if (!selMonth || (selMonth !== 'all' && !months.includes(selMonth))) {
-      selMonth = dataMonths.includes(nowYm) || !dataMonths.length ? nowYm : dataMonths.sort().reverse()[0];
-    }
-    state.cancelMonth = selMonth;
-    const monthLabel = (m) => {
-      if (m === 'all') return '全部月份';
-      const [y, mm] = String(m).split('/');
-      return `${y} 年 ${Number(mm)} 月`;
-    };
-    const monthPick = months.length
-      ? `<label class="apt-lvr-month-pick">月份
-          <select data-cancel-month>
-            ${months.map((m) => `<option value="${esc(m)}"${m === selMonth ? ' selected' : ''}>${esc(monthLabel(m))}（${allRows.filter((r) => cancelRowMonth(r) === m).length}）</option>`).join('')}
-            <option value="all"${selMonth === 'all' ? ' selected' : ''}>全部月份（${allRows.length}）</option>
-          </select>
-        </label>`
-      : '';
-    const head = `<div class="apt-lvr-ana-head">
-      <div>
-        <h3 class="apt-sec-title">解編儀表板<small>統計行政專區「星鴻註銷物件申請」；同意／不同意解編後才算結案</small></h3>
-        <p class="apt-sub-note">依送出月份統計。申請、簽呈上傳與審核請到「行政專區 → 星鴻註銷物件申請」；管理員後台有完整圖表與 CSV。</p>
-      </div>
-      <div class="apt-lvr-ana-actions">
-        ${monthPick}
-        <button type="button" class="apt-btn apt-lvr-deck-btn" data-cancel-deck-open>線上簡報（<span data-cancel-pick-count>${cancelPickedCount()}</span>）</button>
-        <button type="button" class="apt-btn" data-cancel-refresh ${tab.loading ? 'disabled' : ''}>${tab.loading ? '讀取中…' : '重新整理'}</button>
-        <button type="button" class="apt-btn apt-btn-lite" data-cancel-goto-form>去申請／審核</button>
-      </div>
-    </div>`;
-    if (tab.loading && !tab.loaded) return `${head}<p class="apt-empty">讀取解編申請中…</p>`;
-    if (tab.error) return `${head}<p class="apt-empty">${esc(tab.error)}</p>`;
-    if (!allRows.length) return `${head}<p class="apt-empty">尚無註銷／解編申請。</p>`;
-    const rows = selMonth === 'all' ? allRows : allRows.filter((r) => cancelRowMonth(r) === selMonth);
-    const total = rows.length;
-    if (!total) return `${head}<p class="apt-empty">${esc(monthLabel(selMonth))}尚無申請。</p>`;
-    const pending = rows.filter((r) => (r.status || 'pending') === 'pending');
-    const done = rows.filter((r) => r.status === 'done');
-    const rejected = rows.filter((r) => r.status === 'rejected');
-    const closed = done.length + rejected.length;
-    const rate = total ? `${Math.round((done.length / total) * 100)}%` : '—';
-    const byDept = lvrAuditCountMap(rows, (r) => r.dept || '（未填）');
-    const byRegion = lvrAuditCountMap(rows, (r) => r.region || '（未填）');
-    const byType = lvrAuditCountMap(rows, (r) => r.objectType || '（未填）');
-    const byReason = lvrAuditCountMap(rows, cancelReasonOf);
-    const byTaker = lvrAuditCountMap(rows, (r) => String(r.takerCompany || '').trim() || '（未填）');
-    const byAgent = lvrAuditCountMap(rows, (r) => r.agentName || '（未填）');
-    const topDept = byDept[0];
-    const topTaker = byTaker[0];
-    const doneWithTime = done.filter((r) => r.handledAt && r.createdAt);
-    const avgDays = doneWithTime.length
-      ? (doneWithTime.reduce((s, r) => s + (new Date(r.handledAt) - new Date(r.createdAt)), 0) / doneWithTime.length / 86400000).toFixed(1)
-      : '—';
-    return `${head}
-      <div class="apt-summary apt-lvr-ana-summary">
-        <span class="apt-chip"><strong>${total}</strong>申請件數</span>
-        <span class="apt-chip"><strong>${pending.length}</strong>未審核</span>
-        <span class="apt-chip apt-chip--ok"><strong>${done.length}</strong>同意解編</span>
-        <span class="apt-chip apt-chip--warn"><strong>${rejected.length}</strong>不同意解編</span>
-        <span class="apt-chip"><strong>${rate}</strong>同意率（相對全部）</span>
-        <span class="apt-chip"><strong>${avgDays}</strong>平均處理天數</span>
-        <span class="apt-chip apt-chip--warn"><strong>${esc(topDept?.[0] || '—')}</strong>申請最多處所（${topDept?.[1] || 0}）</span>
-        <span class="apt-chip"><strong>${esc(topTaker?.[0] || '—')}</strong>最常承接業者（${topTaker?.[1] || 0}）</span>
-        <span class="apt-chip"><strong>${closed}</strong>已結案</span>
-      </div>
-      <section class="apt-block apt-block--charts">
-        <h4 class="apt-sec-title">處所分布<small>點處所看該處明細</small></h4>
-        ${total ? cancelDeptPie(byDept, total) : '<p class="apt-empty">尚無資料</p>'}
-        <p class="apt-sub-note">點處所看該處業務／承接業者／原因；再點一次收合。</p>
-        ${state.cancelDeptOpen ? cancelDeptDrillHtml(rows, state.cancelDeptOpen) : ''}
-        <details class="apt-lvr-rank-fold" data-cancel-rank-fold ${state.cancelRankOpen ? 'open' : ''}>
-          <summary>排行明細<small>處所／區域／型態／原因／業者／業務</small></summary>
-          <div class="apt-lvr-ana-grid">
-            ${lvrAuditRankTable('申請處所', '', byDept, total)}
-            ${lvrAuditRankTable('物件所在區域', '', byRegion, total)}
-            ${lvrAuditRankTable('物件型態', '代管／包租', byType, total)}
-            ${lvrAuditRankTable('註銷原因', '依合約狀況判斷', byReason, total)}
-            ${lvrAuditRankTable('承接業者', '前排', byTaker, total)}
-            ${lvrAuditRankTable('星鴻業務', '', byAgent, total)}
-          </div>
-        </details>
-      </section>`;
-  }
-
-  function cancelRecordsHtml() {
-    const tab = state.cancelTab || { loading: false, loaded: false, rows: [], error: '' };
-    const allRows = tab.rows || [];
-    const nowYm = lvrAuditYm();
-    const dataMonths = [...new Set(allRows.map(cancelRowMonth).filter(Boolean))];
-    const months = [...new Set([nowYm, ...dataMonths])].sort().reverse();
-    let selMonth = state.cancelRecMonth || '';
-    if (!selMonth || !months.includes(selMonth)) {
-      selMonth = dataMonths.includes(nowYm) || !dataMonths.length ? nowYm : dataMonths.sort().reverse()[0];
-      state.cancelRecMonth = selMonth;
-    }
-    const monthLabel = (m) => {
-      const [y, mm] = String(m).split('/');
-      return `${y} 年 ${Number(mm)} 月`;
-    };
-    const rows = allRows.filter((r) => cancelRowMonth(r) === selMonth);
-    const total = rows.length;
-    const monthPick = months.length
-      ? `<label class="apt-lvr-month-pick">月份
-          <select data-cancel-rec-month>
-            ${months.map((m) => `<option value="${esc(m)}"${m === selMonth ? ' selected' : ''}>${esc(monthLabel(m))}（${allRows.filter((r) => cancelRowMonth(r) === m).length}）</option>`).join('')}
-          </select>
-        </label>`
-      : '';
-    const head = `<div class="apt-lvr-rec-head">
-      <div class="apt-lvr-rec-title">
-        <h3 class="apt-title">最近申請</h3>
-        <span class="apt-sub-note">${total ? `${Math.min(total, 50)}／${total} 筆 · ${esc(monthLabel(selMonth))} · 勾選要放進簡報的案件` : esc(monthLabel(selMonth))}</span>
-      </div>
-      ${monthPick}
-    </div>`;
-    if (tab.loading && !tab.loaded) return `${head}<p class="apt-empty">讀取中…</p>`;
-    if (tab.error) return `${head}<p class="apt-empty">${esc(tab.error)}</p>`;
-    if (!allRows.length) return `${head}<p class="apt-empty">尚無紀錄；請到行政專區送出註銷申請</p>`;
-    if (!total) return `${head}<p class="apt-empty">${esc(monthLabel(selMonth))}尚無紀錄，可切換上方月份查看</p>`;
-    return `${head}<div class="apt-lvr-audit-list">${rows
-      .slice(0, 50)
-      .map((r) => {
-        const st = cancelStatusLabel(r.status || 'pending');
-        const when = lvrAuditWhen(r.createdAt);
-        return `<article class="apt-lvr-audit-card">
-          ${cancelPickLabel(r)}
-          <h4>${esc(r.address || '')}<span class="apt-lvr-status ${st[0]}">${st[1]}</span><span class="apt-lvr-month-tag">${esc(cancelRowMonth(r))}</span></h4>
-          <p class="apt-lvr-audit-meta">${esc(r.dept || '')} · ${esc(r.applicant || '')} · 業務 ${esc(r.agentName || '')} · ${esc(r.objectType || '')} · ${esc(when)}${r.fileCount ? ` · 簽呈 ${r.fileCount}` : ''}</p>
-          <p class="apt-lvr-audit-reason">${esc(r.contractStatus || '')}${r.takerCompany ? ` → ${esc(r.takerCompany)}` : ''}</p>
-          ${r.adminNote ? `<p class="apt-lvr-admin-note">管理部：${esc(r.adminNote)}</p>` : ''}
-        </article>`;
-      })
-      .join('')}</div>`;
-  }
-
-  function refreshCancelAnalysis() {
-    const root = $('apt-cancel-ana-root');
-    const rec = $('apt-cancel-rec-root');
-    try {
-      if (root) root.innerHTML = cancelAnalysisHtml();
-      if (rec) rec.innerHTML = cancelRecordsHtml();
-    } catch (err) {
-      if (root) root.innerHTML = `<p class="apt-empty">解編儀表板渲染失敗：${esc(String(err.message || err))}</p>`;
-    }
-  }
-
-  function cancelDeckCaseHtml(r, index, total) {
-    const st = cancelStatusLabel(r.status || 'pending');
-    return `<article class="apt-lvr-deck-case">
-      <p class="apt-lvr-deck-kicker">勾選案件 ${index}／${total}</p>
-      <h2>${esc(r.address || '未填地址')}</h2>
-      <p class="apt-lvr-deck-tags"><span class="apt-lvr-status ${st[0]}">${st[1]}</span><span class="apt-lvr-month-tag">${esc(cancelRowMonth(r))}</span></p>
-      <p class="apt-lvr-deck-meta">${esc(r.dept || '')} · ${esc(r.applicant || '')} · 業務 ${esc(r.agentName || '')} · ${esc(r.objectType || '')} · 轉 ${esc(r.takerCompany || '')}</p>
-      <p class="apt-lvr-deck-reason">${esc(r.contractStatus || '')}</p>
-      ${r.adminNote ? `<p class="apt-lvr-admin-note">管理部：${esc(r.adminNote)}</p>` : ''}
-    </article>`;
-  }
-
-  function cancelDeckSlides() {
-    const allRows = state.cancelTab?.rows || [];
-    const selMonth = state.cancelMonth || 'all';
-    const monthLabel = (m) => {
-      if (m === 'all') return '全部月份';
-      const [y, mm] = String(m).split('/');
-      return `${y} 年 ${Number(mm)} 月`;
-    };
-    const rows = selMonth === 'all' ? allRows : allRows.filter((r) => cancelRowMonth(r) === selMonth);
-    const pending = rows.filter((r) => (r.status || 'pending') === 'pending');
-    const done = rows.filter((r) => r.status === 'done');
-    const rejected = rows.filter((r) => r.status === 'rejected');
-    const byDept = lvrAuditCountMap(rows, (r) => r.dept || '（未填）');
-    const byRegion = lvrAuditCountMap(rows, (r) => r.region || '（未填）');
-    const byType = lvrAuditCountMap(rows, (r) => r.objectType || '（未填）');
-    const byReason = lvrAuditCountMap(rows, cancelReasonOf);
-    const byTaker = lvrAuditCountMap(rows, (r) => String(r.takerCompany || '').trim() || '（未填）');
-    const byAgent = lvrAuditCountMap(rows, (r) => r.agentName || '（未填）');
-    const picked = allRows.filter((r) => state.cancelPicked[String(r.id)]);
-    const fixed = `<div class="apt-lvr-deck-fixed">
-        <section class="apt-lvr-deck-block">
-          <h2>儀表板<small>${esc(monthLabel(selMonth))}</small></h2>
-          <div class="apt-summary apt-lvr-ana-summary">
-            <span class="apt-chip"><strong>${rows.length}</strong>總筆數</span>
-            <span class="apt-chip"><strong>${pending.length}</strong>未審核</span>
-            <span class="apt-chip apt-chip--ok"><strong>${done.length}</strong>同意解編</span>
-            <span class="apt-chip apt-chip--warn"><strong>${rejected.length}</strong>不同意解編</span>
-          </div>
-          ${rows.length ? cancelDeptPie(byDept, rows.length, false) : '<p class="apt-empty">尚無資料</p>'}
-        </section>
-        <details class="apt-lvr-deck-block apt-lvr-deck-ranks" open>
-          <summary>排行明細<small>處所／區域／型態／原因／業者／業務</small></summary>
-          <div class="apt-lvr-ana-grid">
-            ${lvrAuditRankTable('申請處所', '', byDept, rows.length)}
-            ${lvrAuditRankTable('物件所在區域', '', byRegion, rows.length)}
-            ${lvrAuditRankTable('物件型態', '', byType, rows.length)}
-            ${lvrAuditRankTable('註銷原因', '', byReason, rows.length)}
-            ${lvrAuditRankTable('承接業者', '', byTaker, rows.length)}
-            ${lvrAuditRankTable('星鴻業務', '', byAgent, rows.length)}
-          </div>
-        </details>
-      </div>`;
-    return { fixed, cases: picked };
-  }
-
-  function paintCancelDeck() {
-    const deck = document.getElementById('apt-cancel-deck');
-    if (!deck || !state.cancelDeck) return;
-    const cases = state.cancelDeck.cases || [];
-    const total = 1 + cases.length;
-    const i = Math.max(0, Math.min(total - 1, state.cancelDeck.i || 0));
-    state.cancelDeck.i = i;
-    const stage = deck.querySelector('[data-cancel-deck-stage]');
-    if (i === 0) {
-      stage.innerHTML = `<div class="apt-lvr-deck-page">${state.cancelDeck.fixed || ''}</div>`;
-      deck.querySelector('[data-cancel-deck-title]').textContent = '儀表板';
-    } else {
-      const row = cases[i - 1];
-      stage.innerHTML = `<div class="apt-lvr-deck-page">${cancelDeckCaseHtml(row, i, cases.length)}</div>`;
-      deck.querySelector('[data-cancel-deck-title]').textContent = row.address || '案件明細';
-    }
-    deck.querySelector('[data-cancel-deck-no]').textContent = String(i + 1);
-    deck.querySelector('[data-cancel-deck-of]').textContent = String(total);
-    deck.querySelector('[data-cancel-deck-prev]').disabled = i <= 0;
-    deck.querySelector('[data-cancel-deck-next]').disabled = i >= total - 1;
-  }
-
-  function openCancelDeck() {
-    const pack = cancelDeckSlides();
-    state.cancelDeck = { i: 0, fixed: pack.fixed, cases: pack.cases };
-    let deck = document.getElementById('apt-cancel-deck');
-    if (!deck) {
-      deck = document.createElement('div');
-      deck.id = 'apt-cancel-deck';
-      deck.className = 'apt-lvr-deck';
-      deck.innerHTML = `<header class="apt-lvr-deck-bar">
-          <strong>解編簡報</strong>
-          <span><b data-cancel-deck-no>1</b>／<span data-cancel-deck-of>1</span> <span data-cancel-deck-title></span></span>
-          <button type="button" class="apt-btn" data-cancel-deck-close>關閉</button>
-        </header>
-        <div class="apt-lvr-deck-stage" data-cancel-deck-stage></div>
-        <footer class="apt-lvr-deck-nav">
-          <button type="button" class="apt-btn" data-cancel-deck-prev>上一張</button>
-          <button type="button" class="apt-btn" data-cancel-deck-next>下一張</button>
-        </footer>`;
-      document.body.appendChild(deck);
-    }
-    deck.hidden = false;
-    paintCancelDeck();
-    deck.requestFullscreen?.().catch(() => {});
-  }
-
-  function closeCancelDeck() {
-    state.cancelDeck = null;
-    const deck = document.getElementById('apt-cancel-deck');
-    if (document.fullscreenElement === deck) document.exitFullscreen?.().catch(() => {});
-    deck?.remove();
-  }
-
-  function stepCancelDeck(delta) {
-    if (!state.cancelDeck) return;
-    state.cancelDeck.i += delta;
-    paintCancelDeck();
-  }
-
-  function gotoCancelForm() {
-    if (typeof window.showPage === 'function') window.showPage('administration');
-    requestAnimationFrame(() => {
-      const zone = document.getElementById('cancel-obj-zone');
-      if (zone) {
-        zone.open = true;
-        zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }
-
-  function renderCancelTab() {
-    return `<div class="apt-lvr-page apt-cancel-page">
-      <div id="apt-cancel-ana-root">${cancelAnalysisHtml()}</div>
-      <div class="apt-lvr-split apt-lvr-split--single">
-        <section class="apt-zone apt-lvr-rec" id="apt-cancel-rec-root">${cancelRecordsHtml()}</section>
-      </div>
-      <p class="apt-sub-note" style="margin-top:0.5rem">管理員完整圖表／CSV：<a href="./admin/object-cancel-dashboard.html" target="_blank" rel="noopener">註銷／解編後台 ↗</a></p>
-    </div>`;
-  }
-
   let lvrAuditSb = null;
   function lvrAuditSbClient() {
     if (lvrAuditSb) return lvrAuditSb;
@@ -8647,30 +8223,17 @@
     $('apt-refresh').addEventListener('click', () => load(true));
     $('apt-lvr-backfill')?.addEventListener('click', () => runLvrBackfill());
     document.addEventListener('click', (e) => {
-      if (state.lvrDeck) {
-        if (e.target.closest('[data-lvr-deck-close]')) closeLvrDeck();
-        else if (e.target.closest('[data-lvr-deck-prev]')) stepLvrDeck(-1);
-        else if (e.target.closest('[data-lvr-deck-next]')) stepLvrDeck(1);
-      }
-      if (state.cancelDeck) {
-        if (e.target.closest('[data-cancel-deck-close]')) closeCancelDeck();
-        else if (e.target.closest('[data-cancel-deck-prev]')) stepCancelDeck(-1);
-        else if (e.target.closest('[data-cancel-deck-next]')) stepCancelDeck(1);
-      }
+      if (!state.lvrDeck) return;
+      if (e.target.closest('[data-lvr-deck-close]')) closeLvrDeck();
+      else if (e.target.closest('[data-lvr-deck-prev]')) stepLvrDeck(-1);
+      else if (e.target.closest('[data-lvr-deck-next]')) stepLvrDeck(1);
     });
     document.addEventListener('keydown', (e) => {
+      if (!state.lvrDeck) return;
       if (e.target.closest?.('input, textarea, select')) return;
-      if (state.lvrDeck) {
-        if (e.key === 'Escape') closeLvrDeck();
-        else if (e.key === 'ArrowRight' || e.key === 'PageDown') { stepLvrDeck(1); e.preventDefault(); }
-        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { stepLvrDeck(-1); e.preventDefault(); }
-        return;
-      }
-      if (state.cancelDeck) {
-        if (e.key === 'Escape') closeCancelDeck();
-        else if (e.key === 'ArrowRight' || e.key === 'PageDown') { stepCancelDeck(1); e.preventDefault(); }
-        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { stepCancelDeck(-1); e.preventDefault(); }
-      }
+      if (e.key === 'Escape') closeLvrDeck();
+      else if (e.key === 'ArrowRight' || e.key === 'PageDown') { stepLvrDeck(1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { stepLvrDeck(-1); e.preventDefault(); }
     });
     syncLvrAdminBtn();
     $('apt-tabs').addEventListener('click', (e) => {
@@ -8687,7 +8250,6 @@
     $('apt-body').addEventListener('toggle', (e) => {
       if (e.target.matches?.('[data-apt-board-fold]')) state.examBoardOpen = e.target.open;
       if (e.target.matches?.('[data-lvr-rank-fold]')) state.lvrRankOpen = e.target.open;
-      if (e.target.matches?.('[data-cancel-rank-fold]')) state.cancelRankOpen = e.target.open;
       const proj = e.target.closest?.('details.apt-proj-multi');
       if (proj && e.target === proj) {
         proj.classList.remove('apt-proj-multi--up');
@@ -8710,26 +8272,6 @@
       }
       if (e.target.closest('[data-lvr-deck-open]')) {
         openLvrDeck();
-        return;
-      }
-      if (e.target.closest('[data-cancel-refresh]')) {
-        ensureCancelTabLoaded(true);
-        return;
-      }
-      if (e.target.closest('[data-cancel-deck-open]')) {
-        openCancelDeck();
-        return;
-      }
-      if (e.target.closest('[data-cancel-goto-form]')) {
-        gotoCancelForm();
-        return;
-      }
-      const cancelDeptHit = e.target.closest('[data-cancel-dept]');
-      if (cancelDeptHit) {
-        const key = cancelDeptHit.getAttribute('data-cancel-dept') || '';
-        state.cancelDeptOpen = state.cancelDeptOpen === key ? '' : key;
-        refreshCancelAnalysis();
-        document.querySelector('.apt-cancel-page .apt-lvr-office-drill')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         return;
       }
       const officeHit = e.target.closest('[data-lvr-office]');
@@ -9156,18 +8698,6 @@
         if (n) n.textContent = String(lvrPickedCount());
         return;
       }
-      if (e.target.matches?.('[data-cancel-pick]')) {
-        const id = String(e.target.getAttribute('data-cancel-pick') || '');
-        if (e.target.checked) state.cancelPicked[id] = true;
-        else delete state.cancelPicked[id];
-        document.querySelectorAll(`[data-cancel-pick="${id}"]`).forEach((el) => {
-          el.checked = !!state.cancelPicked[id];
-        });
-        document.querySelectorAll('[data-cancel-pick-count]').forEach((el) => {
-          el.textContent = String(cancelPickedCount());
-        });
-        return;
-      }
       if (e.target.matches?.('[data-lvr-rec-month]')) {
         state.lvrAuditRecMonth = e.target.value || lvrAuditYm();
         refreshLvrAuditAnalysis();
@@ -9176,16 +8706,6 @@
       if (e.target.matches?.('[data-lvr-month]')) {
         state.lvrAuditMonth = e.target.value || 'all';
         refreshLvrAuditAnalysis();
-        return;
-      }
-      if (e.target.matches?.('[data-cancel-rec-month]')) {
-        state.cancelRecMonth = e.target.value || lvrAuditYm();
-        refreshCancelAnalysis();
-        return;
-      }
-      if (e.target.matches?.('[data-cancel-month]')) {
-        state.cancelMonth = e.target.value || 'all';
-        refreshCancelAnalysis();
         return;
       }
       if (e.target.dataset?.leaseCheck) {

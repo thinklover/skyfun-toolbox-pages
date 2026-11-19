@@ -1185,6 +1185,60 @@
         .acf-msg { margin: 0.6rem 0 0; font-size: 0.84rem; font-weight: 700; min-height: 1.2em; }
         .acf-msg.is-ok { color: #047857; }
         .acf-msg.is-err { color: #dc2626; }
+        .acf-dash { border: 1px solid #fda4af; background: #fff1f2; border-radius: 0.85rem; padding: 0.75rem 0.85rem; margin-bottom: 0.85rem; }
+        .acf-dash-head { display: flex; flex-wrap: wrap; gap: 0.55rem 1rem; align-items: flex-start; justify-content: space-between; margin-bottom: 0.55rem; }
+        .acf-dash-title { margin: 0; font-size: 0.98rem; font-weight: 900; color: #9f1239; }
+        .acf-dash-sub { margin: 0.15rem 0 0; font-size: 0.74rem; color: #9f1239; opacity: 0.85; }
+        .acf-dash-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+        .acf-dash-month { font-size: 0.74rem; font-weight: 800; color: #9f1239; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .acf-dash-month select { font-size: 0.78rem; border: 1px solid #fda4af; border-radius: 0.45rem; padding: 0.25rem 0.4rem; background: #fff; }
+        .acf-dash-btn { border: 1px solid #fda4af; background: #fff; color: #be123c; border-radius: 0.5rem; padding: 0.3rem 0.7rem; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
+        .acf-dash-btn:hover { background: #ffe4e6; }
+        .acf-dash-btn:disabled { opacity: 0.6; cursor: wait; }
+        .acf-dash-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.45rem; }
+        .acf-dash-chip { display: inline-flex; align-items: baseline; gap: 0.25rem; background: #fff; border: 1px solid #fecdd3; border-radius: 999px; padding: 0.2rem 0.65rem; font-size: 0.72rem; color: #64748b; font-weight: 700; }
+        .acf-dash-chip strong { font-size: 0.92rem; color: #9f1239; font-weight: 900; }
+        .acf-dash-chip.is-ok strong { color: #047857; }
+        .acf-dash-chip.is-warn strong { color: #b45309; }
+        .acf-dash-insight { font-size: 0.8rem; line-height: 1.55; color: #4c0519; background: #fff; border: 1px solid #fecdd3; border-radius: 0.65rem; padding: 0.55rem 0.7rem; margin-bottom: 0.55rem; }
+        .acf-dash-insight strong { color: #be123c; }
+        .acf-dash-ranks { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.5rem; }
+        .acf-dash-card { background: #fff; border: 1px solid #fecdd3; border-radius: 0.65rem; padding: 0.5rem 0.6rem 0.55rem; }
+        .acf-dash-card h4 { margin: 0 0 0.35rem; font-size: 0.78rem; font-weight: 900; color: #9f1239; }
+        .acf-dash-card table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+        .acf-dash-card th, .acf-dash-card td { padding: 0.2rem 0.15rem; border-bottom: 1px solid #fce7f3; text-align: left; }
+        .acf-dash-card th { color: #94a3b8; font-weight: 700; }
+        .acf-dash-card td.num, .acf-dash-card th.num { text-align: right; }
+        .acf-dash-card tr.is-top td { font-weight: 800; color: #9f1239; }
+        .acf-dash-bar { display: block; height: 0.35rem; border-radius: 999px; background: linear-gradient(90deg, #fb7185, #e11d48); min-width: 0.25rem; }
+        .acf-dash-empty { margin: 0; font-size: 0.78rem; color: #94a3b8; }
+        #page-business-receipt-print .rcp-shell { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem 1.1rem 1.15rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+        #page-business-receipt-print .rcp-head { margin-bottom: 0.85rem; }
+        #page-business-receipt-print .rcp-title { margin: 0; font-size: 1.35rem; font-weight: 900; color: #312e81; }
+        #page-business-receipt-print .rcp-lead { margin: 0.35rem 0 0; font-size: 0.86rem; color: #64748b; line-height: 1.55; }
+        #page-business-receipt-print .rcp-lookup { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: end; }
+        #page-business-receipt-print .rcp-field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+        #page-business-receipt-print .rcp-field--grow { flex: 1 1 14rem; }
+        #page-business-receipt-print .rcp-label { font-size: 0.74rem; font-weight: 800; color: #64748b; }
+        #page-business-receipt-print .rcp-input { border: 1.5px solid #cbd5e1; border-radius: 0.55rem; padding: 0.45rem 0.65rem; font-size: 0.9rem; }
+        #page-business-receipt-print .rcp-input:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
+        #page-business-receipt-print .rcp-btn { border: 0; border-radius: 0.55rem; padding: 0.5rem 1rem; font-size: 0.86rem; font-weight: 800; cursor: pointer; }
+        #page-business-receipt-print .rcp-btn--main { background: #4f46e5; color: #fff; }
+        #page-business-receipt-print .rcp-btn--main:hover { background: #4338ca; }
+        #page-business-receipt-print .rcp-btn--main:disabled { opacity: 0.55; cursor: wait; }
+        #page-business-receipt-print .rcp-btn--block { width: 100%; margin-top: 0.35rem; }
+        #page-business-receipt-print .rcp-msg { min-height: 1.2em; margin: 0.55rem 0 0; font-size: 0.84rem; font-weight: 700; color: #64748b; }
+        #page-business-receipt-print .rcp-msg.is-ok { color: #047857; }
+        #page-business-receipt-print .rcp-msg.is-err { color: #b91c1c; }
+        #page-business-receipt-print .rcp-panel { margin-top: 0.85rem; border-top: 1px dashed #e2e8f0; padding-top: 0.85rem; display: flex; flex-direction: column; gap: 0.65rem; }
+        #page-business-receipt-print .rcp-meta { display: flex; flex-wrap: wrap; gap: 0.45rem 1rem; font-size: 0.8rem; color: #475569; }
+        #page-business-receipt-print .rcp-meta b { color: #312e81; }
+        #page-business-receipt-print .rcp-kind { border: 1px solid #e2e8f0; border-radius: 0.65rem; padding: 0.55rem 0.7rem; margin: 0; }
+        #page-business-receipt-print .rcp-kind legend { font-size: 0.74rem; font-weight: 800; color: #64748b; padding: 0 0.25rem; }
+        #page-business-receipt-print .rcp-radio { display: inline-flex; align-items: center; gap: 0.3rem; margin-right: 0.85rem; font-size: 0.86rem; font-weight: 700; color: #334155; }
+        #page-business-receipt-print .rcp-hint { font-size: 0.72rem; color: #94a3b8; }
+        #page-business-receipt-print .rcp-date-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+        #page-business-receipt-print .rcp-note { margin: 0; font-size: 0.74rem; color: #94a3b8; line-height: 1.5; }
         .acf-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.6rem; margin-bottom: 0.7rem; }
         .acf-filters { display: flex; flex-wrap: wrap; gap: 0.3rem; }
         .acf-chip {
@@ -4421,7 +4475,7 @@
         .app-panel :is(
             #page-landlord, #page-announcement, #page-manager-bonus, #page-landlord-house-tax,
             #page-tenant, #page-tenant-kinship, #page-tenant-criteria, #page-tenant-eligibility,
-            #page-business, #page-business-forms, #page-business-591-listing, #page-business-notary-fee,
+            #page-business, #page-business-forms, #page-business-receipt-print, #page-business-591-listing, #page-business-notary-fee,
             #page-business-deposit-refund, #page-business-bao-deposit-refund, #page-business-income-standards,
             #page-business-guide-exam, #page-business-land-value-tax,
             #page-rentmanager-links, #page-rentmanager-crossarea-bonus, #page-rentmanager-line-endorse
@@ -4433,7 +4487,7 @@
         .app-panel :is(
             #page-landlord, #page-announcement, #page-manager-bonus, #page-landlord-house-tax,
             #page-tenant, #page-tenant-kinship, #page-tenant-criteria, #page-tenant-eligibility,
-            #page-business, #page-business-forms, #page-business-591-listing, #page-business-notary-fee,
+            #page-business, #page-business-forms, #page-business-receipt-print, #page-business-591-listing, #page-business-notary-fee,
             #page-business-deposit-refund, #page-business-bao-deposit-refund, #page-business-income-standards,
             #page-business-guide-exam, #page-business-land-value-tax,
             #page-rentmanager-links, #page-rentmanager-crossarea-bonus, #page-rentmanager-line-endorse
@@ -4441,7 +4495,7 @@
         .app-panel :is(
             #page-landlord, #page-announcement, #page-manager-bonus, #page-landlord-house-tax,
             #page-tenant, #page-tenant-kinship, #page-tenant-criteria, #page-tenant-eligibility,
-            #page-business, #page-business-forms, #page-business-591-listing, #page-business-notary-fee,
+            #page-business, #page-business-forms, #page-business-receipt-print, #page-business-591-listing, #page-business-notary-fee,
             #page-business-deposit-refund, #page-business-bao-deposit-refund, #page-business-income-standards,
             #page-business-guide-exam, #page-business-land-value-tax,
             #page-rentmanager-links, #page-rentmanager-crossarea-bonus, #page-rentmanager-line-endorse
@@ -5266,7 +5320,24 @@
             </details>
 
             <details class="admin-tools-card admin-tools-card--compact af-fold" id="cancel-obj-zone">
-                <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🗑️</i>星鴻註銷物件申請</span><span class="af-summary-hint">申請列表 · 簽呈上傳 · 完成勾選</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                <summary class="admin-tools-title af-summary"><span class="af-title"><i class="adz-ico" aria-hidden="true">🗑️</i>星鴻註銷物件申請</span><span class="af-summary-hint">解編儀表板 · 申請列表 · 簽呈上傳 · 完成勾選</span><span class="af-chevron" aria-hidden="true">▾</span></summary>
+                <section class="acf-dash" id="acf-dash" aria-label="解編儀表板">
+                    <div class="acf-dash-head">
+                        <div>
+                            <h3 class="acf-dash-title">解編儀表板</h3>
+                            <p class="acf-dash-sub">統計本區註銷申請；同意／不同意解編後才算結案</p>
+                        </div>
+                        <div class="acf-dash-actions">
+                            <label class="acf-dash-month">月份
+                                <select id="acf-dash-month"></select>
+                            </label>
+                            <button type="button" class="acf-dash-btn" id="acf-dash-refresh">重新整理</button>
+                        </div>
+                    </div>
+                    <div class="acf-dash-chips" id="acf-dash-chips"></div>
+                    <div class="acf-dash-insight" id="acf-dash-insight"></div>
+                    <div class="acf-dash-ranks" id="acf-dash-ranks"></div>
+                </section>
                 <div class="acf-toolbar">
                     <div class="acf-filters" id="acf-filters" role="tablist" aria-label="篩選狀態"></div>
                     <input type="search" id="acf-q" class="acf-search" placeholder="搜尋地址／申請人／業務／處所" aria-label="搜尋註銷申請">
@@ -5580,7 +5651,6 @@
                     <button type="button" class="apt-tab" data-tab="duration">耗時</button>
                     <button type="button" class="apt-tab" data-tab="spot" hidden>小組長抽查</button>
                     <button type="button" class="apt-tab" data-tab="lvraudit">實價登錄稽核</button>
-                    <button type="button" class="apt-tab" data-tab="cancel">解編</button>
                     <span class="apt-op-btns">
                         <button type="button" class="apt-op-open" data-op-open="case">📝 填寫案件意見</button>
                         <button type="button" class="apt-op-open apt-op-open--roster" data-op-open="roster">📝 填寫清冊意見</button>
@@ -9583,6 +9653,14 @@
                         </span>
                         <span class="bz-go" aria-hidden="true">進入 →</span>
                     </button>
+                    <button type="button" class="bz-card bz-card--sm" onclick="showPage('business-receipt-print')">
+                        <span class="bz-ico" aria-hidden="true">🧾</span>
+                        <span class="bz-copy">
+                            <span class="bz-name">領款收據套印</span>
+                            <span class="bz-hint">媒合編號帶入；星鴻／星華自動選</span>
+                        </span>
+                        <span class="bz-go" aria-hidden="true">進入 →</span>
+                    </button>
                     <button type="button" class="bz-card bz-card--sm" onclick="showPage('business-forms')">
                         <span class="bz-ico" aria-hidden="true">📋</span>
                         <span class="bz-copy">
@@ -10107,6 +10185,61 @@
             </section>
         </div>
 
+        <!-- 業務專區：領款收據套印 -->
+        <div id="page-business-receipt-print" class="hidden max-w-3xl mx-auto space-y-5">
+            <button type="button" onclick="showPage('business')" class="mb-2 btn btn-sm tone-slate-soft">← 返回業務專區</button>
+            <section class="rcp-shell">
+                <header class="rcp-head">
+                    <h2 class="rcp-title">星華／星鴻領款收據套印</h2>
+                    <p class="rcp-lead">輸入媒合編號自動帶入門牌與押金；畫面上只選「媒合版」或「解約版」，星鴻／星華由合約自動判斷。簽名欄留白給現場簽。</p>
+                </header>
+                <div class="rcp-lookup">
+                    <label class="rcp-field rcp-field--grow">
+                        <span class="rcp-label">媒合編號</span>
+                        <input type="text" id="rcp-match" class="rcp-input" placeholder="例如：星鴻D2M30500343" autocomplete="off">
+                    </label>
+                    <button type="button" class="rcp-btn rcp-btn--main" id="rcp-lookup">查詢帶入</button>
+                </div>
+                <p class="rcp-msg" id="rcp-msg" role="status" aria-live="polite"></p>
+                <div id="rcp-fields" class="rcp-panel" hidden>
+                    <div class="rcp-meta">
+                        <span>媒合編號 <b id="rcp-match-show">—</b></span>
+                        <span>公司別 <b id="rcp-brand-show">—</b></span>
+                    </div>
+                    <fieldset class="rcp-kind">
+                        <legend>收據版別</legend>
+                        <label class="rcp-radio"><input type="radio" name="rcp-kind" value="match" checked> 媒合版（付給出租人）</label>
+                        <label class="rcp-radio"><input type="radio" name="rcp-kind" value="term"> 解約版（返還次承租人）</label>
+                    </fieldset>
+                    <label class="rcp-field">
+                        <span class="rcp-label">租賃標的門牌</span>
+                        <input type="text" id="rcp-address" class="rcp-input" maxlength="200">
+                    </label>
+                    <label class="rcp-field">
+                        <span class="rcp-label">押金金額（新臺幣）</span>
+                        <input type="text" id="rcp-amount" class="rcp-input" inputmode="numeric" maxlength="20">
+                        <span class="rcp-hint" id="rcp-rent-hint"></span>
+                    </label>
+                    <div class="rcp-date-row">
+                        <label class="rcp-field">
+                            <span class="rcp-label">民國年</span>
+                            <input type="number" id="rcp-year" class="rcp-input" min="100" max="200">
+                        </label>
+                        <label class="rcp-field">
+                            <span class="rcp-label">月</span>
+                            <input type="number" id="rcp-month" class="rcp-input" min="1" max="12">
+                        </label>
+                        <label class="rcp-field">
+                            <span class="rcp-label">日</span>
+                            <input type="number" id="rcp-day" class="rcp-input" min="1" max="31">
+                        </label>
+                    </div>
+                    <button type="button" class="rcp-btn rcp-btn--main rcp-btn--block" id="rcp-download" disabled>下載套印 PDF</button>
+                    <p class="rcp-note">空白範本仍可在「各式表單」下載。套印需登入；正式／測試 Worker 需已上線 <code>/receipt/lookup</code>。</p>
+                </div>
+            </section>
+        </div>
+
         <!-- 業務專區：各式表單 -->
         <div id="page-business-forms" class="hidden max-w-4xl mx-auto space-y-6">
             <button onclick="showPage('business')" class="mb-4 btn btn-sm tone-slate-soft">
@@ -10150,6 +10283,10 @@
                             <div class="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm transition duration-200 ease-out hover:border-purple-200 hover:shadow-md">
                                 <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-slate-800 leading-relaxed">押金讓渡書</span>
                                 <a href="./docs/forms/%E6%8A%BC%E9%87%91%E8%AE%93%E6%B8%A1%E6%9B%B8.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid shrink-0">↗ 開啟 PDF</a>
+                            </div>
+                            <div class="rounded-xl border border-violet-200 bg-violet-50/60 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm">
+                                <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-violet-950 leading-relaxed">領款收據套印（媒合編號自動帶入）</span>
+                                <button type="button" class="btn btn-sm tone-slate-mid shrink-0" onclick="showPage('business-receipt-print')">開啟套印 →</button>
                             </div>
                             <div class="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm transition duration-200 ease-out hover:border-purple-200 hover:shadow-md">
                                 <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-slate-800 leading-relaxed">媒合-領款收據（1151016版・星鴻）</span>
@@ -14560,13 +14697,14 @@
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261119-cancel"></script>
+        <script src="./js/admin-points.js?v=20261119-cancel2"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
         <script src="./js/nb-api-config.js"></script>
         <script src="./js/nb-api-base.js"></script>
         <script src="./js/termination-agreement-pdf.js?v=20260923-civil-month"></script>
+        <script src="./js/receipt-print.js?v=20261119-1"></script>
         <script src="./js/termination-case.js?v=20260920-bao-mode1"></script>
         <script src="./js/termination-bao-case.js?v=20260921-end-tenant1"></script>
         <script>
@@ -14592,7 +14730,7 @@
         <script src="./js/newbie-exam.js?v=20261030-1"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
         <script src="./js/subsidy-petition.js?v=20261001-3"></script>
-        <script src="./js/admin-cancel-form.js?v=20261014-4"></script>
+        <script src="./js/admin-cancel-form.js?v=20261119-dash"></script>
         <script src="./js/admin-calendar-sheet.js?v=20261011-1"></script>
         <script src="./js/admin-calendar.js?v=20261011-5"></script>
         <script src="./js/admin-org.js?v=20261024-orgdoc"></script>
@@ -16363,10 +16501,11 @@
             { file: './admin/admin-points-dashboard.html', title: '行政績效中心後台（報表、組長登錄、考試成績、改善計畫）', category: '管理工具', keywords: '後台 admin 行政績效中心 行政點數表 每月進度報表 手填點數 審件抽查 客訴 教育訓練 執行要點 考試 成績 補考 改善計畫 人力明細' },
             { file: './admin/rentmgr-report-dashboard.html', title: '租賃管理部月報一鍵產出', category: '管理工具', keywords: '後台 admin 租管 月報 PPT 簡報 不續約 催收 績效 租賃管理部 租管部月報 各地區KPI 週報 週月報' },
             { file: './admin/object-cancel-dashboard.html', title: '註銷物件申請後台', category: '管理工具', keywords: '後台 admin 註銷 註銷物件 註銷物件申請 物件註銷 行政 管理部 承接業者 解編 同意解編' },
-            { page: 'admin-points', title: '行政績效中心・解編儀表板', category: '行政專區', keywords: '解編 解編儀表板 註銷 同意解編 不同意解編 承接業者 行政績效' },
+            { page: 'administration', title: '星鴻註銷物件申請・解編儀表板', category: '行政專區', keywords: '解編 解編儀表板 註銷 同意解編 不同意解編 承接業者 註銷物件' },
             { file: './admin/subsidy-checkin-dashboard.html', title: '財補打卡紀錄後台', category: '管理工具', keywords: '後台 admin 財補 打卡 每日打卡 照片 上傳 Excel 匯出 財補計畫照片上傳 簽呈 展延' },
             { page: 'business-notary-fee', title: '租賃公證費試算', category: '業務專區', keywords: '公證 公證費 租賃公證 119條' },
             { page: 'business-forms', title: '各式表單', category: '業務專區', keywords: '表單 場勘 押金讓渡 領款收據 切結書 300億切結 115Y 自願撤案 帳戶變更 租金補貼 複審 檢核 還款 協議 欠租' },
+            { page: 'business-receipt-print', title: '星華／星鴻領款收據套印', category: '業務專區', keywords: '領款收據 套印 星鴻 星華 媒合 解約 押金 媒合編號' },
             { page: 'business-guide-exam', title: '執行要點考試', category: '業務專區', keywords: '執行要點 考試 題庫 業務考試 補考 成績 公開成績 20題' },
             { page: 'business-handover', title: '業務離職交接', category: '業務專區', keywords: '離職 交接 業務 接手 代管 案件 checklist 匯出' },
             { page: 'business-system-change', title: '系統欄位更改通報', category: '業務專區', keywords: '系統 欄位 更改 修改 通報 媒合編號 物件地址 系統資料' },
@@ -16468,6 +16607,7 @@
             'business-deposit-refund': 'page-business-deposit-refund',
             'business-bao-deposit-refund': 'page-business-bao-deposit-refund',
             'business-forms': 'page-business-forms',
+            'business-receipt-print': 'page-business-receipt-print',
             'business-guide-exam': 'page-business-guide-exam',
             'business-handover': 'page-business-handover',
             'business-system-change': 'page-business-system-change',
@@ -16546,7 +16686,7 @@
             'page-newbie-roadmap', 'page-newbie-glossary', 'page-newbie-screening', 'page-newbie-quest', 'page-newbie-subsidy', 'page-newbie-transcript',
             'page-business', 'page-business-land-value-tax',
             'page-business-income-standards', 'page-business-notary-fee', 'page-business-591-listing', 'page-business-deposit-refund',
-            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-guide-exam', 'page-business-bonus', 'page-business-coverage', 'page-business-toolbox', 'page-biz-mgr-report', 'page-business-handover', 'page-business-system-change', 'page-termination',
+            'page-business-bao-deposit-refund', 'page-business-forms', 'page-business-receipt-print', 'page-business-guide-exam', 'page-business-bonus', 'page-business-coverage', 'page-business-toolbox', 'page-biz-mgr-report', 'page-business-handover', 'page-business-system-change', 'page-termination',
             'page-rentmanager', 'page-rentmanager-links', 'page-rentmanager-crossarea-bonus', 'page-rentmanager-perf', 'page-rentmanager-line-endorse',
             'page-announcement', 'page-manager-bonus', 'page-administration', 'page-hr', 'page-hr-report', 'page-hr-onboard', 'page-hr-resign', 'page-finance', 'page-gm-office', 'page-meeting-scoreboard', 'page-biz-supervisor', 'page-admin-qa', 'page-ai-tingting', 'page-admin-points', 'page-petition', 'page-newbie', 'page-calculator', 'page-rent',
             'page-practice-timeline', 'page-collection-case', 'page-mediation-flow', 'page-equip-dep', 'page-practice-templates', 'page-practice-contacts', 'page-lal-generator', 'page-care-visit-notice'

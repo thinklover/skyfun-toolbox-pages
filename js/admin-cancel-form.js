@@ -23,7 +23,8 @@
         rejecting: null,
         files: {},
         busy: false,
-        loaded: false
+        loaded: false,
+        dash: { loading: false, loaded: false, rows: [], error: '', month: '' }
     };
 
     function esc(s) {
@@ -343,6 +344,8 @@
             if ($('acf-q')) $('acf-q').value = '';
             state.openId = res.id || null;
             await loadList();
+            state.dash.loaded = false;
+            loadDash(true);
         } catch (e) {
             setMsg(e.message, 'err');
         } finally {
@@ -564,6 +567,161 @@
         el.className = 'acf-detail-msg' + (kind ? ' is-' + kind : '');
     }
 
+    function dashReasonOf(it) {
+        const s = String(it?.contractStatus || '');
+        if (/不續約|到期/.test(s)) return '到期不續約';
+        if (/解約|終止/.test(s)) return '提前解約';
+        return '其他';
+    }
+
+    function dashYm(iso) {
+        const d = iso ? new Date(iso) : new Date();
+        if (Number.isNaN(d.getTime())) return '';
+        const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit' }).formatToParts(d);
+        const y = Number(parts.find((p) => p.type === 'year')?.value || 0);
+        const m = parts.find((p) => p.type === 'month')?.value || '01';
+        return y ? (y - 1911) + '/' + m : '';
+    }
+
+    function dashCountMap(rows, keyFn) {
+        const map = new Map();
+        for (const r of rows || []) {
+            const k = String(keyFn(r) || '').trim() || '（未填）';
+            map.set(k, (map.get(k) || 0) + 1);
+        }
+        return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'));
+    }
+
+    function dashMonthLabel(m) {
+        if (m === 'all') return '全部月份';
+        const [y, mm] = String(m).split('/');
+        return y + ' 年 ' + Number(mm) + ' 月';
+    }
+
+    function renderDash() {
+        const chips = $('acf-dash-chips');
+        const insight = $('acf-dash-insight');
+        const ranks = $('acf-dash-ranks');
+        const monthSel = $('acf-dash-month');
+        if (!chips || !insight || !ranks) return;
+        const tab = state.dash;
+        const all = tab.rows || [];
+        const nowYm = dashYm();
+        const dataMonths = [...new Set(all.map((r) => dashYm(r.createdAt)).filter(Boolean))];
+        const months = [...new Set([nowYm, ...dataMonths])].sort().reverse();
+        let sel = tab.month;
+        if (!sel || (sel !== 'all' && !months.includes(sel))) {
+            sel = dataMonths.includes(nowYm) || !dataMonths.length ? nowYm : dataMonths.sort().reverse()[0];
+            tab.month = sel;
+        }
+        if (monthSel) {
+            monthSel.innerHTML = months.map((m) =>
+                '<option value="' + esc(m) + '"' + (m === sel ? ' selected' : '') + '>' +
+                esc(dashMonthLabel(m)) + '（' + all.filter((r) => dashYm(r.createdAt) === m).length + '）</option>'
+            ).join('') +
+                '<option value="all"' + (sel === 'all' ? ' selected' : '') + '>全部月份（' + all.length + '）</option>';
+        }
+        if (tab.loading && !tab.loaded) {
+            chips.innerHTML = '';
+            insight.innerHTML = '讀取解編統計中…';
+            ranks.innerHTML = '';
+            return;
+        }
+        if (tab.error) {
+            chips.innerHTML = '';
+            insight.innerHTML = esc(tab.error);
+            ranks.innerHTML = '';
+            return;
+        }
+        if (!all.length) {
+            chips.innerHTML = '';
+            insight.innerHTML = '尚無註銷／解編申請。';
+            ranks.innerHTML = '';
+            return;
+        }
+        const rows = sel === 'all' ? all : all.filter((r) => dashYm(r.createdAt) === sel);
+        const total = rows.length;
+        if (!total) {
+            chips.innerHTML = '';
+            insight.innerHTML = esc(dashMonthLabel(sel)) + '尚無申請。';
+            ranks.innerHTML = '';
+            return;
+        }
+        const n = (st) => rows.filter((r) => (r.status || 'pending') === st).length;
+        const pending = n('pending');
+        const done = n('done');
+        const rejected = n('rejected');
+        const rate = Math.round((done / total) * 100) + '%';
+        const byDept = dashCountMap(rows, (r) => r.dept);
+        const byRegion = dashCountMap(rows, (r) => r.region);
+        const byType = dashCountMap(rows, (r) => r.objectType);
+        const byReason = dashCountMap(rows, dashReasonOf);
+        const byTaker = dashCountMap(rows, (r) => String(r.takerCompany || '').trim());
+        const topDept = byDept[0];
+        const topTaker = byTaker[0];
+        chips.innerHTML =
+            '<span class="acf-dash-chip"><strong>' + total + '</strong>申請</span>' +
+            '<span class="acf-dash-chip is-warn"><strong>' + pending + '</strong>未審核</span>' +
+            '<span class="acf-dash-chip is-ok"><strong>' + done + '</strong>同意解編</span>' +
+            '<span class="acf-dash-chip"><strong>' + rejected + '</strong>不同意</span>' +
+            '<span class="acf-dash-chip"><strong>' + rate + '</strong>同意率</span>';
+        insight.innerHTML = '<strong>' + esc(dashMonthLabel(sel)) + '</strong>共 <strong>' + total + '</strong> 件' +
+            (topDept ? '，最多處所「<strong>' + esc(topDept[0]) + '</strong>」（' + topDept[1] + '）' : '') +
+            (topTaker ? '，最常承接「<strong>' + esc(topTaker[0]) + '</strong>」（' + topTaker[1] + '）' : '') + '。';
+        const rankCard = (title, pairs) => {
+            if (!pairs.length) return '<section class="acf-dash-card"><h4>' + esc(title) + '</h4><p class="acf-dash-empty">尚無資料</p></section>';
+            const top = pairs[0][1] || 1;
+            return '<section class="acf-dash-card"><h4>' + esc(title) + '</h4><table><thead><tr><th>#</th><th>名稱</th><th class="num">件</th><th>分布</th></tr></thead><tbody>' +
+                pairs.slice(0, 8).map(([name, c], i) =>
+                    '<tr class="' + (i < 3 ? 'is-top' : '') + '"><td>' + (i + 1) + '</td><td>' + esc(name) +
+                    '</td><td class="num"><b>' + c + '</b></td><td><span class="acf-dash-bar" style="width:' +
+                    ((c / top) * 100) + '%"></span></td></tr>'
+                ).join('') +
+                '</tbody></table></section>';
+        };
+        ranks.innerHTML =
+            rankCard('申請處所', byDept) +
+            rankCard('物件區域', byRegion) +
+            rankCard('物件型態', byType) +
+            rankCard('註銷原因', byReason) +
+            rankCard('承接業者', byTaker);
+    }
+
+    async function loadDash(force) {
+        const tab = state.dash;
+        if (tab.loading && !force) return;
+        if (tab.loaded && !force) { renderDash(); return; }
+        if (!token()) {
+            tab.loaded = true;
+            tab.error = '請先登入工具箱';
+            tab.rows = [];
+            renderDash();
+            return;
+        }
+        const seq = (tab._seq = (tab._seq || 0) + 1);
+        tab.loading = true;
+        tab.error = '';
+        $('acf-dash-refresh')?.setAttribute('disabled', '');
+        renderDash();
+        try {
+            const res = await rpc('object_cancel_list', { p_token: token(), p_query: '', p_status: '', p_limit: 2000 });
+            if (seq !== tab._seq) return;
+            tab.rows = res.items || [];
+            tab.loaded = true;
+        } catch (e) {
+            if (seq !== tab._seq) return;
+            tab.error = e.message || String(e);
+            tab.rows = [];
+            tab.loaded = true;
+        } finally {
+            if (seq === tab._seq) {
+                tab.loading = false;
+                $('acf-dash-refresh')?.removeAttribute('disabled');
+                renderDash();
+            }
+        }
+    }
+
     async function loadList() {
         if (!token()) { renderList('登入工具箱後可查看註銷申請列表。'); return; }
         try {
@@ -648,6 +806,8 @@
             const res = await rpc('object_cancel_decide', { p_token: token(), p_id: id, p_decision: kind, p_note: note });
             state.rejecting = null;
             await loadList();
+            state.dash.loaded = false;
+            loadDash(true);
             if (kind === 'reset') flash('已撤銷審核決定，回到未審核');
             else if (res.lineRecipients) flash('✅ 已' + (kind === 'reject' ? '不同意解編' : '同意解編') + '，並已 LINE 通知送件人');
             else flash('已' + (kind === 'reject' ? '不同意解編' : '同意解編') + '（LINE 沒有通知到：' + (res.lineError || '未知原因') + '）', 10000);
@@ -726,9 +886,22 @@
             if (btn) lineAction(btn.dataset.line, btn);
         });
 
-        zone.addEventListener('toggle', () => {
-            if (zone.open) loadList();
+        $('acf-dash-refresh')?.addEventListener('click', () => loadDash(true));
+        $('acf-dash-month')?.addEventListener('change', (e) => {
+            state.dash.month = e.target.value || 'all';
+            renderDash();
         });
+
+        zone.addEventListener('toggle', () => {
+            if (zone.open) {
+                loadList();
+                loadDash(false);
+            }
+        });
+        if (zone.open) {
+            loadList();
+            loadDash(false);
+        }
     }
 
     if (document.readyState === 'loading') {
