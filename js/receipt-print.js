@@ -15,11 +15,12 @@
     term_xinghua: './docs/forms/解約-領款收據_1151016版_星華.pdf'
   };
 
-  /** PDF 座標（pdf-lib 原點在左下；由 pymupdf 量測後換算） */
+  /** PDF 座標（pdf-lib 原點在左下；由 pymupdf 量測後換算；字型＝標楷體同範本） */
   const LAYOUT = {
     pageH: 841.92,
     amount: { x: 292, top: 175, size: 13 },
     address: { x: 224, top: 415, size: 12 },
+    manager: { x: 224, top: 451, size: 12 },
     year: { x: 230, top: 603, size: 12 },
     month: { x: 345, top: 603, size: 12 },
     day: { x: 438, top: 603, size: 12 }
@@ -63,6 +64,13 @@
 
   function brandLabel(brand) {
     return brand === 'xinghua' ? '星華' : '星鴻';
+  }
+
+  /** 星華台北／星華臺北媒合編號：租管人員一律林呈錡 */
+  function resolveManagerName(matchNo, fromApi) {
+    const no = String(matchNo || '').normalize('NFKC');
+    if (/星華台北|星華臺北/.test(no)) return '林呈錡';
+    return String(fromApi || '').trim();
   }
 
   function yieldUi() {
@@ -138,6 +146,7 @@
     if ($('rcp-match-show')) $('rcp-match-show').textContent = row.matchNo || '—';
     if ($('rcp-brand-show')) $('rcp-brand-show').textContent = brandLabel(row.brand) + '（' + (row.companyName || '') + '）';
     if ($('rcp-address')) $('rcp-address').value = row.address || '';
+    if ($('rcp-manager')) $('rcp-manager').value = resolveManagerName(row.matchNo, row.managerName);
     if ($('rcp-amount')) $('rcp-amount').value = row.depositAmount || row.rent * (row.depositMonths || 2) || '';
     if ($('rcp-rent-hint')) {
       $('rcp-rent-hint').textContent = row.rent
@@ -192,11 +201,13 @@
     const kind = String(document.querySelector('input[name="rcp-kind"]:checked')?.value || 'match');
     if (kind !== 'match' && kind !== 'term') throw new Error('請選擇媒合版或解約版');
     const address = String($('rcp-address')?.value || '').trim();
+    const manager = resolveManagerName(state.row.matchNo, String($('rcp-manager')?.value || '').trim());
     const amount = Math.round(Number(String($('rcp-amount')?.value || '').replace(/[,，]/g, '')) || 0);
     const year = Number($('rcp-year')?.value || 0);
     const month = Number($('rcp-month')?.value || 0);
     const day = Number($('rcp-day')?.value || 0);
     if (!address) throw new Error('請填門牌');
+    if (!manager) throw new Error('請填租賃住宅管理人員');
     if (!amount) throw new Error('請填押金金額');
     if (!year || !month || !day) throw new Error('請填日期（年／月／日）');
     const brand = state.row.brand === 'xinghua' ? 'xinghua' : 'xinghong';
@@ -207,6 +218,7 @@
       brand,
       matchNo: state.row.matchNo,
       address,
+      manager,
       amount,
       amountText: moneyText(amount),
       year: String(year),
@@ -266,6 +278,14 @@
           font,
           color: ink,
           maxWidth: 340
+        });
+        page.drawText(pack.manager, {
+          x: LAYOUT.manager.x,
+          y: pdfY(LAYOUT.manager.top, LAYOUT.manager.size),
+          size: LAYOUT.manager.size,
+          font,
+          color: ink,
+          maxWidth: 220
         });
         page.drawText(pack.year, {
           x: LAYOUT.year.x,
