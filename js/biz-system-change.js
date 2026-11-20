@@ -96,6 +96,7 @@
     xferMates: [],
     formMates: [],
     rejectId: null,
+    doneId: null,
     editId: null,
     editRow: null,
     editMode: 'resubmit', // resubmit | patch
@@ -562,8 +563,13 @@
         reasons.push({ by: m[1], at: m[2], reason: m[3].trim() });
         return;
       }
+      const done = t.match(/^完成留言｜([^｜]+)｜([^｜]+)｜內容：([\s\S]+)$/);
+      if (done) {
+        rest.push({ kind: 'done', by: done[1], at: done[2], note: done[3].trim() });
+        return;
+      }
       // 轉單人改在卡片 meta「轉單人」顯示，這裡不重複列歷程
-      if (/^(處長轉行政｜|行政轉管理員｜|行政轉處長｜|行政補件｜|管理員補件｜)/.test(t) || t === '修改人已標記完成') return;
+      if (/^(處長轉行政｜|行政轉管理員｜|行政轉處長｜|行政補件｜|管理員補件｜)/.test(t) || t === '修改人已標記完成' || t === '已標記完成') return;
       rest.push(t);
     });
     return { reasons, rest };
@@ -634,8 +640,20 @@
         <div class="bsc-reject-meta">${esc(x.by)}｜${esc(x.at)}</div>
       </div>`);
     });
-    if (rest.length) {
-      parts.push(`<div class="bsc-item-meta">備註：${esc(rest.join('／'))}</div>`);
+    const plain = [];
+    rest.forEach((x) => {
+      if (x && typeof x === 'object' && x.kind === 'done') {
+        parts.push(`<div class="bsc-reject-box bsc-done-note-box">
+          <div class="bsc-reject-label">完成留言</div>
+          <div class="bsc-reject-reason">${esc(x.note)}</div>
+          <div class="bsc-reject-meta">${esc(x.by)}｜${esc(x.at)}</div>
+        </div>`);
+        return;
+      }
+      plain.push(String(x || ''));
+    });
+    if (plain.length) {
+      parts.push(`<div class="bsc-item-meta">備註：${esc(plain.join('／'))}</div>`);
     }
     return parts.join('');
   }
@@ -896,31 +914,76 @@
     renderLists();
   }
 
-  async function markDone(id) {
+  function openDoneModal(id) {
+    state.doneId = id;
+    const modal = $('bsc-done-modal');
+    const note = $('bsc-done-note');
+    const hint = $('bsc-done-hint');
+    if (note) note.value = '';
+    if (hint) {
+      hint.textContent = myRoleKey() === 'super'
+        ? '留言會寫入案件紀錄，並 LINE 通知填寫人、承辦行政與處經理（可不填）'
+        : '留言會寫入案件紀錄並 LINE 通知填寫人（可不填）';
+      hint.classList.remove('is-err');
+    }
+    const confirmBtn = $('bsc-done-confirm');
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '確認完成';
+    }
+    if (modal) {
+      modal.hidden = false;
+      modal.classList.remove('hidden');
+    }
+    note?.focus();
+  }
+
+  function closeDoneModal() {
+    state.doneId = null;
+    const modal = $('bsc-done-modal');
+    if (modal) {
+      modal.hidden = true;
+      modal.classList.add('hidden');
+    }
+  }
+
+  async function confirmDone() {
+    const id = state.doneId;
     if (state.busy || !id) return;
-    if (!confirm(myRoleKey() === 'super'
-      ? '確認系統已改完？按了會標記為已完成，並 LINE 通知填寫人、承辦行政與處經理。'
-      : '確認系統已改完？按了會標記為已完成，並 LINE 通知填寫人。')) return;
+    const note = String($('bsc-done-note')?.value || '').trim();
+    const hint = $('bsc-done-hint');
+    const confirmBtn = $('bsc-done-confirm');
     state.busy = true;
-    const btn = document.querySelector(`[data-bsc-done="${id}"]`);
-    if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '送出中…';
+    }
     try {
       const res = await window.skyfunAuth.rpc('biz_system_change_mark_done', {
         p_token: token(),
-        p_id: Number(id)
+        p_id: Number(id),
+        p_note: note
       });
       if (!res?.ok) throw new Error(res?.error || '標記失敗');
+      closeDoneModal();
       setMsg(lineNote(
         res.line,
         myRoleKey() === 'super'
-          ? '已標記完成，並已 LINE 通知填寫人、承辦行政與處經理'
-          : '已標記完成，並已 LINE 通知填寫人',
+          ? (note ? '已標記完成並送出留言，已 LINE 通知填寫人、承辦行政與處經理' : '已標記完成，並已 LINE 通知填寫人、承辦行政與處經理')
+          : (note ? '已標記完成並送出留言，已 LINE 通知填寫人' : '已標記完成，並已 LINE 通知填寫人'),
         '已標記完成，但 LINE 未送出'
       ), 'ok');
       await Promise.all([loadInbox(), loadMine()]);
     } catch (e) {
+      if (hint) {
+        hint.textContent = e.message || String(e);
+        hint.classList.add('is-err');
+      }
       setMsg(e.message || String(e), 'err');
-      if (btn) { btn.disabled = false; btn.textContent = '已修改完畢'; }
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '確認完成';
+      }
     } finally {
       state.busy = false;
     }
@@ -1759,7 +1822,7 @@
       }
       const btn = e.target.closest('[data-bsc-done]');
       if (!btn) return;
-      markDone(btn.getAttribute('data-bsc-done'));
+      openDoneModal(btn.getAttribute('data-bsc-done'));
     });
     $('bsc-policy-ack')?.addEventListener('change', syncPolicyConfirm);
     $('bsc-policy-confirm')?.addEventListener('click', () => {
@@ -1856,6 +1919,10 @@
     $('bsc-reject-modal')?.addEventListener('click', (e) => {
       if (e.target.closest('[data-bsc-reject-close]')) closeRejectModal();
     });
+    $('bsc-done-confirm')?.addEventListener('click', confirmDone);
+    $('bsc-done-modal')?.addEventListener('click', (e) => {
+      if (e.target.closest('[data-bsc-done-close]')) closeDoneModal();
+    });
     $('bsc-edit-confirm')?.addEventListener('click', confirmResubmit);
     $('bsc-edit-files')?.addEventListener('change', (e) => onEditPickFiles(e.target));
     $('bsc-edit-modal')?.addEventListener('click', (e) => {
@@ -1884,6 +1951,7 @@
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
       if (state.editId) closeEditModal();
+      else if (state.doneId) closeDoneModal();
       else if (state.rejectId) closeRejectModal();
       else if (state.xferId) closeXferModal();
       else if (state.pendingPayload) closePolicyModal();

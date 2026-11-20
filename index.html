@@ -12025,6 +12025,25 @@
                     </footer>
                 </div>
             </div>
+            <div id="bsc-done-modal" class="bsc-modal hidden" hidden>
+                <div class="bsc-modal-backdrop" data-bsc-done-close></div>
+                <div class="bsc-modal-panel bsc-xfer-panel" role="dialog" aria-modal="true" aria-labelledby="bsc-done-title">
+                    <header class="bsc-modal-head">
+                        <h3 id="bsc-done-title">已修改完畢</h3>
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-done-close>關閉</button>
+                    </header>
+                    <div class="bsc-modal-body bsc-xfer-body">
+                        <p class="bsc-xfer-lead">確認系統已改完後會標記完成，並 LINE 通知相關人員。可選填留言說明改了什麼。</p>
+                        <label class="bsc-xfer-label" for="bsc-done-note">完成留言（選填）</label>
+                        <textarea id="bsc-done-note" rows="4" maxlength="500" placeholder="例如：已改完預設租金／押金月份，請再核對系統"></textarea>
+                        <p id="bsc-done-hint" class="bsc-xfer-hint"></p>
+                    </div>
+                    <footer class="bsc-modal-foot">
+                        <button type="button" class="btn btn-sm tone-slate-soft" data-bsc-done-close>取消</button>
+                        <button type="button" class="btn-main" id="bsc-done-confirm">確認完成</button>
+                    </footer>
+                </div>
+            </div>
             <div id="bsc-edit-modal" class="bsc-modal hidden" hidden>
                 <div class="bsc-modal-backdrop" data-bsc-edit-close></div>
                 <div class="bsc-modal-panel bsc-edit-panel" role="dialog" aria-modal="true" aria-labelledby="bsc-edit-title">
@@ -14697,7 +14716,7 @@
         <script src="./js/handover-core.js?v=20261107-sop"></script>
         <script src="./js/biz-handover.js?v=20261107-sop"></script>
         <script src="./js/admin-handover.js?v=20261107-sop"></script>
-        <script src="./js/biz-system-change.js?v=20261119-rentmgr-steps"></script>
+        <script src="./js/biz-system-change.js?v=20261120-done-note"></script>
         <script src="./js/biz-bonus-data.js?v=20261105-layout"></script>
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
         <script src="./js/biz-coverage.js?v=20261115-sheet"></script>
