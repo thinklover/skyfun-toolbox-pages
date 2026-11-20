@@ -424,7 +424,9 @@
           date: iso,
           type: 'contract',
           status: '實登補點（合約頁儲存）',
-          action: '實登'
+          action: '實登',
+          /** 存實登把待產編變成已生效時，Worker 會標 true，一併補產編點 */
+          prodFromLvr: !!(c.prodFromLvr || c.alsoProd)
         };
       })
       .filter(Boolean);
@@ -572,6 +574,12 @@
     const lvrCreditedIds = new Set(
       scored.filter((r) => r.item === 'lvr').map((r) => String(r.targetId ?? r.id ?? '').trim()).filter(Boolean)
     );
+    const prodCreditedIds = new Set(
+      scored
+        .filter((r) => r.item === 'p4' || r.item === 'p5')
+        .map((r) => String(r.targetId ?? r.id ?? '').trim())
+        .filter(Boolean)
+    );
     const lvrBackfill = dropExcludedRows(opts.lvrBackfill, excluded)
       .filter((r) => r.date >= start && r.date <= end && r.auditor)
       .slice()
@@ -591,6 +599,24 @@
         targetId: id,
         status: r.status || '實登補點（合約頁儲存）'
       });
+      /* 存實登把待產編變成已生效：補產編點（審核時間紀錄常沒有「待產編→已生效」） */
+      if (r.prodFromLvr && !prodCreditedIds.has(id)) {
+        const code = contractPeriod(r.no);
+        let prodItem = null;
+        if (code && PERIOD_4.has(code.period)) prodItem = 'p4';
+        else if (code && PERIOD_5.has(code.period)) prodItem = 'p5';
+        if (prodItem) {
+          prodCreditedIds.add(id);
+          scored.push({
+            ...r,
+            item: prodItem,
+            points: itemPoints(prodItem, r.date),
+            type: 'contract',
+            targetId: id,
+            status: '待產編 → 已生效（存實登）'
+          });
+        }
+      }
     }
 
     /** 行政＝人力明細在職；非行政＝有審核紀錄但不在人力明細 */

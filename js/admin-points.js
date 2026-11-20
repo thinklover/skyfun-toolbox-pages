@@ -211,11 +211,16 @@
     return data;
   }
 
-  function syncLvrAdminBtn() {
-    const btn = $('apt-lvr-backfill');
-    if (!btn) return;
+  /** 重新抓取／實登補點：僅簡為倢、邱奕棋、黃怡婷可見可點 */
+  function syncOpsAdminBtns() {
     const show = Core.isSupervisor(myName());
-    btn.hidden = !show;
+    const refresh = $('apt-refresh');
+    const lvr = $('apt-lvr-backfill');
+    if (refresh) refresh.hidden = !show;
+    if (lvr) lvr.hidden = !show;
+  }
+  function syncLvrAdminBtn() {
+    syncOpsAdminBtns();
   }
 
   function renderLvrPanel(html, show) {
@@ -8220,7 +8225,13 @@
       state.spotQualityOpen = false;
       load(false);
     });
-    $('apt-refresh').addEventListener('click', () => load(true));
+    $('apt-refresh')?.addEventListener('click', () => {
+      if (!Core.isSupervisor(myName())) {
+        window.alert('僅管理員可重新抓取星鴻資料');
+        return;
+      }
+      load(true);
+    });
     $('apt-lvr-backfill')?.addEventListener('click', () => runLvrBackfill());
     document.addEventListener('click', (e) => {
       if (!state.lvrDeck) return;
