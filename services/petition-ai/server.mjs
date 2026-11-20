@@ -13,7 +13,16 @@ const PORT = Number(process.env.PORT) || 10000;
 const HOST = process.env.BIND_HOST || '0.0.0.0';
 const MOCK = process.env.PETITION_AI_MOCK === '1';
 const API_KEY = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '').trim();
-const MODEL = (process.env.GEMINI_MODEL || 'gemini-2.0-flash').trim();
+/** gemini-2.0-flash 已於 2026-06-01 下架；舊環境變數自動改走替換模型 */
+const MODEL_ALIASES = {
+  'gemini-2.0-flash': 'gemini-3.6-flash',
+  'gemini-2.0-flash-001': 'gemini-3.6-flash',
+  'gemini-2.0-flash-exp': 'gemini-3.6-flash',
+  'gemini-2.0-flash-lite': 'gemini-3.1-flash-lite',
+  'gemini-2.0-flash-lite-001': 'gemini-3.1-flash-lite'
+};
+const MODEL_RAW = (process.env.GEMINI_MODEL || 'gemini-3.6-flash').trim();
+const MODEL = MODEL_ALIASES[MODEL_RAW] || MODEL_RAW;
 const MAX_BUSY = Math.max(1, Number(process.env.PETITION_AI_CONCURRENCY) || 3);
 const TIMEOUT_MS = 120000;
 const MAX_BODY = 64 * 1024;
@@ -339,8 +348,11 @@ export async function askGemini(prompt) {
   try { data = await res.json(); } catch { /* non-JSON */ }
   if (!res.ok) {
     const msg = String(data?.error?.message || data?.error?.status || ('Gemini HTTP ' + res.status)).slice(0, 180);
-    console.error('gemini failed:', res.status, msg);
+    console.error('gemini failed:', res.status, MODEL, msg);
     if (res.status === 429) throw new Error('AI 額度忙碌中，請稍後再試');
+    if (res.status === 404 || /no longer available|not found|is not found/i.test(msg)) {
+      throw new Error('AI 模型已停用（' + MODEL + '），請聯絡管理員更新 GEMINI_MODEL');
+    }
     if (res.status === 400 || res.status === 403) throw new Error('AI 金鑰或模型設定有誤，請聯絡管理員');
     throw new Error('暫時連不上 AI，請稍後再試');
   }
