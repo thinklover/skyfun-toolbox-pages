@@ -549,7 +549,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === 'GET' && (url.pathname === '/health' || url.pathname === '/api/petition/status')) {
-    send(res, 200, { ok: true, ready: MOCK || !!API_KEY, mock: MOCK }, origin);
+    send(res, 200, { ok: true, ready: MOCK || !!API_KEY, mock: MOCK, model: MODEL }, origin);
     return;
   }
   if (req.method === 'POST' && url.pathname === '/api/petition/organize') {
