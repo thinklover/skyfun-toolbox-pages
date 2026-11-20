@@ -1,0 +1,688 @@
+﻿/* 專區入口共用樣式：業務／房東／房客
+   對齊行政專區：白底淺色漸層、右上柔光＋點點、白圖示方塊、實心膠囊「進入 →」 */
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) {
+  --bz-ink: #1e1b4b;
+  --bz-muted: #5b5f86;
+  --bz-line: #e8ecf4;
+  --bz-card: #ffffff;
+  --bz-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.05);
+  --bz-accent: #7c3aed;
+  --bz-accent-soft: #f4efff;
+  --bz-accent-mid: #ece9ff;
+  --bz-glow-a: rgba(167, 139, 250, 0.28);
+  --bz-glow-b: rgba(196, 181, 253, 0.18);
+  --bz-dot: rgba(124, 58, 237, 0.09);
+  --bz-hover-line: #d8ccfd;
+  --bz-hover-shadow: rgba(124, 58, 237, 0.45);
+  --bz-card-ink: #2e1065;
+  --bz-card-sub: #6b5b8c;
+  --bz-card-line: #e6dcfd;
+  --bz-card-bg1: #f4efff;
+  --bz-card-bg2: #ece9ff;
+}
+
+#page-landlord {
+  --bz-accent: #0284c7;
+  --bz-accent-soft: #eaf6fe;
+  --bz-accent-mid: #e3f1fb;
+  --bz-glow-a: rgba(56, 189, 248, 0.28);
+  --bz-glow-b: rgba(125, 211, 252, 0.18);
+  --bz-dot: rgba(2, 132, 199, 0.09);
+  --bz-hover-line: #bae6fd;
+  --bz-hover-shadow: rgba(2, 132, 199, 0.4);
+  --bz-ink: #0c3b5e;
+  --bz-muted: #4f6f86;
+  --bz-card-ink: #0c3b5e;
+  --bz-card-sub: #4f6f86;
+  --bz-card-line: #d3ecfb;
+  --bz-card-bg1: #eaf6fe;
+  --bz-card-bg2: #e3f1fb;
+}
+
+#page-tenant {
+  --bz-accent: #10a37f;
+  --bz-accent-soft: #eafbf4;
+  --bz-accent-mid: #e2f5fb;
+  --bz-glow-a: rgba(52, 211, 153, 0.28);
+  --bz-glow-b: rgba(110, 231, 183, 0.18);
+  --bz-dot: rgba(16, 163, 127, 0.09);
+  --bz-hover-line: #a7f3d0;
+  --bz-hover-shadow: rgba(16, 163, 127, 0.4);
+  --bz-ink: #064e3b;
+  --bz-muted: #4f7a6c;
+  --bz-card-ink: #064e3b;
+  --bz-card-sub: #4f7a6c;
+  --bz-card-line: #cdf1e3;
+  --bz-card-bg1: #eafbf4;
+  --bz-card-bg2: #e2f5fb;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid var(--bz-line);
+  background:
+    radial-gradient(120% 80% at 100% -10%, var(--bz-glow-a), transparent 55%),
+    radial-gradient(90% 60% at -10% 110%, var(--bz-glow-b), transparent 50%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaff 42%, #f8fafc 100%);
+  box-shadow: 0 16px 36px -24px rgba(15, 23, 42, 0.2);
+  padding: 1.4rem 1.25rem 1.5rem;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--bz-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+  -webkit-mask-image: linear-gradient(115deg, transparent 40%, #000 100%);
+  mask-image: linear-gradient(115deg, transparent 40%, #000 100%);
+  pointer-events: none;
+  opacity: 1;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-head,
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-quick,
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-tools,
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-forms {
+  position: relative;
+  z-index: 1;
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-quick {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  margin: 0 0 1.15rem;
+}
+
+@media (min-width: 720px) {
+  :is(#page-business, #page-biz-supervisor) .bz-quick {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #page-business .bz-quick .bz-hero--span {
+    grid-column: 1 / -1;
+  }
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-quick > .bz-hero {
+  height: 100%;
+  margin: 0;
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: space-between;
+  gap: 0.85rem 1rem;
+  min-height: 9.5rem;
+  padding: 1.25rem 1.3rem;
+  border: 1px solid var(--hero-line);
+  border-radius: 22px;
+  color: var(--hero-ink);
+  box-shadow: 0 16px 36px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+
+#page-business .bz-hero--bonus {
+  --hero-ink: #78350f;
+  --hero-sub: #8a6a4a;
+  --hero-accent: #d97706;
+  --hero-line: #fde68a;
+  --hero-shadow: rgba(217, 119, 6, 0.4);
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 45%, #fef3c7 100%);
+}
+
+#page-business .bz-hero--sys {
+  --hero-ink: #4c1d95;
+  --hero-sub: #6b5b8c;
+  --hero-accent: #7c3aed;
+  --hero-line: #ddd6fe;
+  --hero-shadow: rgba(124, 58, 237, 0.42);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 45%, #ede9fe 100%);
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 18rem;
+  height: 18rem;
+  right: -6rem;
+  top: -8rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--hero-glow, rgba(196, 181, 253, 0.5)), rgba(255, 255, 255, 0) 70%);
+}
+
+#page-business .bz-hero--bonus::before {
+  --hero-glow: rgba(252, 211, 77, 0.55);
+}
+
+#page-business .bz-hero--sys::before {
+  --hero-glow: rgba(196, 181, 253, 0.5);
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: radial-gradient(rgba(109, 40, 217, 0.09) 1px, transparent 1px);
+  background-size: 16px 16px;
+  -webkit-mask-image: linear-gradient(115deg, transparent 45%, #000 100%);
+  mask-image: linear-gradient(115deg, transparent 45%, #000 100%);
+}
+
+#page-business .bz-hero--bonus::after {
+  background-image: radial-gradient(rgba(217, 119, 6, 0.1) 1px, transparent 1px);
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero:hover {
+  transform: translateY(-2px);
+  border-color: var(--hero-line);
+  box-shadow: 0 22px 44px -22px var(--hero-shadow), 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero .apt-entry-icon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 16px;
+  font-size: 1.7rem;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--hero-line), 0 6px 14px -8px var(--hero-shadow);
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero .apt-entry-text {
+  flex: 1 1 8rem;
+  min-width: 0;
+  gap: 0.3rem;
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero .apt-entry-text strong {
+  color: var(--hero-ink);
+  font-size: 1.2rem;
+  letter-spacing: 0.03em;
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero .apt-entry-text small {
+  color: var(--hero-sub);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero .apt-entry-arrow {
+  flex-shrink: 0;
+  margin-left: auto;
+  align-self: flex-end;
+  padding: 0.42rem 1rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+  background: var(--hero-accent);
+  color: #fff;
+  box-shadow: 0 6px 14px -6px var(--hero-shadow);
+  transition: transform 0.15s;
+}
+
+:is(#page-business, #page-biz-supervisor) .bz-hero:hover .apt-entry-arrow {
+  transform: translateX(2px);
+  color: #fff;
+  background: var(--hero-accent);
+}
+
+@media (max-width: 719px) {
+  :is(#page-business, #page-biz-supervisor) .bz-hero {
+    min-height: 0;
+    padding: 1.15rem 1.05rem;
+    gap: 0.8rem;
+  }
+  :is(#page-business, #page-biz-supervisor) .bz-hero .apt-entry-icon {
+    width: 2.8rem;
+    height: 2.8rem;
+    font-size: 1.4rem;
+  }
+  :is(#page-business, #page-biz-supervisor) .bz-hero .apt-entry-text strong {
+    font-size: 1.15rem;
+  }
+  :is(#page-business, #page-biz-supervisor) .bz-hero .apt-entry-arrow {
+    margin-left: 0;
+  }
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-head {
+  text-align: center;
+  margin-bottom: 1.15rem;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: var(--bz-accent-mid);
+  color: var(--bz-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-title {
+  margin: 0;
+  font-family: var(--font-display, "Noto Sans TC", sans-serif);
+  font-size: clamp(1.65rem, 4vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: var(--bz-ink);
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-sub {
+  margin: 0.55rem auto 0;
+  max-width: 34rem;
+  color: var(--bz-muted);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-sec {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--bz-accent);
+  text-transform: none;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-tools {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+#page-business .bz-tools {
+  margin-bottom: 1.25rem;
+}
+
+#page-business .bz-tools--zones {
+  gap: 1rem;
+}
+
+#page-business .bz-tools--utils {
+  gap: 0.65rem;
+}
+
+@media (min-width: 720px) {
+  :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #page-business .bz-tools .bz-card--span {
+    grid-column: 1 / -1;
+  }
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card {
+  --card-m: var(--bz-accent);
+  --card-ink: var(--bz-card-ink);
+  --card-sub: var(--bz-card-sub);
+  --card-line: var(--bz-card-line);
+  --card-bg1: var(--bz-card-bg1);
+  --card-bg2: var(--bz-card-bg2);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  min-height: 5.2rem;
+  padding: 1.1rem 1.15rem;
+  border: 1px solid var(--card-line);
+  border-radius: 1.15rem;
+  background: linear-gradient(135deg, #ffffff 0%, var(--card-bg1) 55%, var(--card-bg2) 100%);
+  box-shadow: 0 16px 36px -24px color-mix(in srgb, var(--card-m) 55%, transparent), 0 1px 3px rgba(15, 23, 42, 0.05);
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 尺寸層級：獎金／系統大卡 → 新人中卡 → 房東／房客中卡 → 常用工具小卡 */
+#page-business .bz-tools--zones .bz-card:not(.bz-card--lg):not(.bz-card--md) {
+  min-height: 6.1rem;
+  padding: 1.2rem 1.2rem;
+  border-radius: 1.2rem;
+}
+
+#page-business .bz-tools--zones .bz-card:not(.bz-card--lg):not(.bz-card--md) .bz-ico {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1rem;
+  font-size: 1.5rem;
+}
+
+#page-business .bz-tools--zones .bz-card:not(.bz-card--lg):not(.bz-card--md) .bz-name {
+  font-size: 1.12rem;
+}
+
+/* 大卡：獎金／系統通報（對齊設計稿 01／02） */
+#page-business .bz-card--lg {
+  min-height: 9.2rem;
+  padding: 1.65rem 1.4rem 1.5rem;
+  border-radius: 1.4rem;
+  border-width: 2px;
+  gap: 1.1rem;
+  box-shadow: 0 22px 40px -20px color-mix(in srgb, var(--card-m) 62%, transparent), 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+#page-business .bz-card--lg .bz-badge {
+  position: absolute;
+  top: -0.55rem;
+  left: -0.35rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 999px;
+  background: var(--card-m);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  box-shadow: 0 8px 16px -8px color-mix(in srgb, var(--card-m) 85%, transparent), 0 0 0 3px #fff;
+}
+
+#page-business .bz-card--lg .bz-ico {
+  width: 3.85rem;
+  height: 3.85rem;
+  border-radius: 1.1rem;
+  font-size: 1.85rem;
+}
+
+#page-business .bz-card--lg .bz-name {
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+
+#page-business .bz-card--lg .bz-hint {
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+#page-business .bz-card--lg .bz-go {
+  min-width: 3.6rem;
+  height: 2.4rem;
+  padding: 0 1.05rem;
+  font-size: 0.86rem;
+  align-self: end;
+}
+
+/* 新人專區：全寬中卡，比獎金／系統大卡矮一截 */
+#page-business .bz-card--md {
+  min-height: 7.2rem;
+  padding: 1.35rem 1.3rem;
+  border-radius: 1.3rem;
+  gap: 1rem;
+  box-shadow: 0 18px 34px -20px color-mix(in srgb, var(--card-m) 55%, transparent), 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+#page-business .bz-card--md .bz-ico {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  font-size: 1.65rem;
+}
+
+#page-business .bz-card--md .bz-name {
+  font-size: 1.28rem;
+  letter-spacing: 0.02em;
+}
+
+#page-business .bz-card--md .bz-hint {
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+#page-business .bz-card--md .bz-go {
+  min-width: 3.4rem;
+  height: 2.25rem;
+  padding: 0 0.95rem;
+  font-size: 0.82rem;
+}
+
+#page-business .bz-card--sm {
+  min-height: 4.15rem;
+  padding: 0.78rem 0.9rem;
+  gap: 0.7rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 22px -18px color-mix(in srgb, var(--card-m) 45%, transparent), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+#page-business .bz-card--sm .bz-ico {
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 0.75rem;
+  font-size: 1.15rem;
+}
+
+#page-business .bz-card--sm .bz-name {
+  font-size: 0.98rem;
+}
+
+#page-business .bz-card--sm .bz-hint {
+  font-size: 0.74rem;
+}
+
+#page-business .bz-card--sm .bz-go {
+  min-width: 2.7rem;
+  height: 1.9rem;
+  padding: 0 0.7rem;
+  font-size: 0.72rem;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 14rem;
+  height: 14rem;
+  right: -5rem;
+  top: -7rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--card-m) 22%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--card-line);
+  box-shadow: 0 22px 44px -22px color-mix(in srgb, var(--card-m) 60%, transparent), 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card:active {
+  transform: translateY(0);
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card:hover .bz-go {
+  transform: translateX(2px);
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-ico {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.95rem;
+  background: #fff;
+  border: none;
+  box-shadow: inset 0 0 0 1px var(--card-line), 0 6px 14px -8px color-mix(in srgb, var(--card-m) 70%, transparent);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-name {
+  font-size: 1.08rem;
+  font-weight: 900;
+  color: var(--card-ink);
+  letter-spacing: 0.02em;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-hint {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--card-sub);
+  line-height: 1.45;
+}
+
+:is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-go {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 3.2rem;
+  height: 2.15rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  background: var(--card-m);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--card-m) 80%, transparent);
+  transition: transform 0.15s ease;
+}
+
+/* 子專區分色：對齊行政／首頁色票 */
+#page-business .bz-card--newbie {
+  --card-m: #ea580c;
+  --card-ink: #7c2d12;
+  --card-sub: #9a6b4a;
+  --card-line: #fdba74;
+  --card-bg1: #fff7ed;
+  --card-bg2: #ffedd5;
+}
+#page-business .bz-card--bonus {
+  --card-m: #d97706;
+  --card-ink: #78350f;
+  --card-sub: #92400e;
+  --card-line: #f59e0b;
+  --card-bg1: #fffbeb;
+  --card-bg2: #fef3c7;
+}
+#page-business .bz-card--sys {
+  --card-m: #6d28d9;
+  --card-ink: #4c1d95;
+  --card-sub: #6b5b8c;
+  --card-line: #8b5cf6;
+  --card-bg1: #f5f3ff;
+  --card-bg2: #ede9fe;
+}
+#page-business .bz-card--ll {
+  --card-m: #0284c7;
+  --card-ink: #0c3b5e;
+  --card-sub: #4f6f86;
+  --card-line: #d3ecfb;
+  --card-bg1: #eaf6fe;
+  --card-bg2: #e3f1fb;
+}
+#page-business .bz-card--tn {
+  --card-m: #10a37f;
+  --card-ink: #064e3b;
+  --card-sub: #4f7a6c;
+  --card-line: #cdf1e3;
+  --card-bg1: #eafbf4;
+  --card-bg2: #e2f5fb;
+}
+
+#page-business .bz-forms {
+  border-radius: 1.15rem;
+  border: 1px solid var(--bz-line);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--bz-shadow);
+  padding: 1.1rem;
+}
+
+#page-business .bz-forms > h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--bz-ink);
+}
+
+@media (max-width: 420px) {
+  :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-shell {
+    padding: 1.1rem 0.85rem 1.15rem;
+  }
+  :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-card {
+    gap: 0.65rem;
+    padding: 0.85rem 0.75rem;
+  }
+  :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-name {
+    font-size: 0.98rem;
+  }
+  :is(#page-business, #page-landlord, #page-tenant, #page-biz-supervisor) .bz-hint {
+    font-size: 0.78rem;
+  }
+  #page-business .bz-card--lg {
+    min-height: 7.2rem;
+    padding: 1.25rem 1rem 1.15rem;
+    gap: 0.8rem;
+  }
+  #page-business .bz-card--lg .bz-badge {
+    width: 1.85rem;
+    height: 1.85rem;
+    font-size: 0.64rem;
+    top: -0.4rem;
+    left: -0.25rem;
+  }
+  #page-business .bz-card--lg .bz-ico {
+    width: 3.2rem;
+    height: 3.2rem;
+    font-size: 1.55rem;
+  }
+  #page-business .bz-card--lg .bz-name {
+    font-size: 1.15rem;
+  }
+  #page-business .bz-card--md {
+    min-height: 5.6rem;
+    padding: 1.05rem 0.95rem;
+    gap: 0.75rem;
+  }
+  #page-business .bz-card--md .bz-ico {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.4rem;
+  }
+  #page-business .bz-card--md .bz-name {
+    font-size: 1.12rem;
+  }
+  #page-business .bz-card--sm {
+    min-height: 3.8rem;
+    padding: 0.7rem 0.75rem;
+  }
+}

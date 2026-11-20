@@ -1,8 +1,8 @@
 ﻿# Deploy toolbox to Cloudflare Pages preview (fixed URL).
 # Usage: powershell -ExecutionPolicy Bypass -File .\scripts\deploy-preview.ps1
 #
-# Includes docs/forms（表單）與 docs/weekly-meeting（業務周會），
-# 仍略過超大 docs/*（photo-guides、collection-flow 等）。
+# Includes docs/forms (表單 PDF/DOCX) but skips huge docs/* trees
+# (photo-guides, weekly-meeting, collection-flow, etc.).
 
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
@@ -29,16 +29,6 @@ robocopy $formsSrc $formsDst /E `
     /XF _exam_preview.png _make-case-opinion-exam.py `
     /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
-
-$wmSrc = Join-Path $Root 'docs\weekly-meeting'
-$wmDst = Join-Path $tmp 'docs\weekly-meeting'
-Write-Host '>> robocopy docs/weekly-meeting (business weekly files)'
-robocopy $wmSrc $wmDst /E `
-    /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
-if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
-if (-not (Test-Path -LiteralPath (Join-Path $wmDst 'manifest.json'))) {
-    Write-Error 'Missing docs/weekly-meeting/manifest.json in deploy bundle'
-}
 
 $checklist = Join-Path $formsDst '複審檢核表'
 if (-not (Test-Path -LiteralPath (Join-Path $checklist '代管複審檢核表.pdf'))) {

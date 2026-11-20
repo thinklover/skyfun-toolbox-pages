@@ -168,7 +168,7 @@
     return 80;
   }
   function titleRank(p) {
-    const t = personTitle(p);
+      const t = personTitle(p);
     if (!t) return 90;
     const parts = t.split(/[／\/、]/).map((x) => x.trim()).filter(Boolean);
     if (!parts.length) return titleRankOne(t);
@@ -290,7 +290,7 @@
     if (list.length) {
       let sum = 0;
       let any = false;
-      list.forEach((e) => {
+    list.forEach((e) => {
         const n = numOrNull(e.score);
         if (n == null) return;
         sum += n;
@@ -360,7 +360,7 @@
   function fillSelects(preferPersonId) {
     const peopleOpts = (state.people || []).map((p) =>
       `<option value="${esc(p.id)}">${esc(p.name)}${personDept(p) ? '（' + esc(personDept(p)) + '）' : ''}</option>`
-    ).join('');
+        ).join('');
     const projectOpts = (state.projects || []).map((p) =>
       `<option value="${esc(p.id)}">${esc(p.name)}</option>`
     ).join('');
@@ -665,55 +665,15 @@
       return db.localeCompare(da) || String(b.id).localeCompare(String(a.id));
     });
   }
-  function periodBounds(monthOrYear) {
-    const raw = String(monthOrYear || '').trim();
-    if (/^\d{4}-\d{2}$/.test(raw)) {
-      const y = Number(raw.slice(0, 4));
-      const m = Number(raw.slice(5, 7));
-      const last = new Date(y, m, 0).getDate();
-      return { from: raw + '-01', to: raw + '-' + String(last).padStart(2, '0'), label: raw.replace('-', '年') + '月' };
-    }
-    if (/^\d{4}$/.test(raw)) {
-      return { from: raw + '-01-01', to: raw + '-12-31', label: raw + '年' };
-    }
-    return null;
-  }
-  /** 紀錄頁預設對齊總表月份／年度，避免混到其他月份以為沒同步 */
-  function syncRecordsPeriodFilter(force) {
-    const hasManual = !!(state.filter.from || state.filter.to || state.filter.q || state.filter.projectId);
-    if (!force && hasManual && state.filter.recordsAligned === false) return;
-    const key = state.span === 'year'
-      ? (state.year || currentMonth().slice(0, 4))
-      : (state.scoreMonth || state.month || currentMonth());
-    const b = periodBounds(key);
-    if (!b) return;
-    state.filter.from = b.from;
-    state.filter.to = b.to;
-    state.filter.recordsAligned = true;
-    state.filter.periodLabel = b.label;
-    if ($('msb-date-from')) $('msb-date-from').value = b.from;
-    if ($('msb-date-to')) $('msb-date-to').value = b.to;
-  }
   function filteredRecords() {
     const q = String(state.filter.q || '').trim().toLowerCase();
-    const from = String(state.filter.from || '').slice(0, 10);
-    const to = String(state.filter.to || '').slice(0, 10);
-    const fromM = from.slice(0, 7);
-    const toM = to.slice(0, 7);
     return allRecordRows().filter((e) => {
       if (state.filter.projectId) {
         if (e.kind === 'bonus') return false;
         if (String(e.projectId) !== String(state.filter.projectId)) return false;
       }
-      if (e.kind === 'bonus') {
-        const pm = String(e.periodMonth || '').slice(0, 7);
-        if (fromM && pm && pm < fromM) return false;
-        if (toM && pm && pm > toM) return false;
-      } else {
-        const d = String(e.scoreDate || '').slice(0, 10);
-        if (from && d && d < from) return false;
-        if (to && d && d > to) return false;
-      }
+      if (state.filter.from && String(e.scoreDate || '').slice(0, 10) < state.filter.from) return false;
+      if (state.filter.to && String(e.scoreDate || '').slice(0, 10) > state.filter.to) return false;
       if (!q) return true;
       const blob = [e.personName, e.projectName, e.item, e.note, e.sessionLabel, e.bonus, e.bonusStatus, e.periodMonth]
         .join(' ').toLowerCase();
@@ -724,12 +684,7 @@
     const table = $('msb-all-table');
     if (!table) return;
     const list = filteredRecords();
-    if ($('msb-records-count')) {
-      const align = state.filter.recordsAligned && state.filter.periodLabel
-        ? '（對齊總表 ' + state.filter.periodLabel + '）'
-        : ((state.filter.from || state.filter.to) ? '（已套用日期篩選）' : '（全部月份）');
-      $('msb-records-count').textContent = '共 ' + list.length + ' 筆' + align;
-    }
+    if ($('msb-records-count')) $('msb-records-count').textContent = '共 ' + list.length + ' 筆';
     const edit = state.canEdit;
     table.innerHTML = `<thead><tr>
       <th>日期</th><th>人員</th><th>專案</th><th>項目</th><th class="num">分數</th><th class="num">獎金</th><th>備註</th>${edit ? '<th></th>' : ''}
@@ -875,7 +830,7 @@
     setMsg('移除中…');
     try {
       const res = await rpc('msb_person_remove', {
-        p_token: token(),
+      p_token: token(),
         p_id: Number(personId)
       });
       if (!res?.ok) throw new Error(res?.error || '移除失敗');
@@ -904,10 +859,7 @@
     applyAccess();
     /* 選單只在開彈窗時填，避免每次重載重寫大量 option 造成卡頓 */
     if (state.view === 'dash') renderPeopleTable();
-    if (state.view === 'records') {
-      if (state.filter.recordsAligned) syncRecordsPeriodFilter(true);
-      renderRecords();
-    }
+    if (state.view === 'records') renderRecords();
     if (state.view === 'settings') renderSettings();
   }
   function periodFromDate(dateStr) {
@@ -1309,7 +1261,6 @@
       if (viewBtn) {
         const next = viewBtn.getAttribute('data-msb-view');
         const same = state.view === next;
-        if (next === 'records') syncRecordsPeriodFilter(true);
         setView(next);
         if (same) {
           if (next === 'settings') renderSettings();
@@ -1363,7 +1314,7 @@
         return;
       }
       if (e.target.id === 'msb-filter-clear') {
-        state.filter = { q: '', projectId: '', from: '', to: '', recordsAligned: false, periodLabel: '' };
+        state.filter = { q: '', projectId: '', from: '', to: '' };
         if ($('msb-q')) $('msb-q').value = '';
         if ($('msb-filter-project')) $('msb-filter-project').value = '';
         if ($('msb-date-from')) $('msb-date-from').value = '';
@@ -1405,7 +1356,7 @@
       state.month = e.target.value || currentMonth();
       state.year = state.month.slice(0, 4);
       if ($('msb-year')) $('msb-year').value = state.year;
-      await reload();
+          await reload();
     });
     $('msb-year')?.addEventListener('change', async (e) => {
       const y = String(e.target.value || '').trim();
@@ -1473,10 +1424,10 @@
         if (!res?.ok) throw new Error(res?.error || '儲存失敗');
         closeBindModal();
         setMsg('已更新「' + newName + '」', 'ok');
-        await reload();
+          await reload();
         if (state.view === 'settings') setView('settings');
         setMsg('已更新「' + newName + '」', 'ok');
-      } catch (err) {
+        } catch (err) {
         setMsg(err.message || String(err), 'err', 'msb-bind-msg');
       } finally {
         state.busy = false;
@@ -1510,7 +1461,7 @@
           if ($('msb-month')) $('msb-month').value = state.month;
         }
         setMsg('已儲存這個月的分數', 'ok');
-        await reload();
+      await reload();
       } catch (err) {
         setMsg(err.message || String(err), 'err', 'msb-month-msg');
       } finally {
@@ -1524,8 +1475,6 @@
         state.filter.projectId = $('msb-filter-project')?.value || '';
         state.filter.from = $('msb-date-from')?.value || '';
         state.filter.to = $('msb-date-to')?.value || '';
-        state.filter.recordsAligned = false;
-        state.filter.periodLabel = '';
         renderRecords();
       };
       $(id)?.addEventListener('input', sync);
@@ -1590,38 +1539,26 @@
         }
         if (hasScoreEntry) {
           if (!projectId) throw new Error('尚無可寫入的專案，請稍後再試或通知管理員');
-          const res = await rpc('msb_entry_save', {
-            p_token: token(),
-            p_data: {
-              id: state.editId,
+        const res = await rpc('msb_entry_save', {
+          p_token: token(),
+          p_data: {
+            id: state.editId,
               board: writeBoardForPersonId(entryPersonId),
               personId: entryPersonId,
               projectId,
-              scoreDate: $('msb-date')?.value || '',
-              score: $('msb-score')?.value || '',
+            scoreDate: $('msb-date')?.value || '',
+            score: $('msb-score')?.value || '',
               item,
-              note: $('msb-note')?.value || '',
+            note: $('msb-note')?.value || '',
               sessionLabel: ''
-            }
-          });
-          if (!res?.ok) throw new Error(res?.error || '儲存失敗');
+          }
+        });
+        if (!res?.ok) throw new Error(res?.error || '儲存失敗');
         }
         if (shouldSaveBonus && entryPersonId) {
           const person = (state.people || []).find((p) => String(p.id) === String(entryPersonId));
           const period = periodFromDate($('msb-date')?.value);
-          /* 分數以加減分紀錄合計為準；存獎金時重算含本筆，避免用舊合計蓋掉總表 */
-          let keepScore = person ? personDisplayScore(person) : null;
-          if (hasScoreEntry && period) {
-            if (state.editId) {
-              const old = (state.recordsEntries || state.entries || [])
-                .find((e) => String(e.id) === String(state.editId));
-              const oldScore = old ? numOrNull(old.score) : null;
-              if (old && String(old.scoreDate || '').slice(0, 7) === period && oldScore != null) {
-                keepScore = (keepScore == null ? 0 : keepScore) - oldScore;
-              }
-            }
-            keepScore = (keepScore == null ? 0 : keepScore) + scoreVal;
-          }
+          const keepScore = person ? personDisplayScore(person) : null;
           const formNote = String($('msb-note')?.value || '').trim();
           const bonusRes = await rpc('msb_month_score_upsert', {
             p_token: token(),
@@ -1630,7 +1567,6 @@
               personId: entryPersonId,
               periodMonth: period,
               score: keepScore != null ? String(keepScore) : '',
-              keepScore: !hasScoreEntry,
               bonus: bonusRaw,
               bonusStatus: person ? (person.bonusStatus || '') : '',
               note: bonusOnly && formNote ? formNote : (person ? (person.monthNote || '') : '')
