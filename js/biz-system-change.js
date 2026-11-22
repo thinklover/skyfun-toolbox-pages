@@ -311,7 +311,12 @@
     return state.rows.filter((r) => r.status !== 'done' && !hide.has(String(r.id)));
   }
 
-  /** 前台已完成：只顯示自己經手（handledBy＝本人）或自己送出且已完成；全員一覽僅後台 */
+  /** 已轉出且下游已完成：離開已轉出，改列入已完成 */
+  function openTransferredRows() {
+    return (state.transferred || []).filter((r) => String(r && r.status) !== 'done');
+  }
+
+  /** 前台已完成：自己經手、自己送出且已完成，以及自己轉出後已完成；全員一覽僅後台 */
   function handlerDoneRows() {
     const me = myDisplayName();
     const map = new Map();
@@ -323,6 +328,9 @@
     };
     (state.completed || []).forEach(take);
     myCompletedRows().forEach(take);
+    (state.transferred || []).forEach((r) => {
+      if (r && r.id != null && String(r.status) === 'done') map.set(String(r.id), r);
+    });
     return Array.from(map.values()).sort((a, b) => {
       const ta = new Date(a.handledAt || a.createdAt || 0).getTime();
       const tb = new Date(b.handledAt || b.createdAt || 0).getTime();
@@ -714,7 +722,7 @@
       return [];
     }
     if (key === 'pending') return state.inbox.slice();
-    if (key === 'transferred') return state.transferred.slice();
+    if (key === 'transferred') return openTransferredRows();
     if (key === 'done') {
       if (canSeeHandlerDone()) return handlerDoneRows();
       return myCompletedRows();
@@ -843,7 +851,7 @@
 
     const sent = handlerOpenRows().length;
     const pending = state.inbox.length;
-    const transferred = state.transferred.length;
+    const transferred = openTransferredRows().length;
     const done = handlerDoneRows().length;
     box.classList.add('bsc-gauges--xfer');
     box.innerHTML = [
