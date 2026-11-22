@@ -521,26 +521,33 @@
       slot.hidden = true;
     });
   }
-  function rankList(people, limit) {
+  function rankList(people, limit, valueOf) {
+    const pick = typeof valueOf === 'function' ? valueOf : personDisplayScore;
     return (people || [])
-      .map((p) => ({ p, score: personDisplayScore(p) }))
+      .map((p) => ({ p, score: pick(p) }))
       .filter((x) => x.score != null && x.score > 0)
       .sort((a, b) => b.score - a.score || String(a.p.name || '').localeCompare(String(b.p.name || ''), 'zh-Hant'))
       .slice(0, limit);
   }
-  function rankCardsHtml(rows) {
-    if (!rows.length) return '<p class="msb-rank-empty">目前沒有可排名的分數</p>';
+  function rankCardsHtml(rows, unit) {
+    const suffix = unit || '分';
+    if (!rows.length) {
+      return '<p class="msb-rank-empty">' + (suffix === '元' ? '目前沒有可排名的獎金' : '目前沒有可排名的分數') + '</p>';
+    }
     return '<ol class="msb-rank-list">' + rows.map((row, i) => {
       const p = row.p;
       const medal = i === 0 ? 'is-gold' : (i === 1 ? 'is-silver' : (i === 2 ? 'is-bronze' : ''));
       const dept = personDept(p) || '—';
+      const text = suffix === '元'
+        ? Number(row.score).toLocaleString('zh-TW')
+        : manualScoreText(row.score);
       return `<li class="msb-rank-card ${medal}">
         <span class="msb-rank-no">${i + 1}</span>
         <div class="msb-rank-meta">
           <b class="msb-rank-name">${esc(p.name || '—')}</b>
           <span class="msb-rank-dept">${esc(dept)}${personTitle(p) ? '・' + esc(personTitle(p)) : ''}</span>
         </div>
-        <span class="msb-rank-score">${esc(manualScoreText(row.score))} <small>分</small></span>
+        <span class="msb-rank-score">${esc(text)} <small>${suffix}</small></span>
       </li>`;
     }).join('') + '</ol>';
   }
@@ -554,9 +561,10 @@
     const officeTop = rankList(list.filter((p) => !isBizDept(personDept(p))), 5);
     const bizTop = rankList(list.filter((p) => isBizDept(personDept(p))), 5);
     const allTop = rankList(list, 5);
+    const bonusTop = rankList(list, 5, (p) => bonusAmount(p.bonus));
     box.innerHTML = `<div class="msb-rank-head">
         <h3 class="msb-rank-title">排名儀表板</h3>
-        <p class="msb-rank-sub">${esc(period)}｜依系統分數由高到低（僅正分）</p>
+        <p class="msb-rank-sub">${esc(period)}｜分數與獎金皆由高到低（僅正數）</p>
       </div>
       <div class="msb-rank-grid">
         <article class="msb-rank-col">
@@ -570,6 +578,10 @@
         <article class="msb-rank-col">
           <h4>業務前五</h4>
           ${rankCardsHtml(bizTop)}
+        </article>
+        <article class="msb-rank-col">
+          <h4>獎金前五</h4>
+          ${rankCardsHtml(bonusTop, '元')}
         </article>
       </div>`;
   }
