@@ -744,6 +744,11 @@
   }
 }
 
+#page-admin-handover,
+#page-business-handover {
+  max-width: min(72rem, 100%);
+  overflow-x: clip;
+}
 #page-admin-handover .bh-sop-board,
 #page-business-handover .bh-sop-board {
   display: grid;
@@ -751,6 +756,9 @@
   gap: 0.65rem;
   padding: 0.35rem 0 0.5rem;
   direction: ltr;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 @media (min-width: 640px) {
   #page-admin-handover .bh-sop-board,
@@ -761,15 +769,9 @@
 @media (min-width: 900px) {
   #page-admin-handover .bh-sop-board,
   #page-business-handover .bh-sop-board {
+    /* 維持最多三欄，避免九欄把整頁撐爆橫向跑版 */
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.55rem;
-  }
-}
-@media (min-width: 1280px) {
-  #page-admin-handover .bh-sop-board,
-  #page-business-handover .bh-sop-board {
-    grid-template-columns: repeat(9, minmax(0, 1fr));
-    gap: 0.45rem;
   }
 }
 
@@ -782,7 +784,7 @@
   align-items: center;
   gap: 0.32rem;
   margin: 0;
-  padding: 0.85rem 0.55rem 0.7rem;
+  padding: 0.85rem 0.7rem 0.75rem;
   text-align: center;
   font: inherit;
   color: inherit;
@@ -791,7 +793,12 @@
   border-radius: 0.85rem;
   box-shadow: 0 2px 8px rgba(25, 36, 55, 0.05);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  min-width: 0;
   min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 #page-admin-handover .bh-sop-card:hover,
 #page-business-handover .bh-sop-card:hover {

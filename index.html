@@ -4571,12 +4571,7 @@
             outline: 3px solid color-mix(in srgb, var(--m) 45%, #fff);
             outline-offset: 3px;
         }
-        #home-menu .home-card-newbie,
-        #home-menu .home-card-rentmgr {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
+        /* 權限卡用 .hidden 控制顯示；不可用 !important 蓋掉，否則會破壞隱藏與版面 */
         #home-menu .home-feature-card::before {
             content: ""; display: block; position: absolute; z-index: -1; inset: auto; opacity: 1;
             width: 16rem; height: 16rem; right: -6rem; top: -8rem; left: auto; border-radius: 50%;
@@ -4667,7 +4662,7 @@
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
-<link rel="stylesheet" href="./css/handover.css?v=20261123-onboard-sop">
+<link rel="stylesheet" href="./css/handover.css?v=20261123-sop-fix2">
 <link rel="stylesheet" href="./css/business-zone.20261110d.css?v=20261115-go-fix">
 <link rel="stylesheet" href="./css/policy-doc-gate.css?v=20261110-scroll2">
 <link rel="stylesheet" href="./css/biz-bonus.css?v=20261111-ackwm">
@@ -14726,9 +14721,9 @@
         <script src="./js/guide-exam.js?v=20261015-1"></script>
         <script src="./js/biz-guide-exam.js?v=20261029-hide"></script>
         <script src="./js/rentmgr-guide-exam.js?v=20261123-196"></script>
-        <script src="./js/handover-core.js?v=20261123-onboard-sop"></script>
-        <script src="./js/biz-handover.js?v=20261123-onboard-sop"></script>
-        <script src="./js/admin-handover.js?v=20261123-onboard-sop"></script>
+        <script src="./js/handover-core.js?v=20261123-sop-fix2"></script>
+        <script src="./js/biz-handover.js?v=20261123-sop-fix2"></script>
+        <script src="./js/admin-handover.js?v=20261123-sop-fix2"></script>
         <script src="./js/biz-system-change.js?v=20261123-xfer-done"></script>
         <script src="./js/biz-bonus-data.js?v=20261105-layout"></script>
         <script src="./js/biz-bonus.js?v=20261111-ackwm"></script>
