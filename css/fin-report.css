@@ -1360,7 +1360,7 @@
 }
 #page-finance .fin-card-gauge.is-on b { color: #0369a1; }
 
-/* 公司系統比對 */
+/* 公司系統比對／送出前檢核表 */
 #page-finance .fin-cmp-bar {
   display: grid;
   gap: 0.45rem;
@@ -1369,6 +1369,43 @@
   border: 1px dashed #99f6e4;
   border-radius: 0.85rem;
   background: #f0fdfa;
+}
+#page-finance .fin-cmp-checklist-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f766e;
+}
+#page-finance .fin-cmp-checklist-body {
+  display: grid;
+  gap: 0.4rem;
+}
+#page-finance .fin-cmp-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #99f6e4;
+  border-radius: 0.65rem;
+  background: #fff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #134e4a;
+  line-height: 1.4;
+}
+#page-finance .fin-cmp-check-item input {
+  margin-top: 0.15rem;
+  flex: 0 0 auto;
+}
+#page-finance .fin-cmp-check-item .fin-cmp-check-val {
+  font-weight: 600;
+  color: #0f766e;
+}
+#page-finance .fin-cmp-check-item.is-bad {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
 }
 #page-finance .fin-cmp-btn {
   justify-self: start;

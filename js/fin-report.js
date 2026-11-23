@@ -203,7 +203,8 @@
     zhuanLeaseStart: '轉租開始日', zhuanLeaseEnd: '轉租到期日',
     leaseStart: '租期起', leaseEnd: '租期迄', leasePick: '公司案件參考',
     depositType: '押金類型', renewTopup: '是否補足押金', topupAmount: '補足金額',
-    receivable: '應收款項', receivableOther: '應收其他說明', pkgDocs: '證明文件類型',
+    receivable: '應收款項', receivableOther: '應收其他說明', receivableOtherAmount: '其他費用金額',
+    pkgDocs: '證明文件類型',
     rematchType: '換約類型', oldTenant: '原房客', newTenant: '新房客',
     hasRoommate: '有無同住', roommates: '同住人', roommate: '同住人',
     refundType: '退押類型', hasGap: '是否有空窗', subleaseStart: '轉租起租日',
@@ -227,7 +228,7 @@
   const FIN_PAYLOAD_ORDER = [
     'address', 'landlord', 'tenant', 'rent', 'managementFee', 'deposit', 'caseType',
     'systemDataPendingFix', 'pkgItem', 'payItem', 'collectItem', 'suppItem', 'genItem',
-    'officeItem', 'venue', 'depositType', 'pkgDocs', 'receivable', 'receivableOther',
+    'officeItem', 'venue', 'depositType', 'pkgDocs', 'receivable', 'receivableOther', 'receivableOtherAmount',
     'baoLeaseStart', 'baoLeaseEnd', 'zhuanLeaseStart', 'zhuanLeaseEnd',
     'leasePick', 'renewTopup', 'topupAmount', 'rematchType', 'oldTenant', 'newTenant', 'hasRoommate',
     'roommates', 'roommate', 'refundType', 'refundDate', 'refundMethod', 'refundSettle', 'refundGap',
@@ -637,7 +638,7 @@
       }
       return;
     }
-    sel.innerHTML = '<option value="">請選擇租期</option>' + state.leaseOptions.map((o) =>
+    sel.innerHTML = '<option value="">請選擇租期（選後自動帶入）</option>' + state.leaseOptions.map((o) =>
       '<option value="' + esc(o.id) + '">' + esc(o.label) + '</option>'
     ).join('');
     wrap.hidden = false;
@@ -696,14 +697,53 @@
     });
     document.querySelectorAll('#page-finance [data-fin-cmp-override]').forEach((el) => { el.hidden = true; });
     document.querySelectorAll('#page-finance [data-fin-cmp-note]').forEach((el) => { el.hidden = true; });
+    const body = $('fin-cmp-checklist-body');
+    if (body) body.innerHTML = '';
   }
 
   function resetCompanyCompare(reason) {
     state.companyCompare = null;
     clearCmpResultUi();
     if (reason) setCmpStatus(reason, true);
-    else setCmpStatus('請先手動填完欄位，再按比對；全部相符（或已勾選系統有誤並說明）才能送出。');
+    else setCmpStatus('請先搜尋地址並選擇租期，系統會自動帶入後顯示檢核項目。');
     syncSubmitEnabled();
+  }
+
+  function cmpFieldLabel(key) {
+    return FIN_PAYLOAD_LABELS[key] || key;
+  }
+
+  function readCmpAcks() {
+    const out = {};
+    document.querySelectorAll('#page-finance [data-fin-cmp-ack]').forEach((box) => {
+      const key = box.getAttribute('data-fin-cmp-ack');
+      if (key) out[key] = !!box.checked;
+    });
+    return out;
+  }
+
+  function renderCmpChecklist(fields) {
+    const body = $('fin-cmp-checklist-body');
+    if (!body) return;
+    const prev = readCmpAcks();
+    const keys = Object.keys(fields || {});
+    if (!keys.length) {
+      body.innerHTML = '';
+      return;
+    }
+    body.innerHTML = keys.map((key) => {
+      const f = fields[key];
+      const label = esc(cmpFieldLabel(key));
+      if (f.ok) {
+        const shown = esc(String(f.user || f.companyDisplay || '（空白）'));
+        return '<label class="fin-cmp-check-item">' +
+          '<input type="checkbox" data-fin-cmp-ack="' + esc(key) + '"' + (prev[key] ? ' checked' : '') + '>' +
+          ' 已核對「' + label + '」與系統相符<span class="fin-cmp-check-val">（' + shown + '）</span></label>';
+      }
+      return '<div class="fin-cmp-check-item is-bad">' +
+        '「' + label + '」與系統不符｜系統：' + esc(f.companyDisplay || '（無資料）') +
+        ' — 請修正欄位，或在該欄勾「公司系統資料有誤」並填說明</div>';
+    }).join('');
   }
 
   function renderCmpFieldUi(fields, overrides) {
@@ -731,6 +771,7 @@
       const checked = !!(ov[key] && ov[key].checked);
       if (note) note.hidden = !checked;
     });
+    renderCmpChecklist(fields);
   }
 
   function syncOverrideNotesVisibility() {
@@ -742,17 +783,26 @@
   }
 
   function evaluateCompareGate() {
-    if (!state.companyCompare) return { ok: false, reason: '請先按「比對」核對公司系統' };
+    if (!state.companyCompare) return { ok: false, reason: '請先查公司資料並完成送出前檢核表' };
     const cmp = CMP();
     if (!cmp) return { ok: false, reason: '比對模組尚未載入' };
     const overrides = readCmpOverrides();
     const sum = cmp.summarize(state.companyCompare.fields, overrides);
     if (!sum.allOk) return { ok: false, reason: '尚有欄位與公司系統不符，請修正或勾選「公司系統資料有誤」並填說明' };
+    const acks = readCmpAcks();
+    const fields = state.companyCompare.fields || {};
+    for (const key of Object.keys(fields)) {
+      const f = fields[key];
+      if (f && f.ok && !acks[key]) {
+        return { ok: false, reason: '請勾選檢核表：確認「' + cmpFieldLabel(key) + '」與系統相符' };
+      }
+    }
     return {
       ok: true,
       fullyMatched: !!sum.fullyMatched,
       systemDataPendingFix: !!sum.systemDataPendingFix,
-      overrides
+      overrides,
+      acks
     };
   }
 
@@ -768,10 +818,68 @@
     btn.disabled = !!state.busy || !gate.ok;
   }
 
+  function moneyText(raw) {
+    if (raw == null || raw === '') return '';
+    const n = CMP()?.normMoney ? CMP().normMoney(raw) : Number(String(raw).replace(/,/g, ''));
+    if (n == null || !Number.isFinite(n)) return String(raw).trim();
+    return String(n);
+  }
+
+  function setCaseTypeFromCompany(raw) {
+    const el = $('fin-cmp-case-type');
+    if (!el) return;
+    const s = String(raw || '').trim();
+    if (!s) {
+      el.value = '';
+      return;
+    }
+    const opts = Array.from(el.options).map((o) => o.value).filter(Boolean);
+    if (opts.includes(s)) {
+      el.value = s;
+      return;
+    }
+    const soft = opts.find((o) => s.includes(o) || o.includes(s));
+    el.value = soft || '';
+  }
+
   function applyLeaseOption(opt) {
-    /* 不再自動帶入房東／房客／租期；僅保留公司案件快照供比對 */
     if (!opt) return;
-    resetCompanyCompare('已改選公司案件參考，請重新比對');
+    const ll = opt.landlord;
+    const tn = opt.tenant;
+    if (ll?.name) {
+      const el = $('fin-landlord');
+      if (el) el.value = ll.name;
+    }
+    if (tn?.name) {
+      const el = $('fin-tenant');
+      if (el) el.value = tn.name;
+    }
+    const baoStart = $('fin-bao-lease-start');
+    const baoEnd = $('fin-bao-lease-end');
+    const zhStart = $('fin-zhuan-lease-start');
+    const zhEnd = $('fin-zhuan-lease-end');
+    if (baoStart) baoStart.value = rocToIso(ll?.leaseStart || '') || '';
+    if (baoEnd) baoEnd.value = rocToIso(ll?.leaseEnd || '') || '';
+    if (zhStart) zhStart.value = rocToIso(tn?.leaseStart || '') || '';
+    if (zhEnd) zhEnd.value = rocToIso(tn?.leaseEnd || '') || '';
+    if (ll?.address) {
+      const addr = $('fin-address');
+      if (addr) addr.value = ll.address;
+    } else if (tn?.address) {
+      const addr = $('fin-address');
+      if (addr) addr.value = tn.address;
+    }
+    const rentEl = $('fin-cmp-rent');
+    const mgmtEl = $('fin-cmp-mgmt');
+    const depEl = $('fin-cmp-deposit');
+    const rent = tn?.rent != null && tn.rent !== '' ? tn.rent : (ll?.rent ?? '');
+    const mgmt = tn?.managementFee ?? ll?.managementFee ?? '';
+    const dep = tn?.deposit ?? tn?.depositAmount ?? ll?.deposit ?? ll?.depositAmount ?? '';
+    if (rentEl) rentEl.value = moneyText(rent);
+    if (mgmtEl) mgmtEl.value = moneyText(mgmt);
+    if (depEl) depEl.value = moneyText(dep);
+    setCaseTypeFromCompany(tn?.caseType || ll?.caseType || tn?.contratTypeName || ll?.contratTypeName || '');
+    resetCompanyCompare('已帶入公司資料，正在核對…');
   }
 
   async function fetchCompanySnapshot(address) {
@@ -804,18 +912,26 @@
     const addr = String(address || '').trim();
     if (!addr) return;
     clearLeasePick();
-    setLookupStatus('載入公司案件參考中…');
+    setLookupStatus('載入公司案件中…');
     resetCompanyCompare();
     const snap = await fetchCompanySnapshot(addr);
     state.companySnapshot = snap;
     const options = buildLeaseOptions(snap);
     if (!options.length) {
       clearLeasePick();
-      setLookupStatus('此地址公司系統有案件，請手動填寫後按「比對」。');
+      setLookupStatus('此地址查無有效租期，請改以人工填寫後按「重新核對系統」。', true);
       return;
     }
     renderLeasePick(options);
-    setLookupStatus((snap.rawMessage || ('找到 ' + options.length + ' 筆案件參考')) + '（不會自動帶入，請手動填寫後比對）');
+    if (options.length === 1) {
+      const sel = $('fin-lease-pick');
+      if (sel) sel.value = options[0].id;
+      applyLeaseOption(options[0]);
+      setLookupStatus('已自動帶入唯一租期與房東客等資料，請勾送出前檢核表');
+      await runCompanyCompare();
+      return;
+    }
+    setLookupStatus(snap.rawMessage || ('找到 ' + options.length + ' 筆租期，請選擇後自動帶入'));
   }
 
   async function runCompanyCompare() {
@@ -873,11 +989,11 @@
       };
       renderCmpFieldUi(result.fields, overrides);
       if (!Object.keys(result.fields).length) {
-        setCmpStatus('沒有可比對欄位', true);
+        setCmpStatus('沒有可核對欄位', true);
       } else if (sum.fullyMatched) {
-        setCmpStatus('全部相符，可以送出');
+        setCmpStatus('欄位已與系統相符，請勾齊送出前檢核表後再送出');
       } else if (sum.allOk && sum.systemDataPendingFix) {
-        setCmpStatus('已勾選系統有誤並填說明，可以送出（列表會標示「系統資料待更正」）');
+        setCmpStatus('已勾選系統有誤並填說明；相符欄位請仍勾檢核表後再送出（列表會標示「系統資料待更正」）');
       } else {
         setCmpStatus('尚有欄位不符；請修正輸入，或勾選「公司系統資料有誤」並填說明', true);
       }
@@ -905,9 +1021,20 @@
     state.companyCompare.systemDataPendingFix = sum.systemDataPendingFix;
     state.companyCompare.allOk = sum.allOk;
     renderCmpFieldUi(state.companyCompare.fields, overrides);
-    if (sum.fullyMatched) setCmpStatus('全部相符，可以送出');
-    else if (sum.allOk) setCmpStatus('已勾選系統有誤並填說明，可以送出（列表會標示「系統資料待更正」）');
+    if (sum.fullyMatched) setCmpStatus('欄位已與系統相符，請勾齊送出前檢核表後再送出');
+    else if (sum.allOk) setCmpStatus('已勾選系統有誤並填說明；相符欄位請仍勾檢核表後再送出（列表會標示「系統資料待更正」）');
     else setCmpStatus('尚有欄位不符；請修正輸入，或勾選「公司系統資料有誤」並填說明', true);
+    syncSubmitEnabled();
+  }
+
+  function refreshCompareAfterAckChange() {
+    if (!state.companyCompare) {
+      syncSubmitEnabled();
+      return;
+    }
+    const gate = evaluateCompareGate();
+    if (gate.ok) setCmpStatus('檢核表已勾齊，可以送出');
+    else if (gate.reason) setCmpStatus(gate.reason, true);
     syncSubmitEnabled();
   }
 
@@ -2110,16 +2237,16 @@
       addrHint.hidden = !!hideLookup;
       if (isGen) {
         addrHint.hidden = false;
-        addrHint.textContent = '一般宅請直接手填物件地址與房東／房客姓名，填完後按「比對」。';
+        addrHint.textContent = '一般宅請直接手填物件地址與房東／房客姓名，填完後按「重新核對系統」並勾檢核表。';
       } else if (!hideLookup) {
-        addrHint.textContent = '註記：可先輸入路名查出相符地址再選；房東／房客／租期請手動填寫，填完後按「比對」核對公司系統。';
+        addrHint.textContent = '註記：可先輸入路名查出相符地址再選；選地址／租期後會自動帶入，請再勾送出前檢核表。';
       }
     }
     if (addrBtn) addrBtn.hidden = !!hideLookup;
     if (addrInput) {
       addrInput.placeholder = isGen
         ? '請手填物件地址'
-        : '請手動輸入完整地址，或先用路名搜尋後再選';
+        : '輸入地址後按查公司資料';
     }
     if (hideLookup) {
       if (pickWrap) {
@@ -2324,6 +2451,7 @@
       address: state.companyCompare.address || '',
       companyValues: state.companyCompare.companyValues || {},
       fields: fieldOut,
+      confirmedAcks: (gate && gate.acks) || readCmpAcks(),
       fullyMatched: !!(gate ? gate.fullyMatched : state.companyCompare.fullyMatched),
       systemDataPendingFix: !!(gate ? gate.systemDataPendingFix : state.companyCompare.systemDataPendingFix),
       allOk: true
@@ -2360,7 +2488,10 @@
           if (payload.renewTopup === '是') payload.topupAmount = val('fin-topup-amount');
         }
         payload.receivable = Array.from(document.querySelectorAll('#page-finance input[name="fin-receivable"]:checked')).map((x) => x.value);
-        if (payload.receivable.includes('其他')) payload.receivableOther = val('fin-receivable-other');
+        if (payload.receivable.includes('其他')) {
+          payload.receivableOther = val('fin-receivable-other');
+          payload.receivableOtherAmount = val('fin-receivable-other-amount');
+        }
         if (payload.pkgItem !== PKG_RENEW_PKG) payload.pkgDocs = resolvePkgDocs();
       }
       payload.rematchType = checked('fin-rematch-type');
@@ -2567,6 +2698,10 @@
       }
       if (Array.isArray(payload.receivable) && payload.receivable.includes('其他')) {
         if (!payload.receivableOther) return '請填其他費用說明';
+        if (payload.receivableOtherAmount === '' || payload.receivableOtherAmount == null) return '請填其他費用金額';
+        if (Number(payload.receivableOtherAmount) < 0 || !Number.isFinite(Number(payload.receivableOtherAmount))) {
+          return '其他費用金額請填有效數字';
+        }
         if ((fileCount.receivable || 0) < 1) return '請上傳其他費用金額檔案';
       }
       if (payload.pkgItem === PKG_RENEW_PKG && !payload.renewTopup) return '請選是否要補押金';
@@ -2790,7 +2925,12 @@
       if (e.target.matches('input[name="fin-issue"]')) return;
       if (e.target.id === 'fin-lease-pick') {
         const opt = state.leaseOptions.find((o) => o.id === e.target.value);
-        applyLeaseOption(opt);
+        if (opt) {
+          applyLeaseOption(opt);
+          void runCompanyCompare();
+        } else {
+          resetCompanyCompare('請選擇租期以自動帶入公司資料');
+        }
         return;
       }
       if (e.target.id === 'fin-address') {
@@ -2798,13 +2938,17 @@
         clearLeasePick();
         state.companySnapshot = null;
         setLookupStatus('');
-        resetCompanyCompare('地址已變更，請重新比對');
+        resetCompanyCompare('地址已變更，請重新查公司資料');
       }
       if (e.target.matches('[data-fin-cmp-input]')) {
-        resetCompanyCompare('欄位已變更，請重新比對');
+        resetCompanyCompare('欄位已變更，請按「重新核對系統」');
       }
       if (e.target.matches('[data-fin-cmp-flag], [data-fin-cmp-note]')) {
         refreshCompareAfterOverrideChange();
+      }
+      if (e.target.matches('[data-fin-cmp-ack]')) {
+        refreshCompareAfterAckChange();
+        return;
       }
       if (e.target.matches('input[type="radio"], #fin-office, input[type="checkbox"]')) {
         syncPanels();
@@ -2813,7 +2957,7 @@
     });
     page.addEventListener('input', (e) => {
       if (e.target.matches('[data-fin-cmp-input]')) {
-        resetCompanyCompare('欄位已變更，請重新比對');
+        resetCompanyCompare('欄位已變更，請按「重新核對系統」');
       }
       if (e.target.matches('[data-fin-cmp-note]')) {
         refreshCompareAfterOverrideChange();
@@ -2943,7 +3087,7 @@
         if (needsCompanyCompare(issueType)) {
           await runCompanyCompare();
           const gate = evaluateCompareGate();
-          if (!gate.ok) throw new Error(gate.reason || '請先完成公司系統比對');
+          if (!gate.ok) throw new Error(gate.reason || '請先完成送出前檢核表');
           payload.companyCompare = buildCompanyComparePayload(gate);
           payload.systemDataPendingFix = !!gate.systemDataPendingFix;
           if (payload.companyCompare) {
