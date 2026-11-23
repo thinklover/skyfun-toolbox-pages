@@ -785,6 +785,8 @@
   const BONUS_STAGE_2 = 5000;
   const BONUS_PROJECT_LIST = 3000;
   const BONUS_PROJECT_LVR = 2000;
+  /** 實價登錄專案獎金：當月實登點數須達此門檻才加發 */
+  const BONUS_LVR_MIN_POINTS = 50;
   /** 人力明細／點數表「專案任務」選項（獎金另見 estimateBonus；可複選，存「、」分隔） */
   const PROJECT_TASKS = ['清冊＋公會對接', '實價登錄', '續約管理', '包租催收管理'];
   const PROJECT_SEP = '、';
@@ -866,12 +868,23 @@
     return asOf >= addMonths(hireDate, 1);
   }
 
+  /** 當月實登點數（自動計點＋補點；實登目前每件 1 點） */
+  function lvrMonthPoints(person) {
+    if (!person) return 0;
+    const fromRecords = (person.records || [])
+      .filter((r) => r.item === 'lvr')
+      .reduce((s, r) => s + (Number(r.points) || 0), 0);
+    if (fromRecords > 0) return fromRecords;
+    return Number(person.month?.counts?.lvr) || 0;
+  }
+
   /**
    * 預估個人獎金：達 250 點 2,000、350 點 5,000；達 250 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。
+   * 實價登錄專案獎金另須當月實登點數 ≥ 50 才加發。
    * 上個業績月未達 250 點時，基本＋專案全部打八折（115年9月制度首月不適用；
    * 新人首月未達標，次月不打折——上個業績月月初仍屬新人首月排除者不適用八折）。
    */
-  function estimateBonus({ points, project, eligible, hireDate, prevPoints, perf }) {
+  function estimateBonus({ points, project, eligible, hireDate, prevPoints, perf, lvrPoints }) {
     if (!eligible) return 0;
     const base = points >= STAGE_2 ? BONUS_STAGE_2 : points >= STAGE_1 ? BONUS_STAGE_1 : 0;
     let py = perf.year;
@@ -891,7 +904,9 @@
     let bonus = base;
     if (points >= STAGE_1) {
       if (/清冊[＋+]公會對接/.test(project || '')) bonus += BONUS_PROJECT_LIST;
-      if (/實價登錄/.test(project || '')) bonus += BONUS_PROJECT_LVR;
+      if (/實價登錄/.test(project || '') && (Number(lvrPoints) || 0) >= BONUS_LVR_MIN_POINTS) {
+        bonus += BONUS_PROJECT_LVR;
+      }
     }
     return discount ? bonus * 0.8 : bonus;
   }
@@ -938,9 +953,11 @@
             eligible,
             hireDate: s.hireDate,
             prevPoints: opts.prevTotals?.get(s.name),
-            perf
+            perf,
+            lvrPoints: lvrMonthPoints(p)
           }),
           bonusPending: points >= STAGE_1 && !opts.prevTotals,
+          lvrPoints: lvrMonthPoints(p),
           checked,
           correct,
           rate: checked ? correct / checked : null,
@@ -2249,6 +2266,9 @@
     areaOfRegion,
     weeklyReport,
     estimateBonus,
+    lvrMonthPoints,
+    BONUS_LVR_MIN_POINTS,
+    BONUS_PROJECT_LVR,
     eligibleAt,
     stageLabel,
     rocYearMonth,
