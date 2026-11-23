@@ -508,14 +508,40 @@
 
 @media (min-width: 900px) {
   #page-hr-onboard .hr-sop-board {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1280px) {
+/* 寬螢幕：上排 1～6 放大、下排 7～8 */
+@media (min-width: 1100px) {
   #page-hr-onboard .hr-sop-board {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  #page-hr-onboard .hr-sop-card {
+    padding: 1rem 0.7rem 0.85rem;
+    gap: 0.4rem;
+  }
+  #page-hr-onboard .hr-sop-num {
+    width: 1.85rem;
+    height: 1.85rem;
+    font-size: 0.88rem;
+  }
+  #page-hr-onboard .hr-sop-day { font-size: 0.84rem; }
+  #page-hr-onboard .hr-sop-act { font-size: 0.98rem; }
+  #page-hr-onboard .hr-sop-icon {
+    width: 3.6rem;
+    height: 3.6rem;
+    font-size: 1.75rem;
+  }
+  #page-hr-onboard .hr-sop-items { font-size: 0.72rem; }
+  #page-hr-onboard .hr-sop-focus { font-size: 0.72rem; padding: 0.45rem 0.35rem; }
+  #page-hr-onboard .hr-sop-cta { font-size: 0.76rem; }
+  #page-hr-onboard .hr-sop-card--week[data-hr-step="7"] {
+    grid-column: 2 / span 2;
+  }
+  #page-hr-onboard .hr-sop-card--week[data-hr-step="8"] {
+    grid-column: 4 / span 2;
   }
 }
 
@@ -533,6 +559,8 @@
   border-radius: 0.85rem;
   box-shadow: 0 2px 8px rgba(25, 36, 55, 0.05);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 #page-hr-onboard .hr-sop-card:hover {
