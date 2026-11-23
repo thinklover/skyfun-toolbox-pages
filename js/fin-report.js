@@ -179,6 +179,7 @@
     companySnapshot: null,
     companyCompare: null,
     cmpBusy: false,
+    pendingSubmit: null,
     suppOrigin: null,
     suppCandidates: [],
     suppLooking: false,
@@ -657,16 +658,6 @@
     return issue && issue !== ISSUE_OFFICE;
   }
 
-  function readCmpOverrides() {
-    const out = {};
-    document.querySelectorAll('#page-finance [data-fin-cmp-flag]').forEach((box) => {
-      const key = box.getAttribute('data-fin-cmp-flag');
-      const noteEl = document.querySelector('#page-finance [data-fin-cmp-note="' + key + '"]');
-      out[key] = { checked: !!box.checked, note: String(noteEl?.value || '').trim() };
-    });
-    return out;
-  }
-
   function collectUserCmpFields() {
     return {
       landlord: val('fin-landlord'),
@@ -689,23 +680,10 @@
     el.style.color = isErr ? '#b91c1c' : '';
   }
 
-  function clearCmpResultUi() {
-    document.querySelectorAll('#page-finance [data-fin-cmp-result]').forEach((el) => {
-      el.hidden = true;
-      el.textContent = '';
-      el.className = 'fin-cmp-result';
-    });
-    document.querySelectorAll('#page-finance [data-fin-cmp-override]').forEach((el) => { el.hidden = true; });
-    document.querySelectorAll('#page-finance [data-fin-cmp-note]').forEach((el) => { el.hidden = true; });
-    const body = $('fin-cmp-checklist-body');
-    if (body) body.innerHTML = '';
-  }
-
   function resetCompanyCompare(reason) {
     state.companyCompare = null;
-    clearCmpResultUi();
     if (reason) setCmpStatus(reason, true);
-    else setCmpStatus('請先搜尋地址並選擇租期，系統會自動帶入後顯示檢核項目。');
+    else setCmpStatus('');
     syncSubmitEnabled();
   }
 
@@ -713,95 +691,114 @@
     return FIN_PAYLOAD_LABELS[key] || key;
   }
 
-  function readCmpAcks() {
+  function checklistKeysForIssue(issue) {
+    const keys = ['address'].concat(cmpKeysForIssue(issue));
+    return keys;
+  }
+
+  function collectChecklistValues(issue) {
+    const user = collectUserCmpFields();
+    const out = { address: val('fin-address') };
+    checklistKeysForIssue(issue).forEach((key) => {
+      if (key === 'address') return;
+      out[key] = user[key] == null ? '' : String(user[key]);
+    });
+    return out;
+  }
+
+  function readModalAcks() {
     const out = {};
-    document.querySelectorAll('#page-finance [data-fin-cmp-ack]').forEach((box) => {
-      const key = box.getAttribute('data-fin-cmp-ack');
+    document.querySelectorAll('#fin-check-modal [data-fin-check-ack]').forEach((box) => {
+      const key = box.getAttribute('data-fin-check-ack');
       if (key) out[key] = !!box.checked;
     });
     return out;
   }
 
-  function renderCmpChecklist(fields) {
-    const body = $('fin-cmp-checklist-body');
-    if (!body) return;
-    const prev = readCmpAcks();
-    const keys = Object.keys(fields || {});
-    if (!keys.length) {
-      body.innerHTML = '';
-      return;
-    }
-    body.innerHTML = keys.map((key) => {
-      const f = fields[key];
+  function setCheckModalStatus(msg, isErr) {
+    const el = $('fin-check-modal-status');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.color = isErr ? '#b91c1c' : '';
+  }
+
+  function syncCheckConfirmEnabled() {
+    const btn = $('fin-check-confirm');
+    if (!btn || !state.pendingSubmit) return;
+    const keys = checklistKeysForIssue(state.pendingSubmit.issueType);
+    const acks = readModalAcks();
+    const all = keys.every((k) => acks[k]);
+    btn.disabled = !all || !!state.busy;
+    if (!all) setCheckModalStatus('請逐項勾選確認無誤後再送出');
+    else setCheckModalStatus('已全部確認，可按確認送出');
+  }
+
+  function openCheckModal(ctx) {
+    state.pendingSubmit = ctx;
+    const body = $('fin-check-modal-body');
+    const modal = $('fin-check-modal');
+    if (!body || !modal) return;
+    const values = collectChecklistValues(ctx.issueType);
+    const fields = (state.companyCompare && state.companyCompare.fields) || {};
+    body.innerHTML = checklistKeysForIssue(ctx.issueType).map((key) => {
       const label = esc(cmpFieldLabel(key));
-      if (f.ok) {
-        const shown = esc(String(f.user || f.companyDisplay || '（空白）'));
-        return '<label class="fin-cmp-check-item">' +
-          '<input type="checkbox" data-fin-cmp-ack="' + esc(key) + '"' + (prev[key] ? ' checked' : '') + '>' +
-          ' 已核對「' + label + '」與系統相符<span class="fin-cmp-check-val">（' + shown + '）</span></label>';
-      }
-      return '<div class="fin-cmp-check-item is-bad">' +
-        '「' + label + '」與系統不符｜系統：' + esc(f.companyDisplay || '（無資料）') +
-        ' — 請修正欄位，或在該欄勾「公司系統資料有誤」並填說明</div>';
-    }).join('');
-  }
-
-  function renderCmpFieldUi(fields, overrides) {
-    const ov = overrides || {};
-    Object.keys(fields || {}).forEach((key) => {
+      const shown = esc(String(values[key] || '（空白）'));
       const f = fields[key];
-      const res = document.querySelector('#page-finance [data-fin-cmp-result="' + key + '"]');
-      const ovLab = document.querySelector('#page-finance [data-fin-cmp-override="' + key + '"]');
-      const note = document.querySelector('#page-finance [data-fin-cmp-note="' + key + '"]');
-      if (!res) return;
-      if (f.ok) {
-        res.hidden = false;
-        res.className = 'fin-cmp-result is-ok';
-        res.textContent = '✓ 相符';
-        if (ovLab) ovLab.hidden = true;
-        if (note) note.hidden = true;
-        return;
+      let tag = '';
+      if (key !== 'address' && f) {
+        tag = f.ok
+          ? '<span class="fin-check-tag is-ok">與系統相符</span>'
+          : '<span class="fin-check-tag is-bad">與系統不符</span>';
       }
-      res.hidden = false;
-      res.className = 'fin-cmp-result is-bad';
-      res.textContent = f.companyMissing
-        ? '✗ 不符｜公司系統查無此欄位資料'
-        : ('✗ 不符｜公司系統為：' + f.companyDisplay);
-      if (ovLab) ovLab.hidden = false;
-      const checked = !!(ov[key] && ov[key].checked);
-      if (note) note.hidden = !checked;
-    });
-    renderCmpChecklist(fields);
+      return '<label class="fin-check-item">' +
+        '<input type="checkbox" data-fin-check-ack="' + esc(key) + '">' +
+        '<span class="fin-check-item-copy"><strong>' + label + '</strong>' + tag +
+        '<em>' + shown + '</em></span></label>';
+    }).join('');
+    modal.hidden = false;
+    document.body.classList.add('fin-check-open');
+    syncCheckConfirmEnabled();
   }
 
-  function syncOverrideNotesVisibility() {
-    document.querySelectorAll('#page-finance [data-fin-cmp-flag]').forEach((box) => {
-      const key = box.getAttribute('data-fin-cmp-flag');
-      const note = document.querySelector('#page-finance [data-fin-cmp-note="' + key + '"]');
-      if (note) note.hidden = !box.checked;
-    });
+  function closeCheckModal() {
+    const modal = $('fin-check-modal');
+    if (modal) modal.hidden = true;
+    document.body.classList.remove('fin-check-open');
+    state.pendingSubmit = null;
+    const body = $('fin-check-modal-body');
+    if (body) body.innerHTML = '';
+    setCheckModalStatus('');
+    const confirmBtn = $('fin-check-confirm');
+    if (confirmBtn) confirmBtn.disabled = true;
   }
 
-  function evaluateCompareGate() {
-    if (!state.companyCompare) return { ok: false, reason: '請先查公司資料並完成送出前檢核表' };
+  function evaluateCompareGate(requireAcks) {
+    if (!state.companyCompare) return { ok: false, reason: '請先查公司資料並帶入案件資料' };
     const cmp = CMP();
     if (!cmp) return { ok: false, reason: '比對模組尚未載入' };
-    const overrides = readCmpOverrides();
-    const sum = cmp.summarize(state.companyCompare.fields, overrides);
-    if (!sum.allOk) return { ok: false, reason: '尚有欄位與公司系統不符，請修正或勾選「公司系統資料有誤」並填說明' };
-    const acks = readCmpAcks();
-    const fields = state.companyCompare.fields || {};
-    for (const key of Object.keys(fields)) {
-      const f = fields[key];
-      if (f && f.ok && !acks[key]) {
-        return { ok: false, reason: '請勾選檢核表：確認「' + cmpFieldLabel(key) + '」與系統相符' };
+    const sum = cmp.summarize(state.companyCompare.fields, {});
+    if (!sum.fullyMatched) {
+      const bad = Object.values(state.companyCompare.fields || {}).find((f) => f && !f.ok);
+      const label = bad ? cmpFieldLabel(bad.key) : '欄位';
+      return {
+        ok: false,
+        reason: '「' + label + '」與公司系統不符，請修正後再送出'
+      };
+    }
+    const acks = requireAcks ? readModalAcks() : {};
+    if (requireAcks) {
+      const issue = checked('fin-issue');
+      for (const key of checklistKeysForIssue(issue)) {
+        if (!acks[key]) {
+          return { ok: false, reason: '請勾選檢核表：確認「' + cmpFieldLabel(key) + '」無誤' };
+        }
       }
     }
     return {
       ok: true,
-      fullyMatched: !!sum.fullyMatched,
-      systemDataPendingFix: !!sum.systemDataPendingFix,
-      overrides,
+      fullyMatched: true,
+      systemDataPendingFix: false,
+      overrides: {},
       acks
     };
   }
@@ -809,13 +806,7 @@
   function syncSubmitEnabled() {
     const btn = $('fin-submit');
     if (!btn) return;
-    const issue = checked('fin-issue');
-    if (!needsCompanyCompare(issue)) {
-      btn.disabled = !!state.busy;
-      return;
-    }
-    const gate = evaluateCompareGate();
-    btn.disabled = !!state.busy || !gate.ok;
+    btn.disabled = !!state.busy;
   }
 
   function moneyText(raw) {
@@ -879,7 +870,7 @@
     if (mgmtEl) mgmtEl.value = moneyText(mgmt);
     if (depEl) depEl.value = moneyText(dep);
     setCaseTypeFromCompany(tn?.caseType || ll?.caseType || tn?.contratTypeName || ll?.contratTypeName || '');
-    resetCompanyCompare('已帶入公司資料，正在核對…');
+    resetCompanyCompare();
   }
 
   async function fetchCompanySnapshot(address) {
@@ -927,7 +918,7 @@
       const sel = $('fin-lease-pick');
       if (sel) sel.value = options[0].id;
       applyLeaseOption(options[0]);
-      setLookupStatus('已自動帶入唯一租期與房東客等資料，請勾送出前檢核表');
+      setLookupStatus('已自動帶入唯一租期與房東客等資料');
       await runCompanyCompare();
       return;
     }
@@ -957,9 +948,7 @@
       return;
     }
     state.cmpBusy = true;
-    const btn = $('fin-cmp-btn');
-    if (btn) btn.disabled = true;
-    setCmpStatus('比對中…');
+    setCmpStatus('核對中…');
     try {
       const snap = await fetchCompanySnapshot(address);
       state.companySnapshot = snap;
@@ -969,8 +958,7 @@
       const user = collectUserCmpFields();
       const result = cmp.compareFields(user, snap, keys);
       const me = sessionUser();
-      const overrides = readCmpOverrides();
-      const sum = cmp.summarize(result.fields, overrides);
+      const sum = cmp.summarize(result.fields, {});
       state.companyCompare = {
         comparedAt: new Date().toISOString(),
         comparedBy: String(me.name || me.username || '').trim(),
@@ -984,58 +972,30 @@
         companyValues: result.companyMap,
         fields: result.fields,
         fullyMatched: sum.fullyMatched,
-        systemDataPendingFix: sum.systemDataPendingFix,
-        allOk: sum.allOk
+        systemDataPendingFix: false,
+        allOk: sum.fullyMatched
       };
-      renderCmpFieldUi(result.fields, overrides);
       if (!Object.keys(result.fields).length) {
         setCmpStatus('沒有可核對欄位', true);
       } else if (sum.fullyMatched) {
-        setCmpStatus('欄位已與系統相符，請勾齊送出前檢核表後再送出');
-      } else if (sum.allOk && sum.systemDataPendingFix) {
-        setCmpStatus('已勾選系統有誤並填說明；相符欄位請仍勾檢核表後再送出（列表會標示「系統資料待更正」）');
+        setCmpStatus('已帶入並與公司系統相符；送出時會跳出檢核表');
       } else {
-        setCmpStatus('尚有欄位不符；請修正輸入，或勾選「公司系統資料有誤」並填說明', true);
+        const bad = Object.values(result.fields).find((f) => f && !f.ok);
+        setCmpStatus(
+          bad
+            ? ('「' + cmpFieldLabel(bad.key) + '」與公司系統不符，請修正後再送出')
+            : '尚有欄位與公司系統不符，請修正後再送出',
+          true
+        );
       }
       syncSubmitEnabled();
     } catch (ex) {
       state.companyCompare = null;
-      clearCmpResultUi();
       setCmpStatus(ex.message || String(ex), true);
       syncSubmitEnabled();
     } finally {
       state.cmpBusy = false;
-      if (btn) btn.disabled = false;
     }
-  }
-
-  function refreshCompareAfterOverrideChange() {
-    if (!state.companyCompare || !CMP()) {
-      syncSubmitEnabled();
-      return;
-    }
-    syncOverrideNotesVisibility();
-    const overrides = readCmpOverrides();
-    const sum = CMP().summarize(state.companyCompare.fields, overrides);
-    state.companyCompare.fullyMatched = sum.fullyMatched;
-    state.companyCompare.systemDataPendingFix = sum.systemDataPendingFix;
-    state.companyCompare.allOk = sum.allOk;
-    renderCmpFieldUi(state.companyCompare.fields, overrides);
-    if (sum.fullyMatched) setCmpStatus('欄位已與系統相符，請勾齊送出前檢核表後再送出');
-    else if (sum.allOk) setCmpStatus('已勾選系統有誤並填說明；相符欄位請仍勾檢核表後再送出（列表會標示「系統資料待更正」）');
-    else setCmpStatus('尚有欄位不符；請修正輸入，或勾選「公司系統資料有誤」並填說明', true);
-    syncSubmitEnabled();
-  }
-
-  function refreshCompareAfterAckChange() {
-    if (!state.companyCompare) {
-      syncSubmitEnabled();
-      return;
-    }
-    const gate = evaluateCompareGate();
-    if (gate.ok) setCmpStatus('檢核表已勾齊，可以送出');
-    else if (gate.reason) setCmpStatus(gate.reason, true);
-    syncSubmitEnabled();
   }
 
   async function lookupCompanyByAddress() {
@@ -2237,9 +2197,9 @@
       addrHint.hidden = !!hideLookup;
       if (isGen) {
         addrHint.hidden = false;
-        addrHint.textContent = '一般宅請直接手填物件地址與房東／房客姓名，填完後按「重新核對系統」並勾檢核表。';
+        addrHint.textContent = '一般宅請直接手填物件地址與房東／房客姓名；送出時會跳出檢核表逐項確認。';
       } else if (!hideLookup) {
-        addrHint.textContent = '註記：可先輸入路名查出相符地址再選；選地址／租期後會自動帶入，請再勾送出前檢核表。';
+        addrHint.textContent = '註記：可先輸入路名查出相符地址再選；選地址／租期後會自動帶入。送出時會跳出檢核表逐項確認。';
       }
     }
     if (addrBtn) addrBtn.hidden = !!hideLookup;
@@ -2267,8 +2227,6 @@
         }
       }
     }
-    const cmpBar = $('fin-cmp-bar');
-    if (cmpBar) cmpBar.hidden = !!isOffice;
     syncSubmitEnabled();
   }
 
@@ -2430,19 +2388,17 @@
   function buildCompanyComparePayload(gate) {
     if (!state.companyCompare) return null;
     const fields = state.companyCompare.fields || {};
-    const overrides = (gate && gate.overrides) || readCmpOverrides();
     const fieldOut = {};
     Object.keys(fields).forEach((key) => {
       const f = fields[key];
-      const o = overrides[key] || {};
       fieldOut[key] = {
         ok: !!f.ok,
         user: f.user,
         company: f.company,
         companyDisplay: f.companyDisplay,
         companyMissing: !!f.companyMissing,
-        override: !f.ok && !!o.checked,
-        overrideNote: !f.ok && o.checked ? String(o.note || '').trim() : ''
+        override: false,
+        overrideNote: ''
       };
     });
     return {
@@ -2451,9 +2407,9 @@
       address: state.companyCompare.address || '',
       companyValues: state.companyCompare.companyValues || {},
       fields: fieldOut,
-      confirmedAcks: (gate && gate.acks) || readCmpAcks(),
+      confirmedAcks: (gate && gate.acks) || readModalAcks(),
       fullyMatched: !!(gate ? gate.fullyMatched : state.companyCompare.fullyMatched),
-      systemDataPendingFix: !!(gate ? gate.systemDataPendingFix : state.companyCompare.systemDataPendingFix),
+      systemDataPendingFix: false,
       allOk: true
     };
   }
@@ -2915,6 +2871,95 @@
     });
   }
 
+  async function confirmCheckModalSubmit() {
+    if (state.busy || !state.pendingSubmit) return;
+    const gate = needsCompanyCompare(state.pendingSubmit.issueType)
+      ? evaluateCompareGate(true)
+      : { ok: true, acks: readModalAcks(), fullyMatched: true, systemDataPendingFix: false };
+    if (!gate.ok) {
+      setCheckModalStatus(gate.reason || '請勾齊檢核表', true);
+      syncCheckConfirmEnabled();
+      return;
+    }
+    const ctx = state.pendingSubmit;
+    if (needsCompanyCompare(ctx.issueType)) {
+      ctx.payload.companyCompare = buildCompanyComparePayload(gate);
+      ctx.payload.systemDataPendingFix = false;
+      if (ctx.payload.companyCompare) {
+        ctx.payload.companyCompare.reverifiedAt = new Date().toISOString();
+      }
+    }
+    closeCheckModal();
+    await doActualSubmit(ctx);
+  }
+
+  async function doActualSubmit(ctx) {
+    if (!ctx || state.busy) return;
+    const { fullName, office, issueType, payload } = ctx;
+    state.busy = true;
+    const btn = $('fin-submit');
+    if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
+    try {
+      const depositLabel = DEPOSIT_FILE_LABEL[payload.depositType] || '押金證明';
+      const docsLabel = DOCS_FILE_LABEL[payload.pkgDocs] || '必檢附資料';
+      const llDocGroups = Object.values(LL_DOC_SETS).flat().map((d) => ({ key: d.key, label: '異動｜' + d.label }));
+      const groups = [
+        { key: 'contract', label: '契約書+行政檢核表' },
+        { key: 'deposit', label: depositLabel.replace(/上傳$/, '') },
+        { key: 'sign', label: docsLabel.replace(/上傳$/, '') },
+        { key: 'receivable', label: '其他費用金額' },
+        { key: 'topup', label: '補押金差額明細' },
+        { key: 'gap', label: '空窗簽呈' },
+        { key: 'refundGap', label: '退押空窗簽呈(總經理)' },
+        { key: 'cancelSheet', label: '解約單' },
+        { key: 'payPassbook', label: '匯款人存摺封面' },
+        { key: 'payOrigin', label: '原匯款明細' },
+        { key: 'fee', label: '費用佐證' },
+        { key: 'collect', label: '催收資料' },
+        { key: 'stop', label: '止付簽呈' },
+        { key: 'genLeaseAuth', label: '委託租賃' },
+        { key: 'genLeaseContract', label: '租賃契約' },
+        { key: 'genManageAuth', label: '委託管理' },
+        { key: 'genCancel', label: '解約單' },
+        { key: 'misc', label: '附件' },
+        { key: 'office', label: '商辦附件' },
+        { key: 'change', label: '異動附件' }
+      ].concat(llDocGroups).concat([{ key: 'supp', label: '補件附件' }]);
+      let files = [];
+      for (const g of groups) {
+        const uploaded = await uploadSelected(state.files[g.key] || []);
+        files = files.concat(uploaded.map((f) => Object.assign({}, f, { name: g.label + '｜' + f.name })));
+      }
+      const res = await rpc('fin_report_submit', {
+        p_token: token(),
+        p_data: { fullName, office, issueType, payload, files }
+      });
+      if (!res?.ok) throw new Error(res?.error || '送出失敗');
+      const line = res.line || {};
+      if (line.error) setMsg('已送出，但 LINE 未送出：' + line.error + '（請至財務回報後台查看）', 'warn');
+      else setMsg('已送出，並已通知財務部（' + (line.recipients || 0) + ' 人）', 'ok');
+      $('fin-form')?.reset();
+      Object.keys(state.files).forEach((k) => { state.files[k] = []; });
+      resetRoommates();
+      clearAddrPick();
+      clearLeasePick();
+      state.companySnapshot = null;
+      resetCompanyCompare();
+      setLookupStatus('');
+      renderFiles();
+      fillOffice();
+      state.mineLoaded = false;
+      await loadMine();
+      syncPanels();
+    } catch (ex) {
+      setMsg(ex.message || String(ex), 'err');
+    } finally {
+      state.busy = false;
+      if (btn) btn.textContent = '送出';
+      syncSubmitEnabled();
+    }
+  }
+
   function bind() {
     const page = $('page-finance');
     if (!page || page.dataset.finBound) return;
@@ -2941,13 +2986,10 @@
         resetCompanyCompare('地址已變更，請重新查公司資料');
       }
       if (e.target.matches('[data-fin-cmp-input]')) {
-        resetCompanyCompare('欄位已變更，請按「重新核對系統」');
+        resetCompanyCompare('欄位已變更，送出時會再核對公司系統');
       }
-      if (e.target.matches('[data-fin-cmp-flag], [data-fin-cmp-note]')) {
-        refreshCompareAfterOverrideChange();
-      }
-      if (e.target.matches('[data-fin-cmp-ack]')) {
-        refreshCompareAfterAckChange();
+      if (e.target.matches('[data-fin-check-ack]')) {
+        syncCheckConfirmEnabled();
         return;
       }
       if (e.target.matches('input[type="radio"], #fin-office, input[type="checkbox"]')) {
@@ -2957,18 +2999,25 @@
     });
     page.addEventListener('input', (e) => {
       if (e.target.matches('[data-fin-cmp-input]')) {
-        resetCompanyCompare('欄位已變更，請按「重新核對系統」');
-      }
-      if (e.target.matches('[data-fin-cmp-note]')) {
-        refreshCompareAfterOverrideChange();
+        resetCompanyCompare('欄位已變更，送出時會再核對公司系統');
       }
     });
     $('fin-addr-lookup')?.addEventListener('click', () => { void lookupCompanyByAddress(); });
-    $('fin-cmp-btn')?.addEventListener('click', () => { void runCompanyCompare(); });
     $('fin-address')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         void lookupCompanyByAddress();
+      }
+    });
+    $('fin-check-cancel')?.addEventListener('click', () => {
+      closeCheckModal();
+      syncSubmitEnabled();
+    });
+    $('fin-check-confirm')?.addEventListener('click', () => { void confirmCheckModalSubmit(); });
+    $('fin-check-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'fin-check-modal') {
+        closeCheckModal();
+        syncSubmitEnabled();
       }
     });
     page.addEventListener('click', (e) => {
@@ -3061,7 +3110,7 @@
 
     $('fin-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (state.busy) return;
+      if (state.busy || state.pendingSubmit) return;
       setMsg('');
       if (!token()) { setMsg('請先登入工具箱再送出', 'err'); return; }
       const fullName = val('fin-full-name');
@@ -3080,78 +3129,28 @@
       const err = validate(issueType, payload, fileCount);
       if (err) { setMsg(err, 'err'); return; }
 
-      state.busy = true;
-      const btn = $('fin-submit');
-      if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
-      try {
-        if (needsCompanyCompare(issueType)) {
+      const ctx = { fullName, office, issueType, payload };
+      if (needsCompanyCompare(issueType)) {
+        const btn = $('fin-submit');
+        if (btn) { btn.disabled = true; btn.textContent = '核對中…'; }
+        try {
           await runCompanyCompare();
-          const gate = evaluateCompareGate();
-          if (!gate.ok) throw new Error(gate.reason || '請先完成送出前檢核表');
-          payload.companyCompare = buildCompanyComparePayload(gate);
-          payload.systemDataPendingFix = !!gate.systemDataPendingFix;
-          if (payload.companyCompare) {
-            payload.companyCompare.reverifiedAt = new Date().toISOString();
+          const gate = evaluateCompareGate(false);
+          if (!gate.ok) {
+            setMsg(gate.reason || '欄位與公司系統不符，請修正後再送出', 'err');
+            return;
           }
+        } catch (ex) {
+          setMsg(ex.message || String(ex), 'err');
+          return;
+        } finally {
+          if (btn) btn.textContent = '送出';
+          syncSubmitEnabled();
         }
-        const depositLabel = DEPOSIT_FILE_LABEL[payload.depositType] || '押金證明';
-        const docsLabel = DOCS_FILE_LABEL[payload.pkgDocs] || '必檢附資料';
-        const llDocGroups = Object.values(LL_DOC_SETS).flat().map((d) => ({ key: d.key, label: '異動｜' + d.label }));
-        const groups = [
-          { key: 'contract', label: '契約書+行政檢核表' },
-          { key: 'deposit', label: depositLabel.replace(/上傳$/, '') },
-          { key: 'sign', label: docsLabel.replace(/上傳$/, '') },
-          { key: 'receivable', label: '其他費用金額' },
-          { key: 'topup', label: '補押金差額明細' },
-          { key: 'gap', label: '空窗簽呈' },
-          { key: 'refundGap', label: '退押空窗簽呈(總經理)' },
-          { key: 'cancelSheet', label: '解約單' },
-          { key: 'payPassbook', label: '匯款人存摺封面' },
-          { key: 'payOrigin', label: '原匯款明細' },
-          { key: 'fee', label: '費用佐證' },
-          { key: 'collect', label: '催收資料' },
-          { key: 'stop', label: '止付簽呈' },
-          { key: 'genLeaseAuth', label: '委託租賃' },
-          { key: 'genLeaseContract', label: '租賃契約' },
-          { key: 'genManageAuth', label: '委託管理' },
-          { key: 'genCancel', label: '解約單' },
-          { key: 'misc', label: '附件' },
-          { key: 'office', label: '商辦附件' },
-          { key: 'change', label: '異動附件' }
-        ].concat(llDocGroups).concat([{ key: 'supp', label: '補件附件' }]);
-        let files = [];
-        for (const g of groups) {
-          const uploaded = await uploadSelected(state.files[g.key] || []);
-          files = files.concat(uploaded.map((f) => Object.assign({}, f, { name: g.label + '｜' + f.name })));
-        }
-        const res = await rpc('fin_report_submit', {
-          p_token: token(),
-          p_data: { fullName, office, issueType, payload, files }
-        });
-        if (!res?.ok) throw new Error(res?.error || '送出失敗');
-        const line = res.line || {};
-        if (line.error) setMsg('已送出，但 LINE 未送出：' + line.error + '（請至財務回報後台查看）', 'warn');
-        else setMsg('已送出，並已通知財務部（' + (line.recipients || 0) + ' 人）', 'ok');
-        $('fin-form')?.reset();
-        Object.keys(state.files).forEach((k) => { state.files[k] = []; });
-        resetRoommates();
-        clearAddrPick();
-        clearLeasePick();
-        state.companySnapshot = null;
-        resetCompanyCompare();
-        setLookupStatus('');
-        renderFiles();
-        fillOffice();
-        state.mineLoaded = false;
-        await loadMine();
-        syncPanels();
-      } catch (ex) {
-        setMsg(ex.message || String(ex), 'err');
-      } finally {
-        state.busy = false;
-        if (btn) { btn.textContent = '送出'; }
-        syncSubmitEnabled();
+        openCheckModal(ctx);
+        return;
       }
+      await doActualSubmit(ctx);
     });
 
     bindDash();
