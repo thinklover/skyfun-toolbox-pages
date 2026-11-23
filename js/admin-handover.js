@@ -386,9 +386,11 @@
       '<section class="bh-detail">' +
       '<button type="button" class="btn btn-sm tone-slate-soft" data-ah-back>← 案件列表</button>' +
       C().caseHeaderHtml(KIND, bag, state.role) +
-      '<h4 class="bh-sop-title">交接流程<small>點節點開啟工作區 · 完成比例依實際資料計算</small></h4>' +
+      '<p class="bh-sop-hint">點上方圖卡看「怎麼做＋勾選／填寫」（圖卡位置固定，左到右）</p>' +
+      '<h4 class="bh-sop-title">交接流程圖<small>點圖卡開啟工作區 · 完成比例依實際資料計算</small></h4>' +
       C().sopBoardHtml(KIND, bag, state.openStage) +
       stagePanelHtml() +
+      C().sopFootHtml(KIND) +
       '</section>'
     );
   }
@@ -398,10 +400,14 @@
     if (!root) return;
     root.innerHTML =
       '<div class="bh-shell">' +
-      '<header class="bh-hero">' +
+      '<header class="bh-hero bh-hero--sop">' +
+      '<div class="bh-hero-main">' +
       '<p class="bh-kicker">行政專區</p>' +
-      '<h2>行政離職交接</h2>' +
-      '<p class="bh-lead">可點擊流程圖：點節點即可檢核、存草稿、送出或覆核。未完成檢核不得結案（後端強制）。</p>' +
+      '<h2>行政離職案件｜系統移交檢核</h2>' +
+      '<ul class="bh-sop-pillars"><li>資料齊全</li><li>進度透明</li><li>權限關閉</li><li>責任可追溯</li></ul>' +
+      '<p class="bh-lead">離職前須完成文件、設備、權限與經手案件移交；由接手人與單位主管逐項確認。點上方圖卡填寫／確認。</p>' +
+      '</div>' +
+      '<p class="bh-sop-tagline">移交人填報 → 接手人確認 → 主管簽核</p>' +
       (state.backendHint ? '<p class="bh-warn">' + esc(state.backendHint) + '</p>' : '') +
       '</header>' +
       '<p id="ah-msg" class="bh-msg" hidden></p>' +

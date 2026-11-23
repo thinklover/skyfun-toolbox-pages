@@ -48,35 +48,41 @@
     '台北', '新北', '基隆', '宜蘭', '桃園', '新竹', '台中', '南投', '彰化', '嘉義', '台南', '高雄'
   ];
 
-  /** 行政：資料準備可並行；簽核節點依狀態機順序 */
+  /** 行政：資料準備可並行；簽核節點依狀態機順序（圖卡文案對齊移交檢核海報） */
   const ADMIN_STAGES = [
     {
       id: 'basics',
       n: 1,
       title: '基本資料與接手人',
       blurb: '離職人員、單位、接手人、主管、離職日',
-      icon: '1',
-      owner: '移交人',
+      icon: '📋',
+      owner: '移交人填報',
+      items: ['填寫移交人／接手人／主管', '確認離職日與最後工作日', '標註地區與離職類型'],
+      focus: ['資料齊全', '責任可追溯'],
       sections: [],
       kind: 'basics'
     },
     {
       id: 'seals',
       n: 2,
-      title: '印鑑設備／公司物品',
-      blurb: '印鑑、電腦、門禁、公司財產移交',
-      icon: '2',
-      owner: '移交人',
+      title: '印鑑與設備',
+      blurb: '公司／公會印鑑、電腦、手機、門禁卡、鑰匙',
+      icon: '🔏',
+      owner: '移交人填報',
+      items: ['公司／公會印鑑點交', '電腦、手機、門禁與鑰匙', '公司財產清點移交'],
+      focus: ['物品清點', '權限關閉前置'],
       sections: ['01'],
       kind: 'items'
     },
     {
       id: 'files',
       n: 3,
-      title: '文件檔案',
-      blurb: '紙本／雲端檔案路徑與交接說明',
-      icon: '3',
-      owner: '移交人',
+      title: '文件與檔案',
+      blurb: '金流、公文、電子檔存放路徑',
+      icon: '📁',
+      owner: '移交人填報',
+      items: ['列冊金流／公文資料', '標註電子檔存放路徑', '說明紙本與雲端交接方式'],
+      focus: ['檔案可找', '進度透明'],
       sections: ['02'],
       kind: 'items'
     },
@@ -84,57 +90,69 @@
       id: 'guild',
       n: 4,
       title: '公會例行作業',
-      blurb: '公會報表、例行作業移交',
-      icon: '4',
-      owner: '移交人',
+      blurb: '聯絡窗口、週報週期、發票／公文流程',
+      icon: '🏛️',
+      owner: '移交人填報',
+      items: ['交接公會聯絡窗口', '說明週報與例行週期', '發票／公文流程移交'],
+      focus: ['例行不斷線', '窗口清楚'],
       sections: ['04'],
       kind: 'items'
     },
     {
       id: 'matters',
       n: 5,
-      title: '逐案進度與補助檢核',
-      blurb: '經手案件、補助／修繕進度',
-      icon: '5',
-      owner: '移交人',
+      title: '逐案進度與補助',
+      blurb: '找屋、修繕、保險、公證、補助清單',
+      icon: '🏠',
+      owner: '移交人填報',
+      items: ['匯入／新增經手案件', '勾選補助／修繕進度', '標註待補件與期限'],
+      focus: ['逐案確認', '避免漏交接'],
       sections: ['05'],
       kind: 'matters'
     },
     {
       id: 'transferor_sign',
       n: 6,
-      title: '移交人確認',
+      title: '移交人確認送出',
       blurb: '確認細項與逐案後送出（停權前必須完成）',
-      icon: '6',
-      owner: '移交人',
+      icon: '✍️',
+      owner: '移交人填報',
+      items: ['再核對細項與逐案', '確認無漏項後送出', '送出後進入接手人覆核'],
+      focus: ['責任留痕', '停權前必完成'],
       kind: 'sign_transferor'
     },
     {
       id: 'receiver_review',
       n: 7,
-      title: '接手人覆核',
-      blurb: '逐項／逐案確認接手',
-      icon: '7',
-      owner: '接手人',
+      title: '接手人逐項確認',
+      blurb: '接手人逐項／逐案確認接手',
+      icon: '🤝',
+      owner: '接手人確認',
+      items: ['逐項勾選接手確認', '逐案核對現況與待辦', '有疑義退回補正'],
+      focus: ['逐項核對', '接手清楚'],
       kind: 'sign_receiver'
     },
     {
       id: 'accounts',
       n: 8,
-      title: '帳號通訊停用驗證',
-      blurb: '可提前列停用清單；移交人確認後才可標完成',
-      icon: '8',
+      title: '帳號與通訊停用',
+      blurb: '系統權限、憑證解綁、LINE／Email 密碼重置',
+      icon: '🔐',
       owner: '移交人／資訊',
+      items: ['列停用帳號與權限清單', '憑證解綁、離開 LINE 群', 'Email／系統密碼重置核實'],
+      focus: ['權限關閉', '資安落實'],
       sections: ['03'],
       kind: 'accounts'
     },
     {
       id: 'manager_close',
       n: 9,
-      title: '主管複核與結案',
-      blurb: '主管確認後結案；缺漏不可結',
-      icon: '9',
-      owner: '主管',
+      title: '主管複核簽核',
+      blurb: '單位主管複核後結案；缺漏不可結',
+      icon: '✅',
+      owner: '單位主管簽核',
+      items: ['複核細項與逐案', '確認帳號已停用', '通過後才可結案'],
+      focus: ['未完成不得結案', '三方簽核'],
       kind: 'sign_manager'
     }
   ];
@@ -145,80 +163,98 @@
       n: 1,
       title: '基本資料與案件清冊',
       blurb: '接手人、主管、匯入／手增待移交案件',
-      icon: '1',
-      owner: '移交人',
+      icon: '📋',
+      owner: '移交人填報',
+      items: ['填寫接手人與主管', '匯入／手增待移交案件', '確認離職日與類型'],
+      focus: ['案件清冊完整', '責任可追溯'],
       kind: 'basics'
     },
     {
       id: 'repair',
       n: 2,
-      title: '修繕／保險／公證',
-      blurb: '逐案勾選修繕保險公證與單據',
-      icon: '2',
-      owner: '移交人',
+      title: '修繕・保險・公證',
+      blurb: '確認是否有申請、補件、請款、單據',
+      icon: '🔧',
+      owner: '移交人填報',
+      items: ['逐案勾選有無申請', '單據／請款進度', '與行政確認未完成項'],
+      focus: ['避免漏補件', '單據可追查'],
       kind: 'matters_repair'
     },
     {
       id: 'subsidy',
       n: 3,
       title: '租金補助與補件',
-      blurb: '300 億補貼與補件進度',
-      icon: '3',
-      owner: '移交人',
+      blurb: '確認補助是否已領、有無待補件',
+      icon: '💰',
+      owner: '移交人填報',
+      items: ['300 億是否已領取', '待補件進度說明', '標註完成期限'],
+      focus: ['補助不漏', '補件不逾期'],
       kind: 'matters_subsidy'
     },
     {
       id: 'special',
       n: 4,
       title: '契約特別約定',
-      blurb: '房東／房客附約與說明',
-      icon: '4',
-      owner: '移交人',
+      blurb: '房東／房客承諾、糾紛、後續追蹤',
+      icon: '📜',
+      owner: '移交人填報',
+      items: ['有無房東／房客附約', '承諾或糾紛說明', '後續追蹤事項'],
+      focus: ['約定清楚', '降低客訴'],
       kind: 'matters_special'
     },
     {
       id: 'transferor_sign',
       n: 5,
-      title: '移交人確認',
-      blurb: '確認逐案後送出（停權前必須完成）',
-      icon: '5',
-      owner: '移交人',
+      title: '移交人確認送出',
+      blurb: '指定接手、填現況／待辦／期限後送出',
+      icon: '✍️',
+      owner: '移交人填報',
+      items: ['確認逐案勾選完整', '現況／待辦／期限齊備', '送出後進入接手覆核'],
+      focus: ['停權前必完成', '責任留痕'],
       kind: 'sign_transferor'
     },
     {
       id: 'receiver_review',
       n: 6,
       title: '接手人逐案覆核',
-      blurb: '接手人確認每案',
-      icon: '6',
-      owner: '接手人',
+      blurb: '接手人逐案確認',
+      icon: '🤝',
+      owner: '接手人確認',
+      items: ['逐案勾選接手確認', '核對修繕／補助／約定', '有疑義退回補正'],
+      focus: ['逐案確認', '接手清楚'],
       kind: 'sign_receiver'
     },
     {
       id: 'manager_call',
       n: 7,
-      title: '主管逐案電話照會',
-      blurb: '主管電話照會紀錄',
-      icon: '7',
-      owner: '主管',
+      title: '主管電話照會',
+      blurb: '主管逐案電話／系統照會紀錄',
+      icon: '📞',
+      owner: '單位主管',
+      items: ['電話或系統逐案照會', '記錄照會結果', '不實勾選可追究'],
+      focus: ['主管覆核', '降低代償風險'],
       kind: 'manager_call'
     },
     {
       id: 'accounts',
       n: 8,
-      title: '適用權限停用驗證',
+      title: '權限停用驗證',
       blurb: '可提前準備；移交人確認後才可標完成',
-      icon: '8',
+      icon: '🔐',
       owner: '移交人／資訊',
+      items: ['列停用帳號清單', '核實權限已關閉', '移交人確認後標完成'],
+      focus: ['權限關閉', '資安落實'],
       kind: 'accounts'
     },
     {
       id: 'manager_close',
       n: 9,
-      title: '主管簽核與結案',
-      blurb: '主管簽核後結案',
-      icon: '9',
-      owner: '主管',
+      title: '三方簽核結案',
+      blurb: '離職業務 → 接手人 → 單位主管，層層確認',
+      icon: '✅',
+      owner: '單位主管簽核',
+      items: ['複核逐案與照會', '確認權限已停用', '通過後才可結案'],
+      focus: ['未完成不得結案', '三方線上簽核'],
       kind: 'sign_manager'
     }
   ];
@@ -741,7 +777,7 @@
   function sopBoardHtml(kind, bag, openId) {
     const stages = stagesOf(kind);
     return (
-      '<div class="bh-sop-board" role="list">' +
+      '<div class="bh-sop-board" role="list" aria-label="離職交接流程圖">' +
       stages
         .map((s) => {
           const st = stageStatusOf(kind, s, bag);
@@ -751,18 +787,35 @@
           const pct =
             prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : st === 'done' ? 100 : 0;
           const countTxt =
-            prog.total > 0 ? prog.done + '／' + prog.total + (String(s.kind).indexOf('matters') >= 0 ? ' 案' : ' 項') : stageStatusLabel(st);
+            prog.total > 0
+              ? prog.done + '／' + prog.total + (String(s.kind).indexOf('matters') >= 0 ? ' 案' : ' 項')
+              : stageStatusLabel(st);
+          const items = Array.isArray(s.items) ? s.items : [];
+          const focus = Array.isArray(s.focus) ? s.focus : [];
+          const itemsHtml = items.length
+            ? '<ul class="bh-sop-items">' +
+              items.map((t) => '<li>' + esc(t) + '</li>').join('') +
+              '</ul>'
+            : '<span class="bh-sop-blurb">' + esc(s.blurb) + '</span>';
+          const focusHtml = focus.length
+            ? '<div class="bh-sop-focus"><b>重點</b>' +
+              focus.map((t) => '<span>' + esc(t) + '</span>').join('') +
+              '</div>'
+            : '';
           return (
             '<button type="button" class="bh-sop-card is-' +
             esc(st) +
             (on ? ' is-on' : '') +
+            (String(s.kind).indexOf('sign_') === 0 || s.kind === 'manager_call' || s.kind === 'accounts'
+              ? ' bh-sop-card--sign'
+              : '') +
             '" data-bh-stage="' +
             esc(s.id) +
             '" aria-expanded="' +
             (on ? 'true' : 'false') +
             '" role="listitem">' +
             '<span class="bh-sop-num">' +
-            s.n +
+            String(s.n).padStart(2, '0') +
             '</span>' +
             '<span class="bh-sop-owner">' +
             esc(s.owner) +
@@ -770,9 +823,11 @@
             '<strong class="bh-sop-act">' +
             esc(s.title) +
             '</strong>' +
-            '<span class="bh-sop-blurb">' +
-            esc(s.blurb) +
+            '<span class="bh-sop-icon" aria-hidden="true">' +
+            esc(s.icon || '📌') +
             '</span>' +
+            itemsHtml +
+            focusHtml +
             '<span class="bh-sop-status" data-st="' +
             esc(st) +
             '">' +
@@ -783,7 +838,9 @@
             (prog.total > 0 ? ' · ' + pct + '%' : '') +
             '</span>' +
             (!gate.open ? '<span class="bh-sop-lock">' + esc(gate.reason || '尚未開放') + '</span>' : '') +
-            '<span class="bh-sop-cta">點開此階段工作</span>' +
+            '<span class="bh-sop-cta">' +
+            (on ? '下方展開工作區' : '點卡片填寫／確認') +
+            '</span>' +
             '</button>'
           );
         })
@@ -796,17 +853,24 @@
     const c = (bag && bag.case) || {};
     const ov = overallProgress(kind, bag);
     const pct = ov.total ? Math.round((ov.done / ov.total) * 100) : 0;
+    const isAdmin = kind === 'admin';
+    const pillars = isAdmin
+      ? ['資料齊全', '進度透明', '權限關閉', '責任可追溯']
+      : ['逐案確認', '責任留痕', '未完成不得結案'];
     return (
       '<div class="bh-case-head">' +
       '<div class="bh-case-head-main">' +
       '<p class="bh-kicker">' +
-      (kind === 'admin' ? '行政離職交接' : '業務離職交接') +
+      (isAdmin ? '行政離職案件｜系統移交檢核' : '業務離職案件｜系統移交檢核') +
       '</p>' +
       '<h3>' +
       esc(c.transferorName || '—') +
       '</h3>' +
+      '<ul class="bh-sop-pillars">' +
+      pillars.map((p) => '<li>' + esc(p) + '</li>').join('') +
+      '</ul>' +
       '<p class="bh-case-meta">' +
-      esc(c.unit || (kind === 'admin' ? '行政管理部' : '業務')) +
+      esc(c.unit || (isAdmin ? '行政管理部' : '業務')) +
       ' · ' +
       esc(c.region || '未填地區') +
       ' · ' +
@@ -836,6 +900,28 @@
       '<small>' +
       esc(statusLabel(c.status)) +
       '</small></div></div>'
+    );
+  }
+
+  function sopFootHtml(kind) {
+    const isAdmin = kind === 'admin';
+    return (
+      '<div class="bh-sop-foot">' +
+      '<p class="bh-sop-warn">⚠ 未完成檢核，系統不得送出' +
+      (isAdmin ? '行政' : '業務') +
+      '離職結案</p>' +
+      '<div class="bh-sop-flow">' +
+      '<span>① 移交人完成填報</span><i aria-hidden="true">→</i>' +
+      '<span>② 接手人逐' +
+      (isAdmin ? '項' : '案') +
+      '確認</span><i aria-hidden="true">→</i>' +
+      '<span>③ 單位主管複核簽核</span>' +
+      '</div>' +
+      '<p class="bh-sop-foot-note">' +
+      (isAdmin
+        ? '避免漏交接、逾期未完成、權限未關閉｜未依系統檢核完成交接致生損失，依公司規定追究責任'
+        : '避免漏交接、漏補件、漏追蹤｜降低客訴與公司代償風險｜未依系統檢核完成交接致生損失，依公司規定追究責任') +
+      '</p></div>'
     );
   }
 
@@ -870,6 +956,7 @@
     matterOverdue,
     sopBoardHtml,
     caseHeaderHtml,
+    sopFootHtml,
     itemDone,
     itemFilled
   };

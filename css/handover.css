@@ -527,6 +527,74 @@
 .bh-kicker { margin: 0; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; color: #64748b; }
 .bh-hero h2 { margin: 0.2rem 0; font-size: 1.45rem; font-weight: 900; color: #0f172a; }
 .bh-lead { margin: 0; color: #64748b; font-size: 0.88rem; }
+
+/* 報到 SOP 風格頁頭（行政／業務離職交接） */
+#page-admin-handover .bh-hero--sop,
+#page-business-handover .bh-hero--sop {
+  display: grid;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 1rem 1.1rem 0.9rem;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 1rem 1rem 0 0;
+}
+@media (min-width: 900px) {
+  #page-admin-handover .bh-hero--sop,
+  #page-business-handover .bh-hero--sop {
+    grid-template-columns: 1fr auto;
+    padding: 1.1rem 1.4rem;
+  }
+}
+#page-admin-handover .bh-hero-main,
+#page-business-handover .bh-hero-main { text-align: center; }
+#page-admin-handover .bh-hero--sop h2,
+#page-business-handover .bh-hero--sop h2 {
+  font-size: clamp(1.15rem, 2.4vw, 1.55rem);
+  letter-spacing: 0.02em;
+}
+#page-admin-handover .bh-sop-pillars,
+#page-business-handover .bh-sop-pillars {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+}
+#page-admin-handover .bh-sop-pillars li::before,
+#page-business-handover .bh-sop-pillars li::before { content: '· '; color: #2563eb; }
+#page-admin-handover .bh-sop-tagline,
+#page-business-handover .bh-sop-tagline {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.35;
+}
+@media (min-width: 900px) {
+  #page-admin-handover .bh-sop-tagline,
+  #page-business-handover .bh-sop-tagline {
+    text-align: right;
+    max-width: 11rem;
+  }
+}
+#page-admin-handover .bh-sop-hint,
+#page-business-handover .bh-sop-hint {
+  margin: 0.55rem 0 0.35rem;
+  padding: 0.55rem 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e40af;
+  text-align: center;
+}
 .bh-warn { margin: 0.5rem 0 0; padding: 0.5rem 0.7rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.6rem; color: #9a3412; font-size: 0.82rem; font-weight: 700; }
 .bh-msg { margin: 0; padding: 0.45rem 0.7rem; border-radius: 0.55rem; font-size: 0.85rem; font-weight: 700; }
 .bh-msg.is-err { background: #fef2f2; color: #b91c1c; }
@@ -682,6 +750,7 @@
   grid-template-columns: 1fr;
   gap: 0.65rem;
   padding: 0.35rem 0 0.5rem;
+  direction: ltr;
 }
 @media (min-width: 640px) {
   #page-admin-handover .bh-sop-board,
@@ -689,11 +758,18 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (min-width: 1100px) {
+@media (min-width: 900px) {
   #page-admin-handover .bh-sop-board,
   #page-business-handover .bh-sop-board {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.55rem;
+  }
+}
+@media (min-width: 1280px) {
+  #page-admin-handover .bh-sop-board,
+  #page-business-handover .bh-sop-board {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 0.45rem;
   }
 }
 
@@ -703,11 +779,11 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.28rem;
+  align-items: center;
+  gap: 0.32rem;
   margin: 0;
-  padding: 0.85rem 0.75rem 0.7rem;
-  text-align: left;
+  padding: 0.85rem 0.55rem 0.7rem;
+  text-align: center;
   font: inherit;
   color: inherit;
   background: #fff;
@@ -715,12 +791,12 @@
   border-radius: 0.85rem;
   box-shadow: 0 2px 8px rgba(25, 36, 55, 0.05);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-  min-height: 9.5rem;
+  min-height: 0;
 }
 #page-admin-handover .bh-sop-card:hover,
 #page-business-handover .bh-sop-card:hover {
-  border-color: #c9a227;
-  box-shadow: 0 6px 16px rgba(25, 36, 55, 0.08);
+  border-color: #2563eb;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
 }
 #page-admin-handover .bh-sop-card.is-on,
 #page-business-handover .bh-sop-card.is-on {
@@ -754,40 +830,106 @@
 #page-business-handover .bh-sop-card.is-doing {
   border-color: #93c5fd;
 }
+#page-admin-handover .bh-sop-card--sign,
+#page-business-handover .bh-sop-card--sign {
+  background: linear-gradient(180deg, #ffffff, #f8f7ff);
+}
 
 #page-admin-handover .bh-sop-num,
 #page-business-handover .bh-sop-num {
-  width: 1.65rem;
-  height: 1.65rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 999px;
-  background: #192437;
+  background: #1e3a8a;
   color: #fff;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 900;
   display: grid;
   place-items: center;
   flex-shrink: 0;
 }
+#page-admin-handover .bh-sop-card--sign .bh-sop-num,
+#page-business-handover .bh-sop-card--sign .bh-sop-num {
+  background: #4f46e5;
+}
 #page-admin-handover .bh-sop-owner,
 #page-business-handover .bh-sop-owner {
   font-size: 0.72rem;
-  font-weight: 800;
-  color: #b45309;
+  font-weight: 900;
+  color: #2563eb;
   line-height: 1.25;
 }
 #page-admin-handover .bh-sop-act,
 #page-business-handover .bh-sop-act {
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 900;
   color: #0f172a;
-  line-height: 1.3;
+  line-height: 1.25;
+}
+#page-admin-handover .bh-sop-icon,
+#page-business-handover .bh-sop-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0.05rem 0;
+  border-radius: 0.65rem;
+  border: 1px solid #e5e7eb;
+  background: linear-gradient(180deg, #eff6ff, #f8fafc);
+  display: grid;
+  place-items: center;
+  font-size: 1.45rem;
+}
+#page-admin-handover .bh-sop-items,
+#page-business-handover .bh-sop-items {
+  margin: 0;
+  padding: 0 0.1rem;
+  list-style: none;
+  text-align: left;
+  width: 100%;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.35;
+}
+#page-admin-handover .bh-sop-items li,
+#page-business-handover .bh-sop-items li {
+  position: relative;
+  padding-left: 0.65rem;
+  margin-top: 0.1rem;
+}
+#page-admin-handover .bh-sop-items li::before,
+#page-business-handover .bh-sop-items li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #2563eb;
+  font-weight: 900;
+}
+#page-admin-handover .bh-sop-focus,
+#page-business-handover .bh-sop-focus {
+  width: 100%;
+  margin-top: 0.15rem;
+  padding: 0.35rem 0.3rem;
+  border-radius: 0.5rem;
+  background: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  align-items: center;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #334155;
+}
+#page-admin-handover .bh-sop-focus b,
+#page-business-handover .bh-sop-focus b {
+  color: #1e3a8a;
+  font-size: 0.68rem;
 }
 #page-admin-handover .bh-sop-blurb,
 #page-business-handover .bh-sop-blurb {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
   color: #64748b;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 #page-admin-handover .bh-sop-status,
 #page-business-handover .bh-sop-status {
@@ -843,10 +985,57 @@
 #page-admin-handover .bh-sop-cta,
 #page-business-handover .bh-sop-cta {
   margin-top: auto;
-  padding-top: 0.35rem;
-  font-size: 0.72rem;
+  padding-top: 0.3rem;
+  font-size: 0.7rem;
   font-weight: 800;
   color: #1d4ed8;
+}
+
+#page-admin-handover .bh-sop-foot,
+#page-business-handover .bh-sop-foot {
+  margin: 0.85rem 0 0.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  color: #e2e8f0;
+}
+#page-admin-handover .bh-sop-warn,
+#page-business-handover .bh-sop-warn {
+  margin: 0 0 0.55rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.5rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+}
+#page-admin-handover .bh-sop-flow,
+#page-business-handover .bh-sop-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+}
+#page-admin-handover .bh-sop-flow i,
+#page-business-handover .bh-sop-flow i {
+  color: #93c5fd;
+  font-style: normal;
+  font-weight: 900;
+}
+#page-admin-handover .bh-sop-foot-note,
+#page-business-handover .bh-sop-foot-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  text-align: center;
+  line-height: 1.45;
 }
 
 #page-admin-handover .bh-sop-detail,
@@ -961,8 +1150,17 @@
   }
   #page-admin-handover .bh-sop-card,
   #page-business-handover .bh-sop-card {
-    min-height: 0;
+    align-items: flex-start;
+    text-align: left;
     padding: 0.75rem 0.85rem;
+  }
+  #page-admin-handover .bh-sop-icon,
+  #page-business-handover .bh-sop-icon {
+    align-self: center;
+  }
+  #page-admin-handover .bh-sop-focus,
+  #page-business-handover .bh-sop-focus {
+    align-items: flex-start;
   }
   #page-admin-handover .bh-sop-detail-inner,
   #page-business-handover .bh-sop-detail-inner {
