@@ -2673,10 +2673,49 @@
   const ROSTER_SNAP_LS = 'apt-roster-snap-v3-all3';
   const ROSTER_SNAP_LITE_LS = 'apt-roster-snap-lite-v3-all3';
 
-  function readRosterSnapLocal(period) {
+  /* 本機暫存：先顯示、同時背景重抓（每次開頁都會向伺服器確認），最多留 1 小時；沒有存入時間的舊暫存一律作廢 */
+  const ROSTER_SNAP_MAX_AGE_MS = 3600 * 1000;
+
+  /** 清冊快照還沒抓齊（補齊中／暫停／某地區有審件卻 0 件清冊）就不寫進本機暫存 */
+  function rosterSnapIncomplete(snap) {
+    if (!snap?.ok || snap.missing || snap.building || snap.partial || snap.enriching) return true;
+    if (snap.status === 'paused' || snap.status === 'running') return true;
+    const reg = snap.totals?.region || {};
+    for (const r of snap.cases?.rows || []) {
+      const region = Array.isArray(r) ? r[0] : '';
+      if (region && Number(r[2]) > 0 && !(Number(reg[region]?.total) > 0)) return true;
+    }
+    return false;
+  }
+
+  function rosterLocalFresh(raw) {
+    const age = Date.now() - Number(raw?.savedAt || 0);
+    return Number(raw?.savedAt) > 0 && age >= -60000 && age <= ROSTER_SNAP_MAX_AGE_MS;
+  }
+
+  function dropRosterLocal(key) {
     try {
-      const raw = JSON.parse(localStorage.getItem(`${ROSTER_SNAP_LS}:${period}`) || 'null');
-      if (!raw?.builtAt || !raw?.ok) return null;
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /** 判斷伺服器資料和畫面上的是否不同（不同才重畫） */
+  function rosterSnapSig(snap) {
+    if (!snap) return '';
+    return JSON.stringify([snap.builtAt || '', snap.updatedAt || '', snap.casesUpdatedAt || '', !!snap.partial, !!snap.enriching, snap.totals || null]);
+  }
+
+  function readRosterSnapLocal(period) {
+    const key = `${ROSTER_SNAP_LS}:${period}`;
+    try {
+      const raw = JSON.parse(localStorage.getItem(key) || 'null');
+      if (!raw) return null;
+      if (!raw.builtAt || !raw.ok || !rosterLocalFresh(raw) || rosterSnapIncomplete(raw)) {
+        dropRosterLocal(key);
+        return null;
+      }
       return raw;
     } catch {
       return null;
@@ -2684,17 +2723,24 @@
   }
 
   function writeRosterSnapLocal(period, snap) {
+    const key = `${ROSTER_SNAP_LS}:${period}`;
+    if (rosterSnapIncomplete(snap)) return dropRosterLocal(key);
     try {
-      localStorage.setItem(`${ROSTER_SNAP_LS}:${period}`, JSON.stringify(snap));
+      localStorage.setItem(key, JSON.stringify({ ...snap, cached: undefined, fromLocal: undefined, savedAt: Date.now() }));
     } catch {
       /* quota */
     }
   }
 
   function readRosterSnapLiteLocal(period) {
+    const key = `${ROSTER_SNAP_LITE_LS}:${period}`;
     try {
-      const raw = JSON.parse(localStorage.getItem(`${ROSTER_SNAP_LITE_LS}:${period}`) || 'null');
-      if (!raw?.builtAt || !raw?.ok || !raw?.totals) return null;
+      const raw = JSON.parse(localStorage.getItem(key) || 'null');
+      if (!raw) return null;
+      if (!raw.builtAt || !raw.ok || !raw.totals || !rosterLocalFresh(raw) || rosterSnapIncomplete(raw)) {
+        dropRosterLocal(key);
+        return null;
+      }
       return raw;
     } catch {
       return null;
@@ -2702,8 +2748,14 @@
   }
 
   function writeRosterSnapLiteLocal(period, snap) {
+    const key = `${ROSTER_SNAP_LITE_LS}:${period}`;
+    if (rosterSnapIncomplete(snap)) return dropRosterLocal(key);
     try {
       const lite = {
+        savedAt: Date.now(),
+        updatedAt: snap.updatedAt || '',
+        status: snap.status || '',
+        enriching: snap.enriching || undefined,
         ok: true,
         period: snap.period || period,
         year: snap.year,
@@ -2725,7 +2777,7 @@
           : null,
         lite: true
       };
-      localStorage.setItem(`${ROSTER_SNAP_LITE_LS}:${period}`, JSON.stringify(lite));
+      localStorage.setItem(key, JSON.stringify(lite));
     } catch {
       /* quota */
     }
@@ -2739,10 +2791,14 @@
     }
     if (lite) {
       const liteLocal = readRosterSnapLiteLocal(period);
-      if (liteLocal) return { ...liteLocal, cached: true, fromLocal: true };
+      if (liteLocal) {
+        revalidateRosterSnapshot(g, period, true, liteLocal);
+        return { ...liteLocal, cached: true, fromLocal: true };
+      }
       const fullLocal = readRosterSnapLocal(period);
       if (fullLocal?.ok && fullLocal.totals) {
         writeRosterSnapLiteLocal(period, fullLocal);
+        revalidateRosterSnapshot(g, period, true, fullLocal);
         return { ...fullLocal, rows: undefined, lite: true, cached: true, fromLocal: true };
       }
     } else {
@@ -2750,9 +2806,15 @@
       /* 補齊中的快照不要死抓本機舊檔，否則畫面會停在第一次寫入 */
       if (local?.ok && Array.isArray(local.rows) && !local.enriching && !local.partial) {
         state.rosterSnap.set(period, local);
+        revalidateRosterSnapshot(g, period, false, local);
         return { ...local, cached: true, fromLocal: true };
       }
     }
+    return fetchRosterSnapshotRemote(g, period, lite);
+  }
+
+  /** 向 Worker 抓清冊快照；抓齊的才寫本機暫存 */
+  async function fetchRosterSnapshotRemote(g, period, lite) {
     let res;
     try {
       const q = `year=${g.year}&month=${g.month}${lite ? '&lite=1' : ''}`;
@@ -2774,6 +2836,45 @@
       if (data.totals) writeRosterSnapLiteLocal(period, data);
     }
     return data;
+  }
+
+  /** 畫面先用本機暫存，背景向伺服器重抓一次（每次開頁每期一次）；有變就覆寫暫存並重畫 */
+  function revalidateRosterSnapshot(g, period, lite, shown) {
+    const key = `${period}|${lite ? 'lite' : 'full'}`;
+    if (!state.rosterReval) state.rosterReval = new Set();
+    if (state.rosterReval.has(key)) return;
+    state.rosterReval.add(key);
+    fetchRosterSnapshotRemote(g, period, lite)
+      .then((data) => {
+        if (!data?.ok || data.missing || data.building) return;
+        if (rosterSnapSig(data) === rosterSnapSig(shown)) return;
+        refreshRosterPeriodUi(period, lite ? null : data);
+      })
+      .catch((e) => console.warn('清冊背景更新', e));
+  }
+
+  /** 背景拿到新清冊後：只重算這一期的良率／營業處，舊畫面留著直到新資料算好 */
+  function refreshRosterPeriodUi(period, fullSnap) {
+    if (fullSnap) state.rosterSnap.set(period, fullSnap);
+    else state.rosterSnap.delete(period);
+    if (state.rosterOff.has(period)) {
+      state.rosterOff.delete(period);
+      loadRosterOffices(period, false);
+    }
+    if (state.guildSys.has(period)) {
+      state.guildSys.delete(period);
+      guildSysPeriod(period).then(guildRerender);
+    }
+    const lk = state.lkpi;
+    if (lk?.guild === period) {
+      const range = state.meta?.range;
+      if (range && lk.key === `${range.year}-${range.month}`) {
+        loadLeaderKpi(range).catch(() => {});
+      } else {
+        state.lkpi = null;
+        if (isWeeklyTab() || state.tab === 'person') render();
+      }
+    }
   }
 
   async function rebuildRosterSnapshot(g) {
@@ -3114,7 +3215,8 @@
       if (lk.quality.error) return card(label, null, `<span class="apt-bad">讀取失敗：${esc(lk.quality.error)}</span>`, note, kind);
       if (lk.quality.snapPending) return card(label, null, esc(lk.quality.snapStatus || '清冊月結建立中'), note, kind);
       const x = guildQuality(lk, kind, o.regions);
-      return card(label, x.rate, x.total ? `錯 <b>${x.err}</b> 件／總 <b>${x.total}</b> 件` : '這期沒有件數', note, kind);
+      const noRoster = kind === 'roster' && !x.total && x.err ? `清冊未進來（已有公會意見 ${x.err} 件）` : '';
+      return card(label, x.rate, x.total ? `錯 <b>${x.err}</b> 件／總 <b>${x.total}</b> 件` : noRoster || '這期沒有件數', note, kind);
     };
     return `<div class="apt-gauges">
         ${card('內部審件良率', inQ.rate, inQ.checked ? `抽查 <b>${inQ.checked}</b> 件・正確 <b>${inQ.correct}</b> 件` : '本業績月還沒有抽查', '本業績月・組長抽查', null, state.spotQualityOpen)}
@@ -3210,6 +3312,14 @@
     return x.total ? { ...x, rate: Core.kpiErrRate(x), src: 'system' } : null;
   }
 
+  /** 系統算的清冊 0 件、卻已有公會清冊意見 → 回傳意見件數（代表清冊還沒同步進來，不是真的沒件） */
+  function guildRosterMissing(period, regions) {
+    const q = state.guildSys.get(period)?.data;
+    if (!q || q.error || !q.roster) return 0;
+    const x = regions.reduce((s, r) => ({ total: s.total + (q.roster[r]?.total || 0), err: s.err + (q.roster[r]?.err || 0) }), { total: 0, err: 0 });
+    return !x.total && x.err ? x.err : 0;
+  }
+
   /** 缺失類別件數（只有系統逐筆意見才有類別） */
   function guildCats(kind, periods, regions) {
     const opKind = GUILD_KIND[kind].op;
@@ -3295,7 +3405,8 @@
     const rowOf = (key, label, list) => {
       const v = valOf(list, selYear);
       const p = valOf(list, selYear - 1);
-      return { key, label, v, p, d: v && p ? (v.rate - p.rate) * 100 : null };
+      const miss = !v && kind === 'roster' && !isYear ? guildRosterMissing(guildPeriodOf(selYear, selMonth), list) : 0;
+      return { key, label, v, p, d: v && p ? (v.rate - p.rate) * 100 : null, miss };
     };
     const total = rowOf('', groupName, regions);
     const cities = regions.map((r) => rowOf(r, r, [r])).sort((a, b) => (b.v ? b.v.rate : -9) - (a.v ? a.v.rate : -9));
@@ -3306,7 +3417,7 @@
       const diff = r.d == null ? '' : Math.abs(r.d) < 0.05 ? '<span class="apt-gcity-diff">持平</span>' : `<span class="apt-gcity-diff ${r.d > 0 ? 'is-up' : 'is-down'}">${r.d > 0 ? '▲' : '▼'}${Math.abs(r.d).toFixed(1)}</span>`;
       return `<button type="button" class="apt-gcity${r.key ? '' : ' is-total'}${on ? ' is-on' : ''}" data-guild-city="${esc(r.key)}" aria-pressed="${on}" title="${r.key ? `看${esc(r.label)}的每月趨勢` : `看${esc(groupName)}的每月趨勢`}">
           <span class="apt-gcity-rank">${r.key ? rank : '合'}</span>
-          <span class="apt-gcity-name">${esc(r.label)}<small>${r.v ? `${k.errText} ${r.v.err}／${r.v.total} 件` : '沒有件數'}</small></span>
+          <span class="apt-gcity-name">${esc(r.label)}<small>${r.v ? `${k.errText} ${r.v.err}／${r.v.total} 件` : r.miss ? `清冊未進來（已有意見 ${r.miss} 件）` : '沒有件數'}</small></span>
           <span class="apt-gcity-track">
             ${r.v ? `<i class="apt-gcity-fill apt-gcity-fill--${tone}" style="width:${Math.max(2, pos(r.v.rate)).toFixed(1)}%"></i>` : ''}
             <em class="apt-gcity-goal" style="left:${pos(k.goal).toFixed(1)}%"></em>
