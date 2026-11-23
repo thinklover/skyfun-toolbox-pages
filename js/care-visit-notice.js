@@ -358,6 +358,7 @@
   }
 
   async function buildPdfBytes(d) {
+    if (typeof window.skyfunEnsurePdfLibs === 'function') await window.skyfunEnsurePdfLibs();
     if (!window.PDFLib) throw new Error('PDF 套件未載入');
     if (!window.fontkit) throw new Error('字型引擎未載入');
 

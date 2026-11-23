@@ -242,6 +242,7 @@
   }
 
   async function buildPdf(fontBytes, d) {
+    if (typeof window.skyfunEnsurePdfLibs === 'function') await window.skyfunEnsurePdfLibs();
     const PDFLib = window.PDFLib;
     if (!PDFLib) throw new Error('PDF 函式庫未載入');
     if (!window.fontkit) throw new Error('字型引擎未載入');

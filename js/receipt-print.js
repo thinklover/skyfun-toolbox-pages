@@ -267,6 +267,8 @@
     const btn = $('rcp-download');
     if (btn) { btn.disabled = true; btn.textContent = '套印中…'; }
     try {
+      setMsg('載入 PDF 套件…', 'ok');
+      if (typeof window.skyfunEnsurePdfLibs === 'function') await window.skyfunEnsurePdfLibs();
       if (!window.PDFLib) throw new Error('PDF 套件未載入');
       if (!window.fontkit) throw new Error('字型引擎未載入');
       setMsg('載入範本與標楷體…（首次較久）', 'ok');

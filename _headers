@@ -5,4 +5,13 @@
   Cache-Control: no-cache, no-store, must-revalidate
 
 /css/*
-  Cache-Control: public, max-age=60, must-revalidate
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/js/*
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/docs/*
+  Cache-Control: public, max-age=86400, must-revalidate

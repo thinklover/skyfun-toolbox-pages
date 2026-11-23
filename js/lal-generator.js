@@ -234,6 +234,9 @@
     }
 
     async function loadTemplateBytes() {
+        if (!window.LAL_TEMPLATE_B64 && typeof window.skyfunEnsureLalTemplate === 'function') {
+            try { await window.skyfunEnsureLalTemplate(); } catch (_) { /* 改走 fetch 範本 */ }
+        }
         if (window.LAL_TEMPLATE_B64) {
             return base64ToArrayBuffer(window.LAL_TEMPLATE_B64);
         }
@@ -1374,7 +1377,11 @@
 
     function bindLalCaseMode() {
         if (!window.LAL_CASE_MODE_UI) return;
-        const root = $('cf-lal') || document;
+        const root = $('cf-lal') || $('page-lal-generator') || document.body;
+        if (!root || !root.dataset) {
+            applyLalCaseMode();
+            return;
+        }
         if (root.dataset.caseModeBound === '1') {
             applyLalCaseMode();
             return;
