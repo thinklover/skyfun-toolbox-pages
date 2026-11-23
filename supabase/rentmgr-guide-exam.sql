@@ -1,5 +1,5 @@
 ﻿-- 租管師專區 › 執行要點考試（題庫與行政同一份 guide_exam_keys）
--- 規則：每人只抽一組 20 題；沒滿分就同一組補考到全對；前台公開姓名＋成績。
+-- 規則：一次考完全部題庫（約 196 題）；沒滿分就同一組補考到全對；前台公開姓名＋成績。
 
 create table if not exists public.rentmgr_guide_exam_attempts (
   id bigint generated always as identity primary key,
@@ -31,10 +31,12 @@ returns json language plpgsql security definer set search_path to 'public' as $$
 declare
   v_uid uuid; v_acc public.toolbox_accounts%rowtype; v_row public.rentmgr_guide_exam_attempts%rowtype;
   v_last public.rentmgr_guide_exam_attempts%rowtype; v_qids text[]; v_retake int := 0;
+  v_bank int := 0; v_mins int := 60;
 begin
   v_uid := admin_qa_user_id(p_token);
   if v_uid is null then return json_build_object('ok', false, 'error', '請先登入'); end if;
   select * into v_acc from public.toolbox_accounts where id = v_uid;
+  select count(*)::int into v_bank from public.guide_exam_keys;
 
   /* 已滿分 → 不用再考 */
   if exists (
@@ -44,10 +46,11 @@ begin
     return json_build_object('ok', false, 'done', true, 'error', '你已考過滿分，不用再考');
   end if;
 
+  /* 進行中且已是全題庫 → 可接續；舊版 20 題進行中則作廢重開全題庫 */
   select * into v_row from public.rentmgr_guide_exam_attempts
   where user_id = v_uid and status = 'in_progress' and deadline_at > now()
   order by started_at desc, id desc limit 1;
-  if found then
+  if found and cardinality(v_row.qids) = v_bank then
     return json_build_object('ok', true, 'resumed', true, 'attemptId', v_row.id, 'qids', v_row.qids,
       'retake', v_row.retake, 'deadlineAt', v_row.deadline_at, 'serverNow', now());
   end if;
@@ -57,14 +60,14 @@ begin
 
   select * into v_last from public.rentmgr_guide_exam_attempts
   where user_id = v_uid order by started_at desc, id desc limit 1;
-  if found and not v_last.passed then
-    /* 沒過 → 同一組 20 題補考 */
+  if found and not v_last.passed and cardinality(v_last.qids) = v_bank then
+    /* 沒過且已是全題庫 → 同一組補考 */
     v_qids := v_last.qids;
     v_retake := v_last.retake + 1;
   else
-    /* 第一次：從行政同一題庫抽 20 題，之後鎖定 */
+    /* 第一次（或舊版 20 題）：一次載入全部題庫，之後鎖定 */
     select coalesce(array_agg(qid), '{}') into v_qids from (
-      select qid from public.guide_exam_keys order by random() limit 20
+      select qid from public.guide_exam_keys order by random()
     ) s;
     if cardinality(v_qids) = 0 then
       return json_build_object('ok', false, 'error', '題庫尚未匯入');
@@ -72,9 +75,11 @@ begin
     v_retake := 0;
   end if;
 
+  v_mins := greatest(cardinality(v_qids), 60);
+
   insert into public.rentmgr_guide_exam_attempts (user_id, username, user_name, retake, qids, deadline_at, total)
   values (v_uid, v_acc.username, coalesce(nullif(v_acc.name, ''), v_acc.username), v_retake, v_qids,
-    now() + interval '20 minutes', cardinality(v_qids))
+    now() + make_interval(mins => v_mins), cardinality(v_qids))
   returning * into v_row;
 
   return json_build_object('ok', true, 'resumed', false, 'attemptId', v_row.id, 'qids', v_row.qids,

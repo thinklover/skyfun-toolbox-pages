@@ -1,6 +1,6 @@
 /**
  * 租管師專區 › 執行要點考試
- * 題庫與行政同一份（GUIDE_EXAM／guide_exam_keys）；每人只抽一組 20 題，
+ * 題庫與行政同一份（GUIDE_EXAM／guide_exam_keys）；一次考完全部題目（約 196 題），
  * 沒滿分就同一組補考到全對；前台公開姓名＋成績。
  */
 (function () {
@@ -197,26 +197,39 @@
         <thead><tr><th class="num">#</th><th>姓名</th><th class="gx-score-cell">最近成績</th><th class="num">答對</th><th class="num">考試次數</th><th class="num">補考</th><th>最近交卷</th><th>狀態</th></tr></thead>
         <tbody>${body || '<tr><td colspan="8" class="gx-muted">還沒有人考試，考完會顯示在這裡給大家看。</td></tr>'}</tbody>
       </table></div>
-      <p class="gx-muted">全員登入後都看得到姓名與成績；不顯示作答內容與正解。租管每人固定同一組 20 題，補考到滿分為止。</p>
+      <p class="gx-muted">全員登入後都看得到姓名與成績；不顯示作答內容與正解。租管一次考完全部題庫，補考到滿分為止。</p>
     </div>`;
+  }
+
+  function bankTotal() {
+    return data()?.questions?.length || 196;
+  }
+
+  function durationMinFor(total) {
+    return Math.max(60, Number(total) || bankTotal());
   }
 
   function renderHome(message) {
     const el = root();
     if (!el) return;
-    const d = data();
+    const totalQ = bankTotal();
+    const mins = durationMinFor(totalQ);
     const pr = progress && !progress.error ? progress : null;
     const done = !!(pr && pr.done);
     const pending = !!(pr && pr.pendingRetake);
     const resume = exam && exam.deadline > Date.now();
-    const btnText = resume ? '接續作答' : pending ? `開始補考（第 ${pr.retakeNext} 次）` : '開始考試（20 題）';
+    const btnText = resume
+      ? '接續作答'
+      : pending
+        ? `開始補考（第 ${pr.retakeNext} 次）`
+        : `開始考試（${totalQ} 題全部）`;
     const status = !pr
       ? `<p class="gx-muted">${progress?.error ? '進度讀取失敗：' + esc(progress.error) : '讀取進度中…'}</p>`
       : done
         ? `<p class="gx-ok">🎉 已考滿分（${pr.lastCorrect}／${pr.lastTotal}）！不用再考。</p>`
         : pending
-          ? `<p class="gx-warn">上次 ${pr.lastCorrect}／${pr.lastTotal}（${pr.lastScore} 分）還沒全對，要用<strong>同一組 20 題</strong>補考到滿分。</p>`
-          : `<p class="gx-muted">第一次會從執行要點題庫抽 <b>${d?.perSet || 20} 題</b>；之後補考都是這同一組。</p>`;
+          ? `<p class="gx-warn">上次 ${pr.lastCorrect}／${pr.lastTotal}（${pr.lastScore} 分）還沒全對，要用<strong>同一組 ${pr.lastTotal || totalQ} 題</strong>補考到滿分。</p>`
+          : `<p class="gx-muted">一次考完執行要點題庫 <b>全部 ${totalQ} 題</b>；沒滿分就同一組補考。</p>`;
     const items = pr?.items || [];
     const hist = items.length
       ? `<div class="gx-hist"><h6>我的考試紀錄</h6><table class="gx-table"><thead><tr><th>時間</th><th>答對</th><th>分數</th><th>結果</th><th>用時</th></tr></thead><tbody>${items
@@ -228,9 +241,9 @@
       : '';
     el.innerHTML = `<div class="gx-card" style="grid-template-columns:1fr">
       <div class="gx-rules">
-        <p><b>租管｜執行要點線上考試</b>（與行政同一份題庫）</p>
+        <p><b>租管｜執行要點線上考試</b>（與行政同一份題庫，共 ${totalQ} 題）</p>
         <ul>
-          <li>每人只抽 <b>一組 ${d?.perSet || 20} 題</b>單選，限時 <b>${d?.durationMin || 20} 分鐘</b>。</li>
+          <li>一次考完 <b>全部 ${totalQ} 題</b>單選，限時 <b>${mins} 分鐘</b>（約一題一分鐘）。</li>
           <li><b>全部答對才算通過</b>；沒過就用<strong>同一組題目</strong>補考到滿分。</li>
           <li>成績與姓名會顯示在下方成績板，同仁都看得到。</li>
         </ul>
@@ -472,6 +485,11 @@
     document.addEventListener('click', onClick);
     document.addEventListener('change', onChange);
     const saved = loadState();
+    /* 舊版只抽 20 題的本機進度作廢，改走全題庫 */
+    if (saved?.attemptId && Array.isArray(saved.order) && saved.order.length !== bankTotal()) {
+      clearState();
+      return;
+    }
     if (saved?.attemptId) {
       exam = saved;
       if (saved.deadline <= Date.now()) whenLoggedIn(() => submitExam(true));

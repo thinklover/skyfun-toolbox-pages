@@ -4653,7 +4653,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261123-measureai">
-<link rel="stylesheet" href="./css/admin-zone.css?v=20261123-exam">
+<link rel="stylesheet" href="./css/admin-zone.css?v=20261123-exam3">
 <link rel="stylesheet" href="./css/ai-tingting.css?v=20261118-staff-bubble">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
@@ -12150,7 +12150,7 @@
                 </div>
             </header>
 
-            <div class="adz-quick adz-quick--featured">
+            <div class="adz-quick adz-quick--featured adz-quick--3up">
                 <button type="button" class="apt-entry adz-hero adz-hero--points rdz-hero--perf" onclick="showPage('rentmanager-perf')">
                     <span class="apt-entry-icon" aria-hidden="true">📊</span>
                     <span class="apt-entry-text">
@@ -12164,6 +12164,14 @@
                     <span class="apt-entry-text">
                         <strong>系統欄位更改通報</strong>
                         <small>發現系統資料有誤時提出申請，送交營業處經理處理</small>
+                    </span>
+                    <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
+                </button>
+                <button type="button" class="apt-entry adz-hero rdz-hero--exam" onclick="showPage('rentmanager-guide-exam')">
+                    <span class="apt-entry-icon" aria-hidden="true">📝</span>
+                    <span class="apt-entry-text">
+                        <strong>執行要點考試</strong>
+                        <small>196 題全部考完、補考到滿分、成績公開</small>
                     </span>
                     <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                 </button>
@@ -12190,14 +12198,6 @@
                     <span class="apt-entry-text">
                         <strong>AI婷婷 問答</strong>
                         <small>行政規定、進件、期數、獎金補助；特殊個案仍請找婷婷本人確認</small>
-                    </span>
-                    <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
-                </button>
-                <button type="button" class="apt-entry adz-hero rdz-hero--exam" onclick="showPage('rentmanager-guide-exam')">
-                    <span class="apt-entry-icon" aria-hidden="true">📝</span>
-                    <span class="apt-entry-text">
-                        <strong>執行要點考試</strong>
-                        <small>20 題、補考到滿分、成績公開（題庫與行政同一份）</small>
                     </span>
                     <span class="apt-entry-arrow" aria-hidden="true">進入 →</span>
                 </button>
@@ -13029,7 +13029,7 @@
             </section>
         </div>
 
-        <!-- 租管師專區：執行要點考試（題庫與行政同一份；每人 20 題補考到滿分；公開成績） -->
+        <!-- 租管師專區：執行要點考試（題庫與行政同一份；196 題一次考完補考到滿分；公開成績） -->
         <div id="page-rentmanager-guide-exam" class="hidden max-w-4xl mx-auto space-y-6">
             <button onclick="showPage('rentmanager')" class="mb-4 btn btn-sm tone-slate-soft">
                 ← 返回租管師專區
@@ -13037,7 +13037,7 @@
             <div class="bg-white rounded-[2rem] p-6 border border-indigo-200 shadow-lg space-y-5">
                 <div>
                     <h2 class="text-3xl font-bold text-indigo-900 mb-2">📝 執行要點考試</h2>
-                    <p class="text-slate-600 text-sm leading-relaxed">題庫與行政「執行要點」同一份。每人抽一組 20 題，沒滿分就同一組補考到全對；下方成績板公開顯示姓名與分數。</p>
+                    <p class="text-slate-600 text-sm leading-relaxed">題庫與行政「執行要點」同一份，共 196 題全部一次考完。沒滿分就同一組補考到全對；下方成績板公開顯示姓名與分數。</p>
                 </div>
                 <div id="rentmgr-guide-exam-root"></div>
                 <div>
@@ -14716,7 +14716,7 @@
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
         <script src="./js/guide-exam.js?v=20261015-1"></script>
         <script src="./js/biz-guide-exam.js?v=20261029-hide"></script>
-        <script src="./js/rentmgr-guide-exam.js?v=20261123-1"></script>
+        <script src="./js/rentmgr-guide-exam.js?v=20261123-196"></script>
         <script src="./js/handover-core.js?v=20261107-sop"></script>
         <script src="./js/biz-handover.js?v=20261107-sop"></script>
         <script src="./js/admin-handover.js?v=20261107-sop"></script>
@@ -16567,7 +16567,7 @@
             { page: 'newbie-playbook', title: '新人業務開發心法', category: '新人專區', keywords: '心法 開發 業務技巧  playbook' },
             { page: 'rentmanager', title: '租管師專區', category: '首頁專區', keywords: '租管師 租管 sop 流程' },
             { page: 'rentmanager-links', title: '會議表單連結', category: '租管師專區', keywords: '表單 連結 續約明細 星鴻系統' },
-            { page: 'rentmanager-guide-exam', title: '執行要點考試', category: '租管師專區', keywords: '執行要點 考試 題庫 租管考試 補考 成績 公開成績 20題' },
+            { page: 'rentmanager-guide-exam', title: '執行要點考試', category: '租管師專區', keywords: '執行要點 考試 題庫 租管考試 補考 成績 公開成績 196題 全部' },
             { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi 考核 獎金辦法 續轉包 跨區' },
             { external: 'https://forms.gle/ZFwBJa2ps6TK2RCv5', title: '跨區派案回報表單', category: '表單連結 · 業務', keywords: '跨區 派案 回報 表單 漏件 跨區派案 填表' },
             { external: 'https://docs.google.com/spreadsheets/d/12l-Il_Sw268H4IKW4CSsHtrz9hiKbejZsUHCNNTzeW0/edit?usp=sharing', title: '跨區派案後台報表', category: '表單連結 · 業務', keywords: '跨區 派案 後台 報表 漏件 試算表' },
