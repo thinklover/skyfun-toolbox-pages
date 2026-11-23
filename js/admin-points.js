@@ -6860,7 +6860,15 @@
           <label class="apt-op-wide"><span>缺失類別 <em>*</em><small class="apt-op-auto">同公會月報的${isCase ? '審件' : '清冊'}缺失分類，一筆意見選最主要的一項</small></span><select name="category" required><option value="">請選擇</option>${Core.OPINION_CATEGORIES[kind].map((c) => `<option>${esc(c)}</option>`).join('')}</select></label>
           <label class="apt-op-wide apt-op-other-cat" hidden><span>其他類別說明 <em>*</em><small class="apt-op-auto">選「其他」時請寫這筆實際屬於哪一類</small></span><input name="categoryOther" maxlength="60" autocomplete="off" placeholder="例如：地址誤繕、附件格式錯誤…"></label>
           <label class="apt-op-wide"><span>公會意見內容 <em>*</em></span><textarea name="content" rows="3" maxlength="2000" placeholder="照公會回傳的意見填寫"></textarea></label>
-          <label class="apt-op-wide apt-op-measure-field"><span>行政檢討對策 <em>*</em></span><textarea name="measure" rows="3" maxlength="2000" placeholder="這個意見要怎麼改善、之後怎麼避免"></textarea></label>
+          <label class="apt-op-wide apt-op-measure-field"><span>行政檢討對策 <em>*</em><small class="apt-op-auto">至少 30 字；可先口語寫完再按 AI 潤飾</small></span>
+            <textarea name="measure" rows="3" maxlength="2000" placeholder="這個意見要怎麼改善、之後怎麼避免（至少 30 字）"></textarea>
+            <div class="apt-op-measure-bar">
+              <span class="apt-op-measure-count" data-op-measure-count>0 / 至少 30 字</span>
+              <button type="button" class="apt-op-ai-btn" data-op-ai-measure>✨ AI 潤飾</button>
+              <button type="button" class="apt-op-ai-undo" data-op-ai-undo hidden>還原</button>
+              <span class="apt-op-ai-msg" data-op-ai-msg role="status" aria-live="polite"></span>
+            </div>
+          </label>
           <div class="apt-op-actions apt-op-wide"><button type="submit" class="apt-op-save">送出</button><span class="apt-op-msg" role="status" aria-live="polite"></span></div>
         </form>
         <div class="apt-op-list">${opinionRows(kind)}</div>
@@ -8059,6 +8067,10 @@
       e.preventDefault();
       saveOpinion(kind, e.currentTarget);
     });
+    syncMeasureCount(form);
+    form.elements.measure?.addEventListener('input', () => syncMeasureCount(form));
+    form.querySelector('[data-op-ai-measure]')?.addEventListener('click', () => polishOpinionMeasure(form));
+    form.querySelector('[data-op-ai-undo]')?.addEventListener('click', () => undoOpinionMeasure(form));
     loadOpenOpinions().then(() => {
       const box = mask.isConnected && mask.querySelector('.apt-op-list');
       if (box) box.innerHTML = opinionRows(kind);
@@ -8142,6 +8154,11 @@
       }
       field = 'category';
     }
+    if (field === 'measure' && Array.from(next).length < 30) {
+      window.alert(`行政檢討對策請至少寫 30 個字（目前 ${Array.from(next).length} 字）`);
+      el.focus();
+      return;
+    }
     if (next === prev) return;
     el.disabled = true;
     try {
@@ -8193,6 +8210,97 @@
     await load(false);
     const box = document.querySelector('#apt-op-mask .apt-op-list');
     if (box) box.innerHTML = opinionRows(kind);
+  }
+
+  const MEASURE_MIN = 30;
+  const opinionAiUrl = () =>
+    String(window.SKYFUN_PETITION_AI_URL || 'https://skyfun-petition-ai.onrender.com').replace(/\/$/, '') +
+    '/api/opinion-measure/polish';
+
+  function measureCharCount(text) {
+    return Array.from(String(text || '').trim()).length;
+  }
+
+  function syncMeasureCount(form) {
+    const ta = form?.elements?.measure;
+    const el = form?.querySelector('[data-op-measure-count]');
+    if (!ta || !el) return;
+    const n = measureCharCount(ta.value);
+    el.textContent = `${n} / 至少 ${MEASURE_MIN} 字`;
+    el.classList.toggle('is-ok', n >= MEASURE_MIN);
+    el.classList.toggle('is-short', n > 0 && n < MEASURE_MIN);
+  }
+
+  function setOpinionAiMsg(form, text, tone) {
+    const el = form?.querySelector('[data-op-ai-msg]');
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'apt-op-ai-msg' + (tone ? ` is-${tone}` : '');
+  }
+
+  async function polishOpinionMeasure(form) {
+    if (!form || form._opAiBusy) return;
+    const ta = form.elements.measure;
+    const btn = form.querySelector('[data-op-ai-measure]');
+    const undo = form.querySelector('[data-op-ai-undo]');
+    const text = String(ta?.value || '').trim();
+    if (!token()) return setOpinionAiMsg(form, '請先登入工具箱', 'err');
+    if (Array.from(text.replace(/\s+/g, '')).length < 5) {
+      ta?.focus();
+      return setOpinionAiMsg(form, '請先用自己的話寫幾句對策，再按 AI 潤飾', 'err');
+    }
+    form._opAiBusy = true;
+    form._opAiOriginal = text;
+    if (btn) { btn.disabled = true; btn.textContent = '✨ 潤飾中…'; }
+    setOpinionAiMsg(form, '大約 5～20 秒；AI 服務在休息時第一次要等 30～60 秒…', '');
+    try {
+      const res = await fetch(opinionAiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: token(),
+          text,
+          content: String(form.elements.content?.value || '').trim().slice(0, 800)
+        }),
+        signal: AbortSignal.timeout(150000)
+      });
+      let data = null;
+      try { data = await res.json(); } catch { /* ignore */ }
+      if (!data?.ok) throw new Error(data?.error || `AI 暫時無法使用（${res.status}）`);
+      if (!form.isConnected) return;
+      ta.value = data.text || '';
+      syncMeasureCount(form);
+      undo?.removeAttribute('hidden');
+      const n = measureCharCount(ta.value);
+      setOpinionAiMsg(
+        form,
+        n >= MEASURE_MIN
+          ? '✅ 已潤飾，請確認內容後再送出'
+          : `✅ 已潤飾，但仍不足 ${MEASURE_MIN} 字，請再補充`,
+        n >= MEASURE_MIN ? 'ok' : 'warn'
+      );
+    } catch (e) {
+      const msg =
+        e.name === 'TimeoutError'
+          ? 'AI 潤飾逾時，請再按一次'
+          : e.message === 'Failed to fetch'
+            ? '連不上 AI 服務，請稍後再試'
+            : e.message;
+      setOpinionAiMsg(form, msg, 'err');
+    } finally {
+      form._opAiBusy = false;
+      if (btn) { btn.disabled = false; btn.textContent = '✨ AI 潤飾'; }
+    }
+  }
+
+  function undoOpinionMeasure(form) {
+    const ta = form?.elements?.measure;
+    if (!ta || form._opAiOriginal == null) return;
+    ta.value = form._opAiOriginal;
+    form._opAiOriginal = null;
+    form.querySelector('[data-op-ai-undo]')?.setAttribute('hidden', '');
+    syncMeasureCount(form);
+    setOpinionAiMsg(form, '已還原成你原本寫的內容', '');
   }
 
   async function saveOpinion(kind, form) {
@@ -8274,6 +8382,10 @@
     if (!data.measure) {
       form.elements.measure?.focus();
       return fail('請填行政檢討對策');
+    }
+    if (Array.from(data.measure).length < 30) {
+      form.elements.measure?.focus();
+      return fail(`行政檢討對策請至少寫 30 個字（目前 ${Array.from(data.measure).length} 字）`);
     }
     btn.disabled = true;
     msg.textContent = '送出中…';

@@ -776,6 +776,23 @@ div.apt-lvr-office-hit { cursor: default; }
 .apt-op-other-note { width: 100%; padding: 0.35rem 0.5rem; border: 1.5px solid #f59e0b; border-radius: 0.45rem; font-size: 0.82rem; font-family: inherit; background: #fffbeb; }
 .apt-op-other-note[hidden] { display: none !important; }
 .apt-op-measure-field textarea { background: #fefce8; border-color: #facc15; }
+.apt-op-measure-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.55rem;
+  margin-top: 0.4rem;
+}
+.apt-op-measure-count { font-size: 0.75rem; font-weight: 800; color: #94a3b8; }
+.apt-op-measure-count.is-short { color: #b45309; }
+.apt-op-measure-count.is-ok { color: #15803d; }
+.apt-op-ai-btn, .apt-op-ai-undo {
+  border: 1px solid #a5b4fc; background: #fff; color: #4338ca; border-radius: 999px;
+  padding: 0.15rem 0.7rem; font-size: 0.75rem; font-weight: 800; cursor: pointer; font-family: inherit;
+}
+.apt-op-ai-btn:hover:not(:disabled), .apt-op-ai-undo:hover { background: #eef2ff; border-color: #6366f1; }
+.apt-op-ai-btn:disabled { opacity: 0.65; cursor: wait; }
+.apt-op-ai-msg { font-size: 0.75rem; color: #64748b; }
+.apt-op-ai-msg.is-ok { color: #15803d; font-weight: 700; }
+.apt-op-ai-msg.is-warn { color: #b45309; font-weight: 700; }
+.apt-op-ai-msg.is-err { color: #b91c1c; font-weight: 700; }
 .apt-op-roster { display: flex; flex-direction: column; gap: 0.5rem; }
 .apt-op-roster input[name="caseNo"] { font-weight: 700; letter-spacing: 0.02em; }
 .apt-op-items { padding: 0.6rem 0.7rem; border-radius: 0.7rem; background: #eef2ff; border: 1px dashed #a5b4fc; }
