@@ -7449,7 +7449,7 @@
               <input type="hidden" name="officeManager" value="">
             </label>
             <label class="apt-lvr-field apt-lvr-field--full"><span>業務姓名 <em>*</em></span><input name="salesName" maxlength="40" required readonly placeholder="按帶入自動填"></label>
-            <label class="apt-lvr-field"><span>簽約日 <em>*</em></span><input name="signingDate" maxlength="10" required readonly placeholder="按帶入從系統帶入"></label>
+            <label class="apt-lvr-field"><span>簽約日 <em>*</em></span><input name="signingDate" type="date" maxlength="10" required placeholder="按帶入從系統帶入，系統沒有可自己填"></label>
             <p class="apt-lvr-merge-hint apt-lvr-field--full" data-lvr-office-hint>帶入後顯示：什麼處｜處經理是誰｜簽約日</p>
           </div>
         </div>
@@ -7763,6 +7763,7 @@
       }
     });
     form.elements.officeManagerPick.addEventListener('change', syncManager);
+    form.elements.signingDate?.addEventListener('change', () => syncLvrOfficeHint(form));
     form.elements.contractPick.addEventListener('change', () => {
       const rows = form._lvrLookupRows || [];
       const idx = Math.max(0, Number(form.elements.contractPick.value) || 0);
@@ -7820,7 +7821,7 @@
       };
       if (!data.address) return fail('請填地址');
       if (!data.office || !data.salesName) return fail('請先按「帶入」');
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.signingDate || '')) return fail('請先按「帶入」，簽約日要從系統帶入');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.signingDate || '')) return fail('請填簽約日：先按「帶入」，系統沒有時請自己選日期');
       if (!nodeFaults.length) return fail('請至少勾選一個錯誤節點');
       const missing = nodeFaults.find((x) => !x.person);
       if (missing) return fail(`請選擇「${missing.node}」誰錯`);
