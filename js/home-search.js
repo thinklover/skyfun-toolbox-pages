@@ -25,6 +25,7 @@
         { page: 'business-coverage', title: '誠實險', category: '業務主管專區', keywords: '誠實險 誠信險 投保 電訪 未投保' },
         { page: 'business-toolbox', title: '工具箱綁定', category: '業務主管專區', keywords: '工具箱 綁定 未綁定' },
         { page: 'rentmanager-crossarea-bonus', title: '租賃管理部獎金辦法', category: '租管師專區', keywords: '獎金 kpi' },
+        { page: 'rentmanager-guide-exam', title: '執行要點考試', category: '租管師專區', keywords: '執行要點 考試 題庫 補考 成績 20題' },
         { page: 'rentmanager-perf', title: '租管師績效中心', category: '租管師專區', keywords: 'kpi 各地區 週報' },
         { page: 'care-visit-notice', title: '家訪單產生器', category: '催收解約專區', keywords: '家訪 關懷' },
         { file: './admin/rentmgr-report-dashboard.html', title: '租賃管理部月報', category: '管理工具', keywords: '月報 ppt' },
@@ -236,6 +237,7 @@
     const RENTMANAGER_ZONE_SEARCH_PAGES = {
         rentmanager: true,
         'rentmanager-links': true,
+        'rentmanager-guide-exam': true,
         'rentmanager-crossarea-bonus': true,
         'rentmanager-perf': true,
         'rentmanager-line-endorse': true
