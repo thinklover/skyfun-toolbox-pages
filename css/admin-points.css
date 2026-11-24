@@ -381,32 +381,31 @@
   background: #4338ca; color: #fff;
 }
 #page-admin-points .apt-train-score-table th.apt-sortable.is-sorted small { color: #c7d2fe; }
-#page-admin-points .apt-train-score-table .apt-train-node {
+#page-admin-points .apt-train-score-table .apt-train-node,
+#page-admin-points .apt-train-score-table .apt-train-total {
   text-align: center; min-width: 4.2rem;
+  /* 格子本身留白，底色只上在膠囊 */
+  background: #fff !important;
 }
 #page-admin-points .apt-train-score-table .apt-train-node .apt-cell,
 #page-admin-points .apt-train-score-table .apt-train-total .apt-cell {
-  display: inline-block; min-width: 3.6rem; padding: 0.28rem 0.55rem;
+  display: inline-block; min-width: 3.6rem; padding: 0.32rem 0.6rem;
   border-radius: 0.65rem; line-height: 1.3; font-size: 1.05rem; font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
-/* 成績底色：直接畫在格子／膠囊上（避免被耗時表「td 透明」規則蓋掉） */
-#page-admin-points .apt-train-score-table tbody td.apt-tone--green,
+/* 成績底色只畫在膠囊，周圍留白（同耗時） */
 #page-admin-points .apt-train-score-table tbody td.apt-tone--green .apt-cell {
   background: #dcfce7 !important; color: #166534 !important;
   box-shadow: inset 0 0 0 1px #bbf7d0;
 }
-#page-admin-points .apt-train-score-table tbody td.apt-tone--yellow,
 #page-admin-points .apt-train-score-table tbody td.apt-tone--yellow .apt-cell {
   background: #fef3c7 !important; color: #92400e !important;
   box-shadow: inset 0 0 0 1px #fde68a;
 }
-#page-admin-points .apt-train-score-table tbody td.apt-tone--red,
 #page-admin-points .apt-train-score-table tbody td.apt-tone--red .apt-cell {
   background: #fee2e2 !important; color: #991b1b !important;
   box-shadow: inset 0 0 0 1px #fecaca;
 }
-#page-admin-points .apt-train-score-table tbody td.apt-tone--white,
 #page-admin-points .apt-train-score-table tbody td.apt-tone--white .apt-cell {
   background: #f8fafc !important; color: #334155 !important;
   box-shadow: inset 0 0 0 1px #e2e8f0;
