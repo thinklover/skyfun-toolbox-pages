@@ -406,7 +406,7 @@
               const allowDl = relHit.download !== false;
               return '<button type="button" class="topic-jump' + (hit ? ' is-hit' : '') + '" data-pv="' + escAttr(relHit.file) + '" data-title="' + escAttr(relHit.title || it.title) + '" data-date="' + escAttr(it.dateLabel || '') + '" data-page="1"' + (allowDl ? '' : ' data-no-dl="1"') + (hit ? ' data-first-hit="1"' : '') + '>' +
                 '<span class="topic-text">' + body + '</span>' +
-                '<span class="go">第 8 頁 ›</span></button>';
+                '<span class="go">預覽 ›</span></button>';
             }
             if (page && canPreview(href)) {
               const goLabel = hit
