@@ -367,17 +367,21 @@
 }
 #page-admin-points .apt-train-note { margin: 0.35rem 0 0; font-size: 0.76rem; color: #64748b; }
 #page-admin-points .apt-train-week-tabs {
-  display: inline-flex; flex-wrap: wrap; gap: 0.25rem; margin: 0.65rem 0 0.55rem;
-  padding: 0.2rem; border-radius: 0.6rem; background: #f1f5f9;
+  display: inline-flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.65rem 0 0.55rem;
+  padding: 0.28rem; border-radius: 0.75rem; background: #e8edf5;
+  box-shadow: inset 0 0 0 1px #dbe3ef;
 }
 #page-admin-points .apt-train-week-tab {
-  margin: 0; padding: 0.3rem 0.8rem; border: 0; border-radius: 0.45rem;
+  margin: 0; padding: 0.42rem 1rem; border: 0; border-radius: 0.55rem;
   background: transparent; cursor: pointer;
-  font: inherit; font-size: 0.8rem; font-weight: 800; color: #475569;
+  font: inherit; font-size: 0.86rem; font-weight: 800; color: #64748b;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
-#page-admin-points .apt-train-week-tab:hover { color: #4338ca; }
+#page-admin-points .apt-train-week-tab:hover { color: #4338ca; background: rgba(255, 255, 255, 0.55); }
 #page-admin-points .apt-train-week-tab.is-active {
-  background: #fff; color: #4338ca; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  background: linear-gradient(180deg, #6366f1, #4f46e5);
+  color: #fff;
+  box-shadow: 0 4px 12px -4px rgba(79, 70, 229, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 #page-admin-points .apt-train-score-wrap {
   overflow-x: auto; width: 100%;
