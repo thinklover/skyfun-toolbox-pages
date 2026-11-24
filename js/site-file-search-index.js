@@ -34,6 +34,7 @@
         { file: './1150420 公告 115年第5業績月高專業務激勵方案.pdf', title: '1150420 115年第5業績月高專業務激勵方案', category: '檔案 · PDF · 簽呈公告', keywords: '公告 簽呈 獎金 激勵 高專' },
         { file: './1150507 公告 配合住都中心政策，推動三年期合約簽立原則.pdf', title: '1150507 三年期合約簽立原則', category: '檔案 · PDF · 簽呈公告', keywords: '公告 簽呈 三年 合約 住都' },
         { file: './1150507 公告 業務協理區_北區組織異動.pdf', title: '1150507 業務協理區北區組織異動', category: '檔案 · PDF · 簽呈公告', keywords: '公告 簽呈 組織 異動' },
+        { file: './docs/forms/116年度三百億元中央租金補貼申請書_社會住宅包租代管適用.pdf', title: '116年度三百億元中央租金補貼申請書（社會住宅包租代管適用）', category: '檔案 · PDF · 各式表單', keywords: '116 三百億 300億 中央 租金補貼 租補 申請書 包租代管 社宅 表單' },
         { file: './docs/forms/115Y_09_租金補貼租賃契約變更申請書.docx', title: '115Y_09 租金補貼租賃契約變更申請書', category: '檔案 · DOCX · 業務專區', keywords: '租金補貼 租補 契約變更 300億' },
         { file: './docs/forms/300億通用切結書.docx', title: '300億通用切結書', category: '檔案 · DOCX · 業務專區', keywords: '300億 切結 表單' },
         { file: './docs/forms/300億連絡資訊變更切結書.docx', title: '300億連絡資訊變更切結書', category: '檔案 · DOCX · 業務專區', keywords: '300億 切結 聯絡資訊' },
