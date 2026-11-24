@@ -7711,72 +7711,66 @@
     </div>`;
   }
 
-  /** 到職日是否在近 N 個月內（含當天） */
-  function hiredWithinMonths(hireDate, months) {
-    const raw = String(hireDate || '').trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const cut = new Date(today);
-    cut.setMonth(cut.getMonth() - months);
-    const hire = new Date(raw + 'T00:00:00');
-    return hire >= cut && hire <= today;
-  }
+  /**
+   * 本次受訓名單：新進秘書五週教育訓練（行政週會核定）
+   * 不以「近三個月」動態推算，避免漏列或誤列。
+   */
+  const TRAIN_COHORT_NAMES = [
+    '吳建勳', '林薇均', '楊欣瑜', '高慈惠', '呂佳融', '王思涵', '楊舒喬', '高佳苓',
+    '詹佳芸', '劉婷昱', '簡旻鈺', '賴曉嫻', '林怡軒', '吳若寧'
+  ];
 
-  /** 行政新人教育訓練成績排名（近三個月到職） */
+  /** 本次受訓名單教育訓練成績排名 */
   function trainScoreRows() {
-    const staff = (state.sb?.staff || []).filter(
-      (s) => Core.isOnDuty(s) && s.kind !== '工讀生' && hiredWithinMonths(s.hireDate, 3)
-    );
-    return staff
-      .map((s) => {
-        const cs = Core.courseScores((key) => trainState(key, s.name));
-        const items = cs.general || [];
-        const done = items.filter((c) => trainState(c.key, s.name).done).length;
-        const score = Math.round(cs.generalScore || 0);
-        return {
-          name: s.name,
-          hireDate: s.hireDate,
-          office: Core.officeName(s.office) || s.office || '',
-          leader: s.leader || '',
-          done,
-          total: items.length,
-          score
-        };
-      })
-      .sort((a, b) => b.score - a.score || b.done - a.done || String(a.name).localeCompare(String(b.name), 'zh-Hant'));
+    const byName = new Map((state.sb?.staff || []).map((s) => [s.name, s]));
+    return TRAIN_COHORT_NAMES.map((name) => {
+      const s = byName.get(name) || {};
+      const cs = Core.courseScores((key) => trainState(key, name));
+      const items = cs.general || [];
+      const done = items.filter((c) => trainState(c.key, name).done).length;
+      const score = Math.round(cs.generalScore || 0);
+      return {
+        name,
+        hireDate: s.hireDate || '',
+        region: s.region || '',
+        office: Core.officeName(s.office) || s.office || '',
+        leader: s.leader || '',
+        done,
+        total: items.length,
+        score,
+        inStaff: !!byName.get(name)
+      };
+    }).sort((a, b) => b.score - a.score || b.done - a.done || String(a.name).localeCompare(String(b.name), 'zh-Hant'));
   }
 
   function renderTrainScoresTab() {
     const rows = trainScoreRows();
     const cxReady = !!(window.CourseExam?.statusOf?.('obj', '')?.loaded);
     const note = cxReady
-      ? '成績依五週行政教育訓練總分（影片＋考試）自動計算；同分以通過項數、姓名排序。'
+      ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位；成績依五週行政教育訓練總分（影片＋考試）自動計算，同分以通過項數、姓名排序。`
       : '考試／影片進度讀取中，分數可能尚未更新…';
-    const body = rows.length
-      ? rows
-          .map((r, idx) => {
-            const rank = idx + 1;
-            return `<tr class="${rankBand(rank)}">
+    const body = rows
+      .map((r, idx) => {
+        const rank = idx + 1;
+        return `<tr class="${rankBand(rank)}${r.inStaff ? '' : ' apt-row-muted'}">
             <td class="apt-rank">${rank <= 3 ? `<i class="apt-rank-badge apt-rank-badge--${rank}">${rank}</i>` : `<span class="apt-rank-num">${rank}</span>`}</td>
             <td><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
-            <td class="apt-mt-hire">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
+            <td class="apt-mt-dept">${r.region ? `<span>${esc(r.region)}</span>` : NIL}</td>
             <td class="apt-mt-org">${esc(r.office) || NIL}</td>
-            <td>${esc(r.leader) || NIL}</td>
+            <td class="apt-mt-hire">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
             <td class="num">${r.done}／${r.total}</td>
             <td class="num apt-total"><b class="apt-total-n" style="color:${scoreColor(r.score)}">${r.score}</b><small>／100</small></td>
             <td><span class="apt-train-bar" aria-hidden="true"><i style="width:${r.score}%;background:${scoreColor(r.score)}"></i></span></td>
           </tr>`;
-          })
-          .join('')
-      : `<tr><td colspan="8" class="apt-empty">近三個月尚無符合條件的行政新人（需在人力明細有到職日）</td></tr>`;
+      })
+      .join('');
     return `<div class="apt-train-scores">
       <div class="apt-zone">
-        <h3 class="apt-sec-title">教育訓練成績<small>近三個月到職行政新人 · 五週課程總分排名</small></h3>
+        <h3 class="apt-sec-title">本次受訓名單<small>五週課程總分排名 · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
         <p class="apt-sub-note">${esc(note)}</p>
         <div class="apt-table-wrap">
           <table class="apt-table apt-month-table apt-train-score-table">
-            <thead><tr><th>#</th><th>姓名</th><th>報到<small>年月</small></th><th>營業處</th><th>組長</th><th class="num">通過</th><th class="num">訓練總分</th><th>進度</th></tr></thead>
+            <thead><tr><th>#</th><th>姓名</th><th>部別</th><th>營業處</th><th>報到<small>年月</small></th><th class="num">通過</th><th class="num">訓練總分</th><th>進度</th></tr></thead>
             <tbody>${body}</tbody>
           </table>
         </div>
