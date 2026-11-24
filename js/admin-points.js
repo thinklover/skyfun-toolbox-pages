@@ -55,6 +55,8 @@
       areaStaff: { key: 'weekPoints', dir: -1 },
       trainscores: { key: 'total', dir: -1 }
     },
+    /** 教育訓練成績：all＝五週平均；1–5＝展開該週節點 */
+    trainWeekView: 'all',
     auditRows: [],
     sb: null,
     prev: null,
@@ -7747,7 +7749,14 @@
     }))
   }));
 
-  /** 本次受訓名單：各節點成績（第一週→第五週）＋訓練總分 */
+  function trainWeekViewKey() {
+    const v = state.trainWeekView;
+    if (v === 'all' || v == null || v === '') return 'all';
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 1 && n <= TRAIN_WEEK_NODES.length ? n : 'all';
+  }
+
+  /** 本次受訓名單：各節點成績＋週平均＋訓練總分 */
   function trainScoreRows() {
     const byName = new Map((state.sb?.staff || []).map((s) => [s.name, s]));
     return TRAIN_COHORT_NAMES.map((name) => {
@@ -7760,6 +7769,11 @@
       TRAIN_WEEK_NODES.forEach((w) => w.items.forEach((n) => {
         if (scores[n.key] == null) scores[n.key] = 0;
       }));
+      const weekAvg = {};
+      TRAIN_WEEK_NODES.forEach((w) => {
+        const vals = w.items.map((n) => Number(scores[n.key]) || 0);
+        weekAvg[w.week] = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+      });
       const total = Math.round(cs.generalScore || 0);
       const done = (cs.general || []).filter((c) => trainState(c.key, name).done).length;
       return {
@@ -7768,6 +7782,7 @@
         office: Core.officeName(s.office) || s.office || '',
         leader: s.leader || '',
         scores,
+        weekAvg,
         total,
         done,
         totalNodes: (cs.general || []).length || TRAIN_WEEK_NODES.reduce((n, w) => n + w.items.length, 0),
@@ -7784,8 +7799,24 @@
       { key: 'office', label: '營業處', dir: 1, value: (r) => r.office || null },
       { key: 'total', label: '訓練總分', num: true, dir: -1, value: (r) => r.total }
     ];
-    const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
-      w.items.map((n) => ({
+    const view = trainWeekViewKey();
+    if (view === 'all') {
+      return [
+        ...meta,
+        ...TRAIN_WEEK_NODES.map((w) => ({
+          key: `week:${w.week}`,
+          label: `第${WEEK_CN[w.week - 1]}週`,
+          week: w.week,
+          num: true,
+          dir: -1,
+          value: (r) => r.weekAvg[w.week]
+        }))
+      ];
+    }
+    const week = TRAIN_WEEK_NODES.find((w) => w.week === view) || TRAIN_WEEK_NODES[0];
+    return [
+      ...meta,
+      ...week.items.map((n) => ({
         key: `node:${n.key}`,
         label: n.label,
         nodeKey: n.key,
@@ -7793,8 +7824,7 @@
         dir: -1,
         value: (r) => r.scores[n.key]
       }))
-    );
-    return [...meta, ...nodes];
+    ];
   }
 
   function trainScoreSortTh(key, label, opts = {}) {
@@ -7809,8 +7839,7 @@
     ]
       .filter(Boolean)
       .join(' ');
-    const rs = opts.rowspan ? ` rowspan="${opts.rowspan}"` : '';
-    return `<th class="${cls}"${rs} data-dur-sort="trainscores:${esc(key)}" title="點擊排序">${label}${arrow}${opts.sub || ''}</th>`;
+    return `<th class="${cls}" data-dur-sort="trainscores:${esc(key)}" title="點擊排序">${label}${arrow}${opts.sub || ''}</th>`;
   }
 
   function trainScoreRankCell(rank) {
@@ -7819,36 +7848,58 @@
     return `<td class="apt-rank">${n <= 3 ? `<i class="apt-rank-badge apt-rank-badge--${n}">${n}</i>` : `<span class="apt-rank-num">${n}</span>`}</td>`;
   }
 
+  function trainScoreScoreCell(score, key, extraClass = '') {
+    const v = Number(score) || 0;
+    const focus = state.durSorts.trainscores?.key || 'total';
+    const fc = key === focus ? ' apt-col-focus' : '';
+    return `<td class="num ${extraClass} ${speedTone(v)}${fc}"><span class="apt-cell">${v}</span></td>`;
+  }
+
   function renderTrainScoresTab() {
+    const view = trainWeekViewKey();
     const cols = trainScoreCols();
+    const sortKey = state.durSorts.trainscores?.key || 'total';
+    if (!cols.some((c) => c.key === sortKey) && sortKey !== 'name' && sortKey !== 'hire' && sortKey !== 'leader' && sortKey !== 'office' && sortKey !== 'total') {
+      state.durSorts.trainscores = { key: 'total', dir: -1 };
+    }
     const { sorted, ranks } = sortedRows('trainscores', cols, trainScoreRows());
     const focus = state.durSorts.trainscores?.key || 'total';
     const fc = (key) => (key === focus ? ' apt-col-focus' : '');
     const cxReady = !!(window.CourseExam?.statusOf?.('obj', '')?.loaded);
     const note = cxReady
-      ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位；# 為目前排序名次（同分同名次）。總分為五週各節點平均；點欄位標題可排序，再點一次反過來。`
+      ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位。預設看總分與五週平均；點週別可展開該週節點。# 為目前排序名次（同分同名次）。`
       : '考試／影片進度讀取中，分數可能尚未更新…';
-    const weekHead = TRAIN_WEEK_NODES.map(
-      (w) => `<th class="apt-train-week-h" colspan="${w.items.length}">第${WEEK_CN[w.week - 1]}週</th>`
-    ).join('');
-    const nodeHead = TRAIN_WEEK_NODES.flatMap((w) =>
-      w.items.map((n) => trainScoreSortTh(`node:${n.key}`, esc(n.label), { num: true, className: 'apt-train-node-h' }))
-    ).join('');
-    const metaHead =
-      `<th rowspan="2">#</th>` +
-      trainScoreSortTh('name', '姓名', { rowspan: 2 }) +
-      trainScoreSortTh('hire', '報到', { rowspan: 2, sub: '<small>年月</small>' }) +
-      trainScoreSortTh('leader', '小組長', { rowspan: 2 }) +
-      trainScoreSortTh('office', '營業處', { rowspan: 2 }) +
-      trainScoreSortTh('total', '總分', { rowspan: 2, num: true, className: 'apt-train-total-h' });
+    const weekTabs = `<div class="apt-sub-tabs apt-train-week-tabs" role="tablist" aria-label="週別檢視">
+      <button type="button" class="apt-sub-tab${view === 'all' ? ' is-active' : ''}" data-train-week-view="all" role="tab" aria-selected="${view === 'all'}">全部週</button>
+      ${TRAIN_WEEK_NODES.map((w) => {
+        const active = view === w.week;
+        return `<button type="button" class="apt-sub-tab${active ? ' is-active' : ''}" data-train-week-view="${w.week}" role="tab" aria-selected="${active}">第${WEEK_CN[w.week - 1]}週</button>`;
+      }).join('')}
+    </div>`;
+    const scoreHead =
+      view === 'all'
+        ? TRAIN_WEEK_NODES.map((w) =>
+            trainScoreSortTh(`week:${w.week}`, `第${WEEK_CN[w.week - 1]}週`, { num: true, className: 'apt-train-week-avg-h' })
+          ).join('')
+        : (TRAIN_WEEK_NODES.find((w) => w.week === view) || TRAIN_WEEK_NODES[0]).items
+            .map((n) => trainScoreSortTh(`node:${n.key}`, esc(n.label), { num: true, className: 'apt-train-node-h' }))
+            .join('');
+    const head =
+      `<th>#</th>` +
+      trainScoreSortTh('name', '姓名') +
+      trainScoreSortTh('hire', '報到', { sub: '<small>年月</small>' }) +
+      trainScoreSortTh('leader', '小組長') +
+      trainScoreSortTh('office', '營業處') +
+      trainScoreSortTh('total', '總分', { num: true, className: 'apt-train-total-h' }) +
+      scoreHead;
     const body = sorted
       .map((r, i) => {
-        const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
-          w.items.map((n) => {
-            const score = Number(r.scores[n.key]) || 0;
-            return `<td class="num apt-train-node ${speedTone(score)}${fc(`node:${n.key}`)}"><span class="apt-cell">${score}</span></td>`;
-          })
-        ).join('');
+        const scoreCells =
+          view === 'all'
+            ? TRAIN_WEEK_NODES.map((w) => trainScoreScoreCell(r.weekAvg[w.week], `week:${w.week}`, 'apt-train-node apt-train-week-avg')).join('')
+            : (TRAIN_WEEK_NODES.find((w) => w.week === view) || TRAIN_WEEK_NODES[0]).items
+                .map((n) => trainScoreScoreCell(r.scores[n.key], `node:${n.key}`, 'apt-train-node'))
+                .join('');
         return `<tr class="apt-dur-row${r.inStaff ? '' : ' apt-row-muted'}">
             ${trainScoreRankCell(ranks[i])}
             <td class="${fc('name').trim()}"><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
@@ -7856,12 +7907,12 @@
             <td class="${fc('leader').trim()}">${esc(r.leader) || NIL}</td>
             <td class="apt-mt-org${fc('office')}" title="${esc(r.office) || ''}">${esc(r.office) || NIL}</td>
             <td class="num apt-train-total ${speedTone(r.total)}${fc('total')}"><span class="apt-cell" title="通過 ${r.done}／${r.totalNodes}"><b>${r.total}</b><small>／100</small><i class="apt-train-pass">${r.done}／${r.totalNodes}</i></span></td>
-            ${nodes}
+            ${scoreCells}
           </tr>`;
       })
       .join('');
     const colCount = cols.length + 1;
-    const nodeCount = TRAIN_WEEK_NODES.reduce((n, w) => n + w.items.length, 0);
+    const scoreColCount = view === 'all' ? TRAIN_WEEK_NODES.length : (TRAIN_WEEK_NODES.find((w) => w.week === view) || TRAIN_WEEK_NODES[0]).items.length;
     const colgroup = `<colgroup>
       <col class="apt-train-col-rank">
       <col class="apt-train-col-name">
@@ -7869,7 +7920,7 @@
       <col class="apt-train-col-leader">
       <col class="apt-train-col-office">
       <col class="apt-train-col-total">
-      ${'<col class="apt-train-col-node">'.repeat(nodeCount)}
+      ${'<col class="apt-train-col-node">'.repeat(scoreColCount)}
     </colgroup>`;
     const legend = `<div class="apt-tone-legend">成績配色同耗時：
       <span class="apt-tone-chip apt-tone--green">70 分以上</span>
@@ -7878,19 +7929,14 @@
     </div>`;
     return `<div class="apt-train-scores">
       <div class="apt-zone">
-        <h3 class="apt-sec-title">本次受訓名單<small>排名＋各節點成績 · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
+        <h3 class="apt-sec-title">本次受訓名單<small>${view === 'all' ? '總分＋五週平均' : `第${WEEK_CN[view - 1]}週節點`} · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
         <p class="apt-sub-note">${esc(note)}</p>
+        ${weekTabs}
         ${legend}
         <div class="apt-table-wrap apt-train-score-wrap">
-          <table class="apt-table apt-dur-table apt-train-score-table">
+          <table class="apt-table apt-dur-table apt-train-score-table apt-train-score-table--${view === 'all' ? 'weeks' : 'nodes'}">
             ${colgroup}
-            <thead>
-              <tr>
-                ${metaHead}
-                ${weekHead}
-              </tr>
-              <tr>${nodeHead}</tr>
-            </thead>
+            <thead><tr>${head}</tr></thead>
             <tbody>${body || `<tr><td colspan="${colCount}" class="apt-empty">尚無受訓名單</td></tr>`}</tbody>
           </table>
         </div>
@@ -8830,6 +8876,16 @@
           root.querySelectorAll('input[type="checkbox"]').forEach((c) => { c.checked = false; });
           saveStaffProject(root.dataset.staffProject, '', root);
         }
+        return;
+      }
+      const trainWeekViewBtn = e.target.closest('[data-train-week-view]');
+      if (trainWeekViewBtn) {
+        const raw = trainWeekViewBtn.dataset.trainWeekView;
+        state.trainWeekView = raw === 'all' ? 'all' : Number(raw);
+        const cols = trainScoreCols();
+        const curKey = state.durSorts.trainscores?.key || 'total';
+        if (!cols.some((c) => c.key === curKey)) state.durSorts.trainscores = { key: 'total', dir: -1 };
+        render();
         return;
       }
       const sortTh = e.target.closest('[data-dur-sort]');

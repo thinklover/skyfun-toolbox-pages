@@ -351,18 +351,19 @@
 .apt-chip--ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
 .apt-lvr-page { display: flex; flex-direction: column; gap: 1rem; }
 #page-admin-points .apt-train-scores { display: flex; flex-direction: column; gap: 0.75rem; }
+#page-admin-points .apt-train-week-tabs { margin: 0.15rem 0 0.55rem; flex-wrap: wrap; }
 #page-admin-points .apt-train-score-wrap { overflow-x: hidden; width: 100%; }
 #page-admin-points .apt-train-score-table {
   width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0;
   font-size: 0.88rem;
 }
-/* 固定前段欄寬，剩餘給各節點，避免總分膠囊被等寬擠掉 */
-#page-admin-points .apt-train-score-table .apt-train-col-rank { width: 2.3rem; }
-#page-admin-points .apt-train-score-table .apt-train-col-name { width: 4.2rem; }
-#page-admin-points .apt-train-score-table .apt-train-col-hire { width: 3.2rem; }
-#page-admin-points .apt-train-score-table .apt-train-col-leader { width: 3.6rem; }
-#page-admin-points .apt-train-score-table .apt-train-col-office { width: 5rem; }
-#page-admin-points .apt-train-score-table .apt-train-col-total { width: 5.6rem; }
+/* 週別摺疊後欄位變少：前段固定、其餘均分 */
+#page-admin-points .apt-train-score-table .apt-train-col-rank { width: 2.4rem; }
+#page-admin-points .apt-train-score-table .apt-train-col-name { width: 4.6rem; }
+#page-admin-points .apt-train-score-table .apt-train-col-hire { width: 3.4rem; }
+#page-admin-points .apt-train-score-table .apt-train-col-leader { width: 4rem; }
+#page-admin-points .apt-train-score-table .apt-train-col-office { width: 5.4rem; }
+#page-admin-points .apt-train-score-table .apt-train-col-total { width: 5.8rem; }
 #page-admin-points .apt-train-score-table .apt-train-col-node { width: auto; }
 #page-admin-points .apt-train-score-table thead th {
   position: sticky; top: 0; z-index: 2; vertical-align: middle;
@@ -382,14 +383,10 @@
 #page-admin-points .apt-train-score-table .apt-mt-org {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-#page-admin-points .apt-train-score-table .apt-train-week-h {
-  text-align: center; font-size: 0.8rem; letter-spacing: 0.02em;
-  background: #eef2ff; color: #3730a3; border-bottom: 1px solid #c7d2fe;
-  white-space: nowrap;
-}
+#page-admin-points .apt-train-score-table .apt-train-week-avg-h,
 #page-admin-points .apt-train-score-table .apt-train-node-h {
-  text-align: center; font-size: 0.72rem; font-weight: 800; color: #334155;
-  background: #f8fafc; padding: 0.35rem 0.1rem;
+  text-align: center; font-size: 0.78rem; font-weight: 800; color: #334155;
+  background: #f8fafc; padding: 0.45rem 0.2rem; white-space: nowrap;
 }
 /* 排序樣式對齊耗時表：選中欄深紫底白字，勿再用深藍字蓋掉 */
 #page-admin-points .apt-train-score-table th.apt-sortable { cursor: pointer; user-select: none; }
@@ -449,7 +446,7 @@
   font-size: 0.62rem; font-weight: 700; opacity: 0.8;
 }
 #page-admin-points.apt-wide:has(.apt-train-scores) {
-  max-width: min(99vw, 118rem);
+  max-width: min(96vw, 72rem);
 }
 .apt-lvr-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
 .apt-lvr-split--single { grid-template-columns: minmax(0, 1fr); }
