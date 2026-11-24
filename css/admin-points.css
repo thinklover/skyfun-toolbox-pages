@@ -364,6 +364,9 @@
   text-align: center; font-size: 0.72rem; font-weight: 700; color: #475569;
   background: #f8fafc; min-width: 3.2rem; padding: 0.35rem 0.3rem;
 }
+#page-admin-points .apt-train-score-table th.apt-sortable { cursor: pointer; user-select: none; }
+#page-admin-points .apt-train-score-table th.apt-sortable:hover { color: #1d4ed8; }
+#page-admin-points .apt-train-score-table th.apt-sortable.is-sorted { color: #1d4ed8; }
 #page-admin-points .apt-train-score-table .apt-train-node {
   text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 3.2rem;
 }

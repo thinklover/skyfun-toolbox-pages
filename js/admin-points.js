@@ -52,7 +52,8 @@
       detail: { key: 'time', dir: -1 },
       weekly: { key: 'weekPoints', dir: -1 },
       areaOffice: { key: 'office', dir: 1 },
-      areaStaff: { key: 'weekPoints', dir: -1 }
+      areaStaff: { key: 'weekPoints', dir: -1 },
+      trainscores: { key: 'name', dir: 1 }
     },
     auditRows: [],
     sb: null,
@@ -7752,41 +7753,87 @@
     return TRAIN_COHORT_NAMES.map((name) => {
       const s = byName.get(name) || {};
       const cs = Core.courseScores((key) => trainState(key, name));
-      const scoreByKey = new Map((cs.general || []).map((c) => [c.key, c.score]));
-      const nodeScores = TRAIN_WEEK_NODES.flatMap((w) =>
-        w.items.map((n) => ({ key: n.key, week: w.week, score: Number(scoreByKey.get(n.key)) || 0 }))
-      );
+      const scores = {};
+      (cs.general || []).forEach((c) => {
+        scores[c.key] = Number(c.score) || 0;
+      });
+      TRAIN_WEEK_NODES.forEach((w) => w.items.forEach((n) => {
+        if (scores[n.key] == null) scores[n.key] = 0;
+      }));
       return {
         name,
         hireDate: s.hireDate || '',
         office: Core.officeName(s.office) || s.office || '',
         leader: s.leader || '',
-        nodeScores,
+        scores,
         inStaff: !!byName.get(name)
       };
-    }).sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-Hant'));
+    });
+  }
+
+  function trainScoreCols() {
+    const meta = [
+      { key: 'name', label: '姓名', dir: 1, value: (r) => r.name },
+      { key: 'hire', label: '報到年月', dir: 1, value: (r) => r.hireDate || null },
+      { key: 'leader', label: '小組長姓名', dir: 1, value: (r) => r.leader || null },
+      { key: 'office', label: '營業處', dir: 1, value: (r) => r.office || null }
+    ];
+    const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
+      w.items.map((n) => ({
+        key: `node:${n.key}`,
+        label: n.label,
+        nodeKey: n.key,
+        num: true,
+        dir: -1,
+        value: (r) => r.scores[n.key]
+      }))
+    );
+    return [...meta, ...nodes];
+  }
+
+  function trainScoreSortTh(key, label, opts = {}) {
+    const s = state.durSorts.trainscores || { key: 'name', dir: 1 };
+    const active = s.key === key;
+    const arrow = active ? (s.dir === 1 ? ' ▲' : ' ▼') : '';
+    const cls = [
+      'apt-sortable',
+      active ? 'is-sorted' : '',
+      opts.num ? 'num' : '',
+      opts.className || ''
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const rs = opts.rowspan ? ` rowspan="${opts.rowspan}"` : '';
+    return `<th class="${cls}"${rs} data-dur-sort="trainscores:${esc(key)}" title="點擊排序">${label}${arrow}${opts.sub || ''}</th>`;
   }
 
   function renderTrainScoresTab() {
-    const rows = trainScoreRows();
+    const cols = trainScoreCols();
+    const { sorted } = sortedRows('trainscores', cols, trainScoreRows());
     const cxReady = !!(window.CourseExam?.statusOf?.('obj', '')?.loaded);
     const note = cxReady
-      ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位；各節點成績依第一週到第五週排列（影片＋考試完成比例，滿分 100）。`
+      ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位；各節點成績依第一週到第五週排列（影片＋考試完成比例，滿分 100）。點欄位標題可排序，再點一次反過來。`
       : '考試／影片進度讀取中，分數可能尚未更新…';
     const weekHead = TRAIN_WEEK_NODES.map(
       (w) => `<th class="apt-train-week-h" colspan="${w.items.length}">第${WEEK_CN[w.week - 1]}週</th>`
     ).join('');
     const nodeHead = TRAIN_WEEK_NODES.flatMap((w) =>
-      w.items.map((n) => `<th class="apt-train-node-h" title="${esc(n.label)}">${esc(n.label)}</th>`)
+      w.items.map((n) => trainScoreSortTh(`node:${n.key}`, esc(n.label), { num: true, className: 'apt-train-node-h' }))
     ).join('');
-    const body = rows
+    const metaHead =
+      trainScoreSortTh('name', '姓名', { rowspan: 2 }) +
+      trainScoreSortTh('hire', '報到', { rowspan: 2, sub: '<small>年月</small>' }) +
+      trainScoreSortTh('leader', '小組長姓名', { rowspan: 2 }) +
+      trainScoreSortTh('office', '營業處', { rowspan: 2 });
+    const body = sorted
       .map((r) => {
-        const nodes = r.nodeScores
-          .map((n) => {
-            const done = n.score >= 100;
-            return `<td class="num apt-train-node${done ? ' is-done' : ''}" style="color:${scoreColor(n.score)}">${n.score}</td>`;
+        const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
+          w.items.map((n) => {
+            const score = Number(r.scores[n.key]) || 0;
+            const done = score >= 100;
+            return `<td class="num apt-train-node${done ? ' is-done' : ''}" style="color:${scoreColor(score)}">${score}</td>`;
           })
-          .join('');
+        ).join('');
         return `<tr class="${r.inStaff ? '' : ' apt-row-muted'}">
             <td><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
             <td class="apt-mt-hire">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
@@ -7796,7 +7843,7 @@
           </tr>`;
       })
       .join('');
-    const colCount = 4 + TRAIN_WEEK_NODES.reduce((s, w) => s + w.items.length, 0);
+    const colCount = cols.length;
     return `<div class="apt-train-scores">
       <div class="apt-zone">
         <h3 class="apt-sec-title">本次受訓名單<small>各節點成績 · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
@@ -7805,10 +7852,7 @@
           <table class="apt-table apt-train-score-table">
             <thead>
               <tr>
-                <th rowspan="2">姓名</th>
-                <th rowspan="2">報到<small>年月</small></th>
-                <th rowspan="2">小組長姓名</th>
-                <th rowspan="2">營業處</th>
+                ${metaHead}
                 ${weekHead}
               </tr>
               <tr>${nodeHead}</tr>
