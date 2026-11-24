@@ -178,6 +178,7 @@ body.pdg-open { overflow: hidden; }
   font-size: 0.9rem;
   cursor: pointer;
 }
+.pdg-btn[hidden] { display: none !important; }
 .pdg-btn:hover { background: #f8fafc; }
 .pdg-btn--main {
   background: #4f46e5;
@@ -207,6 +208,7 @@ body.pdg-open { overflow: hidden; }
   border-bottom: 1px solid #e2e8f0;
   background: #f8fafc;
 }
+.pdg-toolbar[hidden] { display: none !important; }
 .pdg-stage {
   position: relative;
   flex: 1;

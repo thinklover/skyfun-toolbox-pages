@@ -547,8 +547,10 @@
     root.querySelector('#pdg-full').hidden = false;
     root.querySelector('#pdg-lock').hidden = true;
     root.querySelector('#pdg-view').hidden = false;
+    const toolbar = root.querySelector('.pdg-toolbar');
     const dl = root.querySelector('#pdg-download');
     const relock = root.querySelector('#pdg-relock');
+    if (toolbar) toolbar.hidden = true;
     if (dl) {
       dl.hidden = true;
       dl.textContent = '⬇️ 下載完整檔';
@@ -566,8 +568,10 @@
     root.querySelectorAll('.pdg-tab').forEach((b) => {
       b.hidden = false;
     });
+    const toolbar = root.querySelector('.pdg-toolbar');
     const dl = root.querySelector('#pdg-download');
     const relock = root.querySelector('#pdg-relock');
+    if (toolbar) toolbar.hidden = false;
     if (dl) dl.hidden = false;
     if (relock) relock.hidden = false;
     const note = root.querySelector('.pdg-wm-note');
