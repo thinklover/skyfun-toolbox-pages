@@ -7854,13 +7854,23 @@
             <td class="${fc('name').trim()}"><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
             <td class="apt-mt-hire${fc('hire')}">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
             <td class="${fc('leader').trim()}">${esc(r.leader) || NIL}</td>
-            <td class="apt-mt-org${fc('office')}">${esc(r.office) || NIL}</td>
-            <td class="num apt-train-total ${speedTone(r.total)}${fc('total')}"><span class="apt-cell"><b>${r.total}</b><small>／100</small><i class="apt-train-pass">通過 ${r.done}／${r.totalNodes}</i></span></td>
+            <td class="apt-mt-org${fc('office')}" title="${esc(r.office) || ''}">${esc(r.office) || NIL}</td>
+            <td class="num apt-train-total ${speedTone(r.total)}${fc('total')}"><span class="apt-cell" title="通過 ${r.done}／${r.totalNodes}"><b>${r.total}</b><small>／100</small><i class="apt-train-pass">${r.done}／${r.totalNodes}</i></span></td>
             ${nodes}
           </tr>`;
       })
       .join('');
     const colCount = cols.length + 1;
+    const nodeCount = TRAIN_WEEK_NODES.reduce((n, w) => n + w.items.length, 0);
+    const colgroup = `<colgroup>
+      <col class="apt-train-col-rank">
+      <col class="apt-train-col-name">
+      <col class="apt-train-col-hire">
+      <col class="apt-train-col-leader">
+      <col class="apt-train-col-office">
+      <col class="apt-train-col-total">
+      ${'<col class="apt-train-col-node">'.repeat(nodeCount)}
+    </colgroup>`;
     const legend = `<div class="apt-tone-legend">成績配色同耗時：
       <span class="apt-tone-chip apt-tone--green">70 分以上</span>
       <span class="apt-tone-chip apt-tone--yellow">50–69 分</span>
@@ -7873,6 +7883,7 @@
         ${legend}
         <div class="apt-table-wrap apt-train-score-wrap">
           <table class="apt-table apt-dur-table apt-train-score-table">
+            ${colgroup}
             <thead>
               <tr>
                 ${metaHead}
