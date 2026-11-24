@@ -507,7 +507,7 @@
   box-shadow: none !important; font-weight: inherit;
 }
 #page-admin-points.apt-wide:has(.apt-train-scores) {
-  max-width: min(96vw, 72rem);
+  max-width: min(98vw, 100rem);
 }
 .apt-lvr-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
 .apt-lvr-split--single { grid-template-columns: minmax(0, 1fr); }
