@@ -156,6 +156,8 @@
         fetchWorker('/admin-points/terminations', '解約', r).catch((e) => ({ fields: [], rows: [], error: e.message })),
         rpc('admin_points_view', { p_start: r.start, p_end: r.end })
       ]);
+      /* 2026-11：實登點只認合約實價登錄人員（v2） */
+      const lvr = await Core.fetchLvrRows(r, { token: token(), rpaBase: RPA_BASE }).catch(() => ({ rows: [] }));
       const data = Core.stripExcluded(raw);
       const auditRows = Core.dropExcludedRows(Core.rowsFromPayload(audit), data.excluded);
       const staff = data.staff || [];
@@ -167,7 +169,8 @@
         manual: data.manual || [],
         opinions: data.opinions || [],
         expenses: Core.dropExcludedRows(Core.rowsFromPayload(expenses), data.excluded),
-        terminations: Core.dropExcludedRows(Core.rowsFromPayload(term), data.excluded)
+        terminations: Core.dropExcludedRows(Core.rowsFromPayload(term), data.excluded),
+        lvrBackfill: Core.dropExcludedRows(lvr.rows, data.excluded)
       });
       const dur = Core.durationReport(auditRows, { start: r.start, end: r.end, staff });
       const today = Core.isoDate(new Date());

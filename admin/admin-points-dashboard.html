@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=20260922-qa-sync1"></script>
-  <script src="../js/admin-points-core.js?v=20261123-lvr50"></script>
+  <script src="../js/admin-points-core.js?v=20261124-lvrv2prod"></script>
   <script src="../js/admin-deck.js?v=20261012-2"></script>
   <script src="../js/admin-boss-deck.js?v=20261012-3"></script>
   <script src="../js/guide-exam-data.js?v=20261010-1"></script>
@@ -1086,6 +1086,8 @@
           fetchWorker('/admin-points/disable-credits', '同租期停用認點', r).catch((e) => ({ fields: [], rows: [], suppressIds: [], error: e.message })),
           key === monthKey(range()) ? data : rpc('admin_points_admin_list', { p_start: r.start, p_end: r.end })
         ]);
+        /* 2026-11：實登點只認合約實價登錄人員（v2）；審核紀錄「已生效→已生效」不再給實登點 */
+        const lvr = await Core.fetchLvrRows(r, { token: toolboxToken(), rpaBase: RPA_BASE }).catch(() => ({ rows: [], updated: false }));
         const src = Core.stripExcluded(raw);
         const auditRows = Core.dropExcludedRows(Core.rowsFromPayload(audit), src.excluded);
         const expenseRows = Core.dropExcludedRows(Core.rowsFromPayload(expenses), src.excluded);
@@ -1099,6 +1101,7 @@
           opinions: src.opinions || [],
           expenses: expenseRows,
           terminations: Core.dropExcludedRows(Core.rowsFromPayload(term), src.excluded),
+          lvrBackfill: Core.dropExcludedRows(lvr.rows, src.excluded),
           ...Core.disableCreditOpts(dis, src.excluded)
         });
         const dur = Core.durationReport(auditRows, { start: r.start, end: r.end, staff });

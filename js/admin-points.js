@@ -4,6 +4,9 @@
 (function () {
   const Core = window.AdminPointsCore;
   const RPA_BASE = String(window.SKYFUN_RPA_BASE || 'https://skyfun-arrears-rpa.dahwork123.workers.dev').replace(/\/$/, '');
+  /** 實登認點 v2：正式 Worker 的 /admin-points/lvr-credits-v2（舊 /admin-points/lvr-backfill 保留，只用來讀「存實登順便產編」產編點） */
+  const LVR_BASE = String(window.SKYFUN_LVR_BASE || RPA_BASE).replace(/\/$/, '');
+  const LVR_V2_PATH = '/admin-points/lvr-credits-v2';
   /** 清冊總件數快照：true＝優先讀快照；false＝完全走舊即時路徑 */
   const USE_ROSTER_SNAPSHOT = true;
   const ITEMS = Core.AUTO_ITEMS;
@@ -202,16 +205,51 @@
     return `${range.year}-${String(range.month).padStart(2, '0')}`;
   }
 
+  /** 實登點 v2（正式 Worker lvr-credits-v2，只讀 KV）＋舊補點（正式 Worker，只讀 KV，只用來保留「存實登順便產編」的產編點） */
   async function fetchLvrBackfill(range) {
-    const res = await fetch(`${RPA_BASE}/admin-points/lvr-backfill?month=${encodeURIComponent(ymKey(range))}`, {
-      headers: { 'X-Skyfun-Session': token() }
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || !data?.ok) throw new Error(data?.error || `實登補點讀取失敗（HTTP ${res.status}）`);
-    return data;
+    const month = encodeURIComponent(ymKey(range));
+    let data;
+    try {
+      const res = await fetch(`${LVR_BASE}${LVR_V2_PATH}?month=${month}`, { headers: { 'X-Skyfun-Session': token() } });
+      data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+    } catch (err) {
+      data = { ok: true, version: 2, empty: true, contracts: [], credits: [], error: String(err.message || err) };
+    }
+    let legacy = null;
+    try {
+      const old = await fetch(`${RPA_BASE}/admin-points/lvr-backfill?month=${month}`, { headers: { 'X-Skyfun-Session': token() } });
+      const oj = await old.json().catch(() => null);
+      if (old.ok && oj?.ok) legacy = oj;
+    } catch (_) {
+      legacy = null;
+    }
+    return { ...data, legacy };
   }
 
-  /** 重新抓取／實登補點：僅簡為倢、邱奕棋、黃怡婷可見可點 */
+  /** v2 該月是否已有實登人員結果 */
+  function lvrFromRegistrarOf(payload) {
+    return !!(payload && Number(payload.version) === 2 && !payload.empty && Array.isArray(payload.contracts));
+  }
+
+  /**
+   * 實登點只用 v2（合約實登人員＋六條件）；v2 尚未跑的月份實登點為 0，畫面提示要按重新抓取。
+   * 舊補點只保留「存實登順便產編」的產編點（prodOnly，不給實登點）。
+   */
+  function lvrRowsOf(payload) {
+    const range = payload?.start && payload?.end ? { start: payload.start, end: payload.end } : null;
+    const v2 = lvrFromRegistrarOf(payload) ? Core.lvrCreditsFromContracts(payload.contracts || [], range) : [];
+    const prodOnly = payload?.legacy ? Core.lvrProdOnlyRows(payload.legacy) : [];
+    return v2.concat(prodOnly);
+  }
+
+  function lvrNote(payload) {
+    if (lvrFromRegistrarOf(payload)) return '';
+    if (payload?.error) return `實登點暫時讀不到（${payload.error}），實登點先不計`;
+    return '本月實登點尚未更新，請按「重新抓取＋實登補點」';
+  }
+
+  /** 重新抓取＋實登補點（合併按鈕）：僅簡為倢、邱奕棋、黃怡婷可見可點 */
   function syncOpsAdminBtns() {
     const show = Core.isSupervisor(myName());
     const refresh = $('apt-refresh');
@@ -235,12 +273,14 @@
     panel.innerHTML = html;
   }
 
+  /** 回傳 true＝讀取／重算成功；false＝失敗或略過（合併按鈕用來判斷停在哪一步） */
   async function load(refresh) {
-    if (state.loading) return;
+    if (state.loading) return false;
     if (!token()) {
       setMsg('請先登入工具箱', 'err');
-      return;
+      return false;
     }
+    let ok = false;
     const range = monthOptions().find((m) => `${m.year}-${m.month}` === state.monthKey) || monthOptions()[0];
     state.loading = true;
     $('apt-refresh')?.setAttribute('disabled', '');
@@ -262,7 +302,7 @@
       state.renewRows = auditRowsOf(renew);
       state.disableRows = auditRowsOf(dis);
       state.disableSuppressIds = Array.isArray(dis.suppressIds) ? dis.suppressIds : [];
-      state.lvrBackfillRows = Core.dropExcludedRows(Core.lvrBackfillRows(lvrBf), excludedStaff);
+      state.lvrBackfillRows = Core.dropExcludedRows(lvrRowsOf(lvrBf), excludedStaff);
       state.lvrBackfillMeta = lvrBf;
       state.lkpi = null;
       state.lease = null;
@@ -279,7 +319,7 @@
         lvrBackfill: state.lvrBackfillRows,
         ...Core.disableCreditOpts(dis, sb.excluded)
       });
-      state.termNote = mergeNotes(termNote(term), renewNote(renew), disableNote(dis));
+      state.termNote = mergeNotes(lvrNote(lvrBf), termNote(term), renewNote(renew), disableNote(dis));
       state.meta = { range, fetchedAt: audit.fetchedAt, total: audit.total, staffCount: (sb.staff || []).length };
       state.sb = sb;
       const today = Core.isoDate(new Date());
@@ -299,13 +339,18 @@
       }
       render();
       loadOpenOpinions();
+      ok = true;
     } catch (err) {
-      setMsg(String(err.message || err), 'err');
+      state.loadError = String(err.message || err);
+      setMsg(state.loadError, 'err');
     } finally {
       state.loading = false;
-      $('apt-refresh')?.removeAttribute('disabled');
-      if (!state.lvrRunning) $('apt-lvr-backfill')?.removeAttribute('disabled');
+      if (!state.lvrRunning) {
+        $('apt-refresh')?.removeAttribute('disabled');
+        $('apt-lvr-backfill')?.removeAttribute('disabled');
+      }
     }
+    return ok;
   }
 
   /** 實登補點：處長密碼（與辦法完整檔／主管獎金同一組） */
@@ -362,56 +407,102 @@
     });
   }
 
-  async function runLvrBackfill() {
+  /** 實登補點 reset=1 重掃整個業績月（正式 Worker lvr-credits-v2）；Worker 遇 403／429／5xx 會 halt，這裡不重試 */
+  async function runLvrBackfillLoop(ym) {
+    let last = null;
+    let reset = true;
+    for (let i = 0; i < 500; i++) {
+      const res = await fetch(`${LVR_BASE}${LVR_V2_PATH}?month=${encodeURIComponent(ym)}${reset ? '&reset=1' : ''}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Skyfun-Session': token()
+        },
+        body: '{}'
+      });
+      reset = false;
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) throw new Error(data?.error || `實登補點失敗（HTTP ${res.status}）`);
+      last = data;
+      const p = data.progress || {};
+      const pct = p.phase === 'search' ? `搜尋第 ${p.searchPage || 0} 頁（已 ${p.contractsFound || 0} 筆）` : p.message || p.phase || '';
+      renderLvrPanel(
+        `<b>步驟 2/3：實登補點重掃整個業績月</b><div class="apt-lvr-progress">${esc(p.message || pct)} · 星鴻呼叫 ${Number(data.skyfunCalls) || 0} 次</div>`,
+        true
+      );
+      if (data.done) break;
+    }
+    if (!last?.done) throw new Error('實登補點逾時，請稍後再按一次');
+    return last;
+  }
+
+  /**
+   * 合併按鈕「重新抓取＋實登補點」：密碼 → 重抓星鴻資料（load(true)）→ 實登補點 reset=1 → 重算一次。
+   * 每天 8:00 自動更新只走 Worker 排程重抓，不會觸發這裡的實登重掃。
+   */
+  async function runRefreshAll() {
     if (state.lvrRunning || state.loading) return;
     if (!Core.isSupervisor(myName())) {
-      window.alert('僅管理員可執行實登補點');
+      window.alert('僅管理員可重新抓取星鴻資料與實登補點');
+      return;
+    }
+    if (!token()) {
+      setMsg('請先登入工具箱', 'err');
       return;
     }
     if (!(await askLvrPassword())) return;
     const range = monthOptions().find((m) => `${m.year}-${m.month}` === state.monthKey) || monthOptions()[0];
     const ym = ymKey(range);
     const label = `${range.year - 1911} 年 ${range.month} 月業績（${range.start}～${range.end}）`;
-    if (!window.confirm(`確定對「${label}」執行實登補點？\n\n點數改以合約上的實價登錄人員計算，已補過但認錯人的會重對一次。不影響「重新抓取星鴻資料」。`)) {
+    if (
+      !window.confirm(
+        `確定對「${label}」重新抓取並實登補點？\n\n會依序：\n① 重新抓取星鴻資料（審核紀錄、補助、解約、續約、停用）\n② 實登補點：重掃整個業績月，點數記在合約上的實價登錄人員（約 1～2 分鐘）\n③ 重算點數並顯示結果\n\n任一步失敗會停下並顯示停在哪一步；重抓失敗就不會跑實登補點。`
+      )
+    ) {
       return;
     }
     state.lvrRunning = true;
-    $('apt-lvr-backfill')?.setAttribute('disabled', '');
     $('apt-refresh')?.setAttribute('disabled', '');
-    let last = null;
+    $('apt-lvr-backfill')?.setAttribute('disabled', '');
+    const steps = [];
     try {
-      let reset = true;
-      for (let i = 0; i < 500; i++) {
-        const res = await fetch(`${RPA_BASE}/admin-points/lvr-backfill?month=${encodeURIComponent(ym)}${reset ? '&reset=1' : ''}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Skyfun-Session': token()
-          },
-          body: '{}'
-        });
-        reset = false;
-        const data = await res.json().catch(() => null);
-        if (!res.ok || !data?.ok) throw new Error(data?.error || `實登補點失敗（HTTP ${res.status}）`);
-        last = data;
-        const p = data.progress || {};
-        const pct = p.candidates
-          ? `查變更 ${p.probeDone || 0}/${p.candidates}`
-          : p.phase === 'search'
-            ? `搜尋第 ${p.searchPage || 0} 頁（已 ${p.contractsFound || 0} 筆）`
-            : p.message || p.phase || '';
+      renderLvrPanel('<b>步驟 1/3：重新抓取星鴻資料中…</b>', true);
+      state.loadError = '';
+      const fetched = await load(true);
+      if (!fetched) {
         renderLvrPanel(
-          `<b>實登補點進行中</b><div class="apt-lvr-progress">${esc(p.message || pct)} · 星鴻呼叫 ${Number(data.skyfunCalls) || 0} 次</div>`,
+          `<b>停在步驟 1/3：重新抓取星鴻資料失敗</b>：${esc(state.loadError || '請稍後再試')}<div>未執行實登補點，點數維持原本結果。</div>`,
           true
         );
-        if (data.done) break;
+        return;
       }
-      if (!last?.done) throw new Error('實登補點逾時，請再按一次接續（已查過的不會重查）');
+      steps.push('① 重新抓取星鴻資料 ✓');
+      let last;
+      try {
+        last = await runLvrBackfillLoop(ym);
+      } catch (err) {
+        renderLvrPanel(
+          `<b>停在步驟 2/3：實登補點失敗</b>：${esc(String(err.message || err))}<div>${steps.join('　')}；實登點維持上次結果，未重試。</div>`,
+          true
+        );
+        setMsg(String(err.message || err), 'err');
+        return;
+      }
+      steps.push(`② 實登補點 ✓（星鴻呼叫 ${Number(last.skyfunCalls) || 0} 次）`);
+      renderLvrPanel(`<b>步驟 3/3：重算點數中…</b><div>${steps.join('　')}</div>`, true);
+      state.loadError = '';
+      const recomputed = await load(false);
+      if (!recomputed) {
+        renderLvrPanel(
+          `<b>停在步驟 3/3：重算點數失敗</b>：${esc(state.loadError || '請重新整理頁面')}<div>${steps.join('　')}</div>`,
+          true
+        );
+        return;
+      }
+      steps.push('③ 重算點數 ✓');
       const credits = Array.isArray(last.credits) ? last.credits : [];
       const by = Array.isArray(last.byEditor) ? last.byEditor : [];
-      const peopleLine = by.length
-        ? by.map((x) => `${esc(x.editor)} +${x.count}`).join('、')
-        : '（本月無須補點）';
+      const peopleLine = by.length ? by.map((x) => `${esc(x.editor)} ${x.count}`).join('、') : '（本月沒有符合的實登）';
       const list = credits.length
         ? `<ul>${credits
             .slice(0, 40)
@@ -419,20 +510,19 @@
             .join('')}${credits.length > 40 ? `<li>…另 ${credits.length - 40} 筆</li>` : ''}</ul>`
         : '';
       const detail = credits.length
-        ? `<details class="apt-lvr-fold"><summary>補給：${peopleLine}（點開看 ${credits.length} 筆明細）</summary>${list}</details>`
-        : `<div>補給：${peopleLine}</div>`;
+        ? `<details class="apt-lvr-fold"><summary>實登認點：${peopleLine}（點開看 ${credits.length} 筆明細）</summary>${list}</details>`
+        : `<div>實登認點：${peopleLine}</div>`;
       renderLvrPanel(
-        `<b>實登補點完成</b>：補 <b>${credits.length}</b> 筆 · 星鴻呼叫 <b>${Number(last.skyfunCalls) || 0}</b> 次${detail}`,
+        `<b>重新抓取＋實登補點完成</b>：實登認點 <b>${credits.length}</b> 筆<div>${steps.join('　')}</div>${detail}`,
         true
       );
-      await load(false);
     } catch (err) {
-      renderLvrPanel(`<b>實登補點失敗</b>：${esc(String(err.message || err))}`, true);
+      renderLvrPanel(`<b>重新抓取＋實登補點失敗</b>：${esc(String(err.message || err))}<div>${steps.join('　')}</div>`, true);
       setMsg(String(err.message || err), 'err');
     } finally {
       state.lvrRunning = false;
-      $('apt-lvr-backfill')?.removeAttribute('disabled');
       $('apt-refresh')?.removeAttribute('disabled');
+      $('apt-lvr-backfill')?.removeAttribute('disabled');
     }
   }
 
@@ -1361,13 +1451,14 @@
           sb = state.sb;
           result = state.result;
         } else {
-          const [audit, expenses, term, renew, dis, sbData] = await Promise.all([
+          const [audit, expenses, term, renew, dis, sbData, lvrBf] = await Promise.all([
             fetchWorker('/admin-points/audit-log', `${mr.month} 月審核時間紀錄`, mr, false),
             fetchWorker('/admin-points/expenses', `${mr.month} 月補助審核`, mr, false),
             fetchTerminations(mr, false),
             fetchRenewals(mr, false),
             fetchDisableCredits(mr, false),
-            fetchSupabase(mr)
+            fetchSupabase(mr),
+            fetchLvrBackfill(mr)
           ]);
           auditRows = auditRowsOf(audit);
           sb = sbData;
@@ -1381,6 +1472,7 @@
             expenses: auditRowsOf(expenses),
             terminations: auditRowsOf(term),
             renewals: auditRowsOf(renew),
+            lvrBackfill: Core.dropExcludedRows(lvrRowsOf(lvrBf), excludedStaff),
             ...Core.disableCreditOpts(dis, sb.excluded)
           });
         }
@@ -2280,13 +2372,14 @@
     state.prev = { key, loading: true };
     const pr = prevRange(range);
     try {
-      const [audit, expenses, term, renew, dis, sb] = await Promise.all([
+      const [audit, expenses, term, renew, dis, sb, lvrBf] = await Promise.all([
         fetchWorker('/admin-points/audit-log', '上月審核時間紀錄', pr, false),
         fetchWorker('/admin-points/expenses', '上月補助審核', pr, false),
         fetchTerminations(pr, false),
         fetchRenewals(pr, false),
         fetchDisableCredits(pr, false),
-        fetchSupabase(pr)
+        fetchSupabase(pr),
+        fetchLvrBackfill(pr)
       ]);
       const res = Core.computePoints(auditRowsOf(audit), {
         start: pr.start,
@@ -2298,6 +2391,7 @@
         expenses: auditRowsOf(expenses),
         terminations: auditRowsOf(term),
         renewals: auditRowsOf(renew),
+        lvrBackfill: Core.dropExcludedRows(lvrRowsOf(lvrBf), excludedStaff),
         ...Core.disableCreditOpts(dis, sb.excluded)
       });
       state.prev = { key, totals: new Map(res.people.map((p) => [p.name, p.month.total])) };
@@ -3608,7 +3702,7 @@
 
   /** 應繳案件依合約的「代管營業處」（媒合管理）分組；只列這一區、有應繳的營業處／租管部 */
   function leaseOfficeGroups(rows, manager) {
-    if (rows.length && !rows.some((r) => r.office)) return { error: '應繳案件還沒有代管營業處資料，請按「重新抓取星鴻資料」' };
+    if (rows.length && !rows.some((r) => r.office)) return { error: '應繳案件還沒有代管營業處資料，請按「重新抓取＋實登補點」' };
     const own = areaOwnRows(rows, manager);
     const by = new Map();
     for (const row of own) {
@@ -8449,14 +8543,8 @@
       state.spotQualityOpen = false;
       load(false);
     });
-    $('apt-refresh')?.addEventListener('click', () => {
-      if (!Core.isSupervisor(myName())) {
-        window.alert('僅管理員可重新抓取星鴻資料');
-        return;
-      }
-      load(true);
-    });
-    $('apt-lvr-backfill')?.addEventListener('click', () => runLvrBackfill());
+    /* 「重新抓取＋實登補點」合併成一顆：密碼 → 重抓 → 實登補點 → 重算 */
+    $('apt-refresh')?.addEventListener('click', () => runRefreshAll());
     document.addEventListener('click', (e) => {
       if (!state.lvrDeck) return;
       if (e.target.closest('[data-lvr-deck-close]')) closeLvrDeck();
@@ -9035,7 +9123,7 @@
       expenses: auditRowsOf(expenses),
       terminations: auditRowsOf(term),
       renewals: auditRowsOf(renew),
-      lvrBackfill: Core.dropExcludedRows(Core.lvrBackfillRows(lvrBf), excludedStaff),
+      lvrBackfill: Core.dropExcludedRows(lvrRowsOf(lvrBf), excludedStaff),
       ...Core.disableCreditOpts(dis, sb.excluded)
     });
     const top = top3FromPeople(result.people);

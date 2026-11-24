@@ -196,7 +196,8 @@
     if (row.type !== 'contract') return { item: null };
     if (status === '預審中 → 預審通過') return { item: 'pre', group: 'pre' };
     if (status === '複審中 → 複審通過') return { item: 'rev', group: 'rev' };
-    if (status === '已生效 → 已生效') return { item: 'lvr', group: 'lvr' };
+    /* 2026-11：實登點只認合約實價登錄人員（lvrCreditsFromContracts／實登補點 v2），審核時間紀錄「已生效→已生效」不再給實登點 */
+    if (status === '已生效 → 已生效') return { item: null };
     if (status === '待產編 → 已生效') {
       const code = contractPeriod(row.no);
       if (code && PERIOD_4.has(code.period)) return { item: 'p4', group: 'prod' };
@@ -433,6 +434,93 @@
   }
 
   /**
+   * 實價登錄認點（新邏輯，2026-11）：資料來源為媒合管理 SearchContracts
+   * （minApplyStatus:5、realPriceRegistered:"Y"、起租日業績月前後 3 個月、依實登日新到舊）。
+   * 條件全部符合才認點，每件固定 1 點、同一合約 id 只算一次、記在實登人員名下：
+   * 1) 實登人員有值 2) 實登日有值 3) realPriceRegistered 為真（已實價登錄）
+   * 4) 剩餘天數「已完成」（系統前端：realPriceRegistered 為真即已完成）
+   * 5) 實登日落在業績月 start～end 6) 合約狀態＝已生效
+   * 回傳格式與 lvrBackfillRows 相同，可直接丟進 compute 的 lvrBackfill。
+   */
+  function lvrCreditsFromContracts(contracts, range, opts) {
+    const list = Array.isArray(contracts?.data) ? contracts.data : Array.isArray(contracts) ? contracts : [];
+    const start = String(range?.start || '');
+    const end = String(range?.end || '');
+    const toIso = (v) => {
+      const t = String(v || '').trim();
+      const west = t.slice(0, 10).replace(/\//g, '-').match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (west) return `${west[1]}-${west[2].padStart(2, '0')}-${west[3].padStart(2, '0')}`;
+      const roc = t.match(/^(\d{2,3})\/(\d{1,2})\/(\d{1,2})/);
+      if (roc) return `${Number(roc[1]) + 1911}-${roc[2].padStart(2, '0')}-${roc[3].padStart(2, '0')}`;
+      return '';
+    };
+    const seen = new Set();
+    const out = [];
+    for (const c of list) {
+      if (!c || typeof c !== 'object') continue;
+      const id = String(c.id ?? '').trim();
+      const auditor = String(c.realPriceRegistrationUserName || c.RealPriceRegistrationUserName || '').trim();
+      const time = String(c.realPriceRegistrationDate || c.RealPriceRegistrationDate || '').trim();
+      const iso = toIso(time);
+      const registered = c.realPriceRegistered === true || c.realPriceRegistered === 'Y' || c.realPriceRegistered === 'true';
+      const status = String(c.applyStatus || c.displayStatus || c.applyStatusText || '').trim();
+      if (!id || seen.has(id)) continue;
+      if (!auditor || !iso || !registered) continue;
+      if (status !== '已生效') continue;
+      if ((start && iso < start) || (end && iso > end)) continue;
+      seen.add(id);
+      out.push({
+        id,
+        targetId: id,
+        no: String(c.matchNo || ''),
+        name: String(c.rentAddress || c.address || ''),
+        auditor,
+        time,
+        date: iso,
+        type: 'contract',
+        status: '實登認點（媒合管理已實價登錄）',
+        action: '實登',
+        prodFromLvr: false
+      });
+    }
+    return out;
+  }
+
+  /** 舊實登補點結果裡「存實登順便產編」的合約 → 只補產編點的列（不給實登點） */
+  function lvrProdOnlyRows(legacyPayload) {
+    return lvrBackfillRows(legacyPayload)
+      .filter((r) => r.prodFromLvr)
+      .map((r) => ({ ...r, prodOnly: true, status: '待產編 → 已生效（存實登）' }));
+  }
+
+  var LVR_V2_BASE = 'https://skyfun-arrears-rpa.dahwork123.workers.dev';
+  var LVR_V2_PATH = '/admin-points/lvr-credits-v2';
+  var LVR_LEGACY_PATH = '/admin-points/lvr-backfill';
+  var LVR_LEGACY_BASE = 'https://skyfun-arrears-rpa.dahwork123.workers.dev';
+  /**
+   * 其他頁（後台 dashboard、成長羅盤）共用：讀實登點 v2（只讀 KV）＋舊補點產編旗標，回傳 compute 用的 lvrBackfill 列。
+   * 讀不到就回空陣列（實登點 0），不打星鴻。
+   */
+  async function fetchLvrRows(range, opts) {
+    const o = opts || {};
+    const tk = String(o.token || '');
+    const month = `${range.year}-${String(range.month).padStart(2, '0')}`;
+    const get = async (base, path) => {
+      try {
+        const res = await fetch(`${base}${path}?month=${encodeURIComponent(month)}`, { headers: { 'X-Skyfun-Session': tk } });
+        const data = await res.json().catch(() => null);
+        return res.ok && data?.ok ? data : null;
+      } catch (_) {
+        return null;
+      }
+    };
+    const [v2, legacy] = await Promise.all([get(o.lvrBase || LVR_V2_BASE, LVR_V2_PATH), get(o.rpaBase || LVR_LEGACY_BASE, LVR_LEGACY_PATH)]);
+    const hasV2 = !!(v2 && Number(v2.version) === 2 && !v2.empty && Array.isArray(v2.contracts));
+    const rows = hasV2 ? lvrCreditsFromContracts(v2.contracts, { start: v2.start || range.start, end: v2.end || range.end }) : [];
+    return { rows: rows.concat(legacy ? lvrProdOnlyRows(legacy) : []), updated: hasV2 };
+  }
+
+  /**
    * @param auditRows  rowsFromPayload 結果
    * @param opts { start, end, staff:[{name,status,kind}], manual:[{date,name,item,qty,points}],
    *               expenses: 補助審核 rowsFromPayload 結果（已生效五類費用，date 為審核日期）,
@@ -587,11 +675,14 @@
     const seenLvrBf = new Set();
     for (const r of lvrBackfill) {
       const id = String(r.targetId ?? r.id ?? '').trim();
-      if (!id || lvrCreditedIds.has(id) || seenLvrBf.has(id)) continue;
-      seenLvrBf.add(id);
+      /* prodOnly：舊補點「存實登順便產編」只補產編點，不給實登點 */
+      if (!r.prodOnly) {
+        if (!id || lvrCreditedIds.has(id) || seenLvrBf.has(id)) continue;
+        seenLvrBf.add(id);
+      } else if (!id) continue;
       if (skipResigned(r.auditor)) continue;
-      lvrCreditedIds.add(id);
-      scored.push({
+      if (!r.prodOnly) lvrCreditedIds.add(id);
+      if (!r.prodOnly) scored.push({
         ...r,
         item: 'lvr',
         points: itemPoints('lvr', r.date),
@@ -2299,6 +2390,9 @@
     dropExcludedRows,
     disableCreditOpts,
     lvrBackfillRows,
+    lvrCreditsFromContracts,
+    lvrProdOnlyRows,
+    fetchLvrRows,
     computePoints,
     compute,
     isoDate

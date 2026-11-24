@@ -5634,8 +5634,7 @@
                 <div class="apt-head">
                     <h2 class="apt-title">📊 行政績效中心</h2>
                     <select id="apt-month" aria-label="業績月"></select>
-                    <button type="button" class="apt-btn" id="apt-refresh" hidden>重新抓取星鴻資料</button>
-                    <button type="button" class="apt-btn apt-btn--lvr" id="apt-lvr-backfill" hidden>實登補點（月結用）</button>
+                    <button type="button" class="apt-btn apt-btn--lvr" id="apt-refresh" hidden title="需處長密碼：重新抓取星鴻資料後，自動重掃整個業績月的實登補點並重算">重新抓取＋實登補點</button>
                     <a class="apt-admin-link" href="./admin/admin-points-dashboard.html" target="_blank" rel="noopener">後台：報表／登錄／考試／改善計畫 ↗</a>
                 </div>
                 <p class="apt-msg" id="apt-msg" role="status" aria-live="polite"></p>
@@ -5760,7 +5759,7 @@
                     <ul>
                         <li>業績月為上月 29 日至本月 28 日；月累積達 250 點為第一階段、350 點為第二階段。</li>
                         <li>只計人力明細中「在職」人員（含工讀生）；同一案件同一工作項目只認列第一次紀錄。</li>
-                        <li>日期以星鴻審核時間（修繕為補助審核日期）為準；點數表每天早上 8:00 自動更新，可按「重新抓取」立即更新。</li>
+                        <li>日期以星鴻審核時間（修繕為補助審核日期）為準；點數表每天早上 8:00 自動更新（不含實登補點）；管理員可按「重新抓取＋實登補點」（需處長密碼）立即重抓並重掃當月實登。</li>
                     </ul>
                 </details>
             </section>
@@ -14714,7 +14713,7 @@
         <script src="./js/admin-qa.js?v=20261013-5"></script>
         <script src="./js/ai-tingting.js?v=20261118-staff-sync"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
-        <script src="./js/admin-points-core.js?v=20261123-lvr50"></script>
+        <script src="./js/admin-points-core.js?v=20261124-lvrv2prod"></script>
         <script src="./js/admin-points-charts.js?v=20261109-zoom"></script>
         <script src="./js/admin-training-content.js?v=20261118-term-bonus-exam"></script>
         <script src="./js/guide-exam-data.js?v=20261010-1"></script>
@@ -14737,8 +14736,8 @@
         <script src="./js/course-exam.js?v=20261116-contract"></script>
         <script src="./js/sim-practice.js?v=20261015-1"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
-        <script src="./js/growth-compass.js?v=20261014-2"></script>
-        <script src="./js/admin-points.js?v=20261123-lvr50"></script>
+        <script src="./js/growth-compass.js?v=20261124-lvrv2prod"></script>
+        <script src="./js/admin-points.js?v=20261124-lvrv2prod"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>
