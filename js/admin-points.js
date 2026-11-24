@@ -7846,22 +7846,22 @@
         const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
           w.items.map((n) => {
             const score = Number(r.scores[n.key]) || 0;
-            return `<td class="num apt-train-node ${speedTone(score)}${fc(`node:${n.key}`)}">${score}</td>`;
+            return `<td class="num apt-train-node ${speedTone(score)}${fc(`node:${n.key}`)}"><span class="apt-cell">${score}</span></td>`;
           })
         ).join('');
-        return `<tr class="${r.inStaff ? '' : 'apt-row-muted'}">
+        return `<tr class="apt-dur-row${r.inStaff ? '' : ' apt-row-muted'}">
             ${trainScoreRankCell(ranks[i])}
             <td class="${fc('name').trim()}"><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
             <td class="apt-mt-hire${fc('hire')}">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
             <td class="${fc('leader').trim()}">${esc(r.leader) || NIL}</td>
             <td class="apt-mt-org${fc('office')}">${esc(r.office) || NIL}</td>
-            <td class="num apt-train-total ${speedTone(r.total)}${fc('total')}"><b>${r.total}</b><small>／100</small><div class="apt-train-pass">通過 ${r.done}／${r.totalNodes}</div></td>
+            <td class="num apt-train-total ${speedTone(r.total)}${fc('total')}"><span class="apt-cell"><b>${r.total}</b><small>／100</small><i class="apt-train-pass">通過 ${r.done}／${r.totalNodes}</i></span></td>
             ${nodes}
           </tr>`;
       })
       .join('');
     const colCount = cols.length + 1;
-    const legend = `<div class="apt-tone-legend">成績底色：
+    const legend = `<div class="apt-tone-legend">成績配色同耗時：
       <span class="apt-tone-chip apt-tone--green">70 分以上</span>
       <span class="apt-tone-chip apt-tone--yellow">50–69 分</span>
       <span class="apt-tone-chip apt-tone--red">未滿 50 分</span>
