@@ -8,6 +8,10 @@
 (function () {
   'use strict';
 
+  /** 教育訓練模擬實作總開關；false 時不掛載 SimPractice（儀表與入口一併消失） */
+  const ENABLED = false;
+  if (!ENABLED) return;
+
   const SIM_BASE = String(window.SKYFUN_SIM_BASE || 'https://skyfun-sim-obj.pages.dev').replace(/\/$/, '');
   /** 每門課的操作說明：清單在哪、可以標哪些頁、用什麼按鈕交卷 */
   const COURSES = {

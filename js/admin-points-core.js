@@ -68,15 +68,18 @@
   const VIDEO_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p4', 'p5', 'lvr', 'weekly', 'repair', 'guild', 'hr', 'contract', 'term', 'bonus'];
   /** 已開放線上考試的課程；未列入者看完影片即可，考試步驟顯示準備中 */
   const EXAM_COURSES = ['obj', 'tenant', 'pre', 'rev', 'p4', 'p5', 'lvr', 'weekly', 'repair', 'guild', 'hr', 'contract', 'term', 'bonus'];
-  /** 已開放模擬系統實作的課程；其他課程的模擬環境還在建置，實作一律顯示準備中 */
-  const PRACTICE_COURSES = ['obj', 'tenant', 'pre'];
+  /**
+   * 已開放模擬系統實作的課程；空陣列＝教育訓練暫不計實作（畫面也不顯示模擬實作）。
+   * 要恢復時改回 ['obj', 'tenant', 'pre']，並把 sim-practice.js 的 ENABLED 設回 true。
+   */
+  const PRACTICE_COURSES = [];
   /** 測試教學影片、題庫與實作用的帳號：人員名單固定列在非行政，不進人力明細與組織圖 */
   const TRAINING_TESTERS = ['簡為倢', '邱奕棋'];
   const isOnDuty = (s) => s.status === '在職' && !TRAINING_TESTERS.includes(s.name);
 
   /**
    * 教育訓練通過判定
-   * 影片課程：看完影片＋考試滿分＋實作完成；執行要點：考試全部滿分；其他項目課程準備中
+   * 影片課程：看完影片＋考試滿分（實作有開放才加計）；執行要點：考試全部滿分；其他項目課程準備中
    * @param st { videoDone, videoPct, examPassed, examBest, practiceDone, guideRate }
    */
   function trainingState(key, st) {

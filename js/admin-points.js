@@ -1072,7 +1072,7 @@
     return `<div class="apt-course-wrap" data-course-of="${esc(pf.name)}">
         <div class="apt-course apt-course--general${genOpen ? ' is-open' : ''}">
           <button type="button" class="apt-course-head" data-course-toggle="general" aria-expanded="${genOpen}">
-            <span class="apt-course-name"><b>📘 行政教育訓練（五週課程）</b>${desc('每週 2～3 項，照週次完成；每一項比重相同。有影片的課程要看完影片、考試滿分、實作完成才算通過（各占 1／3 分數），執行要點依考試進度計分', `五週共 ${generalItems.length} 項，已通過 ${generalDone} 項 · 點一下展開各週課程`)}</span>
+            <span class="apt-course-name"><b>📘 行政教育訓練（五週課程）</b>${desc('每週 2～3 項，照週次完成；每一項比重相同。有影片的課程要看完影片、考試滿分才算通過（各占 1／2 分數；模擬實作暫關閉），執行要點依考試進度計分', `五週共 ${generalItems.length} 項，已通過 ${generalDone} 項 · 點一下展開各週課程`)}</span>
             <span class="apt-course-total"><span>訓練總分</span><strong style="color:${scoreColor(g)}">${g}</strong><small>／100</small></span>
             ${caret}
             <span class="apt-course-bar"><i style="width:${g}%;background:${scoreColor(g)}"></i></span>
