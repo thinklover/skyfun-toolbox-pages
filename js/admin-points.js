@@ -7822,6 +7822,8 @@
   function renderTrainScoresTab() {
     const cols = trainScoreCols();
     const { sorted, ranks } = sortedRows('trainscores', cols, trainScoreRows());
+    const focus = state.durSorts.trainscores?.key || 'total';
+    const fc = (key) => (key === focus ? ' apt-col-focus' : '');
     const cxReady = !!(window.CourseExam?.statusOf?.('obj', '')?.loaded);
     const note = cxReady
       ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位；# 為目前排序名次（同分同名次）。總分為五週各節點平均；點欄位標題可排序，再點一次反過來。`
@@ -7844,28 +7846,33 @@
         const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
           w.items.map((n) => {
             const score = Number(r.scores[n.key]) || 0;
-            const done = score >= 100;
-            return `<td class="num apt-train-node${done ? ' is-done' : ''}" style="color:${scoreColor(score)}">${score}</td>`;
+            return `<td class="num apt-train-node ${speedTone(score)}${fc(`node:${n.key}`)}">${score}</td>`;
           })
         ).join('');
-        return `<tr class="${rankBand(Number(ranks[i]) || 999)}${r.inStaff ? '' : ' apt-row-muted'}">
+        return `<tr class="${r.inStaff ? '' : 'apt-row-muted'}">
             ${trainScoreRankCell(ranks[i])}
-            <td><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
-            <td class="apt-mt-hire">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
-            <td>${esc(r.leader) || NIL}</td>
-            <td class="apt-mt-org">${esc(r.office) || NIL}</td>
-            <td class="num apt-total apt-train-total"><b class="apt-total-n" style="color:${scoreColor(r.total)}">${r.total}</b><small>／100</small><div class="apt-train-pass">${r.done}／${r.totalNodes}</div></td>
+            <td class="${fc('name').trim()}"><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
+            <td class="apt-mt-hire${fc('hire')}">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
+            <td class="${fc('leader').trim()}">${esc(r.leader) || NIL}</td>
+            <td class="apt-mt-org${fc('office')}">${esc(r.office) || NIL}</td>
+            <td class="num apt-train-total ${speedTone(r.total)}${fc('total')}"><b>${r.total}</b><small>／100</small><div class="apt-train-pass">通過 ${r.done}／${r.totalNodes}</div></td>
             ${nodes}
           </tr>`;
       })
       .join('');
     const colCount = cols.length + 1;
+    const legend = `<div class="apt-tone-legend">成績底色：
+      <span class="apt-tone-chip apt-tone--green">70 分以上</span>
+      <span class="apt-tone-chip apt-tone--yellow">50–69 分</span>
+      <span class="apt-tone-chip apt-tone--red">未滿 50 分</span>
+    </div>`;
     return `<div class="apt-train-scores">
       <div class="apt-zone">
         <h3 class="apt-sec-title">本次受訓名單<small>排名＋各節點成績 · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
         <p class="apt-sub-note">${esc(note)}</p>
+        ${legend}
         <div class="apt-table-wrap apt-train-score-wrap">
-          <table class="apt-table apt-train-score-table">
+          <table class="apt-table apt-dur-table apt-train-score-table">
             <thead>
               <tr>
                 ${metaHead}
