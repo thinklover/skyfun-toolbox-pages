@@ -7723,20 +7723,20 @@
 
   /** 五週各節點短標（表頭用） */
   const TRAIN_NODE_SHORT = {
-    guide: '執行要點',
+    guide: '要點',
     obj: '物審',
     tenant: '房客',
     pre: '預審',
     rev: '複審',
     contract: '合約',
-    p4: '四期產編',
-    p5: '五期產編',
+    p4: '四期',
+    p5: '五期',
     weekly: '週報',
     term: '解約',
-    repair: '補助審核',
-    bonus: '媒合獎金',
+    repair: '補助',
+    bonus: '獎金',
     hr: '到離職',
-    guild: '送公會'
+    guild: '公會'
   };
 
   const TRAIN_WEEK_NODES = (Core.TRAINING_WEEKS || []).map((keys, i) => ({
@@ -7838,9 +7838,9 @@
       `<th rowspan="2">#</th>` +
       trainScoreSortTh('name', '姓名', { rowspan: 2 }) +
       trainScoreSortTh('hire', '報到', { rowspan: 2, sub: '<small>年月</small>' }) +
-      trainScoreSortTh('leader', '小組長姓名', { rowspan: 2 }) +
+      trainScoreSortTh('leader', '小組長', { rowspan: 2 }) +
       trainScoreSortTh('office', '營業處', { rowspan: 2 }) +
-      trainScoreSortTh('total', '訓練總分', { rowspan: 2, num: true, className: 'apt-train-total-h' });
+      trainScoreSortTh('total', '總分', { rowspan: 2, num: true, className: 'apt-train-total-h' });
     const body = sorted
       .map((r, i) => {
         const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
