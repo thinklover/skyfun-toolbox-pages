@@ -7,6 +7,19 @@ window.SKYFUN_BIZ_BONUS = {
   lead: '點「預覽浮水印檔」看辦法原文、看各營業處完成率；再點營業處可看誰還沒勾。營業處業務請打勾「已閱畢知悉」。',
   docs: [
     {
+      id: 'bb-service-star-1151120',
+      title: '星鴻服務之星獎勵辦法',
+      version: '115/11/20｜簽呈：總經理室',
+      file: './簽呈-總經理室20261120_星鴻服務之星獎勵辦法乙案.pdf',
+      moneyHint: '服務之星獎勵辦法乙案',
+      summaryHtml: `
+        <p class="bb-sum-lead">115/11/20 總經理室簽呈：星鴻服務之星獎勵辦法乙案</p>
+        <ul class="bb-sum-list">
+          <li>請以預覽浮水印檔閱讀完整簽呈內容。</li>
+          <li>預覽滑到底後，打勾「已閱畢知悉」。</li>
+        </ul>`
+    },
+    {
       id: 'bb-gaozhuan-1151031',
       title: '高專業務獎金制度',
       version: '115/10/31 修訂',
