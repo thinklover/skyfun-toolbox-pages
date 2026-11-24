@@ -53,7 +53,7 @@
       weekly: { key: 'weekPoints', dir: -1 },
       areaOffice: { key: 'office', dir: 1 },
       areaStaff: { key: 'weekPoints', dir: -1 },
-      trainscores: { key: 'name', dir: 1 }
+      trainscores: { key: 'total', dir: -1 }
     },
     auditRows: [],
     sb: null,
@@ -7747,7 +7747,7 @@
     }))
   }));
 
-  /** 本次受訓名單：各節點成績（第一週→第五週） */
+  /** 本次受訓名單：各節點成績（第一週→第五週）＋訓練總分 */
   function trainScoreRows() {
     const byName = new Map((state.sb?.staff || []).map((s) => [s.name, s]));
     return TRAIN_COHORT_NAMES.map((name) => {
@@ -7760,12 +7760,17 @@
       TRAIN_WEEK_NODES.forEach((w) => w.items.forEach((n) => {
         if (scores[n.key] == null) scores[n.key] = 0;
       }));
+      const total = Math.round(cs.generalScore || 0);
+      const done = (cs.general || []).filter((c) => trainState(c.key, name).done).length;
       return {
         name,
         hireDate: s.hireDate || '',
         office: Core.officeName(s.office) || s.office || '',
         leader: s.leader || '',
         scores,
+        total,
+        done,
+        totalNodes: (cs.general || []).length || TRAIN_WEEK_NODES.reduce((n, w) => n + w.items.length, 0),
         inStaff: !!byName.get(name)
       };
     });
@@ -7776,7 +7781,8 @@
       { key: 'name', label: '姓名', dir: 1, value: (r) => r.name },
       { key: 'hire', label: '報到年月', dir: 1, value: (r) => r.hireDate || null },
       { key: 'leader', label: '小組長姓名', dir: 1, value: (r) => r.leader || null },
-      { key: 'office', label: '營業處', dir: 1, value: (r) => r.office || null }
+      { key: 'office', label: '營業處', dir: 1, value: (r) => r.office || null },
+      { key: 'total', label: '訓練總分', num: true, dir: -1, value: (r) => r.total }
     ];
     const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
       w.items.map((n) => ({
@@ -7792,7 +7798,7 @@
   }
 
   function trainScoreSortTh(key, label, opts = {}) {
-    const s = state.durSorts.trainscores || { key: 'name', dir: 1 };
+    const s = state.durSorts.trainscores || { key: 'total', dir: -1 };
     const active = s.key === key;
     const arrow = active ? (s.dir === 1 ? ' ▲' : ' ▼') : '';
     const cls = [
@@ -7807,12 +7813,18 @@
     return `<th class="${cls}"${rs} data-dur-sort="trainscores:${esc(key)}" title="點擊排序">${label}${arrow}${opts.sub || ''}</th>`;
   }
 
+  function trainScoreRankCell(rank) {
+    if (rank === '-' || rank == null) return `<td class="apt-rank"><span class="apt-rank-num">—</span></td>`;
+    const n = Number(rank);
+    return `<td class="apt-rank">${n <= 3 ? `<i class="apt-rank-badge apt-rank-badge--${n}">${n}</i>` : `<span class="apt-rank-num">${n}</span>`}</td>`;
+  }
+
   function renderTrainScoresTab() {
     const cols = trainScoreCols();
-    const { sorted } = sortedRows('trainscores', cols, trainScoreRows());
+    const { sorted, ranks } = sortedRows('trainscores', cols, trainScoreRows());
     const cxReady = !!(window.CourseExam?.statusOf?.('obj', '')?.loaded);
     const note = cxReady
-      ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位；各節點成績依第一週到第五週排列（影片＋考試完成比例，滿分 100）。點欄位標題可排序，再點一次反過來。`
+      ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位；# 為目前排序名次（同分同名次）。總分為五週各節點平均；點欄位標題可排序，再點一次反過來。`
       : '考試／影片進度讀取中，分數可能尚未更新…';
     const weekHead = TRAIN_WEEK_NODES.map(
       (w) => `<th class="apt-train-week-h" colspan="${w.items.length}">第${WEEK_CN[w.week - 1]}週</th>`
@@ -7821,12 +7833,14 @@
       w.items.map((n) => trainScoreSortTh(`node:${n.key}`, esc(n.label), { num: true, className: 'apt-train-node-h' }))
     ).join('');
     const metaHead =
+      `<th rowspan="2">#</th>` +
       trainScoreSortTh('name', '姓名', { rowspan: 2 }) +
       trainScoreSortTh('hire', '報到', { rowspan: 2, sub: '<small>年月</small>' }) +
       trainScoreSortTh('leader', '小組長姓名', { rowspan: 2 }) +
-      trainScoreSortTh('office', '營業處', { rowspan: 2 });
+      trainScoreSortTh('office', '營業處', { rowspan: 2 }) +
+      trainScoreSortTh('total', '訓練總分', { rowspan: 2, num: true, className: 'apt-train-total-h' });
     const body = sorted
-      .map((r) => {
+      .map((r, i) => {
         const nodes = TRAIN_WEEK_NODES.flatMap((w) =>
           w.items.map((n) => {
             const score = Number(r.scores[n.key]) || 0;
@@ -7834,19 +7848,21 @@
             return `<td class="num apt-train-node${done ? ' is-done' : ''}" style="color:${scoreColor(score)}">${score}</td>`;
           })
         ).join('');
-        return `<tr class="${r.inStaff ? '' : ' apt-row-muted'}">
+        return `<tr class="${rankBand(Number(ranks[i]) || 999)}${r.inStaff ? '' : ' apt-row-muted'}">
+            ${trainScoreRankCell(ranks[i])}
             <td><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
             <td class="apt-mt-hire">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
             <td>${esc(r.leader) || NIL}</td>
             <td class="apt-mt-org">${esc(r.office) || NIL}</td>
+            <td class="num apt-total apt-train-total"><b class="apt-total-n" style="color:${scoreColor(r.total)}">${r.total}</b><small>／100</small><div class="apt-train-pass">${r.done}／${r.totalNodes}</div></td>
             ${nodes}
           </tr>`;
       })
       .join('');
-    const colCount = cols.length;
+    const colCount = cols.length + 1;
     return `<div class="apt-train-scores">
       <div class="apt-zone">
-        <h3 class="apt-sec-title">本次受訓名單<small>各節點成績 · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
+        <h3 class="apt-sec-title">本次受訓名單<small>排名＋各節點成績 · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
         <p class="apt-sub-note">${esc(note)}</p>
         <div class="apt-table-wrap apt-train-score-wrap">
           <table class="apt-table apt-train-score-table">
