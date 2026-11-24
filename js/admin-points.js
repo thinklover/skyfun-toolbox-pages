@@ -6406,11 +6406,16 @@
     else if (state.tab === 'duration') box.innerHTML = renderDuration();
     else if (state.tab === 'spot') box.innerHTML = renderSpot();
     else if (state.tab === 'lvraudit') box.innerHTML = renderLvrAuditTab();
+    else if (state.tab === 'trainscores') box.innerHTML = renderTrainScoresTab();
     else box.innerHTML = renderMonth();
     $('apt-warnings').innerHTML = renderWarnings();
     if (state.tab === 'lvraudit') {
       mountLvrAuditInlineForm();
       ensureLvrAuditTabLoaded();
+    }
+    if (state.tab === 'trainscores') {
+      window.GuideExam?.loadOverview?.();
+      window.CourseExam?.loadOverview?.();
     }
     if (state.tab === 'person' && window.GuideExam) {
       window.GuideExam.loadOverview();
@@ -7702,6 +7707,79 @@
       <div class="apt-lvr-split">
         ${lvrAuditFormHtml()}
         <section class="apt-zone apt-lvr-rec" id="apt-lvr-rec-root">${lvrAuditRecordsHtml()}</section>
+      </div>
+    </div>`;
+  }
+
+  /** 到職日是否在近 N 個月內（含當天） */
+  function hiredWithinMonths(hireDate, months) {
+    const raw = String(hireDate || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const cut = new Date(today);
+    cut.setMonth(cut.getMonth() - months);
+    const hire = new Date(raw + 'T00:00:00');
+    return hire >= cut && hire <= today;
+  }
+
+  /** 行政新人教育訓練成績排名（近三個月到職） */
+  function trainScoreRows() {
+    const staff = (state.sb?.staff || []).filter(
+      (s) => Core.isOnDuty(s) && s.kind !== '工讀生' && hiredWithinMonths(s.hireDate, 3)
+    );
+    return staff
+      .map((s) => {
+        const cs = Core.courseScores((key) => trainState(key, s.name));
+        const items = cs.general || [];
+        const done = items.filter((c) => trainState(c.key, s.name).done).length;
+        const score = Math.round(cs.generalScore || 0);
+        return {
+          name: s.name,
+          hireDate: s.hireDate,
+          office: Core.officeName(s.office) || s.office || '',
+          leader: s.leader || '',
+          done,
+          total: items.length,
+          score
+        };
+      })
+      .sort((a, b) => b.score - a.score || b.done - a.done || String(a.name).localeCompare(String(b.name), 'zh-Hant'));
+  }
+
+  function renderTrainScoresTab() {
+    const rows = trainScoreRows();
+    const cxReady = !!(window.CourseExam?.statusOf?.('obj', '')?.loaded);
+    const note = cxReady
+      ? '成績依五週行政教育訓練總分（影片＋考試）自動計算；同分以通過項數、姓名排序。'
+      : '考試／影片進度讀取中，分數可能尚未更新…';
+    const body = rows.length
+      ? rows
+          .map((r, idx) => {
+            const rank = idx + 1;
+            return `<tr class="${rankBand(rank)}">
+            <td class="apt-rank">${rank <= 3 ? `<i class="apt-rank-badge apt-rank-badge--${rank}">${rank}</i>` : `<span class="apt-rank-num">${rank}</span>`}</td>
+            <td><button type="button" class="apt-name" data-person="${esc(r.name)}" title="看個人績效">${esc(r.name)}</button></td>
+            <td class="apt-mt-hire">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
+            <td class="apt-mt-org">${esc(r.office) || NIL}</td>
+            <td>${esc(r.leader) || NIL}</td>
+            <td class="num">${r.done}／${r.total}</td>
+            <td class="num apt-total"><b class="apt-total-n" style="color:${scoreColor(r.score)}">${r.score}</b><small>／100</small></td>
+            <td><span class="apt-train-bar" aria-hidden="true"><i style="width:${r.score}%;background:${scoreColor(r.score)}"></i></span></td>
+          </tr>`;
+          })
+          .join('')
+      : `<tr><td colspan="8" class="apt-empty">近三個月尚無符合條件的行政新人（需在人力明細有到職日）</td></tr>`;
+    return `<div class="apt-train-scores">
+      <div class="apt-zone">
+        <h3 class="apt-sec-title">教育訓練成績<small>近三個月到職行政新人 · 五週課程總分排名</small></h3>
+        <p class="apt-sub-note">${esc(note)}</p>
+        <div class="apt-table-wrap">
+          <table class="apt-table apt-month-table apt-train-score-table">
+            <thead><tr><th>#</th><th>姓名</th><th>報到<small>年月</small></th><th>營業處</th><th>組長</th><th class="num">通過</th><th class="num">訓練總分</th><th>進度</th></tr></thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>
       </div>
     </div>`;
   }
@@ -9184,6 +9262,7 @@
         document.querySelectorAll('[data-gx-prog]').forEach((el) => {
           el.textContent = guideExamText(el.dataset.gxProg);
         });
+        if (state.tab === 'trainscores') render();
       });
       window.CourseExam?.onChange(() => {
         refreshTraining();
@@ -9191,6 +9270,7 @@
           const [course, name] = el.dataset.cxProg.split('|');
           el.textContent = courseExamText(course, name);
         });
+        if (state.tab === 'trainscores') render();
       });
       window.SimPractice?.onChange(refreshTraining);
     }
