@@ -7848,11 +7848,18 @@
     return `<td class="apt-rank">${n <= 3 ? `<i class="apt-rank-badge apt-rank-badge--${n}">${n}</i>` : `<span class="apt-rank-num">${n}</span>`}</td>`;
   }
 
+  function trainScoreTone(v) {
+    if (v == null) return '';
+    if (Number(v) <= 0) return 'apt-tone--mute';
+    return speedTone(v);
+  }
+
   function trainScoreScoreCell(score, key, extraClass = '') {
     const v = Number(score) || 0;
     const focus = state.durSorts.trainscores?.key || 'total';
     const fc = key === focus ? ' apt-col-focus' : '';
-    return `<td class="num ${extraClass} ${speedTone(v)}${fc}"><span class="apt-cell">${v}</span></td>`;
+    const label = v <= 0 ? '—' : String(v);
+    return `<td class="num ${extraClass} ${trainScoreTone(v)}${fc}"><span class="apt-cell">${label}</span></td>`;
   }
 
   function renderTrainScoresTab() {
@@ -7867,13 +7874,13 @@
     const fc = (key) => (key === focus ? ' apt-col-focus' : '');
     const cxReady = !!(window.CourseExam?.statusOf?.('obj', '')?.loaded);
     const note = cxReady
-      ? `本次受訓 ${TRAIN_COHORT_NAMES.length} 位。預設看總分與五週平均；點週別可展開該週節點。# 為目前排序名次（同分同名次）。`
+      ? `預設看總分與五週平均；點週別展開節點。# 為目前排序名次（同分同名次）。`
       : '考試／影片進度讀取中，分數可能尚未更新…';
-    const weekTabs = `<div class="apt-sub-tabs apt-train-week-tabs" role="tablist" aria-label="週別檢視">
-      <button type="button" class="apt-sub-tab${view === 'all' ? ' is-active' : ''}" data-train-week-view="all" role="tab" aria-selected="${view === 'all'}">全部週</button>
+    const weekTabs = `<div class="apt-train-week-tabs" role="tablist" aria-label="週別檢視">
+      <button type="button" class="apt-train-week-tab${view === 'all' ? ' is-active' : ''}" data-train-week-view="all" role="tab" aria-selected="${view === 'all'}">全部週</button>
       ${TRAIN_WEEK_NODES.map((w) => {
         const active = view === w.week;
-        return `<button type="button" class="apt-sub-tab${active ? ' is-active' : ''}" data-train-week-view="${w.week}" role="tab" aria-selected="${active}">第${WEEK_CN[w.week - 1]}週</button>`;
+        return `<button type="button" class="apt-train-week-tab${active ? ' is-active' : ''}" data-train-week-view="${w.week}" role="tab" aria-selected="${active}">第${WEEK_CN[w.week - 1]}週</button>`;
       }).join('')}
     </div>`;
     const scoreHead =
@@ -7906,7 +7913,7 @@
             <td class="apt-mt-hire${fc('hire')}">${r.hireDate ? esc(hireShort(r.hireDate)) : NIL}</td>
             <td class="${fc('leader').trim()}">${esc(r.leader) || NIL}</td>
             <td class="apt-mt-org${fc('office')}" title="${esc(r.office) || ''}">${esc(r.office) || NIL}</td>
-            <td class="num apt-train-total ${speedTone(r.total)}${fc('total')}"><span class="apt-cell" title="通過 ${r.done}／${r.totalNodes}"><b>${r.total}</b><small>／100</small><i class="apt-train-pass">${r.done}／${r.totalNodes}</i></span></td>
+            <td class="num apt-train-total ${trainScoreTone(r.total)}${fc('total')}"><span class="apt-cell" title="通過 ${r.done}／${r.totalNodes}"><b>${r.total}</b><small>／100</small><i class="apt-train-pass">${r.done}／${r.totalNodes}</i></span></td>
             ${scoreCells}
           </tr>`;
       })
@@ -7922,15 +7929,20 @@
       <col class="apt-train-col-total">
       ${'<col class="apt-train-col-node">'.repeat(scoreColCount)}
     </colgroup>`;
-    const legend = `<div class="apt-tone-legend">成績配色同耗時：
-      <span class="apt-tone-chip apt-tone--green">70 分以上</span>
-      <span class="apt-tone-chip apt-tone--yellow">50–69 分</span>
-      <span class="apt-tone-chip apt-tone--red">未滿 50 分</span>
+    const legend = `<div class="apt-train-legend" aria-hidden="true">
+      <span class="apt-train-legend-k">配色</span>
+      <span class="apt-train-legend-i"><i class="apt-train-swatch apt-tone--green"></i>70↑</span>
+      <span class="apt-train-legend-i"><i class="apt-train-swatch apt-tone--yellow"></i>50–69</span>
+      <span class="apt-train-legend-i"><i class="apt-train-swatch apt-tone--mute"></i>未考／0</span>
+      <span class="apt-train-legend-i"><i class="apt-train-swatch apt-tone--red"></i>未滿 50</span>
     </div>`;
     return `<div class="apt-train-scores">
-      <div class="apt-zone">
-        <h3 class="apt-sec-title">本次受訓名單<small>${view === 'all' ? '總分＋五週平均' : `第${WEEK_CN[view - 1]}週節點`} · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
-        <p class="apt-sub-note">${esc(note)}</p>
+      <div class="apt-zone apt-train-panel">
+        <header class="apt-train-head">
+          <p class="apt-train-eyebrow">Education Training</p>
+          <h3 class="apt-sec-title apt-train-title">本次受訓名單<small>${view === 'all' ? '總分＋五週平均' : `第${WEEK_CN[view - 1]}週節點`} · ${TRAIN_COHORT_NAMES.length} 位</small></h3>
+          <p class="apt-sub-note apt-train-note">${esc(note)}</p>
+        </header>
         ${weekTabs}
         ${legend}
         <div class="apt-table-wrap apt-train-score-wrap">
