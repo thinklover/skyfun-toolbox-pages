@@ -440,7 +440,7 @@
   }
 
   /**
-   * 合併按鈕「重新抓取＋實登補點」：密碼 → 重抓星鴻資料（load(true)）→ 實登補點 reset=1 → 重算一次。
+   * 合併按鈕「重新抓取＋實登補點」：確認 → 重抓星鴻資料（load(true)）→ 實登補點 reset=1 → 重算一次。
    * 每天 8:00 自動更新只走 Worker 排程重抓，不會觸發這裡的實登重掃。
    */
   async function runRefreshAll() {
@@ -453,7 +453,7 @@
       setMsg('請先登入工具箱', 'err');
       return;
     }
-    if (!(await askLvrPassword())) return;
+    /* 2026-11-25 處長：實登補點不再要求處長密碼（askLvrPassword 保留未呼叫） */
     const range = monthOptions().find((m) => `${m.year}-${m.month}` === state.monthKey) || monthOptions()[0];
     const ym = ymKey(range);
     const label = `${range.year - 1911} 年 ${range.month} 月業績（${range.start}～${range.end}）`;
