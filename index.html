@@ -5644,7 +5644,7 @@
                 <div class="apt-head">
                     <h2 class="apt-title">📊 行政績效中心</h2>
                     <select id="apt-month" aria-label="業績月"></select>
-                    <button type="button" class="apt-btn apt-btn--lvr" id="apt-refresh" hidden title="需處長密碼：重新抓取星鴻資料後，自動重掃整個業績月的實登補點並重算">重新抓取＋實登補點</button>
+                    <button type="button" class="apt-btn apt-btn--lvr" id="apt-refresh" hidden title="重新抓取星鴻資料（審核紀錄、補助審核、解約、續約、同租期停用），同時重掃整個業績月的實登補點，完成後重算">重新抓取＋實登補點</button>
                     <a class="apt-admin-link" href="./admin/admin-points-dashboard.html" target="_blank" rel="noopener">後台：報表／登錄／考試／改善計畫 ↗</a>
                 </div>
                 <p class="apt-msg" id="apt-msg" role="status" aria-live="polite"></p>
@@ -5770,7 +5770,7 @@
                     <ul>
                         <li>業績月為上月 29 日至本月 28 日；月累積達 250 點為第一階段、350 點為第二階段。</li>
                         <li>只計人力明細中「在職」人員（含工讀生）；同一案件同一工作項目只認列第一次紀錄。</li>
-                        <li>日期以星鴻審核時間（修繕為補助審核日期）為準；點數表每天早上 8:00 自動更新（不含實登補點）；管理員可按「重新抓取＋實登補點」（需處長密碼）立即重抓並重掃當月實登。</li>
+                        <li>日期以星鴻審核時間（修繕為補助審核日期）為準；點數表每天早上 8:00 自動更新（不含實登補點）；管理員可按「重新抓取＋實登補點」立即重抓並同時重掃當月實登（完成後 10 分鐘內不能再按）。</li>
                     </ul>
                 </details>
             </section>
@@ -14752,7 +14752,7 @@
         <script src="./js/sim-practice.js?v=20261124-nosim"></script>
         <script src="./js/improve-plan.js?v=20261017-61"></script>
         <script src="./js/growth-compass.js?v=20261124-nosim"></script>
-        <script src="./js/admin-points.js?v=20261125-nolvrpwd"></script>
+        <script src="./js/admin-points.js?v=20261125-parallel"></script>
         <script src="./js/spot-notice.js?v=20261013-1"></script>
         <script src="./js/photo-guide-data.js"></script>
         <script src="./js/photo-guide-preview.js"></script>

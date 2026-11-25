@@ -116,20 +116,89 @@
     el.className = 'apt-msg' + (kind ? ' is-' + kind : '');
   }
 
+  /**
+   * 重新抓取＋實登補點（2026-11-25 測試版）：「重新抓取」與「實登補點」兩路同時跑。
+   * 任一路失敗（含星鴻 403／429／5xx，Worker 回 5xx）→ 兩路一起停（AbortController），不重試，畫面標出哪一路。
+   */
+  let refreshRun = null;
+  function refreshStop(branch, msg) {
+    const run = refreshRun;
+    if (!run || run.stopped) return;
+    run.stopped = { branch, msg: String(msg || '失敗') };
+    try {
+      run.ctrl.abort();
+    } catch (_) {}
+  }
+  function refreshAborted() {
+    return new Error(`已停止（${refreshRun?.stopped?.branch || '另一路'}失敗，兩路一起停下，未重試）`);
+  }
+  /** 計時一個資料集；結果 ok:false（解約／續約／停用失敗時會回 ok:false）也算失敗並讓兩路停下 */
+  function refreshTimed(key, label, p) {
+    const run = refreshRun;
+    if (!run) return p;
+    run.times[key] = { label, t0: Date.now(), sec: null, ok: null };
+    const done = (ok, err) => {
+      const t = run.times[key];
+      t.sec = (Date.now() - t.t0) / 1000;
+      t.ok = ok;
+      if (!ok && !run.stopped) refreshStop(`重新抓取・${label}`, err);
+      renderRefreshPanel();
+    };
+    return Promise.resolve(p).then(
+      (v) => {
+        if (v && v.ok === false) done(false, v.error || `${label}讀取失敗`);
+        else done(true);
+        return v;
+      },
+      (err) => {
+        done(false, String(err?.message || err));
+        throw err;
+      }
+    );
+  }
+  function refreshPanelHtml(title) {
+    const run = refreshRun;
+    if (!run) return '';
+    const now = Date.now();
+    const secOf = (t0, sec) => (sec != null ? sec : (now - t0) / 1000).toFixed(1);
+    const items = Object.values(run.times).map((t) => {
+      const mark = t.ok == null ? '…' : t.ok ? '✓' : '✕';
+      return `<span class="apt-lvr-time">${esc(t.label)} ${mark} ${secOf(t.t0, t.sec)} 秒</span>`;
+    });
+    const l = run.lvr;
+    const lvrMark = l.ok == null ? '…' : l.ok ? '✓' : '✕';
+    const stop = run.stopped ? `<div class="apt-bad">已停止：${esc(run.stopped.branch)} 失敗（${esc(run.stopped.msg)}）；兩路都已停下，未重試。</div>` : '';
+    return `<b>${esc(title)}</b>（已 ${secOf(run.t0, run.sec)} 秒）${stop}
+      <div class="apt-lvr-progress">① 重新抓取（同時）：${items.join('　') || '準備中…'}</div>
+      <div class="apt-lvr-progress">② 實登補點（同時）${lvrMark} ${secOf(l.t0, l.sec)} 秒：${esc(l.msg || '準備中…')}</div>`;
+  }
+  function renderRefreshPanel(title) {
+    const run = refreshRun;
+    if (!run || run.finished) return;
+    if (title) run.title = title;
+    renderLvrPanel(refreshPanelHtml(run.title || '重新抓取＋實登補點進行中…'), true);
+  }
+
   async function fetchWorker(path, label, range, refresh) {
     const q = new URLSearchParams({ start: range.start, end: range.end });
     if (refresh) q.set('refresh', '1');
+    const run = refreshRun;
+    if (run?.stopped) throw refreshAborted();
     let res;
     try {
       res = await fetch(`${RPA_BASE}${path}?${q}`, {
-        headers: { 'X-Skyfun-Session': token() }
+        headers: { 'X-Skyfun-Session': token() },
+        ...(run ? { signal: run.ctrl.signal } : {})
       });
     } catch {
+      if (run?.stopped) throw refreshAborted();
       throw new Error('連不到星鴻資料服務（Worker），可能尚未部署行政點數表端點或網路中斷');
     }
     const data = await res.json().catch(() => null);
     if (!res.ok || !data?.ok) {
-      throw new Error(data?.error || `${label}讀取失敗（HTTP ${res.status}）`);
+      const msg = data?.error || `${label}讀取失敗（HTTP ${res.status}）`;
+      if (run) refreshStop(`重新抓取・${label}`, msg);
+      throw new Error(msg);
     }
     return data;
   }
@@ -290,15 +359,17 @@
     $('apt-lvr-backfill')?.setAttribute('disabled', '');
     setMsg(`讀取 ${range.month} 月業績（${range.start}～${range.end}）…第一次約需 5～10 秒`);
     try {
+      const T = refresh && refreshRun ? refreshTimed : (_k, _l, p) => p;
       const [audit, expenses, term, renew, dis, sb, lvrBf] = await Promise.all([
-        fetchWorker('/admin-points/audit-log', '審核時間紀錄', range, refresh),
-        fetchWorker('/admin-points/expenses', '補助審核', range, refresh),
-        fetchTerminations(range, refresh),
-        fetchRenewals(range, refresh),
-        fetchDisableCredits(range, refresh),
-        fetchSupabase(range),
+        T('audit', '審核紀錄', fetchWorker('/admin-points/audit-log', '審核時間紀錄', range, refresh)),
+        T('expenses', '補助審核', fetchWorker('/admin-points/expenses', '補助審核', range, refresh)),
+        T('term', '解約', fetchTerminations(range, refresh)),
+        T('renew', '續約', fetchRenewals(range, refresh)),
+        T('dis', '同租期停用', fetchDisableCredits(range, refresh)),
+        T('sb', '人力明細', fetchSupabase(range)),
         fetchLvrBackfill(range).catch(() => ({ ok: true, credits: [], empty: true }))
       ]);
+      if (refresh && refreshRun?.stopped) throw refreshAborted();
       state.auditRows = auditRowsOf(audit);
       state.expenseRows = auditRowsOf(expenses);
       state.termRows = auditRowsOf(term);
@@ -414,25 +485,43 @@
   async function runLvrBackfillLoop(ym) {
     let last = null;
     let reset = true;
+    const run = refreshRun;
     for (let i = 0; i < 500; i++) {
-      const res = await fetch(`${LVR_BASE}${LVR_V2_PATH}?month=${encodeURIComponent(ym)}${reset ? '&reset=1' : ''}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Skyfun-Session': token()
-        },
-        body: '{}'
-      });
+      if (run?.stopped) throw refreshAborted();
+      let res;
+      try {
+        res = await fetch(`${LVR_BASE}${LVR_V2_PATH}?month=${encodeURIComponent(ym)}${reset ? '&reset=1' : ''}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Skyfun-Session': token()
+          },
+          body: '{}',
+          ...(run ? { signal: run.ctrl.signal } : {})
+        });
+      } catch (err) {
+        if (run?.stopped) throw refreshAborted();
+        throw err;
+      }
       reset = false;
       const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.ok) throw new Error(data?.error || `實登補點失敗（HTTP ${res.status}）`);
+      if (!res.ok || !data?.ok) {
+        const msg = data?.error || `實登補點失敗（HTTP ${res.status}）`;
+        if (run) refreshStop('實登補點', msg);
+        throw new Error(msg);
+      }
       last = data;
       const p = data.progress || {};
       const pct = p.phase === 'search' ? `搜尋第 ${p.searchPage || 0} 頁（已 ${p.contractsFound || 0} 筆）` : p.message || p.phase || '';
-      renderLvrPanel(
-        `<b>步驟 2/3：實登補點重掃整個業績月</b><div class="apt-lvr-progress">${esc(p.message || pct)} · 星鴻呼叫 ${Number(data.skyfunCalls) || 0} 次</div>`,
-        true
-      );
+      if (run) {
+        run.lvr.msg = `${p.message || pct} · 星鴻呼叫 ${Number(data.skyfunCalls) || 0} 次`;
+        renderRefreshPanel();
+      } else {
+        renderLvrPanel(
+          `<b>步驟 2/3：實登補點重掃整個業績月</b><div class="apt-lvr-progress">${esc(p.message || pct)} · 星鴻呼叫 ${Number(data.skyfunCalls) || 0} 次</div>`,
+          true
+        );
+      }
       if (data.done) break;
     }
     if (!last?.done) throw new Error('實登補點逾時，請稍後再按一次');
@@ -440,9 +529,13 @@
   }
 
   /**
-   * 合併按鈕「重新抓取＋實登補點」：確認 → 重抓星鴻資料（load(true)）→ 實登補點 reset=1 → 重算一次。
+   * 合併按鈕「重新抓取＋實登補點」（2026-11-25 測試版）：確認 →
+   * ①重新抓取（審核紀錄、補助審核、解約、續約、同租期停用，五種照舊全部 refresh=1）與 ②實登補點 reset=1 同時跑 →
+   * 兩路都成功才 ③重算。任一路失敗兩路一起停，不重試。實登補點的 5 秒間隔由 Worker 控制，沒有改。
    * 每天 8:00 自動更新只走 Worker 排程重抓，不會觸發這裡的實登重掃。
    */
+  const REFRESH_ALL_COOLDOWN_MS = 10 * 60 * 1000;
+  const REFRESH_ALL_LAST_LS = 'apt-refresh-all-last';
   async function runRefreshAll() {
     if (state.lvrRunning || state.loading) return;
     if (!Core.isSupervisor(myName())) {
@@ -454,12 +547,21 @@
       return;
     }
     /* 2026-11-25 處長：實登補點不再要求處長密碼（askLvrPassword 保留未呼叫） */
+    let lastOk = 0;
+    try {
+      lastOk = Number(localStorage.getItem(REFRESH_ALL_LAST_LS)) || 0;
+    } catch (_) {}
+    const waitMs = lastOk + REFRESH_ALL_COOLDOWN_MS - Date.now();
+    if (waitMs > 0) {
+      window.alert(`上次重新抓取＋實登補點剛完成，請 ${Math.ceil(waitMs / 60000)} 分鐘後再按（避免短時間重複抓星鴻）`);
+      return;
+    }
     const range = monthOptions().find((m) => `${m.year}-${m.month}` === state.monthKey) || monthOptions()[0];
     const ym = ymKey(range);
     const label = `${range.year - 1911} 年 ${range.month} 月業績（${range.start}～${range.end}）`;
     if (
       !window.confirm(
-        `確定對「${label}」重新抓取並實登補點？\n\n會依序：\n① 重新抓取星鴻資料（審核紀錄、補助、解約、續約、停用）\n② 實登補點：重掃整個業績月，點數記在合約上的實價登錄人員（約 1～2 分鐘）\n③ 重算點數並顯示結果\n\n任一步失敗會停下並顯示停在哪一步；重抓失敗就不會跑實登補點。`
+        `確定對「${label}」重新抓取並實登補點？\n\n會同時進行：\n① 重新抓取星鴻資料（審核紀錄、補助審核、解約、續約、同租期停用）\n② 實登補點：重掃整個業績月，點數記在合約上的實價登錄人員\n兩路都完成後 ③ 重算點數並顯示結果\n\n任一路失敗會兩路一起停下並顯示是哪一路；不會自動重試。`
       )
     ) {
       return;
@@ -467,42 +569,65 @@
     state.lvrRunning = true;
     $('apt-refresh')?.setAttribute('disabled', '');
     $('apt-lvr-backfill')?.setAttribute('disabled', '');
-    const steps = [];
+    const run = {
+      ctrl: new AbortController(),
+      t0: Date.now(),
+      sec: null,
+      times: {},
+      lvr: { t0: Date.now(), sec: null, ok: null, msg: '' },
+      stopped: null,
+      finished: false,
+      title: ''
+    };
+    refreshRun = run;
+    const tick = setInterval(() => renderRefreshPanel(), 1000);
+    const finishPanel = (html) => {
+      run.sec = (Date.now() - run.t0) / 1000;
+      run.finished = true;
+      renderLvrPanel(html, true);
+    };
     try {
-      renderLvrPanel('<b>步驟 1/3：重新抓取星鴻資料中…</b>', true);
+      renderRefreshPanel('重新抓取＋實登補點進行中（兩路同時）…');
       state.loadError = '';
-      const fetched = await load(true);
-      if (!fetched) {
-        renderLvrPanel(
-          `<b>停在步驟 1/3：重新抓取星鴻資料失敗</b>：${esc(state.loadError || '請稍後再試')}<div>未執行實登補點，點數維持原本結果。</div>`,
-          true
-        );
+      const step1 = load(true).then((ok) => {
+        if (!ok && !run.stopped) refreshStop('重新抓取', state.loadError || '重新抓取失敗');
+        return ok;
+      });
+      const step2 = runLvrBackfillLoop(ym).then(
+        (v) => {
+          run.lvr.sec = (Date.now() - run.lvr.t0) / 1000;
+          run.lvr.ok = true;
+          return v;
+        },
+        (err) => {
+          run.lvr.sec = (Date.now() - run.lvr.t0) / 1000;
+          run.lvr.ok = false;
+          if (!run.stopped) refreshStop('實登補點', String(err?.message || err));
+          throw err;
+        }
+      );
+      const [r1, r2] = await Promise.allSettled([step1, step2]);
+      const fetched = r1.status === 'fulfilled' && r1.value;
+      if (run.stopped || !fetched || r2.status !== 'fulfilled') {
+        if (!run.stopped) refreshStop(!fetched ? '重新抓取' : '實登補點', !fetched ? state.loadError : String(r2.reason?.message || r2.reason));
+        run.sec = (Date.now() - run.t0) / 1000;
+        finishPanel(`${refreshPanelHtml('停下來了：重新抓取＋實登補點未完成')}<div>點數維持原本結果（已抓完的資料集會留在快取）；請確認原因後再按，不會自動重試。</div>`);
+        setMsg(`已停止：${run.stopped?.branch || ''} ${run.stopped?.msg || ''}`, 'err');
         return;
       }
-      steps.push('① 重新抓取星鴻資料 ✓');
-      let last;
-      try {
-        last = await runLvrBackfillLoop(ym);
-      } catch (err) {
-        renderLvrPanel(
-          `<b>停在步驟 2/3：實登補點失敗</b>：${esc(String(err.message || err))}<div>${steps.join('　')}；實登點維持上次結果，未重試。</div>`,
-          true
-        );
-        setMsg(String(err.message || err), 'err');
-        return;
-      }
-      steps.push(`② 實登補點 ✓（星鴻呼叫 ${Number(last.skyfunCalls) || 0} 次）`);
-      renderLvrPanel(`<b>步驟 3/3：重算點數中…</b><div>${steps.join('　')}</div>`, true);
+      const last = r2.value;
+      run.title = '③ 重算點數中…';
+      renderRefreshPanel();
       state.loadError = '';
       const recomputed = await load(false);
+      run.sec = (Date.now() - run.t0) / 1000;
       if (!recomputed) {
-        renderLvrPanel(
-          `<b>停在步驟 3/3：重算點數失敗</b>：${esc(state.loadError || '請重新整理頁面')}<div>${steps.join('　')}</div>`,
-          true
-        );
+        finishPanel(`${refreshPanelHtml('停在 ③ 重算點數')}<div>${esc(state.loadError || '請重新整理頁面')}</div>`);
         return;
       }
-      steps.push('③ 重算點數 ✓');
+      try {
+        localStorage.setItem(REFRESH_ALL_LAST_LS, String(Date.now()));
+      } catch (_) {}
       const credits = Array.isArray(last.credits) ? last.credits : [];
       const by = Array.isArray(last.byEditor) ? last.byEditor : [];
       const peopleLine = by.length ? by.map((x) => `${esc(x.editor)} ${x.count}`).join('、') : '（本月沒有符合的實登）';
@@ -515,19 +640,21 @@
       const detail = credits.length
         ? `<details class="apt-lvr-fold"><summary>實登認點：${peopleLine}（點開看 ${credits.length} 筆明細）</summary>${list}</details>`
         : `<div>實登認點：${peopleLine}</div>`;
-      renderLvrPanel(
-        `<b>重新抓取＋實登補點完成</b>：實登認點 <b>${credits.length}</b> 筆<div>${steps.join('　')}</div>${detail}`,
-        true
+      finishPanel(
+        `${refreshPanelHtml(`重新抓取＋實登補點完成：實登認點 ${credits.length} 筆，星鴻呼叫 ${Number(last.skyfunCalls) || 0} 次`)}<div class="apt-lvr-progress">③ 重算點數 ✓</div>${detail}`
       );
     } catch (err) {
-      renderLvrPanel(`<b>重新抓取＋實登補點失敗</b>：${esc(String(err.message || err))}<div>${steps.join('　')}</div>`, true);
+      finishPanel(`${refreshPanelHtml('重新抓取＋實登補點失敗')}<div>${esc(String(err.message || err))}</div>`);
       setMsg(String(err.message || err), 'err');
     } finally {
+      clearInterval(tick);
+      if (refreshRun === run) refreshRun = null;
       state.lvrRunning = false;
       $('apt-refresh')?.removeAttribute('disabled');
       $('apt-lvr-backfill')?.removeAttribute('disabled');
     }
   }
+
 
   function dayList() {
     const r = state.result;
