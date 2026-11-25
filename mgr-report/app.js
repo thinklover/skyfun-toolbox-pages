@@ -13694,8 +13694,8 @@
     if (extra.id && !(extra.addr || extra.a)) extra = arContractOf(extra.id) || extra;
     if (extra.n && !(extra.addr || extra.a)) extra = arContractByNo(extra.n) || extra;
     const info = {
-      tn: r.tn || r.tenant || saved.tn || c.tn || c.t || extra.tn || extra.t || '',
-      addr: r.addr || r.a || r.address || saved.addr || c.addr || c.a || extra.addr || extra.a || '',
+      tn: r.tn || r.tenant || r.tenantName || r.lesseeName || r.renterName || saved.tn || c.tn || c.t || extra.tn || extra.t || '',
+      addr: r.addr || r.a || r.address || r.rentAddress || saved.addr || c.addr || c.a || extra.addr || extra.a || '',
       st: r.st || r.status || saved.st || c.st || c.raw || extra.st || '',
       n: n0 || extra.n || extra.rel || saved.n || '',
       memo: String(r.memo || r.note || saved.memo || '').trim(),

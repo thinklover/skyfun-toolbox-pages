@@ -626,17 +626,46 @@ function rocDate(value) {
   return y + '/' + String(Number(m[2])).padStart(2, '0') + '/' + String(Number(m[3])).padStart(2, '0');
 }
 
+function pickArField(item, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    var v = item && item[keys[i]];
+    if (v != null && String(v).trim() !== '') return v;
+  }
+  return '';
+}
+
 function arrearsOf(item) {
   var fee = String(item.arrearsTypeText || item.receivableTypeText || item.feeTypeText || item.itemName || item.receivableName || '');
+  var matchNo = pickArField(item, ['matchNo', 'subleaseNo', 'leaseNo', 'matchOrSubleaseNo', 'matchSubleaseNo', 'vendorNo', 'contractNo', 'contratNo', 'caseNo']);
+  if (!matchNo) {
+    var keys = Object.keys(item || {});
+    for (var i = 0; i < keys.length; i++) {
+      var val = item[keys[i]];
+      if (val != null && typeof val !== 'object' && /^星[鴻華]/.test(String(val))) {
+        matchNo = val;
+        break;
+      }
+    }
+  }
   return {
-    days: Number(item.overdueDays) || 0,
+    id: item.recordId || item.RecordId || item.id || item.Id || item.contractId || item.contratId || null,
+    cid: pickArField(item, ['contractId', 'contratId']) || item.contractId || item.ContractId || null,
+    n: matchNo || '',
+    days: Number(item.overdueDays || item.OverdueDays) || 0,
     amt: Number(item.arrearsAmount != null ? item.arrearsAmount : item.receivableAmount) || 0,
-    rd: rocDate(item.receivableDate),
-    agent: String(item.agentName || ''),
-    office: String(item.branchOfficeName || item.branchOfficeText || item.branchOffice || ''),
-    ct: String(item.contractTypeText || item.contratType || ''),
+    recv: Number(item.receivedAmount != null ? item.receivedAmount : item.recvAmount) || 0,
+    bill: Number(item.billAmount != null ? item.billAmount : item.receivableAmount) || 0,
+    rd: rocDate(item.receivableDate || item.ReceivableDate),
+    agent: String(item.agentName || item.AgentName || ''),
+    office: String(item.branchOfficeName || item.branchOfficeText || item.branchOffice || item.BranchOffice || ''),
+    ct: String(pickArField(item, ['contractTypeText', 'contratTypeText', 'entrustTypeText', 'contratType']) || ''),
     cat: /押/.test(fee) ? 'deposit' : 'rent',
-    id: item.contractId || item.contratId || item.id || item.recordId || null
+    tn: String(pickArField(item, ['tenantName', 'tenant', 'lesseeName', 'renterName', 'tenantUserName']) || ''),
+    addr: String(pickArField(item, ['rentAddress', 'leaseAddress', 'address', 'rentalAddress']) || ''),
+    ast: String(pickArField(item, ['arrearsStatusText', 'collectionStatusText', 'arrearsStatus']) || item.arrearsStatusText || ''),
+    st: String(pickArField(item, ['contractStatusText', 'contratStatusText', 'displayStatus', 'contractStatus', 'leaseStatusText', 'statusText']) || ''),
+    memo: String(pickArField(item, ['caseRemark', 'caseNote', 'remark', 'note', 'comments', 'caseMemo', 'memo', 'caseRemarkText', 'remarkText']) || ''),
+    plan: String(pickArField(item, ['monthlyCollectionRecord', 'monthlyRemark', 'currentMonthRemark', 'overduePlan', 'collectionPlan', 'monthPlan', 'monthlyOverduePlan']) || '')
   };
 }
 

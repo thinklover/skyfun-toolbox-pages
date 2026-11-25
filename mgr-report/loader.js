@@ -236,7 +236,7 @@
 
   function startApp() {
     var s = document.createElement('script');
-    s.src = 'app.js?v=20261125-2101';
+    s.src = 'app.js?v=20261125-2126';
     s.onload = function () { mgrReportBindUpdate(); };
     document.body.appendChild(s);
   }
