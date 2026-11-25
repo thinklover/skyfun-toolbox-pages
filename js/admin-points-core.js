@@ -443,6 +443,7 @@
    * 1) 實登人員有值 2) 實登日有值 3) realPriceRegistered 為真（已實價登錄）
    * 4) 剩餘天數「已完成」（系統前端：realPriceRegistered 為真即已完成）
    * 5) 實登日落在業績月 start～end 6) 合約狀態＝已生效
+   * 7) 同地址的包租＋轉租兩張合約只算 1 點，給轉租那張的實登人（2026-11-25）
    * 回傳格式與 lvrBackfillRows 相同，可直接丟進 compute 的 lvrBackfill。
    */
   function lvrCreditsFromContracts(contracts, range, opts) {
@@ -483,8 +484,26 @@
         type: 'contract',
         status: '實登認點（媒合管理已實價登錄）',
         action: '實登',
-        prodFromLvr: false
+        prodFromLvr: false,
+        contratType: String(c.contratType || c.contractType || '').trim()
       });
+    }
+    /* 2026-11-25：同地址的包租＋轉租兩張合約算 1 點，點數給轉租那張的實登人（包租那張不認點）；與 Worker lvrV2Credits 同規則 */
+    const addrKey = (a) => String(a || '').normalize('NFKC').replace(/\s+/g, '').replace(/臺/g, '台');
+    const zhuanzu = new Map();
+    for (const r of out) {
+      if (r.contratType !== '轉租') continue;
+      const k = addrKey(r.name);
+      if (k && !zhuanzu.has(k)) zhuanzu.set(k, r);
+    }
+    for (let i = out.length - 1; i >= 0; i--) {
+      const r = out[i];
+      if (r.contratType !== '包租') continue;
+      const pair = zhuanzu.get(addrKey(r.name));
+      if (!pair) continue;
+      pair.pairedBaozu = { id: r.id, no: r.no, auditor: r.auditor };
+      pair.status = `實登認點（包租＋轉租同地址算 1 點；包租 ${r.no || r.id}${r.auditor && r.auditor !== pair.auditor ? `／${r.auditor} 實登` : ''}）`;
+      out.splice(i, 1);
     }
     return out;
   }
