@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>社宅管報儀表板｜星鴻包租代管系統</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="styles.css?v=202611182300" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="styles.css?v=20261125-2101" />
 </head>
 <body>
   <aside class="side">
@@ -38,7 +39,7 @@
       <div class="update-prog-bar" aria-hidden="true"><i id="updateProgFill"></i></div>
       <div class="update-prog-sub" id="updateProgSub">等待星鴻開始擷取。開始後大約 8–15 分鐘，請保持星鴻已登入。</div>
     </div>
-    <section class="page" id="page-cases">
+    <section class="page hidden" id="page-cases">
       <div class="period-title">社宅業績總覽</div>
       <p class="hint" id="dataHint"></p>
       <section class="kpi-row kpi-5" id="kpiRow"></section>
@@ -421,6 +422,48 @@
         </div>
         <div id="houseStaffBox" class="src-staff hidden"></div>
       </article>
+      <article class="card fam-card">
+        <div class="unit-cmp-head">
+          <h3>婚育家庭分析</h3>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="famSeg">
+              <button type="button" data-g="month" class="on">月別</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <button type="button" class="tool-btn" id="famStaffBtn">業務明細</button>
+          </div>
+        </div>
+        <p class="note" id="famPeriod"></p>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis" id="famKpis"></div>
+            <div class="rev-panel">
+              <div class="grow-chart-head">
+                <h4 id="famChartTitle">1-12月案件結構</h4>
+                <div class="grow-legend" id="famLegend">
+                  <button type="button" data-fam-ds="新婚"><i style="background:#be185d"></i>新婚</button>
+                  <button type="button" data-fam-ds="育兒"><i style="background:#fde8f1"></i>育兒</button>
+                </div>
+              </div>
+              <div class="chart-h grow-chart"><canvas id="famChart"></canvas></div>
+              <p class="note" id="famChartNote"></p>
+            </div>
+            <div class="rev-mid">
+              <div class="rev-panel">
+                <h4>來源細項：新婚育兒並列</h4>
+                <div id="famPair"></div>
+              </div>
+              <div class="rev-panel" id="famJudge"></div>
+            </div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="famCmpTbl"></div>
+            <div class="rev-panel" id="famFocusNote"></div>
+            <div class="table-scroll unit-detail-scroll" id="famTable"></div>
+          </div>
+        </div>
+        <div id="famStaffBox" class="src-staff hidden"></div>
+      </article>
       <article class="card nat-card">
         <div class="unit-cmp-head">
           <h3>全台業務分析</h3>
@@ -505,7 +548,7 @@
             </div>
           </div>
         </div>
-        <p class="note" id="lzCmpNote">依篩選單位對照階層，可展開所屬營業處。包租率＝包租件／所選案件類型；目標%固定 50%。續約代轉包＝案件類型代管轉包租。簽三年代管＝代管且租期約三年。</p>
+        <p class="note" id="lzCmpNote">依篩選單位對照階層，可展開所屬營業處。包租率＝包租件／所選案件類型；目標%固定 55%。續約代轉包＝案件類型代管轉包租。簽三年代管＝代管且租期約三年。</p>
         <div class="table-scroll unit-detail-scroll" id="lzCmpTable"></div>
         <div class="rev-mid lz-cmp-intel">
           <div class="rev-panel" id="lzCmpJudge"></div>
@@ -1421,28 +1464,85 @@
         <div class="unit-cmp-head">
           <h3>單位應收帳款帳齡明細表</h3>
           <div class="unit-cmp-tools">
-            <label>合約狀態</label>
             <select id="arCtFilter">
-              <option value="all">全選</option>
-              <option value="轉租">轉租</option>
+              <option value="包租">包租</option>
+              <option value="轉租" selected>轉租</option>
               <option value="代管">代管</option>
+              <option value="all">全部</option>
             </select>
           </div>
         </div>
         <p class="note">資料來源：系統催收管理＞催收查詢。依欠租天數分類統計筆數與金額；單位對照代管營業處，可展開所屬營業處。</p>
         <div class="table-scroll unit-detail-scroll" id="arAgeTable"></div>
       </article>
-      <article class="card type-card">
+      <article class="card grow-card ar-watch-card">
         <div class="unit-cmp-head">
-          <h3>應收帳款狀態分析</h3>
+          <div>
+            <h3>欠租帳齡與催收監控分析</h3>
+            <p class="note" id="arWatchMeta"></p>
+          </div>
           <div class="unit-cmp-tools">
+            <select id="arWatchCt">
+              <option value="包租">包租</option>
+              <option value="轉租" selected>轉租</option>
+              <option value="代管">代管</option>
+              <option value="all">全部</option>
+            </select>
+            <div class="seg" id="arWatchSeg">
+              <button type="button" data-ar-wband="all" class="on">全部</button>
+              <button type="button" data-ar-wband="b17">逾期1-7天</button>
+              <button type="button" data-ar-wband="b814">逾期8-14天</button>
+              <button type="button" data-ar-wband="b1529">逾期15-29天</button>
+              <button type="button" data-ar-wband="b30">逾期30天</button>
+            </div>
+            <button type="button" class="tool-btn" id="arWatchStaffBtn">案件明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="arWatchKpis"></div>
+            <div class="rev-panel">
+              <h4>欠租帳齡分布</h4>
+              <div class="ar-watch-bars" id="arWatchBars"></div>
+              <p class="note">點選柱狀圖、指標卡或上方篩選按鈕，可切換右側統計及下方案件明細。</p>
+            </div>
+            <div class="rev-panel" id="arWatchOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="arWatchStatTbl"></div>
+            <div class="rev-panel" id="arWatchJudge"></div>
+            <p class="note" id="arWatchUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll" id="arWatchUnitTbl"></div>
+          </div>
+        </div>
+        <div id="arWatchStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card ar-st-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3>應收帳款狀態分析</h3>
+            <p class="note" id="arStPeriod"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <select id="arStCt">
+              <option value="包租">包租</option>
+              <option value="轉租" selected>轉租</option>
+              <option value="代管">代管</option>
+              <option value="all">全部</option>
+            </select>
+            <div class="seg" id="arStSeg">
+              <button type="button" data-ar-sband="all" class="on">全部</button>
+              <button type="button" data-ar-sband="b17">逾期1-7天</button>
+              <button type="button" data-ar-sband="b814">逾期8-14天</button>
+              <button type="button" data-ar-sband="b1529">逾期15-29天</button>
+              <button type="button" data-ar-sband="b30">逾期30天</button>
+            </div>
             <button type="button" class="tool-btn" id="arStaffBtn">業務明細</button>
           </div>
         </div>
-        <p class="note" id="arStPeriod"></p>
         <div class="rev-board">
           <div class="rev-main">
-            <div class="rev-kpis" id="arStKpis"></div>
+            <div class="rev-kpis grow-kpis" id="arStKpis"></div>
             <div class="rev-mid">
               <div class="rev-panel">
                 <h4>應收帳款逾期天數</h4>
@@ -1462,18 +1562,130 @@
         </div>
         <div id="arStaffBox" class="src-staff hidden"></div>
       </article>
-      <article class="card">
+      <article class="card grow-card ar-watch-card" id="arAgCard">
         <div class="unit-cmp-head">
-          <h3>欠款大戶（承租人）分析</h3>
-          <p class="note">依催收查詢案件編號彙總欠租筆數與金額；點姓名或數字可帶出業務明細。右側為代管業務欠款占比排名。</p>
-        </div>
-        <div class="ar-debt-layout">
-          <div class="table-scroll" id="arDebtorTable"></div>
-          <div class="rev-panel">
-            <h4>代管業務占比排名</h4>
-            <div id="arAgentRank"></div>
+          <div>
+            <h3>代管業務欠租帳齡與催收監控分析</h3>
+            <p class="note" id="arAgMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <select id="arAgAgent"></select>
+            <select id="arAgCt">
+              <option value="包租">包租</option>
+              <option value="轉租" selected>轉租</option>
+              <option value="代管">代管</option>
+              <option value="all">全部</option>
+            </select>
+            <div class="seg" id="arAgSeg">
+              <button type="button" data-ar-ag-band="all" class="on">全部</button>
+              <button type="button" data-ar-ag-band="b17">逾期1-7天</button>
+              <button type="button" data-ar-ag-band="b814">逾期8-14天</button>
+              <button type="button" data-ar-ag-band="b1529">逾期15-29天</button>
+              <button type="button" data-ar-ag-band="b30">逾期30天</button>
+            </div>
+            <button type="button" class="tool-btn" id="arAgStaffBtn">案件明細</button>
           </div>
         </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="arAgKpis"></div>
+            <div class="rev-panel">
+              <h4 id="arAgBarsTitle">欠租帳齡分布</h4>
+              <div class="ar-watch-bars" id="arAgBars"></div>
+              <p class="note">點選柱狀圖、指標卡或上方篩選按鈕，可切換右側統計及下方案件明細。</p>
+            </div>
+            <div class="rev-panel" id="arAgOffRank"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="arAgStatTbl"></div>
+            <div class="rev-panel" id="arAgJudge"></div>
+            <p class="note" id="arAgUnitNote"></p>
+            <div class="table-scroll unit-detail-scroll ar-ag-tn-scroll" id="arAgUnitTbl"></div>
+          </div>
+        </div>
+        <div id="arAgStaffBox" class="src-staff hidden"></div>
+      </article>
+      <article class="card grow-card ar-debt-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3>欠款大戶│承租人分析</h3>
+            <p class="note" id="arDebtMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <select id="arDebtCt">
+              <option value="包租">包租</option>
+              <option value="轉租" selected>轉租</option>
+              <option value="代管">代管</option>
+              <option value="all">全部</option>
+            </select>
+            <select id="arDebtOff">
+              <option value="all">全部營業處</option>
+            </select>
+            <select id="arDebtBand">
+              <option value="all">全部欠租天數</option>
+              <option value="b17">逾期1-7天</option>
+              <option value="b814">逾期8-14天</option>
+              <option value="b1529">逾期15-29天</option>
+              <option value="b30">逾期30天</option>
+            </select>
+            <button type="button" class="tool-btn" id="arDebtStaffBtn">案件明細</button>
+          </div>
+        </div>
+        <div class="rev-board">
+          <div class="rev-main">
+            <div class="rev-kpis grow-kpis" id="arDebtKpis"></div>
+            <div class="rev-panel" id="arDebtTop"></div>
+            <div class="rev-panel" id="arDebtJudge"></div>
+          </div>
+          <div class="rev-side">
+            <div class="table-scroll" id="arDebtOffTbl"></div>
+            <div class="table-scroll" id="arDebtorTable"></div>
+          </div>
+        </div>
+        <div id="arDebtStaffBox" class="src-staff hidden"></div>
+      </article>
+    </section>
+    <section class="page" id="page-sum">
+      <div class="period-title">總表數據管理</div>
+      <article class="card sum-card">
+        <div class="unit-cmp-head">
+          <div>
+            <h3 id="sumTitle">總表數據管理</h3>
+            <p class="note" id="sumMeta"></p>
+          </div>
+          <div class="unit-cmp-tools">
+            <div class="seg" id="sumGrainSeg">
+              <button type="button" data-g="month" class="on">當月</button>
+              <button type="button" data-g="year">年度累計</button>
+            </div>
+            <div class="seg">
+              <button type="button" id="sumHideZero" class="on">年度業績為0值不顯示</button>
+            </div>
+            <button type="button" class="tool-btn" id="sumFoldBtn">全部收合</button>
+            <label>月份</label>
+            <select id="sumMonth"></select>
+            <label id="sumArCtLab" class="hidden">案件類型</label>
+            <select id="sumArCt" class="hidden">
+              <option value="包租">包租</option>
+              <option value="轉租" selected>轉租</option>
+              <option value="代管">代管</option>
+              <option value="all">全部</option>
+            </select>
+          </div>
+        </div>
+        <div class="seg sum-tabs" id="sumTabSeg">
+          <button type="button" data-t="kpi" class="on">關鍵指標總表</button>
+          <button type="button" data-t="match">新媒合</button>
+          <button type="button" data-t="lease">包租率</button>
+          <button type="button" data-t="weak">政策戶比率</button>
+          <button type="button" data-t="new">新件率</button>
+          <button type="button" data-t="ref">轉介比率</button>
+          <button type="button" data-t="suite">套房比率</button>
+          <button type="button" data-t="fam">婚育比</button>
+          <button type="button" data-t="renew">續約率</button>
+          <button type="button" data-t="ar">應收帳款比率</button>
+        </div>
+        <div id="sumBody"></div>
       </article>
     </section>
     <section class="page hidden" id="page-org">
@@ -1643,6 +1855,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js"></script>
   <script src="../js/toolbox-auth.js"></script>
-  <script src="loader.js?v=202611182300"></script>
+  <script src="loader.js?v=20261125-2101"></script>
 </body>
 </html>

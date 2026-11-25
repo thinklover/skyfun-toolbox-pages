@@ -1,8 +1,9 @@
 (() => {
-  const NAV = ['案件管理','組織管理','包租管理','政策戶管理','新件管理','續約管理','應收帳管理','業務績效表','證照檢核','開發管理','報修管理','社宅回饋管理'];
-  const LEASE_TARGET_RATE = 0.5;
+  const NAV = ['總表數據管理','案件管理','組織管理','包租管理','政策戶管理','新件管理','續約管理','應收帳管理','業務績效表','證照檢核','開發管理','報修管理'];
+  const LEASE_TARGET_RATE = 0.55;
+  const WEAK_TARGET_RATE = 0.5;
   const NEW_TARGET_RATE = 0.9;
-  const RENEW_TARGET_RATE = 0.7;
+  const RENEW_TARGET_RATE = 0.8;
   const RENEW_LEAD1_RATE = 0.8;
   const RENEW_LEAD2_RATE = 0.7;
   const NEW_CHILDREN = ['新媒合','新媒合-多元-直','新媒合-多元-間','新媒合-爬蟲','新媒合-客服-直','新媒合-客服-間','新媒合-寄居蟹轉銜案','新媒合-跨區派案-直','新媒合-跨區派案-間','新媒合-電銷-直','新媒合-電銷-間'];
@@ -38,7 +39,7 @@
   const PERIODS = ['2期','3期','3-1期','4期','4-1期','5期'];
   const REGIONS = {
     '雙北/基/宜': ['北一處','北二處','北三處','北四處','北五處','北六處','基一處','基二處','基三處','宜一處','宜二處','宜三處','蘆洲處'],
-    '桃/竹/中/彰/投/嘉': ['桃一處','桃二處','桃三處','林口處','竹一處','竹二處','中一處','中三處','中二處','中四處','中五處','中六處','中七處','投一處','嘉一處','嘉二處','彰一處','彰二處'],
+    '桃/竹/中/彰/投/嘉': ['桃一處','桃二處','桃三處','林口處','竹一處','竹二處','中一處','中二處','中三處','中四處','中五處','中六處','中七處','投一處','嘉一處','嘉二處','彰一處','彰二處'],
     '台南': ['南一處','南二處','南三處','南四處','南五處','南六處'],
     '高雄': ['高一處','高二處','高三處','高四處','高五處','高六處']
   };
@@ -150,7 +151,7 @@
   const now = taiwanNow();
   const defaultMonth = currentMonthRange(now);
   const state = {
-    nav: '案件管理',
+    nav: '總表數據管理',
     types: [...NEW_CHILDREN],
     offices: ['__ALL__'],
     cities: [...CITIES],
@@ -191,6 +192,16 @@
     houseStaffDir: 'desc',
     houseTblSort: '',
     houseTblDir: 'desc',
+    famGrain: 'month',
+    famOpen: ['全公司', '__SEL__'],
+    famFocus: '全公司',
+    famStaffOpen: false,
+    famStaffSort: 'total',
+    famStaffDir: 'desc',
+    famTblSort: '',
+    famTblDir: 'desc',
+    famHide: { 新婚: false, 育兒: false },
+    famCmpKey: 'mix',
     revGrain: 'month',
     revFilter: '全部',
     revOpen: ['全公司', '__SEL__'],
@@ -356,7 +367,7 @@
     nwRevStaffOpen: false,
     nwRevStaffSort: 'done',
     nwRevStaffDir: 'desc',
-    arCt: 'all',
+    arCt: '轉租',
     arAgeOpen: ['全公司'],
     arAgeFocus: '全公司',
     arAgeTblSort: '',
@@ -365,11 +376,34 @@
     arStFocus: '全公司',
     arStTblSort: '',
     arStTblDir: 'desc',
+    arStCt: '轉租',
+    arStBand: 'all',
     arStaffOpen: false,
+    arWatchOpen: ['全公司'],
+    arWatchFocus: '全公司',
+    arWatchBand: 'all',
+    arWatchCt: '轉租',
+    arWatchStaffOpen: false,
+    arAgOpen: ['全公司'],
+    arAgFocus: '全公司',
+    arAgBand: 'all',
+    arAgCt: '轉租',
+    arAgAgent: '',
+    arAgStaffOpen: false,
+    arAgCaseQ: '',
+    arAgTn: '',
+    arAgMarkTot: false,
     arStaffSort: 'amt',
     arStaffDir: 'desc',
     arDebtorTblSort: 'amt',
     arDebtorTblDir: 'desc',
+    arDebtCt: '轉租',
+    arDebtOff: 'all',
+    arDebtBand: 'all',
+    arDebtStaffOpen: false,
+    arDebtTn: '',
+    arDebtAddr: '',
+    arDebtCaseQ: '',
     arAgentSort: 'amt',
     arAgentDir: 'desc',
     rnGrowGrain: 'month',
@@ -465,11 +499,21 @@
     orgFlowPeopleOpen: false,
     orgFlowPeopleKey: 'left',
     orgFlowTitle: '',
-    orgFlowYm: null
+    orgFlowYm: null,
+    sumTab: 'kpi',
+    sumGrain: 'month',
+    sumPick: 0,
+    sumScope: '全公司',
+    sumHideZero: true,
+    sumArCt: '轉租',
+    sumKpiSort: null,
+    sumClosed: [],
+    arCaseQ: '',
+    arCaseFold: false
   };
   const draft = {};
   let charts = {};
-  const staffPeople = { rev: [], src: [], house: [], type: [], crab: [], grow: [], cg: [], fcst: [], lzGrow: [], wkGrow: [], nwGrow: [], lzCg: [], wkCg: [], nwCg: [], nat: [], lzType: [], lzRev: [], wkType: [], wkRev: [], nwType: [], nwRev: [], ar: [], rnGrow: [], rnConv: [], rnProg: [], rnWatch: [], rnYear: [], org: [], orgMem: [] };
+  const staffPeople = { rev: [], src: [], house: [], fam: [], type: [], crab: [], grow: [], cg: [], fcst: [], lzGrow: [], wkGrow: [], nwGrow: [], lzCg: [], wkCg: [], nwCg: [], nat: [], lzType: [], lzRev: [], wkType: [], wkRev: [], nwType: [], nwRev: [], ar: [], rnGrow: [], rnConv: [], rnProg: [], rnWatch: [], rnYear: [], org: [], orgMem: [] };
   const ROWS = window.CONTRACTS || [];
   for (let i = 0; i < ROWS.length; i++) {
     const r = ROWS[i];
@@ -532,9 +576,16 @@
     { id: 'b1529', lab: '15-29天', lo: 15, hi: 29 },
     { id: 'b30', lab: '30天以上', lo: 30, hi: null }
   ];
+  const AR_CASE_BANDS = [
+    { id: 'b30', lab: '逾期30天' },
+    { id: 'b1529', lab: '逾期15-29天' },
+    { id: 'b814', lab: '逾期7-14天' },
+    { id: 'b17', lab: '逾期1-7天' }
+  ];
   const AR_STATUS = [
     { id: 'paid', lab: '已繳款' },
-    { id: 'open', lab: '未處理完成未繳款' },
+    { id: 'unpaid', lab: '未繳款' },
+    { id: 'pending', lab: '未處理完成' },
     { id: 'legal', lab: '預計送法務部' }
   ];
   function arAgeBand(days) {
@@ -546,9 +597,28 @@
   }
   function arStatusOf(r) {
     const amt = Number(r.amt) || 0;
-    if (amt <= 0) return 'paid';
-    if ((Number(r.days) || 0) >= 30) return 'legal';
-    return 'open';
+    const t = String(r.ast || r.arrearsStatusText || '');
+    if (amt <= 0 || /已繳/.test(t)) return 'paid';
+    if ((Number(r.days) || 0) >= 30 || /法務/.test(t)) return 'legal';
+    if (/未繳款/.test(t) && !/未處理/.test(t)) return 'unpaid';
+    return 'pending';
+  }
+  function arNum(v) {
+    if (v == null || v === '') return null;
+    const n = Number(String(v).replace(/,/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }
+  function arRecvOf(r) {
+    const direct = arNum(r.recv ?? r.received ?? r.paidAmt ?? r.receivedAmount);
+    if (direct != null) return direct;
+    const bill = arNum(r.bill ?? r.receivable ?? r.receivableAmount);
+    const amt = arNum(r.amt) || 0;
+    if (bill != null) return Math.max(0, bill - amt);
+    return 0;
+  }
+  function arWarnOf(days) {
+    const id = arAgeBand(days);
+    return AR_CASE_BANDS.find(b => b.id === id) || AR_CASE_BANDS[3];
   }
   function arMoney(n, amt) {
     return `${fmt(n)}筆／$${fmt(amt)}`;
@@ -560,6 +630,106 @@
   const ID_CLASS = window.ID_CLASS || {};
   const NL_CLASS = window.NL_CLASS || {};
   const RENEWALS = (window.RENEWALS && window.RENEWALS.rows) || [];
+  function arContractOf(id) {
+    if (!arContractOf.map) {
+      const m = new Map();
+      const add = r => { if (r && r.id != null && !m.has(String(r.id))) m.set(String(r.id), r); };
+      ROWS.forEach(add);
+      MATCH_EXTRA.forEach(add);
+      RENEWALS.forEach(add);
+      arContractOf.map = m;
+    }
+    return arContractOf.map.get(String(id == null ? '' : id)) || MATCH_EXTRA_BY_ID.get(id) || MATCH_EXTRA_BY_ID.get(String(id)) || null;
+  }
+  function arContractByNo(n) {
+    if (!n) return null;
+    if (!arContractByNo.map) {
+      const m = new Map();
+      const add = r => {
+        const k = r && (r.n || r.rel);
+        if (k && !m.has(String(k))) m.set(String(k), r);
+      };
+      ROWS.forEach(add);
+      MATCH_EXTRA.forEach(add);
+      RENEWALS.forEach(add);
+      arContractByNo.map = m;
+    }
+    return arContractByNo.map.get(String(n)) || MATCH_EXTRA_BY_N.get(n) || MATCH_EXTRA_BY_N.get(String(n)) || null;
+  }
+  function arContractGuess(r) {
+    if (!arContractGuess.idx) {
+      const idx = new Map();
+      const dups = new Set();
+      const byAg = new Map();
+      const add = (row, agent, office) => {
+        if (!row || !agent || !office) return;
+        const gkey = String(agent) + '\t' + String(office) + '\t' + String(row.ct || '');
+        if (!byAg.has(gkey)) byAg.set(gkey, []);
+        byAg.get(gkey).push(row);
+        const rent = Number(row.rent);
+        if (!rent) return;
+        const key = gkey + '\t' + rent;
+        if (dups.has(key)) return;
+        const cur = idx.get(key);
+        if (!cur) { idx.set(key, row); return; }
+        if (row.id === cur.id) return;
+        const better = row.st === '已生效' && cur.st !== '已生效';
+        const worse = cur.st === '已生效' && row.st !== '已生效';
+        if (better) idx.set(key, row);
+        else if (!worse) { dups.add(key); idx.delete(key); }
+      };
+      ROWS.forEach(row => {
+        add(row, row.eu, row.eo);
+        add(row, row.sl, row.so);
+      });
+      MATCH_EXTRA.forEach(row => {
+        add(row, row.eu, row.eo);
+        add(row, row.sl, row.so);
+      });
+      RENEWALS.forEach(row => add(row, row.ag, row.of));
+      arContractGuess.idx = idx;
+      arContractGuess.byAg = byAg;
+    }
+    const gkey = String(r.agent || '') + '\t' + String(r.office || '') + '\t' + String(r.ct || '');
+    const amt = Number(r.amt) || 0;
+    const exact = arContractGuess.idx.get(gkey + '\t' + amt);
+    if (exact) return exact;
+    const rd = rocToDate(r.rd);
+    const list = arContractGuess.byAg.get(gkey) || [];
+    const inRange = list.filter(c => {
+      if (c.st && c.st !== '已生效') return false;
+      const rent = Number(c.rent) || 0;
+      if (rent && amt && amt > rent + 1) return false;
+      const ls = rocToDate(c.ls);
+      const le = rocToDate(c.le);
+      if (rd && ls && le && (rd.getTime() < ls.getTime() || rd.getTime() > le.getTime())) return false;
+      return true;
+    });
+    if (inRange.length === 1) return inRange[0];
+    if (inRange.length && inRange.every(x => x.n && x.n === inRange[0].n)) return inRange[0];
+    if (inRange.length && inRange.every(x => x.tn && x.tn === inRange[0].tn)) return inRange[0];
+    const ge = inRange.filter(c => Number(c.rent) >= amt).sort((a, b) => Number(a.rent) - Number(b.rent));
+    if (ge.length === 1) return ge[0];
+    if (ge.length && ge.every(x => x.n && x.n === ge[0].n)) return ge[0];
+    if (ge.length && ge.every(x => x.tn && x.tn === ge[0].tn)) return ge[0];
+    return null;
+  }
+  function arExtraStore() {
+    try { return JSON.parse(localStorage.getItem('dashArExtra') || '{}'); } catch (e) { return {}; }
+  }
+  function arExtraPut(id, info) {
+    if (id == null) return;
+    const all = arExtraStore();
+    const prev = all[String(id)] || {};
+    let chg = false;
+    const next = { ...prev };
+    ['tn', 'addr', 'st', 'n', 'memo', 'plan'].forEach(k => {
+      if (info[k] && info[k] !== prev[k]) { next[k] = info[k]; chg = true; }
+    });
+    if (!chg) return;
+    all[String(id)] = next;
+    try { localStorage.setItem('dashArExtra', JSON.stringify(all)); } catch (e) {}
+  }
 
   function ymKey(y, m) { return `${y}-${pad(m)}`; }
   function parseIso(s) {
@@ -750,7 +920,7 @@
     for (let i = 0; i < list.length; i++) {
       const r = list[i];
       n++;
-      if (isLeaseCt(r)) lease++;
+      if (isSubletCt(r) || isLeaseCt(r)) lease++;
       if (isMgmtCt(r)) mgmt++;
     }
     return { n, lease, mgmt, rate: n ? lease / n : 0 };
@@ -808,7 +978,10 @@
     return 'page-lease';
   }
   function dashTarget(kind) {
-    return dashKind(kind) === 'new' ? NEW_TARGET_RATE : LEASE_TARGET_RATE;
+    kind = dashKind(kind);
+    if (kind === 'new') return NEW_TARGET_RATE;
+    if (kind === 'weak') return WEAK_TARGET_RATE;
+    return LEASE_TARGET_RATE;
   }
   function dashTgtPct(kind) {
     return (dashTarget(kind) * 100).toFixed(1) + '%';
@@ -863,7 +1036,7 @@
       yoyR: '同期包租率', lastR: '上月包租率',
       yoyH: '同期包租%', lastH: '上月包租%',
       only: '僅計包租', typeFilter: '包租',
-      note: '包租率＝包租件／所選案件類型；目標%固定 50%。簽三年代管＝代管且租期約三年。'
+      note: '包租率＝轉租件（含包租）／所選案件類型；目標%固定 55%。簽三年代管＝代管且租期約三年。'
     };
   }
   function leaseNewRows(start, end, offices, kind) {
@@ -1297,6 +1470,7 @@
       state.nav = n;
       document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('on', b.dataset.nav === n));
       const cases = n === '案件管理';
+      const sum = n === '總表數據管理';
       const org = n === '組織管理';
       const lease = n === '包租管理';
       const weak = n === '政策戶管理';
@@ -1305,6 +1479,7 @@
       const ar = n === '應收帳管理';
       const perf = n === '業務績效表';
       $('page-cases').classList.toggle('hidden', !cases);
+      if ($('page-sum')) $('page-sum').classList.toggle('hidden', !sum);
       if ($('page-org')) $('page-org').classList.toggle('hidden', !org);
       if ($('page-lease')) $('page-lease').classList.toggle('hidden', !lease);
       if ($('page-weak')) $('page-weak').classList.toggle('hidden', !weak);
@@ -1312,8 +1487,9 @@
       if ($('page-renew')) $('page-renew').classList.toggle('hidden', !renew);
       if ($('page-ar')) $('page-ar').classList.toggle('hidden', !ar);
       if ($('page-perf')) $('page-perf').classList.toggle('hidden', !perf);
-      $('page-placeholder').classList.toggle('hidden', cases || org || lease || weak || fresh || renew || ar || perf);
+      $('page-placeholder').classList.toggle('hidden', cases || sum || org || lease || weak || fresh || renew || ar || perf);
       if ($('phTitle')) $('phTitle').textContent = n;
+      if (sum) renderSumDash();
       if (org) renderOrgDash();
       if (lease) renderLeaseDash('lease');
       if (weak) renderLeaseDash('weak');
@@ -1780,7 +1956,7 @@
     if (!el) return;
     kind = dashKind(kind);
     const lab = dashLab(kind);
-    const hi = kind === 'new' ? 0.9 : 0.5;
+    const hi = dashTarget(kind);
     const lo = kind === 'new' ? 0.7 : 0.3;
     const arr = officeRateList(rows, kind).slice(0, 24);
     const max = Math.max(...arr.map(x => x[1]), 0.01);
@@ -6283,6 +6459,7 @@
         </tr>`).join('') || '<tr><td colspan="6">無資料</td></tr>'}
       </tbody></table></div>
       ${staffCasePanel('org')}`;
+    installSnapButtons();
   }
   function fcstKeep(set, r) {
     return officeSetHasRow(set, r, r.so) || officeSetHasRow(set, r, crabNormSo(r.so));
@@ -6777,6 +6954,11 @@
     { id: 'p', label: '期數' },
     { id: 'nl', label: '是否帶租約' }
   ];
+  const FAM_CASE_COLS = CASE_COLS.map(c => {
+    if (c.id === 'nl') return { id: 'fam', label: '婚育家庭類別' };
+    if (c.id === 'so') return { id: 'so', label: '業務營業處' };
+    return c;
+  });
   const RN_CASE_COLS = [
     { id: 'sl', label: '代管人員' },
     { id: 'so', label: '代管營業處' },
@@ -6951,14 +7133,43 @@
     if (!v) return null;
     return /新件/.test(v);
   }
-  function familyFlag(r) {
+  function famRaw(r) {
     const m = matchExtraOf(r) || {};
-    const v = r.fam || r.family || m.fam || m.family || '';
-    if (v == null || v === '') return null;
-    const s = String(v);
-    if (/^[123]$/.test(s)) return true;
-    if (s === '4' || s === '0' || s === 'null') return false;
-    return /新婚|育兒/.test(s);
+    const v = r.fam != null && r.fam !== '' ? r.fam : (r.family != null && r.family !== '' ? r.family : (m.fam != null && m.fam !== '' ? m.fam : m.family));
+    return String(v == null ? '' : v).trim();
+  }
+  function famKind(r) {
+    const s = famRaw(r);
+    if (!s || s === '0' || s === 'null') return '';
+    if (s === '4' || /非婚育/.test(s) || /非新婚無育兒/.test(s)) return 'none';
+    if (s === '1' || s === '3' || /有育兒/.test(s) || (/育兒/.test(s) && !/新婚無育兒/.test(s))) return 'kid';
+    if (s === '2' || /新婚無育兒/.test(s) || /新婚/.test(s)) return 'wed';
+    return '';
+  }
+  function isWedFam(r) { return famKind(r) === 'wed'; }
+  function isKidFam(r) { return famKind(r) === 'kid'; }
+  function isMixFam(r) { const k = famKind(r); return k === 'wed' || k === 'kid'; }
+  function isNoneFam(r) { return famKind(r) === 'none'; }
+  function famLabel(r) {
+    const k = famKind(r);
+    if (k === 'wed') return '新婚家庭';
+    if (k === 'kid') return '育兒家庭';
+    if (k === 'none') return '非婚育家庭';
+    return famRaw(r) || '';
+  }
+  function familyFlag(r) {
+    const k = famKind(r);
+    if (!k) return null;
+    return k !== 'none';
+  }
+  function famStBucket(r) {
+    const st = String(r.st || '');
+    if (/解約/.test(st)) return 'early';
+    if (/已到期/.test(st)) return 'due';
+    if (/已生效/.test(st)) return 'live';
+    if (/複審/.test(st)) return 'rev';
+    if (/預審/.test(st)) return 'pre';
+    return '';
   }
   function isLeaseMgmt(r) {
     const ct = String(r.ct || '');
@@ -7599,6 +7810,329 @@
     if (hBtn) hBtn.classList.toggle('on', !!state.houseStaffOpen);
     renderHouseStaff(focusNode.rows || [], focusNode.name || '全公司');
   }
+  function famRange() {
+    if (state.famGrain === 'year') {
+      const y = state.end.getFullYear();
+      return { start: new Date(y, 0, 1), end: new Date(y, 11, 31) };
+    }
+    return { start: state.start, end: state.end };
+  }
+  function isFamSt(r) {
+    const st = String(r.st || '');
+    if (/已停用|暫存/.test(st)) return false;
+    return /已生效|已到期|已解約|審|產編/.test(st);
+  }
+  function isFamFt(r) {
+    return String(r.ft || '').includes('新媒合');
+  }
+  function famRows(offices, start, end) {
+    return typeRows(offices, start, end, { ignoreType: true }).filter(r => isFamSt(r) && isFamFt(r));
+  }
+  function famCountsOf(rows) {
+    const list = rows || [];
+    const wed = list.filter(isWedFam).length;
+    const kid = list.filter(isKidFam).length;
+    const mix = list.filter(isMixFam).length;
+    const none = list.filter(isNoneFam).length;
+    const total = list.length;
+    const ref = list.filter(r => { const s = caseSource(r); return s && s.group === '轉介紹'; }).length;
+    const stOf = subset => {
+      const out = { pre: 0, rev: 0, live: 0, due: 0, early: 0 };
+      subset.forEach(r => { const b = famStBucket(r); if (b) out[b] += 1; });
+      return out;
+    };
+    return {
+      wed, kid, mix, none, total, ref,
+      refRate: total ? ref / total : 0,
+      mixRate: total ? mix / total : 0,
+      stAll: stOf(list),
+      stMix: stOf(list.filter(isMixFam)),
+      stWed: stOf(list.filter(isWedFam)),
+      stKid: stOf(list.filter(isKidFam)),
+      stNone: stOf(list.filter(isNoneFam))
+    };
+  }
+  function famComboLines(node) {
+    const peers = revPeers(node).filter(p => p.c && p.c.mix);
+    const top = [...peers].sort((a, b) => b.c.mix - a.c.mix)[0];
+    if (top) return [`${top.name}：${fmt(top.c.mix)} 件，為區域婚育件數最多。`];
+    return ['此範圍婚育件數分散，依各單位表列檢視即可。'];
+  }
+  function famJudgeLines(node) {
+    const c = node.c;
+    if (!c.total) return ['此範圍目前無案件。'];
+    return [
+      `婚育合計 ${fmt(c.mix)} 件，占全部 ${revPct(c.mix, c.total)}%；新婚 ${fmt(c.wed)} 件、育兒 ${fmt(c.kid)} 件。`,
+      `非婚育 ${fmt(c.none)} 件，占全部 ${revPct(c.none, c.total)}%。`
+    ];
+  }
+  function renderFamAnalysis() {
+    if (!$('famKpis')) return;
+    const { start, end } = famRange();
+    const open = new Set(state.famOpen || []);
+    const y = state.end.getFullYear();
+    const filterM = state.end.getMonth() + 1;
+    const isYear = state.famGrain === 'year';
+    $('famPeriod').textContent = `統計期間：${slash(start)}～${slash(end)}　案件類型：名稱含新媒合　狀態：已生效／已到期／已解約生效（含審、產編）　歸屬業務營業處　資料來源：媒合管理＞契約資料查詢「婚育家庭類別」`;
+    const ownerOf = (id, name) => displayOwner(id, name) || '—';
+    const decorate = (node) => {
+      const kids = (node.kids || []).map(decorate);
+      const rows = famRows(unitOfficeSet(node.id), start, end);
+      return { ...node, kids, rows, c: famCountsOf(rows) };
+    };
+    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.c && n.c.total) || decorate(scopedUnitTree());
+    const famKey = state.famTblSort || '';
+    if (famKey) sortUnitTree(root, n => {
+      if (famKey === 'name') return n.name;
+      if (famKey === 'owner') return ownerOf(n.id, n.name);
+      if (famKey === 'wed') return n.c.wed;
+      if (famKey === 'kid') return n.c.kid;
+      if (famKey === 'mix') return n.c.mix;
+      if (famKey === 'none') return n.c.none;
+      if (famKey === 'refRate') return n.c.refRate;
+      if (famKey === 'mixRate') return n.c.mixRate;
+      return n.c.total;
+    }, state.famTblDir || 'desc');
+    if (!findUnitNode(root, state.famFocus || '')) state.famFocus = root.id;
+    const focus = state.famFocus || root.id;
+    const html = [];
+    const walk = (node, depth) => {
+      const hasKids = node.kids && node.kids.length;
+      const isOpen = node.id === '__SEL__' || open.has(node.id);
+      const tog = hasKids
+        ? `<button type="button" class="unit-tog" data-fam-open="${node.id}">${isOpen ? '▾' : '▸'}</button>`
+        : `<span class="unit-tog-sp"></span>`;
+      const on = node.id === focus ? ' on' : '';
+      html.push(`<tr class="${on}" data-fam-focus="${node.id}">
+        ${unitCellHtml(node, depth, tog)}
+        <td>${fmt(node.c.total)}</td>
+        <td>${fmt(node.c.wed)}</td>
+        <td>${fmt(node.c.kid)}</td>
+        <td>${fmt(node.c.mix)}</td>
+        <td>${fmt(node.c.none)}</td>
+        <td>${Math.round(node.c.mixRate * 100)}%</td>
+      </tr>`);
+      if (hasKids && isOpen) node.kids.forEach(k => walk(k, depth + 1));
+    };
+    walk(root, 0);
+    $('famTable').innerHTML = `<table class="type-tbl ana-tbl"><thead><tr>
+      ${tblTh('fam', 'name', '單位／擔當者')}${tblTh('fam', 'total', '總件數')}${tblTh('fam', 'wed', '新婚')}${tblTh('fam', 'kid', '育兒')}${tblTh('fam', 'mix', '婚育件數')}${tblTh('fam', 'none', '非婚育')}${tblTh('fam', 'mixRate', '婚育占比')}
+    </tr></thead><tbody>${html.join('')}</tbody></table>`;
+    const findNode = (node, id) => node.id === id ? node : (node.kids || []).reduce((hit, k) => hit || findNode(k, id), null);
+    const focusNode = findNode(root, focus) || root;
+    const focusRows = focusNode.rows || [];
+    const c = focusNode.c;
+    const scopeName = focusNode.name || ddLabel('office');
+    $('famKpis').innerHTML = `
+      <div class="card kpi hot">
+        <div class="k">新婚+育兒件數</div>
+        <div class="v">${fmt(c.mix)}<span class="unit"> 件</span></div>
+        <div class="s">占全部 ${revPct(c.mix, c.total)}%</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">新婚件數</div>
+        <div class="v">${fmt(c.wed)}<span class="unit"> 件</span></div>
+        <div class="s">占全部 ${revPct(c.wed, c.total)}%</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">育兒件數</div>
+        <div class="v">${fmt(c.kid)}<span class="unit"> 件</span></div>
+        <div class="s">占全部 ${revPct(c.kid, c.total)}%</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">非婚育件數</div>
+        <div class="v">${fmt(c.none)}<span class="unit"> 件</span></div>
+        <div class="s">占全部 ${revPct(c.none, c.total)}%</div>
+      </div>`;
+    const pm = filterM === 1 ? 12 : filterM - 1;
+    const lastStart = isYear ? new Date(y - 1, 0, 1) : monthStart(addMonths(start, -1));
+    const lastEnd = isYear ? monthEnd(new Date(y - 1, filterM - 1, 1)) : monthEnd(lastStart);
+    const yoyStart = isYear ? new Date(y - 1, 0, 1) : new Date(y - 1, filterM - 1, 1);
+    const yoyEnd = isYear ? monthEnd(new Date(y - 1, filterM - 1, 1)) : monthEnd(yoyStart);
+    const lastC = famCountsOf(famRows(unitOfficeSet(focusNode.id), lastStart, lastEnd));
+    const yoyC = famCountsOf(famRows(unitOfficeSet(focusNode.id), yoyStart, yoyEnd));
+    const cmpKey = state.famCmpKey || 'mix';
+    const famCmpRow = (lab, key, now, last, yoy) => {
+      const d = now - last;
+      const yoyP = yoy ? (now - yoy) / yoy * 100 : null;
+      const on = key === cmpKey ? ' mark' : '';
+      if (isYear) {
+        const yd = now - yoy;
+        return `<tr class="${on}" data-fam-cmp="${key}"><td>${esc(lab)}</td><td>${fmt(now)}</td>${crabTd(crabSigned(yd), crabCls(yd))}<td>${fmt(yoy)}</td>${crabTd(yoy ? crabPpTxt(yoyP) : '—', crabCls(yoyP))}</tr>`;
+      }
+      return `<tr class="${on}" data-fam-cmp="${key}"><td>${esc(lab)}</td><td>${fmt(now)}</td><td>${fmt(last)}</td>
+        ${crabTd(crabSigned(d), crabCls(d))}
+        ${crabTd(crabMomTxt(now, last), crabCls(d))}
+        <td>${fmt(yoy)}</td>
+        ${crabTd(yoy ? crabPpTxt(yoyP) : '—', crabCls(yoyP))}</tr>`;
+    };
+    $('famCmpTbl').innerHTML = `<p class="note">婚育總件數＝新婚件數＋育兒件數；點列切換深底。</p>
+      <table class="crab-tbl"><thead><tr>
+      ${isYear
+        ? `<th>比較項目</th><th>1–${filterM}月</th><th>累計差異</th><th>同期1–${filterM}月</th><th>同期比</th>`
+        : `<th>比較項目</th><th>${filterM}月</th><th>${pm}月</th><th>差異</th><th>上月比</th><th>同期</th><th>同期比</th>`}
+    </tr></thead><tbody>
+      ${famCmpRow('婚育總件數', 'mix', c.mix, lastC.mix, yoyC.mix)}
+      ${famCmpRow('新婚件數', 'wed', c.wed, lastC.wed, yoyC.wed)}
+      ${famCmpRow('育兒件數', 'kid', c.kid, lastC.kid, yoyC.kid)}
+      ${famCmpRow('非婚育件數', 'none', c.none, lastC.none, yoyC.none)}
+    </tbody></table>`;
+    const combo = famComboLines(focusNode);
+    $('famFocusNote').innerHTML = `<h4>婚育分析說明</h4>${combo.map(t => `<p>${esc(t)}</p>`).join('')}`;
+    $('famJudge').innerHTML = `<h4>附件可觀察的來源結構</h4>${famJudgeLines(focusNode).map(t => `<p>${esc(t)}</p>`).join('')}`;
+    const offStats = SALES_OFFICES.map(o => {
+      const rows = focusRows.filter(r => r.so === o);
+      return { name: o, wed: rows.filter(isWedFam).length, kid: rows.filter(isKidFam).length };
+    }).filter(x => x.wed || x.kid).sort((a, b) => (b.wed + b.kid) - (a.wed + a.kid)).slice(0, 12);
+    const maxPair = Math.max(1, ...offStats.map(x => Math.max(x.wed, x.kid)));
+    $('famPair').innerHTML = offStats.length ? `<div class="src-pair fam-pair">
+      <span class="h">來源細項</span><span class="h">新婚</span><span class="h">育兒</span>
+      ${offStats.map(x => `<span class="lab">${esc(x.name)}</span>
+        <span class="pair"><span class="track"><i style="width:${(x.wed / maxPair) * 100}%;background:#be185d"></i></span><span class="n">${fmt(x.wed)}</span></span>
+        <span class="pair"><span class="track"><i style="width:${(x.kid / maxPair) * 100}%;background:#fde8f1"></i></span><span class="n">${fmt(x.kid)}</span></span>`).join('')}
+    </div>` : '<p class="note">此範圍無婚育案件可列示。</p>';
+    const months = Array.from({ length: 12 }, (_, i) => i + 1);
+    const focusSet = unitOfficeSet(focusNode.id);
+    const monthP = months.map(m => {
+      if (m > filterM) return { wed: null, kid: null };
+      const st = new Date(y, m - 1, 1);
+      const en = monthEnd(st);
+      const rows = famRows(focusSet, st, en);
+      return { wed: rows.filter(isWedFam).length, kid: rows.filter(isKidFam).length };
+    });
+    const hide = state.famHide || {};
+    $('famChartTitle').textContent = isYear ? `1–${filterM}月案件結構` : '1–12月案件結構';
+    $('famChartNote').textContent = `資料來源：星鴻媒合管理＞契約資料查詢「婚育家庭類別」。案件類型凡名稱含「新媒合」均列入。狀態：已生效、已到期、已解約生效（含審、產編）；剔除已停用／暫存。每件僅一個類別：新婚家庭、育兒家庭、非婚育家庭。柱為每月起租案件堆疊。${filterM < 12 ? `${filterM + 1}月以後尚未列入。` : ''}`;
+    const bandPlugin = {
+      id: 'famBand',
+      beforeDraw(chart) {
+        if (isYear) return;
+        const meta = chart.getDatasetMeta(0);
+        const pt = meta && meta.data[filterM - 1];
+        if (!pt) return;
+        const { ctx, chartArea } = chart;
+        const bw = typeof pt.width === 'number' ? pt.width : 24;
+        ctx.save();
+        ctx.fillStyle = 'rgba(59,130,246,.07)';
+        ctx.fillRect(pt.x - (bw + 10) / 2, chartArea.top, bw + 10, chartArea.bottom - chartArea.top);
+        ctx.restore();
+      }
+    };
+    const labelPlugin = {
+      id: 'famLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((ds, di) => {
+          const meta = chart.getDatasetMeta(di);
+          if (!meta.visible) return;
+          meta.data.forEach((pt, i) => {
+            const v = ds.data[i];
+            if (v == null || !v || !pt) return;
+            const base = pt.base != null ? pt.base : pt.y;
+            const h = Math.abs(base - pt.y);
+            if (h <= 14) return;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '10px Arial, sans-serif';
+            ctx.fillStyle = ds.label === '育兒' ? '#9d174d' : '#fff';
+            ctx.fillText(fmt(Math.round(v)), pt.x, (pt.y + base) / 2);
+            ctx.restore();
+          });
+        });
+        monthP.forEach((p, i) => {
+          if (p.wed == null) return;
+          const tot = (hide['新婚'] ? 0 : (p.wed || 0)) + (hide['育兒'] ? 0 : (p.kid || 0));
+          const topDs = [...chart.data.datasets].reverse().find((ds, idx) => {
+            const di = chart.data.datasets.length - 1 - idx;
+            return chart.isDatasetVisible(di);
+          });
+          const di = chart.data.datasets.indexOf(topDs);
+          const meta = di >= 0 ? chart.getDatasetMeta(di) : null;
+          const pt = meta && meta.data[i];
+          if (!pt || !tot) return;
+          ctx.save();
+          ctx.fillStyle = '#1e3a5f';
+          ctx.font = '10px Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(fmt(tot), pt.x, pt.y - 4);
+          ctx.restore();
+        });
+      }
+    };
+    upsert('famChart', 'bar', months.map(m => `${m}月`), [
+      { label: '新婚', data: monthP.map(p => p.wed), hidden: !!hide['新婚'], backgroundColor: '#be185d', stack: 's', borderRadius: 0, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 },
+      { label: '育兒', data: monthP.map(p => p.kid), hidden: !!hide['育兒'], backgroundColor: '#fde8f1', stack: 's', borderRadius: { topLeft: 3, topRight: 3, bottomLeft: 0, bottomRight: 0 }, barPercentage: 0.58, categoryPercentage: 0.78, maxBarThickness: 28 }
+    ], {
+      clip: false,
+      layout: { padding: { top: 18, right: 8, left: 4, bottom: 2 } },
+      plugins: { legend: { display: false } },
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 }, color: '#94a3b8' }, border: { display: false } },
+        y: { stacked: true, beginAtZero: true, grace: '18%', grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8' }, border: { display: false } }
+      }
+    }, [bandPlugin, labelPlugin]);
+    if ($('famLegend')) $('famLegend').querySelectorAll('[data-fam-ds]').forEach(b => b.classList.toggle('off', !!hide[b.dataset.famDs]));
+    const fBtn = $('famStaffBtn');
+    if (fBtn) fBtn.classList.toggle('on', !!state.famStaffOpen);
+    renderFamStaff(focusRows, focusNode.name || '全公司');
+  }
+  function renderFamStaff(rows, scopeName) {
+    const box = $('famStaffBox');
+    if (!box) return;
+    bindStaffBox('famStaffBox', 'fam');
+    box.classList.toggle('hidden', !state.famStaffOpen);
+    if (!state.famStaffOpen) {
+      if (state.staffCase && state.staffCase.kind === 'fam') state.staffCase = null;
+      box.innerHTML = '';
+      return;
+    }
+    const map = new Map();
+    rows.forEach(r => {
+      const name = r.sl || '—';
+      const office = r.so || '—';
+      const key = office + '\t' + name;
+      if (!map.has(key)) map.set(key, { office, name, rows: [] });
+      map.get(key).rows.push(r);
+    });
+    const people = sortStaffPeople([...map.values()].map(p => {
+      const wed = p.rows.filter(isWedFam).length;
+      const kid = p.rows.filter(isKidFam).length;
+      const mix = p.rows.filter(isMixFam).length;
+      const none = p.rows.filter(isNoneFam).length;
+      const total = p.rows.length;
+      return { ...p, wed, kid, mix, none, total, mixRate: total ? mix / total : 0 };
+    }), state.famStaffSort || 'total', state.famStaffDir || 'desc');
+    staffPeople.fam = people;
+    const total = rows.length;
+    const mixN = people.reduce((a, p) => a + p.mix, 0);
+    const top = [...people].sort((a, b) => b.mix - a.mix)[0];
+    box.innerHTML = `
+      ${staffHead(esc(scopeName) + ' ｜ 婚育家庭業務明細查詢')}
+      <p class="src-staff-k">媒合總件數${fmt(total)}件，${fmt(people.length)}位業務；婚育${fmt(mixN)}件，占整體${total ? (mixN / total * 100).toFixed(1) : '0.0'}%${top && top.mix ? `，婚育最高業務${esc(top.name)}${fmt(top.mix)}件` : ''}</p>
+      <p class="src-staff-k">點表頭排序；點業務姓名展開案件明細</p>
+      <div class="src-staff-scroll"><table class="src-combo"><thead>
+        <tr>
+          <th data-sort="office" class="${staffSortMark('fam', 'office')}">業務營業處</th>
+          <th data-sort="name" class="${staffSortMark('fam', 'name')}">業務</th>
+          <th data-sort="wed" class="${staffSortMark('fam', 'wed')}">新婚</th>
+          <th data-sort="kid" class="${staffSortMark('fam', 'kid')}">育兒</th>
+          <th data-sort="mix" class="${staffSortMark('fam', 'mix')}">新婚+育兒</th>
+          <th data-sort="none" class="${staffSortMark('fam', 'none')}">非婚育</th>
+          <th data-sort="total" class="${staffSortMark('fam', 'total')}">總件數</th>
+          <th>婚育%</th>
+        </tr>
+      </thead><tbody>
+        ${people.map(p => `<tr>
+          <td>${esc(p.office)}</td><td class="name-hit">${esc(p.name)}</td>
+          ${numTd(p.wed, 'wed')}${numTd(p.kid, 'kid')}${numTd(p.mix, 'mix')}${numTd(p.none, 'none')}${numTd(p.total, 'total')}
+          <td>${Math.round(p.mixRate * 100)}%</td>
+        </tr>`).join('') || '<tr><td colspan="8">無資料</td></tr>'}
+      </tbody></table></div>
+      ${staffCasePanel('fam')}`;
+  }
   function fitPieWrap(cardSel) {
     const wrap = document.querySelector(cardSel + ' .type-pie-wrap');
     if (!wrap) return;
@@ -7889,6 +8423,7 @@
       if (key === 'city') return normCity(r.city);
       if (key === 'i') return identityOf(r);
       if (key === 'nl') return leaseCarryOf(r);
+      if (key === 'fam') return famLabel(r);
       if (key === 'rent' || key === 'repair' || key === 'notary') {
         const p = casePartyOf(r);
         const n = Number(String(p[key] == null ? '' : p[key]).replace(/,/g, ''));
@@ -7967,9 +8502,15 @@
       });
     }
     if (kind === 'ar') {
-      if (k === 'paid') return p.rows.filter(r => arStatusOf(r) === 'paid');
-      if (k === 'open') return p.rows.filter(r => arStatusOf(r) === 'open');
+      if (k === 'paid' || k === 'recv') return p.rows.filter(r => arRecvOf(r) > 0);
+      if (k === 'unpaid') return p.rows.filter(r => arStatusOf(r) === 'unpaid');
+      if (k === 'pending') return p.rows.filter(r => arStatusOf(r) === 'pending');
+      if (k === 'open') return p.rows.filter(r => {
+        const st = arStatusOf(r);
+        return st === 'unpaid' || st === 'pending';
+      });
       if (k === 'legal') return p.rows.filter(r => arStatusOf(r) === 'legal');
+      if (k === 'debt') return p.rows.filter(r => arStatusOf(r) !== 'paid');
       if (k === 'b17' || k === 'b814' || k === 'b1529' || k === 'b30') return p.rows.filter(r => arAgeBand(r.days) === k);
       return p.rows;
     }
@@ -8031,6 +8572,12 @@
       return p.rows.filter(hitFn);
     }
     if (kind === 'house') return p.rows.filter(r => (houseGroupOf(r) || {}).id === k);
+    if (kind === 'fam') {
+      if (k === 'wed') return p.rows.filter(isWedFam);
+      if (k === 'kid') return p.rows.filter(isKidFam);
+      if (k === 'none') return p.rows.filter(isNoneFam);
+      if (k === 'mix') return p.rows.filter(isMixFam);
+    }
     if (kind === 'type' || kind === 'lzType' || kind === 'wkType') {
       if (k === 'newN' || k === '新媒合') return p.rows.filter(r => NEW_CHILDREN.includes(r.ft));
       if (k === 'reN' || k === '再媒合') return p.rows.filter(r => r.ft === '到期再媒合' || r.ft === '解約再媒合');
@@ -8091,6 +8638,9 @@
       if (mm) return mm[1] + '月';
     }
     if (kind === 'ar') {
+      if (k === 'recv') return '實收金額';
+      if (k === 'open') return '未處理完成未繳款';
+      if (k === 'debt') return '欠款總計';
       const hit = AR_STATUS.find(s => s.id === k) || AR_AGE.find(s => s.id === k);
       if (hit) return hit.lab;
       if (k === 'n' || k === 'amt') return '欠款';
@@ -8101,6 +8651,12 @@
       return String(k).replace('|', '-');
     }
     if (kind === 'house') return k === 'solo' ? '獨套' : (k === 'whole' ? '整棟(戶)' : k);
+    if (kind === 'fam') {
+      if (k === 'wed') return '新婚';
+      if (k === 'kid') return '育兒';
+      if (k === 'none') return '非婚育';
+      if (k === 'mix') return '婚育';
+    }
     if (kind === 'rev' || kind === 'lzRev' || kind === 'wkRev') {
       if (k === 'donePct') return '已生效%';
       if (k === 'reviewPct') return '審件中%';
@@ -8130,7 +8686,7 @@
     const sorted = sortCaseRows(rows);
     if (!sorted.length) return '<div class="empty">無符合條件的資料</div>';
     const rn = isRnCaseView();
-    const cols = rn ? RN_CASE_COLS : CASE_COLS;
+    const cols = rn ? RN_CASE_COLS : ((state.staffCase && state.staffCase.kind === 'fam') ? FAM_CASE_COLS : CASE_COLS);
     const cell = (r, id) => {
       if (id === 'so' && rn) return esc(rnMgmtOffice(r));
       if (id === 'sl' && rn) return esc(rnMgmtAgent(r) || r.eu || r.ag || '');
@@ -8147,6 +8703,7 @@
       }
       if (id === 'i') return esc(identityOf(r));
       if (id === 'nl') return esc(leaseCarryOf(r));
+      if (id === 'fam') return esc(famLabel(r));
       if (id === 'src') {
         const s = caseSource(r);
         return esc(s ? (s.group === '轉介紹' ? '轉介' : '陌生') + '-' + s.leaf : '');
@@ -8178,10 +8735,17 @@
     if (!c || c.kind !== kind) return '';
     const p = (staffPeople[kind] || []).find(x => x.office === c.office && x.name === c.name);
     const rows = filterStaffCases(p, kind, c.key);
+    const shown = kind === 'ar' ? arCaseFilterRows(rows) : rows;
     const monthBar = kind === 'rnYear' ? rnYearCaseMonthBar(c, p) : '';
+    const arTools = kind === 'ar' ? `<div class="ar-case-tools">
+        <input type="search" class="ar-case-q" data-ar-case-q placeholder="搜尋姓名" value="${esc(state.arCaseQ || '')}" autocomplete="off" />
+        ${AR_CASE_BANDS.map(b => `<button type="button" class="ar-case-band ar-warn-${b.id}${c.key === b.id ? ' on' : ''}" data-ar-case-band="${b.id}">${esc(b.lab)}</button>`).join('')}
+      </div>` : '';
     return `<div class="staff-case">
       <div class="staff-case-head">
-        <h4>${esc(c.name)}（${esc(c.office)}）｜${esc(c.label)}　業務案件明細　共${fmt(rows.length)}筆</h4>
+        <h4>${esc(c.name)}（${esc(c.office)}）｜${esc(c.label)}　業務案件明細　共${fmt(shown.length)}筆</h4>
+        ${arTools}
+        ${kind === 'ar' ? `<button type="button" class="snap-btn snap-btn-inline" data-ar-snap title="複製此區塊圖片，可貼到 PowerPoint">擷取</button>` : ''}
         <button type="button" class="tool-btn close-btn" data-close-case>關閉</button>
       </div>
       ${monthBar}
@@ -8197,6 +8761,25 @@
     }
     if (e.target.closest('[data-close-case]')) {
       if (state.staffCase && state.staffCase.kind === kind) state.staffCase = null;
+      refreshStaffKind(kind);
+      return;
+    }
+    if (e.target.closest('[data-ar-snap]') && kind === 'ar') {
+      const panel = e.target.closest('.staff-case');
+      snapBlock(panel, e.target.closest('button'));
+      return;
+    }
+    const bandBtn = e.target.closest('[data-ar-case-band]');
+    if (bandBtn && kind === 'ar' && state.staffCase && state.staffCase.kind === 'ar') {
+      const id = bandBtn.getAttribute('data-ar-case-band');
+      const hit = AR_CASE_BANDS.find(b => b.id === id);
+      if (state.staffCase.key === id) {
+        state.staffCase.key = 'total';
+        state.staffCase.label = '欠款';
+      } else {
+        state.staffCase.key = id;
+        state.staffCase.label = hit ? hit.lab : id;
+      }
       refreshStaffKind(kind);
       return;
     }
@@ -8237,6 +8820,7 @@
     if (kind === 'rev') renderReviewAnalysis();
     else if (kind === 'src') renderSourceAnalysis();
     else if (kind === 'house') renderHouseAnalysis();
+    else if (kind === 'fam') renderFamAnalysis();
     else if (kind === 'type') renderTypeAnalysis();
     else if (kind === 'lzType') renderLeaseType('lease');
     else if (kind === 'lzRev') renderLeaseReview('lease');
@@ -8268,6 +8852,21 @@
     if (!box || box.dataset.bound === '1') return;
     box.dataset.bound = '1';
     box.addEventListener('click', e => handleStaffBoxClick(kind, e));
+    if (kind === 'ar') {
+      box.addEventListener('input', e => {
+        const inp = e.target.closest('[data-ar-case-q]');
+        if (!inp) return;
+        state.arCaseQ = inp.value;
+        const c = state.staffCase;
+        if (!c || c.kind !== 'ar') return;
+        const p = (staffPeople.ar || []).find(x => x.office === c.office && x.name === c.name);
+        const rows = arCaseFilterRows(filterStaffCases(p, 'ar', c.key));
+        const scroll = box.querySelector('.staff-case-scroll');
+        if (scroll) scroll.innerHTML = arCaseRowsHtml(filterStaffCases(p, 'ar', c.key));
+        const h4 = box.querySelector('.staff-case h4');
+        if (h4) h4.textContent = `${c.name}（${c.office}）｜${c.label}　業務案件明細　共${fmt(rows.length)}筆`;
+      });
+    }
   }
   function tallyStatus(rows, groupId) {
     const m = new Map();
@@ -12027,18 +12626,18 @@
     box.innerHTML = `<div class="nat-perf">
       <h4>業務績效表　${esc(name)}</h4>
       <p class="note">${y}年${viewM}月｜${esc(office || '—')}｜年度業績截至${viewM}月</p>
-      <div class="rev-board">
+      <div class="rev-kpis nat-perf-kpis">
+        <div class="card kpi"><div class="k">新媒合業績</div><div class="v">${fmt(cur.n)}<span class="unit"> 件</span></div>
+          <div class="s">包租${fmt(cur.lease)}／代管${fmt(cur.mgmt)}｜1-${viewM}月${fmt(ytdN)}件</div></div>
+        <div class="card kpi"><div class="k">${esc(name)}年資</div>
+          ${tenureTxt ? `<div class="v" style="font-size:20px">${esc(tenureTxt)}</div>` : `<div class="v nat-pending">待確認資料來源</div>`}
+          <div class="s">${esc(title)}</div></div>
+        <div class="card kpi"><div class="k">持有證照數</div>${licHtml}</div>
+        <div class="card kpi"><div class="k">檔內有效代管</div><div class="v">${fmt(activeMgmt)}<span class="unit"> 件</span></div>
+          <div class="s">依代管，起日≤基準日且已生效</div></div>
+      </div>
+      <div class="rev-board nat-perf-board">
         <div class="rev-main">
-          <div class="rev-kpis nat-perf-kpis">
-            <div class="card kpi"><div class="k">新媒合業績</div><div class="v">${fmt(cur.n)}<span class="unit"> 件</span></div>
-              <div class="s">包租${fmt(cur.lease)}／代管${fmt(cur.mgmt)}｜1-${viewM}月${fmt(ytdN)}件</div></div>
-            <div class="card kpi"><div class="k">${esc(name)}年資</div>
-              ${tenureTxt ? `<div class="v" style="font-size:20px">${esc(tenureTxt)}</div>` : `<div class="v nat-pending">待確認資料來源</div>`}
-              <div class="s">${esc(title)}</div></div>
-            <div class="card kpi"><div class="k">持有證照數</div>${licHtml}</div>
-            <div class="card kpi"><div class="k">檔內有效代管</div><div class="v">${fmt(activeMgmt)}<span class="unit"> 件</span></div>
-              <div class="s">依代管，起日≤基準日且已生效</div></div>
-          </div>
           <div class="rev-panel">
             <h4>每月新媒合：包租與代管合併</h4>
             <p class="nat-legend"><span><i class="lease"></i>包租</span><span><i class="mgmt"></i>代管</span></p>
@@ -12049,7 +12648,7 @@
         <div class="rev-side">
           <div class="rev-panel">
             <h4>近3個月關鍵數字與今年度說明</h4>
-        <div class="table-scroll"><table class="type-tbl ana-tbl"><thead><tr>
+        <div class="nat-perf-tbl"><table class="type-tbl ana-tbl"><thead><tr>
           <th>項目</th><th>${m2 ? mLab(viewM - 2) : '—'}</th><th>${m1 ? mLab(viewM - 1) : '—'}</th><th>${mLab(viewM)}</th><th>今年度成績／說明</th>
         </tr></thead><tbody>
           <tr><td>新媒合件數</td><td>${cell(m2, 'n')}</td><td>${cell(m1, 'n')}</td><td>${cell(cur, 'n')}</td><td>${ytdCell('n')}</td></tr>
@@ -12103,8 +12702,8 @@
       const office = crabNormSo(r.so);
       if (natIsCo(name)) {
         co.n += 1;
-        if (String(r.ct || '').includes('包租')) co.lease += 1;
-        if (String(r.ct || '').includes('代管')) co.mgmt += 1;
+        if (isSubletCt(r)) co.lease += 1;
+        if (isMgmtCt(r)) co.mgmt += 1;
         if (isCrabFt(r)) co.crab += 1;
         return;
       }
@@ -12113,8 +12712,8 @@
       const p = map.get(key);
       p.n += 1;
       p.rows.push(r);
-      if (String(r.ct || '').includes('包租')) p.lease += 1;
-      if (String(r.ct || '').includes('代管')) p.mgmt += 1;
+      if (isSubletCt(r)) p.lease += 1;
+      if (isMgmtCt(r)) p.mgmt += 1;
       if (isCrabFt(r)) p.crab += 1; else p.non += 1;
       if (/已生效/.test(r.st || '')) p.done += 1;
     });
@@ -12133,8 +12732,8 @@
     const bandSel = state.natBand || 'all';
     if ($('natBandSel')) $('natBandSel').value = bandSel;
     const total = rows.length;
-    const leaseN = rows.filter(r => String(r.ct || '').includes('包租')).length;
-    const mgmtN = rows.filter(r => String(r.ct || '').includes('代管')).length;
+    const leaseN = rows.filter(isSubletCt).length;
+    const mgmtN = rows.filter(isMgmtCt).length;
     const crabN = rows.filter(isCrabFt).length;
     const front = people.filter(p => p.band === '前段');
     const mid = people.filter(p => p.band === '中段');
@@ -12160,8 +12759,8 @@
     const viewPeopleAll = bandSel === 'all' ? people : people.filter(p => p.band === bandSel);
     const viewRows = bandSel === 'all' ? rows : viewPeopleAll.flatMap(p => p.rows);
     const viewTotal = viewRows.length;
-    const viewLease = viewRows.filter(r => String(r.ct || '').includes('包租')).length;
-    const viewMgmt = viewRows.filter(r => String(r.ct || '').includes('代管')).length;
+    const viewLease = viewRows.filter(isSubletCt).length;
+    const viewMgmt = viewRows.filter(isMgmtCt).length;
     const viewCrab = viewRows.filter(isCrabFt).length;
     const viewSalesN = viewPeopleAll.length;
     const viewCo = bandSel === 'all' ? co : { n: 0, lease: 0, mgmt: 0, crab: 0 };
@@ -12626,7 +13225,7 @@
       return [so, s.rate, s.n, s.lease];
     }).sort((a, b) => b[1] - a[1] || b[3] - a[3] || a[0].localeCompare(b[0], 'zh-Hant'));
     const max = Math.max(...arr.map(x => x[1]), 0.01);
-    const hi = kind === 'new' ? 0.9 : 0.5;
+    const hi = dashTarget(kind);
     const lo = kind === 'new' ? 0.7 : 0.3;
     $d(kind, 'RankList').innerHTML = arr.map((x, i) => rankRowHtml(i, x[0], (x[1] / max) * 100, (x[1] * 100).toFixed(1) + '%', rankToneRate(x[1], hi, lo))).join('')
       || '<div class="empty">無符合條件的資料</div>';
@@ -13038,41 +13637,168 @@
       return true;
     });
   }
+  function arDedupAddr(rows) {
+    const m = new Map();
+    (rows || []).forEach(r => {
+      const info = arInfoOf(r);
+      const addr = String(info.addr || '').trim();
+      const k = addr ? addr + '\t' + (r.cat || 'rent') : String(r.id);
+      const prev = m.get(k);
+      if (!prev || (Number(r.days) || 0) > (Number(prev.days) || 0)) m.set(k, r);
+    });
+    return [...m.values()];
+  }
+  const AR_WATCH_BANDS = [
+    { id: 'b17', lab: '逾期1-7天', short: '1-7天' },
+    { id: 'b814', lab: '逾期8-14天', short: '8-14天' },
+    { id: 'b1529', lab: '逾期15-29天', short: '15-29天' },
+    { id: 'b30', lab: '逾期30天', short: '30天以上' }
+  ];
+  function arWatchBandLab(id) {
+    if (!id || id === 'all') return '全部';
+    return (AR_WATCH_BANDS.find(b => b.id === id) || {}).lab || id;
+  }
   function arPack(rows) {
     const list = rows || [];
-    const out = { n: list.length, amt: 0, tenants: new Set() };
+    const out = { n: list.length, amt: 0, tenants: new Set(), recv: { n: 0, amt: 0 }, open: { n: 0, amt: 0 } };
     AR_AGE.forEach(b => { out[b.id] = { n: 0, amt: 0, tenants: new Set() }; });
     AR_STATUS.forEach(s => { out[s.id] = { n: 0, amt: 0 }; });
     list.forEach(r => {
       const amt = Number(r.amt) || 0;
+      const recv = arRecvOf(r);
       out.amt += amt;
       out.tenants.add(r.id);
+      if (recv > 0) { out.recv.n += 1; out.recv.amt += recv; }
       const band = arAgeBand(r.days);
       out[band].n += 1;
       out[band].amt += amt;
       out[band].tenants.add(r.id);
       const st = arStatusOf(r);
+      if (!out[st]) out[st] = { n: 0, amt: 0 };
       out[st].n += 1;
       out[st].amt += amt;
+      if (st === 'unpaid' || st === 'pending') {
+        out.open.n += 1;
+        out.open.amt += amt;
+      }
     });
     out.tenants = out.tenants.size;
     AR_AGE.forEach(b => { out[b.id].tenants = out[b.id].tenants.size; });
     return out;
   }
-  function arCaseRowsHtml(rows) {
-    const list = [...(rows || [])].sort((a, b) => (Number(b.days) || 0) - (Number(a.days) || 0));
+  function arInfoOf(r) {
+    const saved = arExtraStore()[String(r.id)] || {};
+    const c = arContractOf(r.cid || r.id) || {};
+    const n0 = r.n || r.matchNo || saved.n || c.n || '';
+    let extra = arContractByNo(n0) || arContractGuess(r) || {};
+    if (extra.id && !(extra.addr || extra.a)) extra = arContractOf(extra.id) || extra;
+    if (extra.n && !(extra.addr || extra.a)) extra = arContractByNo(extra.n) || extra;
+    const info = {
+      tn: r.tn || r.tenant || saved.tn || c.tn || c.t || extra.tn || extra.t || '',
+      addr: r.addr || r.a || r.address || saved.addr || c.addr || c.a || extra.addr || extra.a || '',
+      st: r.st || r.status || saved.st || c.st || c.raw || extra.st || '',
+      n: n0 || extra.n || extra.rel || saved.n || '',
+      memo: String(r.memo || r.note || saved.memo || '').trim(),
+      plan: String(r.plan || saved.plan || '').trim()
+    };
+    arExtraPut(r.id, info);
+    return info;
+  }
+  function arCityOf(r) {
+    const hit = rowLeaseCity(r);
+    if (hit) return hit;
+    const addr = arInfoOf(r).addr;
+    return addr ? cityOfLease({ addr, a: addr, city: r && r.city }) : '';
+  }
+  function arKeepOffice(offices, r) {
+    if (!offices) return true;
+    const o = r.office || '';
+    if (!offices.has(o)) return false;
+    if (offices.supportCity && o === '業務支援管理部' && arCityOf(r) !== offices.supportCity) return false;
+    return true;
+  }
+  function arCtName(ct) {
+    if (!ct || ct === 'all') return '全部';
+    return ct;
+  }
+  function arPickRows(ct, band) {
+    const offices = selectedOffices();
+    return ARREARS.filter(r => {
+      if (ct && ct !== 'all' && !String(r.ct || '').includes(ct)) return false;
+      if (band && band !== 'all' && arAgeBand(r.days) !== band) return false;
+      if (offices && !offices.has(r.office)) return false;
+      return true;
+    });
+  }
+  function arWatchSourceRows() {
+    return arPickRows(state.arWatchCt || '轉租', 'all');
+  }
+  function arTenantGroups(rows) {
+    const map = new Map();
+    (rows || []).forEach(r => {
+      const info = arInfoOf(r);
+      const tn = info.tn || '—';
+      if (!map.has(tn)) map.set(tn, { tn, addr: info.addr || '', n: 0, amt: 0, days: 0, office: r.office, agent: r.agent });
+      const o = map.get(tn);
+      o.n += 1;
+      o.amt += Number(r.amt) || 0;
+      o.days = Math.max(o.days, Number(r.days) || 0);
+      if (r.office) o.office = r.office;
+      if (r.agent) o.agent = r.agent;
+      if (info.addr) o.addr = info.addr;
+    });
+    return [...map.values()];
+  }
+  function arAgentRankList(rows) {
+    const map = new Map();
+    (rows || []).forEach(r => {
+      const name = String(r.agent || '—');
+      if (!map.has(name)) map.set(name, { name, n: 0, amt: 0 });
+      const o = map.get(name);
+      o.n += 1;
+      o.amt += Number(r.amt) || 0;
+    });
+    return [...map.values()].sort((a, b) => b.amt - a.amt || b.n - a.n || a.name.localeCompare(b.name, 'zh-Hant'));
+  }
+  function arStSourceRows() {
+    return arPickRows(state.arStCt || '轉租', state.arStBand || 'all');
+  }
+  function arCaseFilterRows(rows, qRaw) {
+    const q = String(qRaw !== undefined ? qRaw : (state.arCaseQ || '')).trim();
+    if (!q) return rows || [];
+    return (rows || []).filter(r => {
+      const info = arInfoOf(r);
+      const hay = [r.agent, r.office, info.tn, info.addr, info.n, info.st, r.id, r.ct, r.rd].join('\t');
+      return hay.includes(q);
+    });
+  }
+  function arCaseRowsHtml(rows, qRaw) {
+    const list = arCaseFilterRows(rows, qRaw).slice().sort((a, b) => (Number(b.days) || 0) - (Number(a.days) || 0));
     if (!list.length) return '<div class="empty">無符合條件的資料</div>';
-    return `<table class="staff-case-tbl"><thead><tr>
-      <th>催收日</th><th>欠租天數</th><th>金額</th><th>委託形式</th><th>類別</th><th>案件編號</th><th>催收狀態</th>
-    </tr></thead><tbody>${list.map(r => `<tr>
-      <td>${esc(showDate(r.rd) || r.rd || '')}</td>
-      <td>${fmt(r.days)}</td>
-      <td>$${fmt(r.amt)}</td>
-      <td>${esc(r.ct || '')}</td>
+    return `<table class="staff-case-tbl ar-case-tbl"><thead><tr>
+      <th>帳齡警示</th><th>代管人員</th><th>承租人</th><th>欠租天數</th><th>欠租金額</th><th>類別</th><th>委託形式</th><th>應收款日</th><th>合約狀態</th><th>催收狀態</th><th>媒合/轉租編號</th><th>地址</th>
+    </tr></thead><tbody>${list.map((r, i) => {
+      const info = arInfoOf(r);
+      const warn = arWarnOf(r.days);
+      const memo = info.memo;
+      const plan = info.plan;
+      const alt = i % 2 ? ' alt' : '';
+      const note = (memo || plan) ? `<tr class="ar-case-note${alt}"><td></td><td colspan="11">${memo ? `<div><b>案件備註</b>${esc(memo)}</div>` : ''}${plan ? `<div><b>當月催收記錄</b>${esc(plan)}</div>` : ''}</td></tr>` : '';
+      return `<tr class="ar-case-main${alt}">
+      <td><span class="ar-warn ar-warn-${warn.id}">${esc(warn.lab)}</span></td>
+      <td>${esc(r.agent || '')}</td>
+      <td>${esc(info.tn)}</td>
+      <td class="neg">${fmt(r.days)}天</td>
+      <td class="neg">$${fmt(r.amt)}</td>
       <td>${esc(r.cat === 'deposit' ? '押金' : '租金')}</td>
-      <td>${esc(r.id)}</td>
+      <td>${esc(r.ct || '')}</td>
+      <td>${esc(showDate(r.rd) || r.rd || '')}</td>
+      <td>${esc(info.st)}</td>
       <td>${esc((AR_STATUS.find(s => s.id === arStatusOf(r)) || {}).lab || '')}</td>
-    </tr>`).join('')}</tbody></table>`;
+      <td>${esc(info.n)}</td>
+      <td>${esc(info.addr)}</td>
+    </tr>${note}`;
+    }).join('')}</tbody></table>`;
   }
   function arOpenStaff(name, office, key, label) {
     state.arStaffOpen = true;
@@ -13141,6 +13867,276 @@
       </tbody></table></div>
       ${staffCasePanel('ar')}`;
   }
+  function renderArWatch(all) {
+    if (!$('arWatchKpis')) return;
+    const y = state.end.getFullYear();
+    const viewM = state.end.getMonth() + 1;
+    const rocY = y - 1911;
+    const pm = viewM === 1 ? 12 : viewM - 1;
+    const srcAll = arWatchSourceRows();
+    const decorate = (node) => {
+      const kids = (node.kids || []).map(decorate);
+      const offices = unitOfficeSet(node.id);
+      const rows = srcAll.filter(r => arKeepOffice(offices, r));
+      return { ...node, kids, rows, m: arPack(rows) };
+    };
+    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.m && n.m.n) || decorate(scopedUnitTree());
+    if (!findUnitNode(root, state.arWatchFocus || '')) state.arWatchFocus = root.id;
+    const focus = findUnitNode(root, state.arWatchFocus) || root;
+    const band = state.arWatchBand || 'all';
+    const uniq = focus.rows || [];
+    const scoped = band === 'all' ? uniq : uniq.filter(r => arAgeBand(r.days) === band);
+    const fm = arPack(uniq);
+    const officeLab = ddLabel('office');
+    const ctLab = state.arWatchCt || '轉租';
+    $('arWatchMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ ${arCtName(ctLab)} ｜ 催收查詢筆數 ｜ 代管營業處 ｜ 目前單位：${focus.name}`;
+    if ($('arWatchCt')) $('arWatchCt').value = ctLab;
+    if ($('arWatchSeg')) $('arWatchSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.arWband || 'all') === band));
+    if ($('arWatchStaffBtn')) $('arWatchStaffBtn').classList.toggle('on', !!state.arWatchStaffOpen);
+    const share = id => fm.amt ? ((fm[id].amt / fm.amt) * 100).toFixed(1) : '0.0';
+    $('arWatchKpis').innerHTML = AR_WATCH_BANDS.map(b => {
+      const on = band === b.id ? ' on' : '';
+      const tone = b.id === 'b30' ? ' tone-red' : '';
+      return `<div class="card kpi${tone}${on}" data-ar-wband="${b.id}">
+        <div class="k">${esc(b.lab)}</div>
+        <div class="v">${fmt(fm[b.id].amt)}<span class="unit"> 元</span></div>
+        <div class="s">${fmt(fm[b.id].n)}筆 · 金額占 ${share(b.id)}%</div>
+      </div>`;
+    }).join('');
+    const maxAmt = Math.max(...AR_WATCH_BANDS.map(b => fm[b.id].amt), 1);
+    $('arWatchBars').innerHTML = AR_WATCH_BANDS.map(b => {
+      const h = Math.max(12, Math.round((fm[b.id].amt / maxAmt) * 100));
+      const on = band === b.id ? ' on' : '';
+      return `<div class="ar-watch-col${on}" data-ar-wband="${b.id}">
+        <div class="ar-watch-amt">$${fmt(fm[b.id].amt)}</div>
+        <div class="ar-watch-track"><div class="ar-watch-bar ${b.id}" style="height:${h}%">${fmt(fm[b.id].n)}筆</div></div>
+        <div class="ar-watch-lbl">${esc(b.short)}</div>
+      </div>`;
+    }).join('');
+    const offArr = Object.values(uniq.reduce((m, r) => {
+      const name = r.office || '—';
+      if (!m[name]) m[name] = { name, n: 0, amt: 0 };
+      if (band === 'all' || arAgeBand(r.days) === band) {
+        m[name].n += 1;
+        m[name].amt += Number(r.amt) || 0;
+      }
+      return m;
+    }, {})).filter(x => x.n).sort((a, b) => b.amt - a.amt || b.n - a.n || a.name.localeCompare(b.name, 'zh-Hant')).slice(0, 24);
+    const maxOff = Math.max(...offArr.map(x => x.amt), 1);
+    const cols = [offArr.slice(0, 8), offArr.slice(8, 16), offArr.slice(16, 24)];
+    $('arWatchOffRank').innerHTML = `<h4>營業處欠租排行榜</h4>
+      <p class="note">依篩選單位轄下代管營業處欠租筆數金額排名</p>
+      <div class="off-rank-3">${cols.map((col, ci) => `<div class="rank-list">${col.map((x, i) =>
+        `<div class="rank-row" data-ar-watch-rank="${esc(x.name)}">
+          <b>${ci * 8 + i + 1}</b>
+          <span>${esc(x.name)}</span>
+          <div class="rank-bar"><i style="width:${Math.max(0, Math.min(100, (x.amt / maxOff) * 100))}%"></i></div>
+          <span class="right">${fmt(x.n)}筆／$${fmt(x.amt)}</span>
+        </div>`).join('')}</div>`).join('')}</div>`;
+    const bandPack = id => arPack(uniq.filter(r => arAgeBand(r.days) === id));
+    const statRows = AR_WATCH_BANDS.map(b => {
+      const p = bandPack(b.id);
+      const cls = (band === 'all' ? b.id === 'b30' : b.id === band) ? 'mark' : '';
+      return `<tr class="${cls}" data-ar-wband="${b.id}">
+        <td>${esc(b.lab)}</td>
+        <td>${fmt(p.n)}</td>
+        <td>$${fmt(p.amt)}</td>
+        <td>${fmt(p.legal.n)}</td>
+        <td>${fmt(p.open.n)}</td>
+      </tr>`;
+    }).join('');
+    $('arWatchStatTbl').innerHTML = `<h4>帳齡與催收狀態</h4><table class="crab-tbl ar-watch-stat"><thead><tr>
+      <th>帳齡</th><th>筆數</th><th>欠款金額</th><th>預計送法務部</th><th>未處理完成未繳款</th>
+    </tr></thead><tbody>
+      ${statRows}
+      <tr class="total"><td>合計</td><td>${fmt(fm.n)}</td><td>$${fmt(fm.amt)}</td><td>${fmt(fm.legal.n)}</td><td>${fmt(fm.open.n)}</td></tr>
+    </tbody></table>`;
+    const maxDays = uniq.reduce((s, r) => Math.max(s, Number(r.days) || 0), 0);
+    const peak = AR_WATCH_BANDS.slice().sort((a, b) => fm[b.id].amt - fm[a.id].amt || fm[b.id].n - fm[a.id].n)[0];
+    const peakPct = share(peak.id);
+    const wLegal = fm.b30.n ? '，目前均標示「預計送法務部」' : '';
+    const wPeak = `${peak.short}共 ${fmt(fm[peak.id].n)} 筆、$${fmt(fm[peak.id].amt)}，金額占 ${peakPct}%，為金額與筆數最高的帳齡區間`;
+    $('arWatchJudge').innerHTML = `<h4>管理結論</h4>${fm.n ? `
+      <p>${esc(`${fmt(fm.n)} 筆欠款共 $${fmt(fm.amt)}，最長帳齡 ${fmt(maxDays)} 天。`)}</p>
+      ${peak.id === 'b30'
+        ? `<p>${esc(wPeak + wLegal + '。')}</p>`
+        : `<p>${esc(wPeak + '。')}</p><p>${esc(`30 天以上共 ${fmt(fm.b30.n)} 筆、$${fmt(fm.b30.amt)}${wLegal}。`)}</p>`}` : '<p>目前範圍無欠租案件。</p>'}`;
+    const wOpen = new Set(state.arWatchOpen || []);
+    const wRows = [];
+    const walkW = (node, depth) => {
+      const hasKids = node.kids && node.kids.length;
+      const isOpen = node.id === '__SEL__' || wOpen.has(node.id);
+      const tog = hasKids
+        ? `<button type="button" class="unit-tog" data-ar-watch-open="${node.id}">${isOpen ? '▾' : '▸'}</button>`
+        : `<span class="unit-tog-sp"></span>`;
+      const m = node.m;
+      const cells = AR_WATCH_BANDS.map(b => `<td class="ar-hit" data-ar-wband="${b.id}">${fmt(m[b.id].n)}筆／$${fmt(m[b.id].amt)}</td>`).join('');
+      wRows.push(`<tr class="${node.id === state.arWatchFocus ? 'on' : ''}" data-ar-watch-row="${node.id}">
+        ${unitCellHtml(node, depth, tog)}${cells}
+      </tr>`);
+      if (hasKids && isOpen) node.kids.forEach(k => walkW(k, depth + 1));
+    };
+    walkW(root, 0);
+    $('arWatchUnitNote').textContent = `點單位查閱｜上月為${pm}月｜數字為催收執行件數`;
+    $('arWatchUnitTbl').innerHTML = `<table class="type-tbl ana-tbl ar-watch-unit"><thead><tr>
+      <th>單位／擔當者</th>
+      ${AR_WATCH_BANDS.map(b => `<th class="${b.id === 'b30' ? 'b30h' : ''}">${esc(b.lab)}</th>`).join('')}
+    </tr></thead><tbody>${wRows.join('')}</tbody></table>`;
+    const box = $('arWatchStaffBox');
+    if (box) {
+      const open = !!state.arWatchStaffOpen;
+      box.classList.toggle('hidden', !open);
+      if (!open) box.innerHTML = '';
+      else {
+        box.innerHTML = `<div class="staff-case">
+          <div class="staff-case-head">
+            <h4>${esc(focus.name)}｜${esc(arWatchBandLab(band))}　欠租案件明細　共${fmt(scoped.length)}筆</h4>
+            <button type="button" class="snap-btn snap-btn-inline" data-ar-watch-snap title="複製此區塊圖片，可貼到 PowerPoint">擷取</button>
+            <button type="button" class="tool-btn close-btn" data-ar-watch-close>關閉</button>
+          </div>
+          <div class="staff-case-scroll">${arCaseRowsHtml(scoped)}</div>
+        </div>`;
+      }
+    }
+  }
+  function renderArAgWatch() {
+    if (!$('arAgKpis')) return;
+    const y = state.end.getFullYear();
+    const viewM = state.end.getMonth() + 1;
+    const rocY = y - 1911;
+    const pm = viewM === 1 ? 12 : viewM - 1;
+    const ctLab = state.arAgCt || '轉租';
+    const pool = arPickRows(ctLab, 'all');
+    const agents = arAgentRankList(pool);
+    const sel = $('arAgAgent');
+    if (sel) {
+      const cur = state.arAgAgent;
+      const pick = (cur && agents.some(a => a.name === cur)) ? cur : (agents[0] ? agents[0].name : '');
+      state.arAgAgent = pick;
+      sel.innerHTML = agents.map(a => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('') || '<option value="">—</option>';
+      sel.value = pick;
+    }
+    const agent = state.arAgAgent || '';
+    const srcAll = pool.filter(r => String(r.agent || '—') === agent);
+    const decorate = (node) => {
+      const kids = (node.kids || []).map(decorate);
+      const offices = unitOfficeSet(node.id);
+      const rows = srcAll.filter(r => arKeepOffice(offices, r));
+      return { ...node, kids, rows, m: arPack(rows) };
+    };
+    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.m && n.m.n) || decorate(scopedUnitTree());
+    if (!findUnitNode(root, state.arAgFocus || '')) state.arAgFocus = root.id;
+    const focus = findUnitNode(root, state.arAgFocus) || root;
+    const band = state.arAgBand || 'all';
+    const uniq = focus.rows || [];
+    const scoped = band === 'all' ? uniq : uniq.filter(r => arAgeBand(r.days) === band);
+    const fm = arPack(uniq);
+    const officeLab = ddLabel('office');
+    const agentLab = agent || '—';
+    $('arAgMeta').textContent = `${rocY}年${viewM}月 ｜ ${officeLab} ｜ ${arCtName(ctLab)} ｜ ${agentLab} ｜ 催收查詢筆數 ｜ 代管營業處 ｜ 目前單位：${focus.name}`;
+    if ($('arAgCt')) $('arAgCt').value = ctLab;
+    if ($('arAgSeg')) $('arAgSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.arAgBand || 'all') === band));
+    if ($('arAgStaffBtn')) $('arAgStaffBtn').classList.toggle('on', !!state.arAgStaffOpen);
+    if ($('arAgBarsTitle')) $('arAgBarsTitle').textContent = `${agentLab}欠租帳齡分布`;
+    const share = id => fm.amt ? ((fm[id].amt / fm.amt) * 100).toFixed(1) : '0.0';
+    $('arAgKpis').innerHTML = AR_WATCH_BANDS.map(b => {
+      const on = band === b.id ? ' on' : '';
+      const tone = b.id === 'b30' ? ' tone-red' : '';
+      return `<div class="card kpi${tone}${on}" data-ar-ag-band="${b.id}">
+        <div class="k">${esc(b.lab)}</div>
+        <div class="v">${fmt(fm[b.id].amt)}<span class="unit"> 元</span></div>
+        <div class="s">${fmt(fm[b.id].n)}筆 · 金額占 ${share(b.id)}%</div>
+      </div>`;
+    }).join('');
+    const maxAmt = Math.max(...AR_WATCH_BANDS.map(b => fm[b.id].amt), 1);
+    $('arAgBars').innerHTML = AR_WATCH_BANDS.map(b => {
+      const h = Math.max(12, Math.round((fm[b.id].amt / maxAmt) * 100));
+      const on = band === b.id ? ' on' : '';
+      return `<div class="ar-watch-col${on}" data-ar-ag-band="${b.id}">
+        <div class="ar-watch-amt">$${fmt(fm[b.id].amt)}</div>
+        <div class="ar-watch-track"><div class="ar-watch-bar ${b.id}" style="height:${h}%">${fmt(fm[b.id].n)}筆</div></div>
+        <div class="ar-watch-lbl">${esc(b.short)}</div>
+      </div>`;
+    }).join('');
+    const tnRank = arTenantGroups(scoped).sort((a, b) => b.amt - a.amt || b.n - a.n || a.tn.localeCompare(b.tn, 'zh-Hant'));
+    const tnMax = Math.max(1, ...tnRank.map(t => t.amt));
+    const tnColN = Math.max(1, Math.ceil(tnRank.length / 8));
+    const tnCols = Array.from({ length: tnColN }, (_, c) => tnRank.slice(c * 8, c * 8 + 8));
+    const tnWide = tnColN > 3;
+    $('arAgOffRank').innerHTML = `<h4>${esc(agentLab)} ${esc(arCtName(ctLab))}案件｜承租人欠款排行榜</h4>
+      <p class="note">依篩選範圍承租人欠租筆數金額排名</p>
+      ${tnRank.length ? `<div class="ar-debt-rank-scroll"><div class="off-rank-3${tnWide ? ' ar-debt-rank-wide' : ''}"${tnWide ? ` style="grid-template-columns:repeat(${tnColN},minmax(220px,1fr));min-width:${tnColN * 240}px"` : ''}>${tnCols.map((col, ci) => `<div class="rank-list">${col.map((t, i) =>
+        `<div class="rank-row" data-ar-ag-tn="${esc(t.tn)}">
+          <b>${ci * 8 + i + 1}</b>
+          <span>${esc(t.tn)}</span>
+          <div class="rank-bar"><i style="width:${Math.max(0, Math.min(100, (t.amt / tnMax) * 100))}%"></i></div>
+          <span class="right">${fmt(t.n)}筆／$${fmt(t.amt)}</span>
+        </div>`).join('')}</div>`).join('')}</div></div>` : '<p class="note">目前沒有承租人欠款資料。</p>'}`;
+    const bandPack = id => arPack(uniq.filter(r => arAgeBand(r.days) === id));
+    const totMark = band === 'all' && !!state.arAgMarkTot;
+    const statRows = AR_WATCH_BANDS.map(b => {
+      const p = bandPack(b.id);
+      const cls = totMark ? '' : ((band === 'all' ? b.id === 'b30' : b.id === band) ? 'mark' : '');
+      return `<tr class="${cls}" data-ar-ag-band="${b.id}">
+        <td>${esc(b.lab)}</td>
+        <td>${fmt(p.n)}</td>
+        <td>$${fmt(p.amt)}</td>
+        <td>${fmt(p.legal.n)}</td>
+        <td>${fmt(p.open.n)}</td>
+      </tr>`;
+    }).join('');
+    $('arAgStatTbl').innerHTML = `<h4>帳齡與催收狀態</h4><table class="crab-tbl ar-watch-stat"><thead><tr>
+      <th>帳齡</th><th>筆數</th><th>欠款金額</th><th>預計送法務部</th><th>未處理完成未繳款</th>
+    </tr></thead><tbody>
+      ${statRows}
+      <tr class="total${totMark ? ' mark' : ''}" data-ar-ag-tot="1"><td>合計</td><td>${fmt(fm.n)}</td><td>$${fmt(fm.amt)}</td><td>${fmt(fm.legal.n)}</td><td>${fmt(fm.open.n)}</td></tr>
+    </tbody></table>`;
+    const maxDays = uniq.reduce((s, r) => Math.max(s, Number(r.days) || 0), 0);
+    const peak = AR_WATCH_BANDS.slice().sort((a, b) => fm[b.id].amt - fm[a.id].amt || fm[b.id].n - fm[a.id].n)[0];
+    const peakPct = share(peak.id);
+    const agLegal = fm.b30.n ? '，目前均標示「預計送法務部」' : '';
+    const agPeak = `${peak.short}共 ${fmt(fm[peak.id].n)} 筆、$${fmt(fm[peak.id].amt)}，金額占 ${peakPct}%，為金額與筆數最高的帳齡區間`;
+    $('arAgJudge').innerHTML = `<h4>管理結論</h4>${fm.n ? `
+      <p>${esc(`${agentLab}｜${fmt(fm.n)} 筆欠款共 $${fmt(fm.amt)}，最長帳齡 ${fmt(maxDays)} 天。`)}</p>
+      ${peak.id === 'b30'
+        ? `<p>${esc(agPeak + agLegal + '。')}</p>`
+        : `<p>${esc(agPeak + '。')}</p><p>${esc(`30 天以上共 ${fmt(fm.b30.n)} 筆、$${fmt(fm.b30.amt)}${agLegal}。`)}</p>`}` : '<p>目前範圍無欠租案件。</p>'}`;
+    const tnBy = new Map();
+    uniq.forEach(r => {
+      const tn = arInfoOf(r).tn || '—';
+      if (!tnBy.has(tn)) tnBy.set(tn, []);
+      tnBy.get(tn).push(r);
+    });
+    const tnRows = [...tnBy.entries()].map(([tn, rs]) => ({ tn, m: arPack(rs) }))
+      .sort((a, b) => b.m.amt - a.m.amt || b.m.n - a.m.n || a.tn.localeCompare(b.tn, 'zh-Hant'));
+    const selTn = state.arAgTn || '';
+    $('arAgUnitNote').textContent = `點承租人查閱｜上月為${pm}月｜數字為催收執行件數`;
+    $('arAgUnitTbl').innerHTML = `<table class="type-tbl ana-tbl ar-watch-unit ar-ag-tn-tbl"><thead><tr>
+      <th>承租人</th>
+      ${AR_WATCH_BANDS.map(b => `<th class="${b.id === 'b30' ? 'b30h' : ''}">${esc(b.lab)}</th>`).join('')}
+    </tr></thead><tbody>${tnRows.map(t => `<tr class="${t.tn === selTn ? 'on' : ''}" data-ar-ag-tn="${esc(t.tn)}">
+      <td class="ar-left">${esc(t.tn)}</td>
+      ${AR_WATCH_BANDS.map(b => `<td class="ar-hit" data-ar-ag-band="${b.id}">${fmt(t.m[b.id].n)}筆／$${fmt(t.m[b.id].amt)}</td>`).join('')}
+    </tr>`).join('') || '<tr><td colspan="5">無資料</td></tr>'}</tbody></table>`;
+    const box = $('arAgStaffBox');
+    if (box) {
+      const open = !!state.arAgStaffOpen;
+      box.classList.toggle('hidden', !open);
+      if (!open) box.innerHTML = '';
+      else {
+        const shown = arCaseFilterRows(scoped, state.arAgCaseQ);
+        box.innerHTML = `<div class="staff-case">
+          <div class="staff-case-head">
+            <h4>${esc(agentLab)}｜${esc(focus.name)}｜${esc(arWatchBandLab(band))}　欠租案件明細　共<span data-ar-ag-n>${fmt(shown.length)}</span>筆</h4>
+            <input type="search" class="ar-case-q" data-ar-ag-q placeholder="搜尋姓名" value="${esc(state.arAgCaseQ || '')}" autocomplete="off" />
+            <button type="button" class="snap-btn snap-btn-inline" data-ar-ag-snap title="複製此區塊圖片，可貼到 PowerPoint">擷取</button>
+            <button type="button" class="tool-btn close-btn" data-ar-ag-close>關閉</button>
+          </div>
+          <div class="staff-case-scroll">${arCaseRowsHtml(scoped, state.arAgCaseQ)}</div>
+        </div>`;
+      }
+    }
+  }
   function renderArDash() {
     if (!$('page-ar') || $('page-ar').classList.contains('hidden')) return;
     const all = arRows();
@@ -13159,7 +14155,7 @@
     const decorate = (node) => {
       const kids = (node.kids || []).map(decorate);
       const offices = unitOfficeSet(node.id);
-      const rows = all.filter(r => !offices || offices.has(r.office));
+      const rows = all.filter(r => arKeepOffice(offices, r));
       return { ...node, kids, rows, m: arPack(rows) };
     };
     const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.m && n.m.n) || decorate(scopedUnitTree());
@@ -13202,17 +14198,28 @@
       ${AR_AGE.map(b => `${ageTh(b.id + 'N', '筆數')}${ageTh(b.id, b.lab)}`).join('')}
       ${ageTh('share30', '30天以上占比')}
     </tr></thead><tbody>${ageRows.join('')}</tbody></table>`;
+    if ($('arCtFilter')) $('arCtFilter').value = state.arCt || '轉租';
 
+    const stAll = arStSourceRows();
+    const decorateSt = (node) => {
+      const kids = (node.kids || []).map(decorateSt);
+      const offices = unitOfficeSet(node.id);
+      const rows = stAll.filter(r => arKeepOffice(offices, r));
+      return { ...node, kids, rows, m: arPack(rows) };
+    };
+    const stRoot = pruneIdleSalesOffices(decorateSt(scopedUnitTree()), n => n.m && n.m.n) || decorateSt(scopedUnitTree());
     const stOpen = new Set(state.arStOpen || []);
     const stKey = state.arStTblSort || '';
-    if (stKey) sortUnitTree(root, n => {
+    if (stKey) sortUnitTree(stRoot, n => {
       if (stKey === 'name') return n.name;
       if (stKey === 'owner') return ownerOf(n.id, n.name);
-      if (stKey === 'paid' || stKey === 'open' || stKey === 'legal') return n.m[stKey].n;
-      if (stKey === 'paidAmt' || stKey === 'openAmt' || stKey === 'legalAmt') return n.m[stKey.replace('Amt', '')].amt;
+      if (stKey === 'paid') return n.m.recv.amt;
+      if (stKey === 'unpaid' || stKey === 'pending' || stKey === 'open' || stKey === 'legal') return (n.m[stKey] || {}).n || 0;
+      if (stKey === 'debt') return ((n.m.unpaid || {}).amt || 0) + ((n.m.pending || {}).amt || 0) + ((n.m.legal || {}).amt || 0);
+      if (stKey === 'paidAmt' || stKey === 'openAmt' || stKey === 'legalAmt' || stKey === 'unpaidAmt' || stKey === 'pendingAmt') return n.m[stKey.replace('Amt', '')].amt;
       return n.m.n;
     }, state.arStTblDir || 'desc');
-    if (!findUnitNode(root, state.arStFocus || '')) state.arStFocus = root.id;
+    if (!findUnitNode(stRoot, state.arStFocus || '')) state.arStFocus = stRoot.id;
     const stRows = [];
     const walkSt = (node, depth) => {
       const hasKids = node.kids && node.kids.length;
@@ -13221,31 +14228,62 @@
         ? `<button type="button" class="unit-tog" data-ar-st-open="${node.id}">${isOpen ? '▾' : '▸'}</button>`
         : `<span class="unit-tog-sp"></span>`;
       const m = node.m;
+      const debtN = (m.unpaid.n || 0) + (m.pending.n || 0) + (m.legal.n || 0);
+      const debtAmt = (m.unpaid.amt || 0) + (m.pending.amt || 0) + (m.legal.amt || 0);
       stRows.push(`<tr class="${node.id === state.arStFocus ? 'on' : ''}" data-ar-st-row="${node.id}">
         ${unitCellHtml(node, depth, tog)}
-        ${AR_STATUS.map(s => `<td class="ar-hit" data-ar-st="${s.id}">${arMoney(m[s.id].n, m[s.id].amt)}</td>`).join('')}
+        <td class="ar-hit" data-ar-st="unpaid">${arMoney(m.unpaid.n, m.unpaid.amt)}</td>
+        <td class="ar-hit" data-ar-st="pending">${arMoney(m.pending.n, m.pending.amt)}</td>
+        <td class="ar-hit" data-ar-st="legal">${arMoney(m.legal.n, m.legal.amt)}</td>
+        <td class="ar-hit" data-ar-st="debt">${arMoney(debtN, debtAmt)}</td>
       </tr>`);
       if (hasKids && isOpen) node.kids.forEach(k => walkSt(k, depth + 1));
     };
-    walkSt(root, 0);
+    walkSt(stRoot, 0);
     const stTh = (key, lab) => `<th data-tbl-sort="${key}" class="${state.arStTblSort === key ? 'sort-on' : ''}">${lab}</th>`;
     $('arStTable').innerHTML = `<table class="type-tbl ana-tbl"><thead><tr>
       ${stTh('name', '單位／擔當者')}
-      ${AR_STATUS.map(s => stTh(s.id, s.lab)).join('')}
+      ${stTh('unpaid', '未繳款')}
+      ${stTh('pending', '未處理完成')}
+      ${stTh('legal', '預計送法務部')}
+      ${stTh('debt', '欠款總計')}
     </tr></thead><tbody>${stRows.join('')}</tbody></table>`;
 
-    const focus = findUnitNode(root, state.arStFocus) || root;
+    const focus = findUnitNode(stRoot, state.arStFocus) || stRoot;
     const fm = focus.m;
-    const unpaidN = fm.open.n + fm.legal.n;
-    const unpaidAmt = fm.open.amt + fm.legal.amt;
-    $('arStPeriod').textContent = `資料來源：催收管理＞催收查詢　合約狀態：${state.arCt === 'all' ? '全選' : state.arCt}　單位：${focus.name}`;
-    $('arStKpis').innerHTML = AR_STATUS.map(s =>
-      `<div class="card kpi"><div class="k">${s.lab}</div><div class="v">${fmt(fm[s.id].n)}<span class="unit"> 筆</span></div><div class="s">${arMoney(fm[s.id].n, fm[s.id].amt)}</div></div>`
-    ).join('') + `<div class="card kpi"><div class="k">未收總額</div><div class="v">${fmt(unpaidAmt)}<span class="unit"> 元</span></div><div class="s">${fmt(unpaidN)}筆</div></div>`;
-    const pal = { paid: '#16a34a', open: '#0ea5e9', legal: '#1e4a7a' };
-    const dist = AR_STATUS.map(s => ({ lab: s.lab, n: fm[s.id].n, color: pal[s.id], id: s.id }));
-    $('arStDist').innerHTML = typeShareBars(dist, fm.n, ['#0ea5e9'], { note: '筆數占比；已繳款為金額 0 的催收列，30 天以上未繳列為預計送法務部。' });
-    const agePal = { b17: '#2563eb', b814: '#7c3aed', b1529: '#ea580c', b30: '#9f1239' };
+    const unpaidN = (fm.unpaid.n || 0) + (fm.pending.n || 0) + (fm.legal.n || 0);
+    const unpaidAmt = (fm.unpaid.amt || 0) + (fm.pending.amt || 0) + (fm.legal.amt || 0);
+    const stCt = state.arStCt || '轉租';
+    const stBand = state.arStBand || 'all';
+    if ($('arStCt')) $('arStCt').value = stCt;
+    if ($('arStSeg')) $('arStSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.arSband || 'all') === stBand));
+    $('arStPeriod').textContent = `資料來源：催收管理＞催收查詢　合約狀態：${arCtName(stCt)}　單位：${focus.name}`;
+    $('arStKpis').innerHTML = `
+      <div class="card kpi">
+        <div class="k">未繳款</div>
+        <div class="v">${fmt(fm.unpaid.n)}<span class="unit"> 筆</span></div>
+        <div class="s">$${fmt(fm.unpaid.amt)}</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">未處理完成</div>
+        <div class="v">${fmt(fm.pending.n)}<span class="unit"> 筆</span></div>
+        <div class="s">$${fmt(fm.pending.amt)}</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">預計送法務部</div>
+        <div class="v">${fmt(fm.legal.n)}<span class="unit"> 筆</span></div>
+        <div class="s">$${fmt(fm.legal.amt)}</div>
+      </div>
+      <div class="card kpi">
+        <div class="k">欠款金額</div>
+        <div class="v">${fmt(unpaidN)}<span class="unit"> 筆</span></div>
+        <div class="s">$${fmt(unpaidAmt)}</div>
+      </div>`;
+    const pal = { unpaid: '#94a3b8', pending: '#1e4a7a', legal: '#64748b' };
+    const dist = AR_STATUS.filter(s => s.id !== 'paid').map(s => ({ lab: s.lab, n: (fm[s.id] || {}).n || 0, color: pal[s.id], id: s.id }));
+    const distN = dist.reduce((s, x) => s + x.n, 0);
+    $('arStDist').innerHTML = typeShareBars(dist, distN, ['#1e4a7a'], { note: '筆數占比；催收狀態依星鴻催收查詢，逾期 30 天以上列為預計送法務部。' });
+    const agePal = { b17: '#9ccc65', b814: '#f5c242', b1529: '#ef7d3b', b30: '#9f1239' };
     const ageDist = AR_AGE.map(b => ({ lab: b.lab, n: fm[b.id].n, color: agePal[b.id] }));
     if ($('arAgeDist')) {
       $('arAgeDist').innerHTML = typeShareBars(ageDist, fm.n, ['#1e4a7a'], { note: '依欠租天數分組，分母為目前範圍催收筆數。' });
@@ -13256,13 +14294,133 @@
       <p>${topLegal ? `${esc(topLegal.name)}預計送法務部金額 $${fmt(topLegal.m.legal.amt)}，為下層最高。` : '目前範圍無下層單位可比較。'}</p>`;
     $('arStFocusNote').innerHTML = `<h4>單位觀察</h4>
       <p>點單位列可切換分析範圍；點狀態數字可開啟該單位業務明細。</p>
-      <p>已繳款 ${arMoney(fm.paid.n, fm.paid.amt)}；未處理完成未繳款 ${arMoney(fm.open.n, fm.open.amt)}。</p>`;
-    renderArStaff(all, focus.name);
-
-    const debtors = [...all.reduce((m, r) => {
-      const id = String(r.id || '—');
-      if (!m.has(id)) m.set(id, { id, n: 0, amt: 0, days: 0, office: r.office, agent: r.agent, rows: [] });
-      const o = m.get(id);
+      <p>未繳款 ${arMoney(fm.unpaid.n, fm.unpaid.amt)}；未處理完成 ${arMoney(fm.pending.n, fm.pending.amt)}。</p>`;
+    renderArStaff(focus.rows || stAll, focus.name);
+    renderArWatch(all);
+    renderArAgWatch();
+    renderArDebtDash();
+    const sBtn = $('arStaffBtn');
+    if (sBtn) sBtn.classList.toggle('on', !!state.arStaffOpen);
+  }
+  function renderArDebtDash() {
+    if (!$('arDebtorTable')) return;
+    const y = state.end.getFullYear();
+    const viewM = state.end.getMonth() + 1;
+    const rocY = y - 1911;
+    const ctLab = state.arDebtCt || '轉租';
+    const band = state.arDebtBand || 'all';
+    const offKey = state.arDebtOff || 'all';
+    const pool = arPickRows(ctLab, 'all');
+    const offices = [...new Set(pool.map(r => r.office).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+    if ($('arDebtOff')) {
+      $('arDebtOff').innerHTML = `<option value="all">全部營業處</option>` + offices.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+      $('arDebtOff').value = offices.includes(offKey) ? offKey : 'all';
+      if (!offices.includes(offKey)) state.arDebtOff = 'all';
+    }
+    if ($('arDebtCt')) $('arDebtCt').value = ctLab;
+    if ($('arDebtBand')) $('arDebtBand').value = band;
+    const offNow = state.arDebtOff || 'all';
+    const rows = pool.filter(r => {
+      if (offNow !== 'all' && r.office !== offNow) return false;
+      if (band !== 'all' && arAgeBand(r.days) !== band) return false;
+      return true;
+    });
+    const baseRows = pool.filter(r => band === 'all' || arAgeBand(r.days) === band);
+    const totAmt = rows.reduce((s, r) => s + (Number(r.amt) || 0), 0);
+    const baseAmt = baseRows.reduce((s, r) => s + (Number(r.amt) || 0), 0);
+    const tenants = arTenantGroups(rows);
+    const maxDays = tenants.reduce((s, t) => Math.max(s, t.days), 0);
+    const longest = tenants.filter(t => t.days === maxDays && maxDays > 0);
+    const over30 = tenants.filter(t => t.days >= 30);
+    const over30Amt = over30.reduce((s, t) => s + t.amt, 0);
+    const share = baseAmt ? ((totAmt / baseAmt) * 100).toFixed(1) : '0.0';
+    const officeLab = offNow === 'all' ? '全部營業處' : offNow;
+    const bandLab = band === 'all' ? '全部欠租天數' : arWatchBandLab(band);
+    if ($('arDebtMeta')) $('arDebtMeta').textContent = `${rocY}年${viewM}月 ｜ ${ddLabel('office')} ｜ ${arCtName(ctLab)} ｜ ${officeLab} ｜ ${bandLab} ｜ 催收查詢筆數 ｜ 目前單位：${officeLab}`;
+    if ($('arDebtStaffBtn')) $('arDebtStaffBtn').classList.toggle('on', !!state.arDebtStaffOpen);
+    if ($('arDebtKpis')) {
+      $('arDebtKpis').innerHTML = `
+        <div class="card kpi">
+          <div class="k">欠款合計</div>
+          <div class="v">${fmt(totAmt)}<span class="unit"> 元</span></div>
+          <div class="s">${fmt(rows.length)}筆${offNow === 'all' ? '' : ` · 金額占 ${share}%`}</div>
+        </div>
+        <div class="card kpi">
+          <div class="k">欠款承租人數</div>
+          <div class="v">${fmt(tenants.length)}<span class="unit"> 人</span></div>
+          <div class="s">共${fmt(rows.length)}筆欠租</div>
+        </div>
+        <div class="card kpi">
+          <div class="k">最長欠租天數</div>
+          <div class="v">${fmt(maxDays)}<span class="unit"> 天</span></div>
+          <div class="s">${longest.length ? longest.map(t => t.tn).slice(0, 3).join('、') : '—'}</div>
+        </div>
+        <div class="card kpi">
+          <div class="k">最長欠租達30天</div>
+          <div class="v">${fmt(over30.length)}<span class="unit"> 人</span></div>
+          <div class="s">承租人欠款合計 $${fmt(over30Amt)}</div>
+        </div>`;
+    }
+    const top = tenants.slice().sort((a, b) => b.amt - a.amt || b.n - a.n || a.tn.localeCompare(b.tn, 'zh-Hant'));
+    const topMax = Math.max(1, ...top.map(t => t.amt));
+    const nCol = Math.max(1, Math.ceil(top.length / 8));
+    const topCols = Array.from({ length: nCol }, (_, c) => top.slice(c * 8, c * 8 + 8));
+    const wide = nCol > 3;
+    if ($('arDebtTop')) {
+      $('arDebtTop').innerHTML = `<h4>承租人欠租排行榜</h4>
+        <p class="note">依篩選範圍承租人欠租筆數金額排名</p>
+        ${top.length ? `<div class="ar-debt-rank-scroll"><div class="off-rank-3${wide ? ' ar-debt-rank-wide' : ''}"${wide ? ` style="grid-template-columns:repeat(${nCol},minmax(220px,1fr));min-width:${nCol * 240}px"` : ''}>${topCols.map((col, ci) => `<div class="rank-list">${col.map((t, i) =>
+          `<div class="rank-row" data-ar-agent="${esc(t.agent || '')}" data-ar-office="${esc(t.office || '')}">
+            <b>${ci * 8 + i + 1}</b>
+            <span>${esc(t.tn)}</span>
+            <div class="rank-bar"><i style="width:${Math.max(0, Math.min(100, (t.amt / topMax) * 100))}%"></i></div>
+            <span class="right">${fmt(t.n)}筆／$${fmt(t.amt)}</span>
+          </div>`).join('')}</div>`).join('')}</div></div>` : '<p class="note">目前沒有承租人欠款資料。</p>'}`;
+    }
+    const offMap = new Map();
+    baseRows.forEach(r => {
+      const name = r.office || '—';
+      if (!offMap.has(name)) offMap.set(name, { name, tns: new Set(), n: 0, amt: 0 });
+      const o = offMap.get(name);
+      o.tns.add(arInfoOf(r).tn || '—');
+      o.n += 1;
+      o.amt += Number(r.amt) || 0;
+    });
+    const offRows = [...offMap.values()].map(o => ({ ...o, people: o.tns.size })).sort((a, b) => b.amt - a.amt || b.n - a.n);
+    const offN = offRows.reduce((s, o) => s + o.n, 0);
+    const offAmt = offRows.reduce((s, o) => s + o.amt, 0);
+    const offPeople = offRows.reduce((s, o) => s + o.people, 0);
+    const totOn = offNow === 'all';
+    if ($('arDebtOffTbl')) {
+      $('arDebtOffTbl').innerHTML = `<h4>代管營業處比較</h4>
+        <div class="ar-debt-off-scroll"><table class="crab-tbl ar-watch-stat"><thead><tr>
+          <th>代管營業處</th><th>承租人數</th><th>欠租筆數</th><th>欠款金額</th><th>金額占比</th>
+        </tr></thead><tbody>
+          ${offRows.map(o => `<tr class="${!totOn && o.name === offNow ? 'on' : ''}" data-ar-debt-off="${esc(o.name)}">
+            <td class="ar-hit">${esc(o.name)}</td>
+            <td>${fmt(o.people)}</td>
+            <td>${fmt(o.n)}</td>
+            <td>$${fmt(o.amt)}</td>
+            <td>${offAmt ? ((o.amt / offAmt) * 100).toFixed(1) : '0.0'}%</td>
+          </tr>`).join('') || '<tr><td colspan="5">無資料</td></tr>'}
+        </tbody>
+        <tfoot><tr class="total${totOn ? ' on' : ''}" data-ar-debt-off="all"><td>合計</td><td>${fmt(offPeople)}</td><td>${fmt(offN)}</td><td>$${fmt(offAmt)}</td><td>100.0%</td></tr></tfoot>
+        </table></div>`;
+    }
+    const peak = totOn ? offRows[0] : (offRows.find(o => o.name === offNow) || offRows[0]);
+    if ($('arDebtJudge')) {
+      $('arDebtJudge').innerHTML = `<h4>管理結論</h4>${rows.length ? `
+        <p>${esc(officeLab)}｜${fmt(rows.length)} 筆欠款共 $${fmt(totAmt)}，承租人 ${fmt(tenants.length)} 人，最長帳齡 ${fmt(maxDays)} 天${longest[0] ? `（${longest[0].tn}）` : ''}。</p>
+        <p>最長欠租達 30 天共 ${fmt(over30.length)} 人、$${fmt(over30Amt)}。</p>
+        <p>${peak ? `${esc(peak.name)}欠款 $${fmt(peak.amt)}，為篩選範圍營業處最高。` : ''}</p>` : '<p>目前範圍無欠租案件。</p>'}`;
+    }
+    const debtors = [...rows.reduce((m, r) => {
+      const info = arInfoOf(r);
+      const tn = info.tn || '—';
+      const addr = info.addr || '—';
+      const key = tn + '\t' + addr;
+      if (!m.has(key)) m.set(key, { tn, addr, n: 0, amt: 0, days: 0, office: r.office, agent: r.agent, rows: [] });
+      const o = m.get(key);
       o.n += 1;
       o.amt += Number(r.amt) || 0;
       o.days = Math.max(o.days, Number(r.days) || 0);
@@ -13273,43 +14431,1000 @@
     }, new Map()).values()].sort((a, b) => {
       const dir = state.arDebtorTblDir === 'asc' ? 1 : -1;
       const k = state.arDebtorTblSort || 'amt';
-      if (k === 'agent' || k === 'office' || k === 'id') return String(a[k] || '').localeCompare(String(b[k] || ''), 'zh-Hant') * dir;
+      if (k === 'agent' || k === 'office' || k === 'tn' || k === 'addr') return String(a[k] || '').localeCompare(String(b[k] || ''), 'zh-Hant') * dir;
       return ((a[k] || 0) - (b[k] || 0)) * dir;
-    }).slice(0, 20);
+    });
     const dTh = (key, lab) => `<th data-tbl-sort="${key}" class="${state.arDebtorTblSort === key ? 'sort-on' : ''}">${lab}</th>`;
-    $('arDebtorTable').innerHTML = `<table class="type-tbl ana-tbl"><thead><tr>
-      <th>#</th>${dTh('id', '承租案件')}${dTh('office', '代管營業處')}${dTh('agent', '業務')}${dTh('n', '筆數')}${dTh('amt', '金額')}${dTh('days', '最長欠租天數')}
-    </tr></thead><tbody>${debtors.map((d, i) => `<tr>
-      <td>${i + 1}</td>
-      <td class="ar-hit" data-ar-agent="${esc(d.agent)}" data-ar-office="${esc(d.office)}">${esc(d.id)}</td>
-      <td>${esc(d.office || '—')}</td>
-      <td class="ar-hit" data-ar-agent="${esc(d.agent)}" data-ar-office="${esc(d.office)}">${esc(d.agent || '—')}</td>
-      <td class="ar-hit" data-ar-agent="${esc(d.agent)}" data-ar-office="${esc(d.office)}">${fmt(d.n)}</td>
-      <td class="ar-hit" data-ar-agent="${esc(d.agent)}" data-ar-office="${esc(d.office)}">$${fmt(d.amt)}</td>
+    const selTn = state.arDebtTn || '';
+    const selAddr = state.arDebtAddr || '';
+    $('arDebtorTable').innerHTML = `<h4>承租人明細</h4>
+      <div class="ar-debtor-scroll"><table class="crab-tbl ar-debtor-tbl"><thead><tr>
+      ${dTh('tn', '承租人')}${dTh('addr', '地址')}${dTh('agent', '代管業務')}${dTh('n', '筆數')}${dTh('amt', '欠租金額')}${dTh('days', '欠租天')}
+    </tr></thead><tbody>${debtors.map(d => `<tr class="${d.tn === selTn && d.addr === selAddr ? 'on' : ''}" data-ar-debt-tn="${esc(d.tn)}" data-ar-debt-addr="${esc(d.addr)}">
+      <td class="ar-hit ar-left">${esc(d.tn)}</td>
+      <td class="ar-debt-addr ar-left">${esc(d.addr)}</td>
+      <td class="ar-left">${esc(d.agent || '—')}</td>
+      <td>${fmt(d.n)}</td>
+      <td>$${fmt(d.amt)}</td>
       <td>${fmt(d.days)}</td>
-    </tr>`).join('') || '<tr><td colspan="7">無資料</td></tr>'}</tbody></table>`;
+    </tr>`).join('') || '<tr><td colspan="6">無資料</td></tr>'}</tbody></table></div>`;
+    const box = $('arDebtStaffBox');
+    if (box) {
+      const open = !!state.arDebtStaffOpen;
+      box.classList.toggle('hidden', !open);
+      if (!open) box.innerHTML = '';
+      else {
+        const shown = arCaseFilterRows(rows, state.arDebtCaseQ);
+        box.innerHTML = `<div class="staff-case">
+          <div class="staff-case-head">
+            <h4>${esc(officeLab)}｜${esc(arCtName(ctLab))}｜${esc(bandLab)}　欠租案件明細　共<span data-ar-debt-n>${fmt(shown.length)}</span>筆</h4>
+            <input type="search" class="ar-case-q" data-ar-debt-q placeholder="搜尋姓名" value="${esc(state.arDebtCaseQ || '')}" autocomplete="off" />
+            <button type="button" class="snap-btn snap-btn-inline" data-ar-debt-snap title="複製此區塊圖片，可貼到 PowerPoint">擷取</button>
+            <button type="button" class="tool-btn close-btn" data-ar-debt-close>關閉</button>
+          </div>
+          <div class="staff-case-scroll">${arCaseRowsHtml(rows, state.arDebtCaseQ)}</div>
+        </div>`;
+      }
+    }
+  }
 
-    const mgmtRows = all.filter(r => String(r.ct || '').includes('代管'));
-    const mgmtTot = mgmtRows.reduce((s, r) => s + (Number(r.amt) || 0), 0);
-    const agents = [...mgmtRows.reduce((m, r) => {
-      const name = r.agent || '—';
-      const office = r.office || '—';
-      const key = office + '\t' + name;
-      if (!m.has(key)) m.set(key, { name, office, n: 0, amt: 0 });
-      const o = m.get(key);
-      o.n += 1;
-      o.amt += Number(r.amt) || 0;
-      return m;
-    }, new Map()).values()].sort((a, b) => b.amt - a.amt).slice(0, 12);
-    const maxAmt = Math.max(1, ...agents.map(a => a.amt));
-    $('arAgentRank').innerHTML = agents.map((a, i) => `
-      <div class="ar-agent-row" data-ar-agent="${esc(a.name)}" data-ar-office="${esc(a.office)}">
-        <span>${i + 1}</span><span class="ar-hit">${esc(a.name)}</span>
-        <span class="track"><i style="width:${(a.amt / maxAmt) * 100}%"></i></span>
-        <span>$${fmt(a.amt)}　${mgmtTot ? ((a.amt / mgmtTot) * 100).toFixed(1) : '0.0'}%</span>
-      </div>`).join('') || '<p class="note">目前沒有代管欠款資料。</p>';
-    const sBtn = $('arStaffBtn');
-    if (sBtn) sBtn.classList.toggle('on', !!state.arStaffOpen);
+  function settleDaysOf(y, m) {
+    const s = settleOf(y, m);
+    if (s && s.calcStart && s.calcEnd) {
+      const a = parseIso(s.calcStart), b = parseIso(s.calcEnd);
+      if (a && b) return Math.max(1, Math.round((b - a) / 86400000));
+    }
+    return monthEnd(new Date(y, m - 1, 1)).getDate();
+  }
+  function sumIsSuite(r) {
+    return /套房/.test(houseOf(r) || '');
+  }
+  function sumIsRef(r) {
+    const s = srcLeafOf(r);
+    return !!(s && s.group === '轉介紹');
+  }
+  function renderSumDash() {
+    const box = $('sumBody');
+    if (!box || ($('page-sum') && $('page-sum').classList.contains('hidden'))) return;
+    const tab = state.sumTab || 'match';
+    const y = state.end.getFullYear();
+    const filterM = state.end.getMonth() + 1;
+    const isYear = (state.sumGrain || 'month') === 'year';
+    const pick = state.sumPick || filterM;
+    const viewM = Math.min(pick, filterM);
+    const m = viewM;
+    const roc = y - 1911;
+    const start = isYear ? new Date(y, 0, 1) : new Date(y, viewM - 1, 1);
+    const end = monthEnd(new Date(y, viewM - 1, 1));
+    const lastStart = isYear ? new Date(y - 1, 0, 1) : monthStart(addMonths(start, -1));
+    const lastEnd = isYear ? monthEnd(new Date(y - 1, viewM - 1, 1)) : monthEnd(lastStart);
+    const days = settleDaysOf(y, viewM);
+    const scope = state.sumScope || '全公司';
+    const hideZero = state.sumHideZero !== false;
+    const rnTgt = RENEW_TARGET_RATE;
+    const tabs = { kpi: '關鍵指標總表', match: '新媒合', lease: '包租率', weak: '政策戶比率', new: '新件率', ref: '轉介比率', suite: '套房比率', fam: '婚育比', renew: '續約率', ar: '應收帳款比率' };
+    if ($('sumTabSeg')) $('sumTabSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+    if ($('sumGrainSeg')) $('sumGrainSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === (isYear ? 'year' : 'month')));
+    if ($('sumHideZero')) $('sumHideZero').classList.toggle('on', hideZero);
+    const monSel = $('sumMonth');
+    if (monSel && !monSel.dataset.ready) {
+      monSel.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}月</option>`).join('');
+      monSel.dataset.ready = '1';
+    }
+    if (monSel) monSel.value = String(viewM);
+    if ($('sumTitle')) $('sumTitle').textContent = '總表數據管理｜' + (tabs[tab] || '');
+    if ($('sumArCt')) {
+      $('sumArCt').classList.toggle('hidden', tab !== 'ar' && tab !== 'kpi');
+      $('sumArCt').value = state.sumArCt || '轉租';
+    }
+    if ($('sumArCtLab')) $('sumArCtLab').classList.toggle('hidden', tab !== 'ar' && tab !== 'kpi');
+    const arCtLab = arCtName(state.sumArCt || '轉租');
+    if ($('sumMeta')) $('sumMeta').textContent = `${roc}年${isYear ? '1–' + viewM + '月累計' : viewM + '月'} ｜ ${scope}${tab === 'ar' || tab === 'kpi' ? ' ｜ ' + arCtLab : ''}${tab === 'fam' ? ' ｜ 歸屬業務營業處' : ''}${tab === 'kpi' ? ' ｜ 目標＝預估 ｜ 包租率＝轉租／新媒合' : ''} ｜ 結績總天數 ${days} 天 ｜ 點上方單位只看當區；負數紅字`;
+    const rowCache = new Map();
+    const rowsOf = (id, which, kind) => {
+      const k = kind || tab;
+      const key = id + '|' + which + '|' + k;
+      if (rowCache.has(key)) return rowCache.get(key);
+      const set = unitOfficeSet(id);
+      const st = which === 'last' ? lastStart : start;
+      const en = which === 'last' ? lastEnd : end;
+      let rows = [];
+      if (k === 'lease') rows = leaseNewRows(st, en, set, 'lease');
+      else if (k === 'weak') rows = leaseNewRows(st, en, set, 'weak');
+      else if (k === 'new') rows = leaseNewRows(st, en, set, 'new');
+      else if (k === 'renew' || k === 'ar') rows = [];
+      else rows = unitPerf(set, st, en);
+      rowCache.set(key, rows);
+      return rows;
+    };
+    const staffOf = id => unitStaff(unitOfficeSet(id));
+    const packMatch = (id, which) => {
+      const rows = rowsOf(id, which, 'match');
+      const n = rows.length;
+      const set = unitOfficeSet(id);
+      const people = (set && set.supportCity)
+        ? [...new Set(rows.map(r => r.sl).filter(nm => nm && nm !== '公司' && nm !== '—'))]
+        : staffOf(id);
+      const moved = (set && set.supportCity)
+        ? people.length
+        : people.filter(s => rows.some(r => r.sl === s.name)).length;
+      const tgt = which === 'last' ? sumTargets(set, lastStart, lastEnd) : sumTargets(set, start, end);
+      let fcst = 0;
+      if (which !== 'last') {
+        const yy = start.getFullYear();
+        for (let mm = start.getMonth() + 1; mm <= end.getMonth() + 1; mm++) fcst += sumFcst(set, yy, mm);
+      }
+      return { n, tgt, fcst, people: people.length, moved, rows };
+    };
+    const packLease = (id, which) => {
+      const rows = rowsOf(id, which, 'lease');
+      const s = leaseShare(rows);
+      const yr3 = rows.filter(r => isMgmtCt(r) && isThreeYearTerm(r)).length;
+      const set = unitOfficeSet(id);
+      let toLease = 0;
+      const y0 = which === 'last' ? lastStart.getFullYear() : y;
+      const m0 = which === 'last' ? lastStart.getMonth() + 1 : start.getMonth() + 1;
+      const m1 = which === 'last' ? lastEnd.getMonth() + 1 : viewM;
+      for (let mm = m0; mm <= m1; mm++) {
+        toLease += mgmtToLeaseRows(y0, mm).filter(r => officeSetHasRow(set, r, r.so)).length;
+      }
+      const re = uniqueById(ROWS.filter(r =>
+        (r.ft === '到期再媒合' || r.ft === '解約再媒合') && isCyclePerf(r) &&
+        startIn(r, which === 'last' ? lastStart : start, which === 'last' ? lastEnd : end) &&
+        officeSetHasRow(set, r, r.so)
+      )).length;
+      return { n: s.n, lease: s.lease, mgmt: s.mgmt, rate: s.rate, yr3, toLease, re, rows };
+    };
+    const packWeak = (id, which) => {
+      const rows = rowsOf(id, which, 'weak');
+      const s = weakShare(rows);
+      return { n: s.n, lease: s.lease, mgmt: s.mgmt, rate: s.rate, rows };
+    };
+    const packNew = (id, which) => {
+      const rows = rowsOf(id, which, 'new');
+      const s = newShare(rows);
+      const non = rows.filter(r => !isCrabFt(r));
+      const newNon = non.filter(isFreshNew).length;
+      return { n: s.n, lease: s.lease, rate: s.rate, cut: non.length ? newNon / non.length : 0, rows };
+    };
+    const packRef = (id, which) => {
+      const rows = rowsOf(id, which);
+      const ref = rows.filter(sumIsRef).length;
+      return { n: rows.length, ref, cold: rows.length - ref, rate: rows.length ? ref / rows.length : 0, rows };
+    };
+    const packSuite = (id, which) => {
+      const rows = rowsOf(id, which);
+      const suite = rows.filter(sumIsSuite).length;
+      return { n: rows.length, suite, whole: rows.length - suite, rate: rows.length ? suite / rows.length : 0, rows };
+    };
+    const packFam = (id, which) => {
+      const st = which === 'last' ? lastStart : start;
+      const en = which === 'last' ? lastEnd : end;
+      const rows = famRows(unitOfficeSet(id), st, en);
+      const wed = rows.filter(isWedFam).length;
+      const kid = rows.filter(isKidFam).length;
+      const mix = rows.filter(isMixFam).length;
+      return { n: rows.length, wed, kid, mix, rate: rows.length ? mix / rows.length : 0, rows };
+    };
+    const packRn = (id, which) => {
+      const st = which === 'last' ? lastStart : start;
+      const en = which === 'last' ? lastEnd : end;
+      const set = unitOfficeSet(id);
+      const p = rnPackRange(st, en, set);
+      const qEnd = which === 'last' ? lastEnd : end;
+      const lead1 = rnPackRange(rnLeadWindow(qEnd, 1).start, rnLeadWindow(qEnd, 1).end, set);
+      const lead2 = rnPackRange(rnLeadWindow(qEnd, 2).start, rnLeadWindow(qEnd, 2).end, set);
+      const conv = rnConvRange(st, en, set);
+      return {
+        due: p.due, keep: p.keep, done: p.done, valid: p.valid,
+        miss: p.miss || 0, early: p.early || 0,
+        rate: p.rate, den: p.den, num: p.num,
+        lead1: lead1.rate, lead2: lead2.rate,
+        toLease: conv.toLease || 0, yr3: conv.yr3 || 0
+      };
+    };
+    const packAr = (id) => {
+      const set = unitOfficeSet(id);
+      const ct = state.sumArCt || '轉租';
+      const rows = ARREARS.filter(r => {
+        if (ct && ct !== 'all' && !String(r.ct || '').includes(ct)) return false;
+        const so = crabNormSo(r.office);
+        return officeSetHasRow(set, { so, city: r.city, addr: r.addr }, so);
+      });
+      return arPack(rows);
+    };
+    const packKpi = (id) => {
+      const m = packMatch(id);
+      const w = packWeak(id);
+      const nw = packNew(id);
+      const f = packFam(id);
+      const rn = packRn(id);
+      const ar = packAr(id);
+      const leaseN = (m.rows || []).filter(r => isSubletCt(r) || isLeaseCt(r)).length;
+      const fcst = m.fcst || 0;
+      return {
+        tgt: fcst, n: m.n, hit: fcst ? m.n / fcst : 0,
+        leaseN, leaseRate: m.n ? leaseN / m.n : 0,
+        weakRate: w.rate, newRate: nw.rate,
+        famN: f.mix, famRate: f.rate,
+        rnRate: rn.rate, lead1: rn.lead1,
+        arN: ar.n, arAmt: ar.amt,
+        ar1529n: (ar.b1529 && ar.b1529.n) || 0,
+        ar1529amt: (ar.b1529 && ar.b1529.amt) || 0,
+        ar30n: (ar.b30 && ar.b30.n) || 0,
+        ar30amt: (ar.b30 && ar.b30.amt) || 0
+      };
+    };
+    const metricOf = (id, which) => {
+      if (tab === 'kpi') return packKpi(id);
+      if (tab === 'lease') return packLease(id, which);
+      if (tab === 'weak') return packWeak(id, which);
+      if (tab === 'new') return packNew(id, which);
+      if (tab === 'ref') return packRef(id, which);
+      if (tab === 'suite') return packSuite(id, which);
+      if (tab === 'fam') return packFam(id, which);
+      if (tab === 'renew') return packRn(id, which);
+      if (tab === 'ar') return packAr(id);
+      return packMatch(id, which);
+    };
+    const inScope = o => {
+      if (scope === '全公司') return true;
+      if (REGIONS[scope]) return REGIONS[scope].includes(o);
+      return o === scope;
+    };
+    const ytdStart = new Date(y, 0, 1);
+    const ytdNCache = new Map();
+    const ytdMatchN = id => {
+      if (ytdNCache.has(id)) return ytdNCache.get(id);
+      const n = unitPerf(unitOfficeSet(id), ytdStart, end).length;
+      ytdNCache.set(id, n);
+      return n;
+    };
+    const hasYtdPerf = id => ytdMatchN(id) > 0;
+    const hasPerf = now => !!(now.n || now.due || now.amt);
+    const shownOffices = SALES_OFFICES.filter(o => {
+      if (!inScope(o)) return false;
+      if (hideZero && !hasYtdPerf(o)) return false;
+      const now = metricOf(o);
+      if (isYear) return hideZero ? hasPerf(now) : true;
+      const last = tab === 'ar' ? now : metricOf(o, 'last');
+      const ln = last.n || last.due || 0;
+      return hasPerf(now) || ln || now.tgt || now.fcst || now.people;
+    });
+    const regionShown = id => REGIONS[id].some(o => shownOffices.includes(o));
+    const supportCityLeaves = () => CITIES.map(c => SUPPORT_CITY_PFX + c).filter(id => {
+      if (hideZero && !hasYtdPerf(id)) return false;
+      const now = metricOf(id);
+      if (isYear) return hideZero ? hasPerf(now) : true;
+      if (tab === 'ar') return hasPerf(now);
+      const last = metricOf(id, 'last');
+      const ln = last.n || last.due || 0;
+      return hasPerf(now) || ln;
+    });
+    const cityLeaf = id => ({ id, name: supportCityName(id), kind: 'scity', kids: [] });
+    const buKids = [];
+    Object.entries(REGIONS).forEach(([rid, arr]) => {
+      if (!regionShown(rid)) return;
+      const kids = arr.filter(o => shownOffices.includes(o)).map(o => ({ id: o, name: o, kind: 'office', region: rid, kids: [] }));
+      if (!kids.length) return;
+      buKids.push({ id: rid, name: rid, kind: 'region', kids });
+    });
+    const supportKids = supportCityLeaves().map(cityLeaf);
+    const showSupport = !(hideZero && !hasYtdPerf('業務支援管理部')) && (!isYear || hasPerf(metricOf('業務支援管理部')) || !hideZero);
+    const showTel = !(hideZero && !hasYtdPerf('電服部')) && (!isYear || hasPerf(metricOf('電服部')) || !hideZero);
+    const shownMulti = MULTI_OFFICES.filter(o => {
+      if (hideZero && !hasYtdPerf(o)) return false;
+      const now = metricOf(o);
+      if (isYear) return hideZero ? hasPerf(now) : true;
+      const last = tab === 'ar' ? now : metricOf(o, 'last');
+      const ln = last.n || last.due || 0;
+      return hasPerf(now) || ln || now.tgt || now.fcst || now.people;
+    });
+    const multiKids = shownMulti.map(o => ({ id: o, name: o, kind: 'office', kids: [] }));
+    const showMulti = !(hideZero && !hasYtdPerf('多元開發部')) && (!isYear || hasPerf(metricOf('多元開發部')) || !hideZero);
+    let root;
+    if (scope === '全公司') {
+      const kids = [{ id: '營業部', name: '營業部', kind: 'dept', kids: buKids }];
+      if (showSupport) kids.push({ id: '業務支援管理部', name: '業務支援管理部', kind: 'support', kids: supportKids });
+      if (showTel) kids.push({ id: '電服部', name: '電服部', kind: 'tel', kids: [] });
+      if (showMulti) kids.push({ id: '多元開發部', name: '多元開發部', kind: 'dept', kids: multiKids });
+      root = { id: '全公司', name: '全公司', kind: 'co', kids };
+    } else if (scope === '營業部') {
+      root = { id: '營業部', name: '營業部', kind: 'dept', kids: buKids };
+    } else if (scope === '業務支援管理部') {
+      root = { id: '業務支援管理部', name: '業務支援管理部', kind: 'support', kids: supportKids };
+    } else if (scope === '多元開發部' || scope === '多元開發部(全)') {
+      root = { id: '多元開發部', name: '多元開發部', kind: 'dept', kids: multiKids };
+    } else if (isSupportCityId(scope)) {
+      root = cityLeaf(scope);
+    } else if (REGIONS[scope]) {
+      root = {
+        id: scope, name: scope, kind: 'region',
+        kids: REGIONS[scope].filter(o => shownOffices.includes(o)).map(o => ({ id: o, name: o, kind: 'office', region: scope, kids: [] }))
+      };
+    } else {
+      root = { id: scope, name: scope, kind: 'bu', kids: [] };
+    }
+    if (tab === 'kpi' && state.sumKpiSort && state.sumKpiSort.k) {
+      const sk = state.sumKpiSort;
+      const lowerK = sk.k === 'arN' || sk.k === 'arAmt' || sk.k === 'ar1529n' || sk.k === 'ar1529amt';
+      const kpiSortMemo = new Map();
+      const kpiSortVal = id => {
+        if (kpiSortMemo.has(id)) return kpiSortMemo.get(id);
+        const x = packKpi(id);
+        const v = x[sk.k];
+        kpiSortMemo.set(id, v);
+        return v;
+      };
+      const sortKids = node => {
+        (node.kids || []).forEach(sortKids);
+        if (!(node.kids && node.kids.length)) return;
+        node.kids.sort((a, b) => {
+          const va = Number(kpiSortVal(a.id));
+          const vb = Number(kpiSortVal(b.id));
+          const na = va === va ? va : (lowerK ? Infinity : -Infinity);
+          const nb = vb === vb ? vb : (lowerK ? Infinity : -Infinity);
+          if (na !== nb) {
+            const raw = lowerK ? na - nb : nb - na;
+            return sk.dir === 'asc' ? -raw : raw;
+          }
+          return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+        });
+      };
+      sortKids(root);
+    }
+    const sumClosed = new Set(state.sumClosed || []);
+    const leaves = [];
+    const walkSum = (node, depth) => {
+      const kids = node.kids || [];
+      const hasKids = kids.length > 0;
+      const isOpen = !sumClosed.has(node.id);
+      leaves.push({ ...node, depth, hasKids, isOpen });
+      if (hasKids && isOpen) kids.forEach(k => walkSum(k, depth + 1));
+    };
+    walkSum(root, 0);
+    const foldIds = [];
+    const walkFold = n => {
+      if (n.kids && n.kids.length) {
+        if (n.id !== root.id) foldIds.push(n.id);
+        n.kids.forEach(walkFold);
+      }
+    };
+    walkFold(root);
+    state.sumFoldIds = foldIds;
+    const allFolded = foldIds.length > 0 && foldIds.every(id => sumClosed.has(id));
+    if ($('sumFoldBtn')) $('sumFoldBtn').textContent = allFolded ? '全部展開' : '全部收合';
+    const rankKey = row => {
+      const x = metricOf(row.id);
+      if (tab === 'match') return x.tgt ? x.n / x.tgt : 0;
+      if (tab === 'fam') return x.mix || 0;
+      if (tab === 'renew') return x.lead1 || 0;
+      if (tab === 'lease' || tab === 'weak' || tab === 'new' || tab === 'ref' || tab === 'suite') return x.rate || 0;
+      return x.n || 0;
+    };
+    const rankSrc = shownOffices.map(o => ({ id: o, v: rankKey({ id: o }) })).sort((a, b) => b.v - a.v);
+    const rankMap = {};
+    rankSrc.forEach((x, i) => { rankMap[x.id] = i + 1; });
+    const medal = id => {
+      const r = rankMap[id];
+      if (!r) return '—';
+      return r <= 3 ? `<b>${r}</b>` : String(r);
+    };
+    const signed = v => {
+      const n = Math.round(v || 0);
+      const t = (n > 0 ? '+' : '') + fmt(n);
+      return n < 0 ? `<span class="neg">${t}</span>` : t;
+    };
+    const pct1 = v => ((v || 0) * 100).toFixed(0) + '%';
+    const pct1d = v => ((v || 0) * 100).toFixed(1) + '%';
+    const bar = (v, max, lab) => {
+      const p = Math.max(0, Math.min(100, (max ? v / max : v) * 100));
+      return `<span class="sum-bar"><i><b style="width:${p}%"></b></i><span>${lab || pct1(max ? v / max : v)}</span></span>`;
+    };
+    const coRn = packRn('營業部');
+    const coNew = packNew('營業部');
+    const coNewLast = packNew('營業部', 'last');
+    const coWeak = packWeak('營業部');
+    const coWeakLast = packWeak('營業部', 'last');
+    const coLease = packLease('營業部');
+    const coLeaseLast = packLease('營業部', 'last');
+    const rateTone = (v, tgt, avg) => {
+      const n = v || 0;
+      if (n >= tgt) return `<span class="sum-hit">${pct1(n)}</span>`;
+      if (avg != null && n < avg) return `<span class="neg">${pct1(n)}</span>`;
+      return pct1(n);
+    };
+    const matchNTone = (n, fcst) => {
+      if ((n || 0) < 10) return `<span class="neg">${fmt(n)}</span>`;
+      if (fcst != null && n > fcst) return `<span class="sum-hit">${fmt(n)}</span>`;
+      return fmt(n);
+    };
+    const ownerChip = (id, name) => {
+      const ow = id === '全公司' ? '營運部長' : (displayOwner(id, name) || ownerLabel(id) || '—');
+      return `<button type="button" class="sum-owner${scope === id ? ' on' : ''}" data-sum-scope="${esc(id)}"><div class="k">${esc(name)}</div><div class="v">${esc(ow)}</div></button>`;
+    };
+    const ownerStrip = `<div class="sum-owners" id="sumOwners">
+      ${ownerChip('全公司', '全公司')}
+      ${Object.keys(REGIONS).map(r => ownerChip(r, r)).join('')}
+      ${ownerChip('業務支援管理部', '業務支援管理部')}
+      ${ownerChip('電服部', '電服部')}
+      ${ownerChip('多元開發部', '多元開發部')}
+    </div>`;
+    if (tab === 'kpi') {
+      const kpiMemo = new Map();
+      const kpiOf = id => {
+        if (kpiMemo.has(id)) return kpiMemo.get(id);
+        const x = packKpi(id);
+        kpiMemo.set(id, x);
+        return x;
+      };
+      const officeIds = shownOffices.filter(o => SALES_OFFICES.includes(o) || isSupportCityId(o));
+      const avgOf = key => {
+        const vs = officeIds.map(id => Number(kpiOf(id)[key])).filter(v => v === v);
+        return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : 0;
+      };
+      const rankOf = (key, ids) => {
+        const arr = (ids || officeIds).map(id => ({ id, v: Number(kpiOf(id)[key]) })).filter(x => x.v === x.v);
+        arr.sort((a, b) => b.v - a.v);
+        const map = {};
+        arr.forEach((x, i) => { map[x.id] = i + 1; });
+        return map;
+      };
+      const avgs = {
+        hit: avgOf('hit'), leaseRate: avgOf('leaseRate'), weakRate: avgOf('weakRate'),
+        newRate: avgOf('newRate'), rnRate: avgOf('rnRate'), lead1: avgOf('lead1'),
+        ar1529amt: avgOf('ar1529amt'), ar30amt: avgOf('ar30amt')
+      };
+      const ranks = {
+        leaseRate: rankOf('leaseRate'), weakRate: rankOf('weakRate'), newRate: rankOf('newRate'),
+        lead1: rankOf('lead1'), famRate: rankOf('famRate')
+      };
+      const regionIds = Object.keys(REGIONS).filter(rid => regionShown(rid));
+      const regionRanks = {
+        leaseRate: rankOf('leaseRate', regionIds), weakRate: rankOf('weakRate', regionIds),
+        newRate: rankOf('newRate', regionIds), lead1: rankOf('lead1', regionIds),
+        famRate: rankOf('famRate', regionIds)
+      };
+      const tgts = {
+        hit: 1, leaseRate: LEASE_TARGET_RATE, weakRate: WEAK_TARGET_RATE,
+        newRate: NEW_TARGET_RATE, rnRate: rnTgt, lead1: RENEW_LEAD1_RATE
+      };
+      const isOff = kind => kind === 'office' || kind === 'scity';
+      const tone = (id, kind, key, val, html) => {
+        const n = val || 0;
+        const off = isOff(kind);
+        if (key === 'n') {
+          if (!off) return html;
+          if (n >= 20) return `<span class="sum-hit">${html}</span>`;
+          if (n < 10) return `<span class="neg">${html}</span>`;
+          return html;
+        }
+        if (key === 'famN') {
+          if (!off) return html;
+          if (n >= 5) return `<span class="sum-hit">${html}</span>`;
+          if (n === 0) return `<span class="neg">${html}</span>`;
+          return html;
+        }
+        if (key === 'ar1529amt' || key === 'ar30amt') {
+          if (!off) return html;
+          if (n > (avgs[key] || 0)) return `<span class="neg">${html}</span>`;
+          return html;
+        }
+        const tgt = tgts[key];
+        if (tgt != null && n >= tgt) return `<span class="sum-hit">${html}</span>`;
+        if (off && avgs[key] != null && n < avgs[key]) return `<span class="neg">${html}</span>`;
+        return html;
+      };
+      const rkCell = (id, kind, key) => {
+        const map = kind === 'region' ? regionRanks[key] : (isOff(kind) ? ranks[key] : null);
+        if (!map) return '';
+        const r = map[id];
+        if (!r) return '—';
+        return r <= 3 ? `<b>${r}</b>` : String(r);
+      };
+      const sk = state.sumKpiSort || {};
+      const th = (key, lab) => {
+        const on = sk.k === key;
+        const mark = on ? (sk.dir === 'asc' ? ' ▲' : ' ▼') : '';
+        return `<th data-kpi-sort="${key}" class="${on ? 'kpi-on' : ''}">${lab}${mark}</th>`;
+      };
+      const clsOfK = kind => kind === 'co' ? 'tot'
+        : (kind === 'dept' || kind === 'support' || kind === 'tel' || kind === 'bu') ? 'tot-sub'
+        : (kind === 'region' ? 'reg' : '');
+      const arPair = (n, amt) => `${fmt(n)}／$${fmt(amt)}`;
+      const rowOf = leaf => {
+        const x = kpiOf(leaf.id);
+        const ow = leaf.id === '全公司' || leaf.id === '營業部' ? '營運部長' : (displayOwner(leaf.id, leaf.name) || '—');
+        const cls = clsOfK(leaf.kind);
+        const nameCls = (isOff(leaf.kind) || leaf.kind === 'region') ? ' kpi-name' : '';
+        const unitTd = `<td class="sum-unit${leaf.kind === 'scity' ? ' city' : ''}${nameCls}" data-sum-scope="${esc(leaf.id)}"><span>${esc(leaf.name)}</span></td>`;
+        const t = (key, html) => tone(leaf.id, leaf.kind, key, x[key], html);
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${fmt(x.tgt)}</td>
+          <td>${t('n', fmt(x.n))}</td>
+          <td>${t('hit', pct1(x.hit))}</td>
+          <td>${t('leaseRate', pct1(x.leaseRate))}</td>
+          <td>${rkCell(leaf.id, leaf.kind, 'leaseRate')}</td>
+          <td>${t('weakRate', pct1(x.weakRate))}</td>
+          <td>${rkCell(leaf.id, leaf.kind, 'weakRate')}</td>
+          <td>${t('newRate', pct1(x.newRate))}</td>
+          <td>${rkCell(leaf.id, leaf.kind, 'newRate')}</td>
+          <td>${t('rnRate', pct1(x.rnRate))}</td>
+          <td>${t('lead1', pct1(x.lead1))}</td>
+          <td>${rkCell(leaf.id, leaf.kind, 'lead1')}</td>
+          <td>${t('famN', fmt(x.famN))}</td>
+          <td>${pct1(x.famRate)}</td>
+          <td>${rkCell(leaf.id, leaf.kind, 'famRate')}</td>
+          <td>${t('ar1529amt', arPair(x.ar1529n, x.ar1529amt))}</td>
+          <td>${t('ar30amt', arPair(x.ar30n, x.ar30amt))}</td>
+        </tr>`;
+      };
+      const head1 = `<tr>
+        <th rowspan="2">單位</th><th rowspan="2">單位主管</th>
+        <th class="kpi-g" colspan="3">新媒合達成率100%</th>
+        <th class="kpi-g" colspan="2">包租率55%</th>
+        <th class="kpi-g" colspan="2">政策戶率50%</th>
+        <th class="kpi-g" colspan="2">新件率90%</th>
+        <th class="kpi-g" colspan="3">續約率80%</th>
+        <th class="kpi-g" colspan="3">婚育率</th>
+        <th class="kpi-g" colspan="2">應收帳款</th>
+      </tr><tr>
+        ${th('tgt', '目標')}${th('n', '新媒合')}${th('hit', '達成率')}
+        ${th('leaseRate', '包租率')}${th('leaseRate', '排名')}
+        ${th('weakRate', '政策戶')}${th('weakRate', '排名')}
+        ${th('newRate', '新件率')}${th('newRate', '排名')}
+        ${th('rnRate', '當月')}${th('lead1', '領先1M')}${th('lead1', '排名')}
+        ${th('famN', '婚育數')}${th('famRate', '婚育率')}${th('famRate', '排名')}
+        ${th('ar1529amt', '帳齡15-29天')}${th('ar30amt', '帳齡30天↑')}
+      </tr>`;
+      const kpiWrap = rows => `<div class="sum-tbl-wrap kpi-block"><table class="sum-tbl kpi-all"><thead>${head1}</thead>
+        <tbody>${rows.map(rowOf).join('')}</tbody></table></div>`;
+      const kpiSub = t => `<h4 class="kpi-sub">${t}</h4>`;
+      const kpiSec = html => `<div class="kpi-sec">${html}</div>`;
+      const kpiNote = '<p class="note">表頭可點選排序。本頁目標＝預估目標。包租率＝轉租件／新媒合。新媒合≥20件藍字、低於10件紅字；包租／政策戶／新件／續約達標藍字、低於平均值紅字；婚育數≥5藍字、0件紅字；帳齡金額大於平均值紅字。應收列筆數／金額。</p>';
+      const nodeOf = (id, name, kind, depth) => ({ id, name, kind, depth: depth || 0, hasKids: false, isOpen: false, kids: [] });
+      const sortNodes = arr => {
+        if (!(state.sumKpiSort && state.sumKpiSort.k) || !arr.length) return arr;
+        const sk = state.sumKpiSort;
+        const lowerK = sk.k === 'ar1529amt' || sk.k === 'ar30amt' || sk.k === 'arN' || sk.k === 'arAmt';
+        return arr.slice().sort((a, b) => {
+          const va = Number(kpiOf(a.id)[sk.k]);
+          const vb = Number(kpiOf(b.id)[sk.k]);
+          const na = va === va ? va : (lowerK ? Infinity : -Infinity);
+          const nb = vb === vb ? vb : (lowerK ? Infinity : -Infinity);
+          if (na !== nb) {
+            const raw = lowerK ? na - nb : nb - na;
+            return sk.dir === 'asc' ? -raw : raw;
+          }
+          return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+        });
+      };
+      const salesIds = shownOffices.filter(o => SALES_OFFICES.includes(o));
+      const buRows = [nodeOf('營業部', '營業部', 'co', 0)].concat(
+        sortNodes(salesIds.map(o => nodeOf(o, o, 'office', 1)))
+      );
+      const regionRows = [];
+      if (scope === '全公司' || scope === '營業部') {
+        if (scope === '全公司') regionRows.push(nodeOf('全公司', '全公司', 'co', 0));
+        regionRows.push(nodeOf('營業部', '營業部', 'dept', 0));
+        const regs = Object.keys(REGIONS).filter(rid => regionShown(rid)).map(rid => nodeOf(rid, rid, 'region', 1));
+        regionRows.push(...sortNodes(regs));
+        if (showSupport) regionRows.push(nodeOf('業務支援管理部', '業務支援管理部', 'support', 0));
+        if (showTel) regionRows.push(nodeOf('電服部', '電服部', 'tel', 0));
+        if (showMulti) regionRows.push(nodeOf('多元開發部', '多元開發部', 'dept', 0));
+      } else if (REGIONS[scope]) {
+        regionRows.push(nodeOf(scope, scope, 'region', 0));
+      }
+      const blocks = [];
+      if (scope === '全公司' || scope === '營業部' || SALES_OFFICES.includes(scope) || REGIONS[scope]) {
+        let buShow = buRows;
+        if (SALES_OFFICES.includes(scope)) buShow = [nodeOf('營業部', '營業部', 'co', 0), nodeOf(scope, scope, 'office', 1)];
+        else if (REGIONS[scope]) {
+          const kids = (REGIONS[scope] || []).filter(o => salesIds.includes(o)).map(o => nodeOf(o, o, 'office', 1));
+          buShow = [nodeOf('營業部', '營業部', 'co', 0)].concat(sortNodes(kids));
+        }
+        if (buShow.length) blocks.push(kpiSec(kpiSub('營業處指標排名') + kpiNote + kpiWrap(buShow)));
+      }
+      if (regionRows.length) blocks.push(kpiSec(kpiSub('營業區指標排名') + kpiWrap(regionRows)));
+      if (scope === '業務支援管理部' || isSupportCityId(scope)) {
+        const cities = sortNodes(supportCityLeaves().map(id => nodeOf(id, supportCityName(id), 'scity', 1)));
+        blocks.push(kpiSec(kpiWrap([nodeOf('業務支援管理部', '業務支援管理部', 'support', 0)].concat(cities))));
+      }
+      if (scope === '多元開發部' || scope === '多元開發部(全)' || shownMulti.includes(scope)) {
+        const kids = sortNodes(shownMulti.map(o => nodeOf(o, o, 'office', 1)));
+        blocks.push(kpiSec(kpiWrap([nodeOf('多元開發部', '多元開發部', 'dept', 0)].concat(kids))));
+      }
+      if (scope === '電服部') blocks.push(kpiSec(kpiWrap([nodeOf('電服部', '電服部', 'tel', 0)])));
+      box.innerHTML = `<div class="sum-layout kpi-only">
+        <div>
+          <p class="sum-days">${roc}/${pad(viewM)}/${pad(end.getDate())}　${isYear ? '1–' + viewM + '月累計' : '當月'}　結績總天數 ${fmt(days)} 天</p>
+          ${ownerStrip}
+          <div class="kpi-blocks">${blocks.join('')}</div>
+        </div>
+      </div>`;
+      installSnapButtons();
+      return;
+    }
+    const packBand = (id, which) => {
+      const set = unitOfficeSet(id);
+      const st = which === 'last' ? lastStart : start;
+      const en = which === 'last' ? lastEnd : end;
+      const rows = unitPerf(set, st, en);
+      const people = staffOf(id);
+      const moved = people.filter(s => rows.some(r => r.sl === s.name)).length;
+      return { n: rows.length, moved, people: people.length };
+    };
+    const bandIds = (scope === '業務支援管理部' || isSupportCityId(scope))
+      ? supportCityLeaves()
+      : shownOffices.filter(hasYtdPerf);
+    const bandOffices = bandIds.map(o => {
+      const nm = isSupportCityId(o) ? supportCityName(o) : o;
+      if (tab === 'lease') {
+        const now = packLease(o);
+        const last = packLease(o, 'last');
+        return {
+          id: o, name: nm, sort: now.rate || 0,
+          rate: now.rate, toLease: now.toLease, yr3: now.yr3,
+          lastRate: last.rate, diffPp: ((now.rate || 0) - (last.rate || 0)) * 100
+        };
+      }
+      if (tab === 'weak') {
+        const now = packWeak(o);
+        const last = packWeak(o, 'last');
+        return {
+          id: o, name: nm, sort: now.rate || 0,
+          rate: now.rate, weakN: now.lease, gen: now.mgmt,
+          lastRate: last.rate, diffPp: ((now.rate || 0) - (last.rate || 0)) * 100
+        };
+      }
+      if (tab === 'new') {
+        const now = packNew(o);
+        const last = packNew(o, 'last');
+        return {
+          id: o, name: nm, sort: now.rate || 0,
+          rate: now.rate, cut: now.cut,
+          lastRate: last.rate, diffPp: ((now.rate || 0) - (last.rate || 0)) * 100
+        };
+      }
+      if (tab === 'ref') {
+        const now = packRef(o);
+        const last = packRef(o, 'last');
+        return {
+          id: o, name: nm, sort: now.rate || 0,
+          rate: now.rate, ref: now.ref, cold: now.cold,
+          lastRate: last.rate, diffPp: ((now.rate || 0) - (last.rate || 0)) * 100
+        };
+      }
+      if (tab === 'suite') {
+        const now = packSuite(o);
+        const last = packSuite(o, 'last');
+        return {
+          id: o, name: nm, sort: now.rate || 0,
+          rate: now.rate, suite: now.suite, whole: now.whole,
+          lastRate: last.rate, diffPp: ((now.rate || 0) - (last.rate || 0)) * 100
+        };
+      }
+      if (tab === 'fam') {
+        const now = packFam(o);
+        const last = packFam(o, 'last');
+        return {
+          id: o, name: nm, sort: now.mix || 0,
+          mix: now.mix, wed: now.wed, kid: now.kid,
+          lastMix: last.mix, diffN: (now.mix || 0) - (last.mix || 0)
+        };
+      }
+      if (tab === 'renew') {
+        const now = packRn(o);
+        return {
+          id: o, name: nm, sort: now.lead1 || 0,
+          rate: now.rate, lead1: now.lead1,
+          toLease: now.toLease, yr3: now.yr3
+        };
+      }
+      if (tab === 'match') {
+        const now = packMatch(o);
+        const last = packMatch(o, 'last');
+        return {
+          id: o, name: nm, sort: now.n,
+          n: now.n, fcst: now.fcst, moved: now.moved,
+          avg: now.people ? now.n / now.people : 0, last: last.n
+        };
+      }
+      const now = packBand(o);
+      const last = packBand(o, 'last');
+      return { id: o, name: nm, sort: now.n, n: now.n, moved: now.moved, avg: now.people ? now.n / now.people : 0, last: last.n, diff: now.n - last.n };
+    }).sort((a, b) => b.sort - a.sort || a.name.localeCompare(b.name, 'zh-Hant'));
+    let front = [], mid = [], back = [];
+    if (bandOffices.length <= 5) front = bandOffices;
+    else if (bandOffices.length <= 10) {
+      front = bandOffices.slice(0, 5);
+      back = bandOffices.slice(5);
+    } else {
+      front = bandOffices.slice(0, 5);
+      back = bandOffices.slice(-5);
+      mid = bandOffices.slice(5, -5);
+    }
+    const bandTbl = (title, arr) => {
+      const leaseHead = '<th>單位</th><th>排名</th><th>包租%</th><th>代轉包</th><th>代3年</th><th>上月包%</th><th>差異%</th>';
+      const weakHead = '<th>單位</th><th>排名</th><th>政策%</th><th>政策戶</th><th>一般戶</th><th>上月%</th><th>差異%</th>';
+      const newHead = '<th>單位</th><th>排名</th><th>新件%</th><th>扣轉銜新件%</th><th>上月%</th><th>差異%</th>';
+      const refHead = '<th>單位</th><th>排名</th><th>轉介%</th><th>轉介</th><th>陌生</th><th>上月%</th><th>差異%</th>';
+      const suiteHead = '<th>單位</th><th>排名</th><th>套房%</th><th>套房</th><th>整棟</th><th>上月%</th><th>差異%</th>';
+      const famHead = '<th>單位</th><th>排名</th><th>婚育總數</th><th>新婚</th><th>育兒</th><th>上月婚育</th><th>差異</th>';
+      const rnHead = '<th>單位</th><th>排名</th><th>續約%</th><th>領先1M%</th><th>代轉包</th><th>代3年</th>';
+      const matchHead = '<th>單位</th><th>排名</th><th>預估</th><th>實績</th><th>實動</th><th>均件</th><th>上月</th>';
+      const head = ({ match: matchHead, lease: leaseHead, weak: weakHead, new: newHead, ref: refHead, suite: suiteHead, fam: famHead, renew: rnHead })[tab] || matchHead;
+      const rows = arr.map((x, i) => {
+        if (tab === 'lease') {
+          return `<tr>
+            <td>${esc(x.name)}</td><td>${i + 1}</td><td>${rateTone(x.rate, LEASE_TARGET_RATE, coLease.rate)}</td>
+            <td>${fmt(x.toLease)}</td><td>${fmt(x.yr3)}</td>
+            <td>${rateTone(x.lastRate, LEASE_TARGET_RATE, coLeaseLast.rate)}</td><td>${signed(x.diffPp)}</td>
+          </tr>`;
+        }
+        if (tab === 'weak') {
+          return `<tr>
+            <td>${esc(x.name)}</td><td>${i + 1}</td><td>${rateTone(x.rate, WEAK_TARGET_RATE, coWeak.rate)}</td>
+            <td>${fmt(x.weakN)}</td><td>${fmt(x.gen)}</td>
+            <td>${rateTone(x.lastRate, WEAK_TARGET_RATE, coWeakLast.rate)}</td><td>${signed(x.diffPp)}</td>
+          </tr>`;
+        }
+        if (tab === 'new') {
+          return `<tr>
+            <td>${esc(x.name)}</td><td>${i + 1}</td><td>${rateTone(x.rate, NEW_TARGET_RATE, coNew.rate)}</td>
+            <td>${rateTone(x.cut, NEW_TARGET_RATE, coNew.cut)}</td>
+            <td>${rateTone(x.lastRate, NEW_TARGET_RATE, coNewLast.rate)}</td><td>${signed(x.diffPp)}</td>
+          </tr>`;
+        }
+        if (tab === 'ref') {
+          return `<tr>
+            <td>${esc(x.name)}</td><td>${i + 1}</td><td>${pct1(x.rate)}</td>
+            <td>${fmt(x.ref)}</td><td>${fmt(x.cold)}</td>
+            <td>${pct1(x.lastRate)}</td><td>${signed(x.diffPp)}</td>
+          </tr>`;
+        }
+        if (tab === 'suite') {
+          return `<tr>
+            <td>${esc(x.name)}</td><td>${i + 1}</td><td>${pct1(x.rate)}</td>
+            <td>${fmt(x.suite)}</td><td>${fmt(x.whole)}</td>
+            <td>${pct1(x.lastRate)}</td><td>${signed(x.diffPp)}</td>
+          </tr>`;
+        }
+        if (tab === 'fam') {
+          return `<tr>
+            <td>${esc(x.name)}</td><td>${i + 1}</td><td>${fmt(x.mix)}</td>
+            <td>${fmt(x.wed)}</td><td>${fmt(x.kid)}</td>
+            <td>${fmt(x.lastMix)}</td><td>${signed(x.diffN)}</td>
+          </tr>`;
+        }
+        if (tab === 'renew') {
+          return `<tr>
+            <td>${esc(x.name)}</td><td>${i + 1}</td><td>${rateTone(x.rate, rnTgt, coRn.rate)}</td>
+            <td>${rateTone(x.lead1, RENEW_LEAD1_RATE, coRn.lead1)}</td>
+            <td>${fmt(x.toLease)}</td><td>${fmt(x.yr3)}</td>
+          </tr>`;
+        }
+        if (tab === 'match') {
+          return `<tr>
+            <td>${esc(x.name)}</td><td>${i + 1}</td>
+            <td>${fmt(x.fcst)}</td><td>${matchNTone(x.n, x.fcst)}</td>
+            <td>${fmt(x.moved)}</td>
+            <td>${x.avg.toFixed(1)}</td><td>${fmt(x.last)}</td>
+          </tr>`;
+        }
+        return `<tr>
+          <td>${esc(x.name)}</td><td>${i + 1}</td><td>${fmt(x.n)}</td><td>${fmt(x.moved)}</td>
+          <td>${x.avg.toFixed(1)}</td><td>${fmt(x.last)}</td><td>${signed(x.diff)}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7" class="muted">無</td></tr>';
+      return `<div class="sum-band"><h4>${esc(title)}</h4>
+        <table><thead><tr>${head}</tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+    };
+    const bandFront = bandTbl('前段前5名', front);
+    const bandMid = bandTbl('中段（扣除前後5名）', mid);
+    const bandBack = bandTbl('後段後5名', back);
+    const scopeRoot = scope === '全公司' ? '營業部' : scope;
+    const judgeMatch = () => {
+      const p = packBand(scopeRoot);
+      const avg = p.people ? p.n / p.people : 0;
+      const backLabs = back.map(x => `<span class="neg">${esc(x.name)}（${fmt(x.n)}）</span>`).join('、');
+      return `${judgeP('均件', `營業處整體業績平均件數 ${avg.toFixed(1)} 件。`)}
+        ${judgeP('標準', '單一營業處單月目標20件，實動8人。')}
+        <p><span class="judge-k">後段：</span>${back.length ? backLabs : '本期無後段單位。'}</p>`;
+    };
+    const judgeRate = (label, tgt, ok) => {
+      const now = metricOf(scopeRoot);
+      const rows = shownOffices.filter(hasYtdPerf).map(o => ({ name: o, x: metricOf(o) })).filter(r => ok(r.x));
+      const avg = rows.length ? rows.reduce((s, r) => s + (r.x.rate || 0), 0) / rows.length : 0;
+      const names = rows.filter(r => (r.x.rate || 0) < avg)
+        .sort((a, b) => (a.x.rate || 0) - (b.x.rate || 0))
+        .map(r => `${r.name}（${pct1(r.x.rate)}）`);
+      const hit = (now.rate || 0) >= tgt;
+      return `${judgeP('目標', `${label}目標 ${pct1(tgt)}。`)}
+        ${judgeP('達成', `${scope}整體${label} ${pct1(now.rate)}，${hit ? '已達標。' : '未達標。'}`)}
+        ${judgeP('低於全單位平均值', names.length
+          ? `全單位平均 ${pct1(avg)}，低於平均單位 ${names.join('、')}。`
+          : `本期${scope}無低於全單位平均值的單位。`)}`;
+    };
+    const judgeRef = () => {
+      const now = metricOf(scopeRoot);
+      const lows = shownOffices.filter(hasYtdPerf).map(o => ({ name: o, x: metricOf(o) }))
+        .filter(r => r.x.n).sort((a, b) => (a.x.rate || 0) - (b.x.rate || 0)).slice(0, 5)
+        .map(r => `${r.name}（${pct1(r.x.rate)}）`);
+      return `${judgeP('轉介', `${scope}轉介 ${fmt(now.ref)} 件、陌生 ${fmt(now.cold)} 件，轉介率 ${pct1(now.rate)}。`)}
+        ${judgeP('偏低', lows.length ? `轉介率較低單位 ${lows.join('、')}。` : '本期無轉介案件。')}`;
+    };
+    const judgeSuite = () => {
+      const now = metricOf(scopeRoot);
+      return `${judgeP('套房', `${scope}套房 ${fmt(now.suite)} 件、整棟 ${fmt(now.whole)} 件，套房率 ${pct1(now.rate)}。`)}
+        ${judgeP('結構', now.n ? `套房占比 ${pct1(now.rate)}，整棟占比 ${pct1(now.n ? now.whole / now.n : 0)}。` : '本期無案件。')}`;
+    };
+    const judgeFam = () => {
+      const now = metricOf(scopeRoot);
+      return `${judgeP('婚育', `${scope}新婚 ${fmt(now.wed)} 件、育兒 ${fmt(now.kid)} 件，婚育率 ${pct1(now.rate)}。`)}
+        ${judgeP('結構', now.n ? `婚育占比 ${pct1(now.rate)}，非婚育占比 ${pct1(now.n ? (now.n - now.mix) / now.n : 0)}。` : '本期無案件。')}`;
+    };
+    const judgeAr = () => {
+      const now = metricOf(scopeRoot);
+      const heavy = shownOffices.filter(hasYtdPerf).map(o => ({ name: o, x: metricOf(o) }))
+        .filter(r => r.x.b30 && r.x.b30.n).sort((a, b) => (b.x.b30.n || 0) - (a.x.b30.n || 0)).slice(0, 5)
+        .map(r => `${r.name}（${fmt(r.x.b30.n)}筆）`);
+      return `${judgeP('合計', `${scope}${arCtLab}應收 ${fmt(now.n)} 筆、金額 $${fmt(now.amt)}。`)}
+        ${judgeP('逾期30天↑', heavy.length ? `30天以上較多單位 ${heavy.join('、')}，請說明催收進度。` : '本期無30天以上應收單位。')}`;
+    };
+    const judgeBody = tab === 'lease' ? judgeRate('包租率', LEASE_TARGET_RATE, x => x.n)
+      : tab === 'weak' ? judgeRate('政策戶比率', WEAK_TARGET_RATE, x => x.n)
+      : tab === 'new' ? judgeRate('新件率', NEW_TARGET_RATE, x => x.n)
+      : tab === 'renew' ? judgeRate('續約率', rnTgt, x => x.due)
+      : tab === 'ref' ? judgeRef()
+      : tab === 'suite' ? judgeSuite()
+      : tab === 'fam' ? judgeFam()
+      : tab === 'ar' ? judgeAr()
+      : judgeMatch();
+    const judge = `<div class="rev-panel sum-judge"><h4>管理總表說明</h4>${judgeBody}</div>`;
+    const clsOf = kind => kind === 'co' ? 'tot'
+      : (kind === 'dept' || kind === 'support' || kind === 'tel' || kind === 'bu') ? 'tot-sub'
+      : (kind === 'region' ? 'reg' : '');
+    const rowHtml = leaf => {
+      const now = metricOf(leaf.id);
+      const last = tab === 'ar' ? now : metricOf(leaf.id, 'last');
+      const ow = leaf.id === '全公司' || leaf.id === '營業部' ? '營運部長' : (displayOwner(leaf.id, leaf.name) || '—');
+      const cls = clsOf(leaf.kind);
+      const pad = 6 + (leaf.depth || 0) * 14;
+      const tog = leaf.hasKids
+        ? `<button type="button" class="unit-tog" data-sum-open="${esc(leaf.id)}">${leaf.isOpen ? '▾' : '▸'}</button>`
+        : `<span class="unit-tog-sp"></span>`;
+      const unitTd = `<td class="sum-unit${leaf.kind === 'scity' ? ' city' : ''}" data-sum-scope="${esc(leaf.id)}" style="padding-left:${pad}px">${tog}<span>${esc(leaf.name)}</span></td>`;
+      if (tab === 'match') {
+        const hit = now.tgt ? now.n / now.tgt : 0;
+        const util = now.people ? now.moved / now.people : 0;
+        const avg = now.people ? now.n / now.people : 0;
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${fmt(now.tgt)}</td><td>${fmt(now.fcst)}</td><td>${matchNTone(now.n, now.fcst)}</td>
+          <td>${signed(now.n - now.fcst)}</td><td>${pct1(hit)}</td>
+          <td>${leaf.kind === 'office' ? medal(leaf.id) : ''}</td>
+          <td>${bar(hit, 1)}</td>
+          <td>${fmt(now.people)}</td><td>${fmt(now.moved)}</td><td>${pct1(util)}</td>
+          <td>${avg.toFixed(1)}</td><td>${fmt(last.n)}</td><td>${signed(now.n - last.n)}</td>
+        </tr>`;
+      }
+      if (tab === 'lease') {
+        const gap = (now.rate - LEASE_TARGET_RATE) * 100;
+        const leasePct = rateTone(now.rate, LEASE_TARGET_RATE, coLease.rate);
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${fmt(now.lease)}</td><td>${fmt(now.mgmt)}</td><td>${fmt(now.n)}</td>
+          <td>${leasePct}</td>
+          <td>${leaf.kind === 'office' ? medal(leaf.id) : ''}</td>
+          <td>${bar(now.rate, 1, leasePct)}</td>
+          <td>${signed(gap)}</td><td>${fmt(now.yr3)}</td><td>${fmt(now.toLease)}</td><td>${fmt(now.re)}</td>
+          <td>${rateTone(last.rate, LEASE_TARGET_RATE, coLeaseLast.rate)}</td>
+          <td>${signed((now.rate - last.rate) * 100)}</td>
+        </tr>`;
+      }
+      if (tab === 'weak') {
+        const gap = (now.rate - WEAK_TARGET_RATE) * 100;
+        const weakPct = rateTone(now.rate, WEAK_TARGET_RATE, coWeak.rate);
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${fmt(now.lease)}</td><td>${fmt(now.mgmt)}</td><td>${fmt(now.n)}</td>
+          <td>${weakPct}</td>
+          <td>${leaf.kind === 'office' ? medal(leaf.id) : ''}</td>
+          <td>${bar(now.rate, 1, weakPct)}</td>
+          <td>${signed(gap)}</td>
+          <td>${rateTone(last.rate, WEAK_TARGET_RATE, coWeakLast.rate)}</td>
+          <td>${signed((now.rate - last.rate) * 100)}</td>
+        </tr>`;
+      }
+      if (tab === 'new') {
+        const gap = (now.rate - NEW_TARGET_RATE) * 100;
+        const newPct = rateTone(now.rate, NEW_TARGET_RATE, coNew.rate);
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${newPct}</td>
+          <td>${leaf.kind === 'office' ? medal(leaf.id) : ''}</td>
+          <td>${bar(now.rate, 1, newPct)}</td>
+          <td>${signed(gap)}</td>
+          <td>${rateTone(last.rate, NEW_TARGET_RATE, coNewLast.rate)}</td><td>${signed((now.rate - last.rate) * 100)}</td>
+          <td>${rateTone(now.cut, NEW_TARGET_RATE, coNew.cut)}</td>
+          <td>${rateTone(last.cut, NEW_TARGET_RATE, coNewLast.cut)}</td>
+          <td>${signed((now.cut - last.cut) * 100)}</td>
+        </tr>`;
+      }
+      if (tab === 'ref') {
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${fmt(now.ref)}</td><td>${fmt(now.cold)}</td><td>${fmt(now.n)}</td>
+          <td>${pct1(now.rate)}</td><td>${bar(now.rate, 1)}</td>
+          <td>${fmt(last.ref)}</td><td>${fmt(last.cold)}</td><td>${fmt(last.n)}</td>
+          <td>${pct1(last.rate)}</td><td>${signed((now.rate - last.rate) * 100)}</td>
+        </tr>`;
+      }
+      if (tab === 'suite') {
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${fmt(now.suite)}</td><td>${fmt(now.whole)}</td><td>${fmt(now.n)}</td>
+          <td>${pct1(now.rate)}</td><td>${bar(now.rate, 1)}</td>
+          <td>${fmt(last.suite)}</td><td>${fmt(last.whole)}</td><td>${fmt(last.n)}</td>
+          <td>${pct1(last.rate)}</td><td>${signed((now.rate - last.rate) * 100)}</td>
+        </tr>`;
+      }
+      if (tab === 'fam') {
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${fmt(now.wed)}</td><td>${fmt(now.kid)}</td><td>${fmt(now.mix)}</td><td>${fmt(now.n)}</td>
+          <td>${pct1(now.rate)}</td><td>${bar(now.rate, 1)}</td>
+          <td>${fmt(last.wed)}</td><td>${fmt(last.kid)}</td><td>${fmt(last.mix)}</td>
+          <td>${pct1(last.rate)}</td><td>${signed((now.rate - last.rate) * 100)}</td>
+        </tr>`;
+      }
+      if (tab === 'renew') {
+        const gap = now.done - now.due;
+        return `<tr class="${cls}">
+          ${unitTd}<td>${esc(ow)}</td>
+          <td>${fmt(now.due)}</td><td>${fmt(now.keep)}</td><td>${fmt(now.done)}</td><td>${fmt(now.valid)}</td>
+          <td>${signed(gap)}</td><td>${rateTone(now.rate, rnTgt, coRn.rate)}</td>
+          <td>${leaf.kind === 'office' ? medal(leaf.id) : ''}</td>
+          <td>${bar(now.rate, 1, rateTone(now.rate, rnTgt, coRn.rate))}</td>
+          <td>${fmt(now.miss)}</td><td>${fmt(now.early)}</td>
+          <td>${fmt(now.toLease)}</td><td>${fmt(now.yr3)}</td>
+          <td>${rateTone(now.lead1, RENEW_LEAD1_RATE, coRn.lead1)}</td>
+          <td>${rateTone(now.lead2, RENEW_LEAD2_RATE, coRn.lead2)}</td>
+        </tr>`;
+      }
+      const a = now;
+      const cell = b => `${fmt(b.n)}／$${fmt(b.amt)}`;
+      return `<tr class="${cls}">
+        ${unitTd}<td>${esc(ow)}</td>
+        <td>${cell(a.b17)}</td><td>${cell(a.b814)}</td><td>${cell(a.b1529)}</td><td>${cell(a.b30)}</td>
+        <td>${fmt(a.n)}／$${fmt(a.amt)}</td>
+      </tr>`;
+    };
+    const heads = {
+      match: '<th>營業處</th><th>擔當者</th><th>目標</th><th>預估</th><th>實績</th><th>預估差</th><th>達成率</th><th>排名</th><th class="sum-prog">目標達成進度</th><th>人數</th><th>實動</th><th>稼動%</th><th>均件</th><th>上月比</th><th>差異</th>',
+      lease: '<th>營業處</th><th>擔當者</th><th>包租</th><th>代管</th><th>合計</th><th>包租%</th><th>排名</th><th class="sum-prog">包租進度</th><th>目標差%</th><th>代3年</th><th>代轉包</th><th>再媒合</th><th>上月包租%</th><th>上月比</th>',
+      weak: '<th>營業處</th><th>擔當者</th><th>政策</th><th>一般</th><th>合計</th><th>政策%</th><th>排名</th><th class="sum-prog">政策進度</th><th>目標差%</th><th>上月政策%</th><th>上月比</th>',
+      new: '<th>營業處</th><th>擔當者</th><th>新件%</th><th>排名</th><th class="sum-prog">目標進度</th><th>目標差%</th><th>上月新件%</th><th>上月比</th><th>扣轉銜新件%</th><th>上月扣轉銜</th><th>扣轉銜差異</th>',
+      ref: '<th>營業處</th><th>擔當者</th><th>轉介</th><th>陌生</th><th>總件數</th><th>轉介%</th><th class="sum-prog">轉介進度</th><th>上月轉介</th><th>上月陌生</th><th>上月總件</th><th>上月轉介%</th><th>差異%</th>',
+      suite: '<th>營業處</th><th>擔當者</th><th>套房</th><th>整棟</th><th>總件數</th><th>套房%</th><th class="sum-prog">套房進度</th><th>上月套房</th><th>上月整棟</th><th>上月總件</th><th>上月套房%</th><th>差異%</th>',
+      fam: '<th>營業處</th><th>擔當者</th><th>新婚</th><th>育兒</th><th>婚育總數</th><th>新媒合數</th><th>婚育%</th><th class="sum-prog">婚育進度</th><th>上月新婚</th><th>上月育兒</th><th>上月總件</th><th>上月婚育%</th><th>差異%</th>',
+      renew: '<th>營業處</th><th>擔當者</th><th>應續約</th><th>未包件</th><th>已續約</th><th>未包續</th><th>差異</th><th>續約%</th><th>排名</th><th class="sum-prog">續約進度</th><th>到期未續</th><th>提前解約</th><th>代轉包</th><th>代3年</th><th>領先1M%</th><th>領先2M%</th>',
+      ar: '<th>營業處</th><th>擔當者</th><th>7天↓ 筆數／金額</th><th>8-14天</th><th>15-29天</th><th>30天↑</th><th>合計</th>'
+    };
+    const table = `<div class="sum-tbl-wrap"><table class="sum-tbl"><thead><tr>${heads[tab]}</tr></thead>
+      <tbody>${leaves.map(rowHtml).join('')}</tbody></table></div>`;
+    box.innerHTML = `<div class="sum-layout">
+      <div>${judge}${bandFront}${bandMid}${bandBack}</div>
+      <div>
+        <p class="sum-days">${roc}/${pad(viewM)}/${pad(end.getDate())}　${isYear ? '1–' + viewM + '月累計' : '當月'}　結績總天數 ${fmt(days)} 天</p>
+        ${ownerStrip}
+        ${table}
+      </div>
+    </div>`;
+    installSnapButtons();
   }
 
   function twAt(iso) {
@@ -13329,7 +15444,7 @@
     clearDashCache();
     const c = compute();
     fillDataStamp();
-    renderKpis(c); renderTrend(); renderMonthCmp(); renderRank(c); renderWeek(); renderMap(c); renderCmp(c); renderGrowAnalysis(); renderFcstAnalysis(); renderCityGrowAnalysis(); renderCrabImpact(); renderReviewAnalysis(); renderTypeAnalysis(); renderSourceAnalysis(); renderHouseAnalysis(); renderSalesRanks();
+    renderKpis(c); renderTrend(); renderMonthCmp(); renderRank(c); renderWeek(); renderMap(c); renderCmp(c); renderGrowAnalysis(); renderFcstAnalysis(); renderCityGrowAnalysis(); renderCrabImpact(); renderReviewAnalysis(); renderTypeAnalysis(); renderSourceAnalysis(); renderHouseAnalysis(); renderFamAnalysis(); renderSalesRanks();
     renderNatPerf(staffPeople.nat || []);
     renderLeaseDash('lease');
     renderLeaseDash('weak');
@@ -13337,6 +15452,137 @@
     renderArDash();
     renderRnDash();
     renderOrgDash();
+    renderSumDash();
+    installSnapButtons();
+  }
+
+  function snapToast(msg) {
+    let el = document.getElementById('snapToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'snapToast';
+      el.className = 'snap-toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(snapToast._t);
+    snapToast._t = setTimeout(() => { el.hidden = true; }, 2200);
+  }
+  function snapFileName(el) {
+    const t = el.querySelector('h3, h4, .k');
+    const raw = (t && t.textContent || '區塊').replace(/\s+/g, ' ').trim().slice(0, 40);
+    return (raw || '區塊') + '.png';
+  }
+  async function snapBlock(el, btn) {
+    if (!window.html2canvas) {
+      snapToast('擷取元件尚未載入，請重新整理頁面');
+      return;
+    }
+    const prev = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '擷取中…'; }
+    const saved = [];
+    el.querySelectorAll('.table-scroll, .sum-tbl-wrap, .month-wrap, .org-idle-scroll, .org-mem-scroll, .staff-case-scroll, .ar-debt-rank-scroll, .ar-debt-off-scroll, .ar-debtor-scroll').forEach(n => {
+      saved.push([n, n.getAttribute('style')]);
+      n.style.overflow = 'visible';
+      n.style.maxHeight = 'none';
+      n.style.height = 'auto';
+    });
+    el.querySelectorAll('select').forEach(sel => {
+      const opt = sel.options[sel.selectedIndex];
+      sel.setAttribute('data-snap-label', (opt && (opt.textContent || opt.text)) || sel.value || '');
+    });
+    try {
+      const canvas = await window.html2canvas(el, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+        imageTimeout: 4000,
+        onclone: doc => {
+          doc.querySelectorAll('.snap-btn, [data-ar-snap], [data-ar-watch-snap], [data-ar-ag-snap], [data-ar-debt-snap]').forEach(b => { b.style.display = 'none'; });
+          doc.querySelectorAll('select').forEach(sel => {
+            const lab = doc.createElement('span');
+            lab.className = 'snap-select';
+            lab.textContent = sel.getAttribute('data-snap-label') || '';
+            if (sel.parentNode) sel.parentNode.replaceChild(lab, sel);
+          });
+        }
+      });
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('empty');
+      let copied = false;
+      if (navigator.clipboard && window.ClipboardItem) {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          copied = true;
+        } catch (err) { copied = false; }
+      }
+      if (copied) snapToast('已複製圖片，可貼到 PowerPoint');
+      else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = snapFileName(el);
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        snapToast('已下載 PNG，可插入 PowerPoint');
+      }
+    } catch (err) {
+      snapToast('擷取失敗，請再試一次');
+    } finally {
+      saved.forEach(([n, css]) => {
+        if (css == null) n.removeAttribute('style');
+        else n.setAttribute('style', css);
+      });
+      el.querySelectorAll('select[data-snap-label]').forEach(sel => sel.removeAttribute('data-snap-label'));
+      if (btn) { btn.disabled = false; btn.textContent = prev || '擷取'; }
+    }
+  }
+  function snapSkip(el) {
+    if (!el) return true;
+    if (el.matches('section.kpi-row, .grow-kpis, .rev-kpis, .sum-judge, .sum-band, .sum-tbl-wrap, .trend-card')) return true;
+    if (el.closest('.ar-watch-card, .ar-st-card, .ar-debt-card') && !el.matches('.ar-watch-card, .ar-st-card, .ar-debt-card')) return true;
+    if (el.closest('#sumBody, .sum-layout')) return true;
+    if (el.querySelector(':scope > .trend-head') || el.querySelector(':scope > .grow-chart-head')) return true;
+    if (el.id && /(Judge|FocusNote)$/.test(el.id)) return true;
+    const h = el.querySelector(':scope > h4');
+    const t = (h && h.textContent || '').trim();
+    return /^管理(重點|結論|總表說明)/.test(t);
+  }
+  function installSnapButtons() {
+    const sel = 'article.card, section.kpi-row, .rev-panel, .org-idle-box, .sum-judge, .sum-band, .sum-tbl-wrap, .grow-kpis, .rev-kpis';
+    document.querySelectorAll('.snap-btn').forEach(b => {
+      const host = b.closest(sel);
+      if (!host || snapSkip(host) || (b.parentElement && b.parentElement.matches('.trend-head, .grow-chart-head'))) {
+        b.remove();
+        return;
+      }
+      if (b.textContent !== '擷取中…') b.textContent = '擷取';
+    });
+    document.querySelectorAll(sel).forEach(el => {
+      if (snapSkip(el)) return;
+      if (el.querySelector(':scope > .snap-btn') || el.querySelector('.unit-cmp-tools > .snap-btn') || el.querySelector('.org-idle-head > .snap-btn')) return;
+      el.classList.add('snap-box');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'snap-btn';
+      b.textContent = '擷取';
+      b.title = '複製此區塊圖片，可貼到 PowerPoint';
+      b.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        snapBlock(el, b);
+      });
+      const tools = el.querySelector(':scope > .unit-cmp-head .unit-cmp-tools')
+        || el.querySelector(':scope > .org-idle-head')
+        || el.querySelector(':scope .org-idle-head');
+      if (tools) {
+        b.classList.add('snap-btn-inline');
+        tools.appendChild(b);
+      } else {
+        el.appendChild(b);
+      }
+    });
   }
 
   function perfNameList() {
@@ -13388,6 +15634,61 @@
 
   renderNav();
   renderFilters();
+  if ($('sumTabSeg')) $('sumTabSeg').onclick = e => {
+    const t = e.target.dataset.t; if (!t) return;
+    state.sumTab = t;
+    renderSumDash();
+  };
+  if ($('sumGrainSeg')) $('sumGrainSeg').onclick = e => {
+    const g = e.target.dataset.g; if (!g) return;
+    state.sumGrain = g;
+    renderSumDash();
+  };
+  if ($('sumHideZero')) $('sumHideZero').onclick = () => {
+    state.sumHideZero = !state.sumHideZero;
+    renderSumDash();
+  };
+  if ($('sumFoldBtn')) $('sumFoldBtn').onclick = () => {
+    const ids = state.sumFoldIds || [];
+    const closed = new Set(state.sumClosed || []);
+    const allFolded = ids.length > 0 && ids.every(id => closed.has(id));
+    state.sumClosed = allFolded ? [] : ids;
+    renderSumDash();
+  };
+  if ($('sumMonth')) $('sumMonth').onchange = e => {
+    const v = Number(e.target.value);
+    if (!v) return;
+    state.sumPick = v;
+    renderSumDash();
+  };
+  if ($('sumArCt')) $('sumArCt').onchange = e => {
+    state.sumArCt = e.target.value || '轉租';
+    renderSumDash();
+  };
+  if ($('sumBody')) $('sumBody').onclick = e => {
+    const sortTh = e.target.closest('th[data-kpi-sort]');
+    if (sortTh) {
+      const k = sortTh.getAttribute('data-kpi-sort');
+      const cur = state.sumKpiSort || {};
+      state.sumKpiSort = { k, dir: cur.k === k && cur.dir === 'desc' ? 'asc' : 'desc' };
+      renderSumDash();
+      return;
+    }
+    const tog = e.target.closest('[data-sum-open]');
+    if (tog) {
+      const id = tog.getAttribute('data-sum-open');
+      const closed = new Set(state.sumClosed || []);
+      if (closed.has(id)) closed.delete(id); else closed.add(id);
+      state.sumClosed = [...closed];
+      renderSumDash();
+      return;
+    }
+    const chip = e.target.closest('[data-sum-scope]');
+    if (!chip) return;
+    state.sumKpiSort = null;
+    state.sumScope = chip.getAttribute('data-sum-scope') || '全公司';
+    renderSumDash();
+  };
   $('trendSeg').onclick = e => {
     const g = e.target.dataset.g; if (!g) return;
     state.trendGrain = g;
@@ -13491,6 +15792,50 @@
   $('houseStaffBtn').onclick = () => {
     state.houseStaffOpen = !state.houseStaffOpen;
     renderHouseAnalysis();
+  };
+  if ($('famSeg')) $('famSeg').onclick = e => {
+    const g = e.target.dataset.g; if (!g) return;
+    state.famGrain = g;
+    $('famSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.g === g));
+    renderFamAnalysis();
+  };
+  if ($('famLegend')) $('famLegend').onclick = e => {
+    const b = e.target.closest('[data-fam-ds]');
+    if (!b) return;
+    state.famHide = state.famHide || {};
+    state.famHide[b.dataset.famDs] = !state.famHide[b.dataset.famDs];
+    renderFamAnalysis();
+  };
+  if ($('famStaffBtn')) $('famStaffBtn').onclick = () => {
+    state.famStaffOpen = !state.famStaffOpen;
+    renderFamAnalysis();
+  };
+  if ($('famCmpTbl')) $('famCmpTbl').onclick = e => {
+    const row = e.target.closest('[data-fam-cmp]');
+    if (!row) return;
+    state.famCmpKey = row.getAttribute('data-fam-cmp') || 'mix';
+    renderFamAnalysis();
+  };
+  if ($('famTable')) $('famTable').onclick = e => {
+    const sortTh = e.target.closest('th[data-tbl-sort]');
+    if (sortTh) {
+      setTblSort('fam', sortTh.dataset.tblSort);
+      renderFamAnalysis();
+      return;
+    }
+    const openBtn = e.target.closest('[data-fam-open]');
+    if (openBtn) {
+      const id = openBtn.dataset.famOpen;
+      const open = new Set(state.famOpen || []);
+      if (open.has(id)) open.delete(id); else open.add(id);
+      state.famOpen = [...open];
+      renderFamAnalysis();
+      return;
+    }
+    const row = e.target.closest('[data-fam-focus]');
+    if (!row) return;
+    state.famFocus = row.dataset.famFocus;
+    renderFamAnalysis();
   };
   $('salesNatSeg').onclick = e => {
     const g = e.target.dataset.g; if (!g) return;
@@ -14706,7 +17051,212 @@
   bindDashUi('weak');
   bindDashUi('new');
   if ($('arCtFilter')) $('arCtFilter').onchange = e => { state.arCt = e.target.value; renderArDash(); };
+  if ($('arWatchCt')) $('arWatchCt').onchange = e => {
+    state.arWatchCt = e.target.value || '轉租';
+    renderArDash();
+  };
+  if ($('arStCt')) $('arStCt').onchange = e => {
+    state.arStCt = e.target.value || '轉租';
+    renderArDash();
+  };
+  if ($('arStSeg')) $('arStSeg').onclick = e => {
+    const b = e.target.closest('[data-ar-sband]');
+    if (!b) return;
+    state.arStBand = b.getAttribute('data-ar-sband') || 'all';
+    renderArDash();
+  };
   if ($('arStaffBtn')) $('arStaffBtn').onclick = () => { state.arStaffOpen = !state.arStaffOpen; renderArDash(); };
+  function arWatchSetBand(id) {
+    const next = id || 'all';
+    state.arWatchBand = (state.arWatchBand === next && next !== 'all') ? 'all' : next;
+    renderArDash();
+  }
+  if ($('arWatchSeg')) $('arWatchSeg').onclick = e => {
+    const b = e.target.closest('[data-ar-wband]');
+    if (!b) return;
+    state.arWatchBand = b.getAttribute('data-ar-wband') || 'all';
+    renderArDash();
+  };
+  if ($('arWatchStaffBtn')) $('arWatchStaffBtn').onclick = () => {
+    state.arWatchStaffOpen = !state.arWatchStaffOpen;
+    renderArDash();
+  };
+  if ($('arWatchKpis')) $('arWatchKpis').onclick = e => {
+    const b = e.target.closest('[data-ar-wband]');
+    if (b) arWatchSetBand(b.getAttribute('data-ar-wband'));
+  };
+  if ($('arWatchBars')) $('arWatchBars').onclick = e => {
+    const b = e.target.closest('[data-ar-wband]');
+    if (b) arWatchSetBand(b.getAttribute('data-ar-wband'));
+  };
+  if ($('arWatchOffRank')) $('arWatchOffRank').onclick = e => {
+    const hit = e.target.closest('[data-ar-watch-rank]');
+    if (!hit) return;
+    const id = hit.getAttribute('data-ar-watch-rank');
+    if (id) {
+      state.arWatchFocus = id;
+      state.arWatchStaffOpen = true;
+      renderArDash();
+    }
+  };
+  if ($('arWatchStatTbl')) $('arWatchStatTbl').onclick = e => {
+    const tr = e.target.closest('tr[data-ar-wband]');
+    if (!tr) return;
+    arWatchSetBand(tr.getAttribute('data-ar-wband'));
+  };
+  if ($('arWatchUnitTbl')) $('arWatchUnitTbl').onclick = e => {
+    const btn = e.target.closest('[data-ar-watch-open]');
+    if (btn) { arToggle('arWatchOpen', btn.getAttribute('data-ar-watch-open')); renderArDash(); return; }
+    const hit = e.target.closest('.ar-hit');
+    const tr = e.target.closest('tr[data-ar-watch-row]');
+    if (!tr) return;
+    state.arWatchFocus = tr.getAttribute('data-ar-watch-row');
+    if (hit) {
+      const bid = hit.getAttribute('data-ar-wband');
+      if (bid) state.arWatchBand = bid;
+      state.arWatchStaffOpen = true;
+    }
+    renderArDash();
+  };
+  if ($('arWatchStaffBox')) $('arWatchStaffBox').onclick = e => {
+    if (e.target.closest('[data-ar-watch-close]')) {
+      state.arWatchStaffOpen = false;
+      renderArDash();
+      return;
+    }
+    if (e.target.closest('[data-ar-watch-snap]')) {
+      const panel = e.target.closest('#arWatchStaffBox') || $('arWatchStaffBox');
+      snapBlock(panel, e.target.closest('button'));
+    }
+  };
+  if ($('arAgAgent')) $('arAgAgent').onchange = e => {
+    state.arAgAgent = e.target.value || '';
+    state.arAgFocus = '全公司';
+    renderArDash();
+  };
+  if ($('arAgCt')) $('arAgCt').onchange = e => {
+    state.arAgCt = e.target.value || '轉租';
+    state.arAgAgent = '';
+    state.arAgFocus = '全公司';
+    renderArDash();
+  };
+  function arAgSetBand(id) {
+    const next = id || 'all';
+    state.arAgBand = (state.arAgBand === next && next !== 'all') ? 'all' : next;
+    if (state.arAgBand !== 'all') state.arAgMarkTot = false;
+    renderArDash();
+  }
+  if ($('arAgSeg')) $('arAgSeg').onclick = e => {
+    const b = e.target.closest('[data-ar-ag-band]');
+    if (!b) return;
+    state.arAgBand = b.getAttribute('data-ar-ag-band') || 'all';
+    if (state.arAgBand !== 'all') state.arAgMarkTot = false;
+    else state.arAgMarkTot = false;
+    renderArDash();
+  };
+  if ($('arAgStaffBtn')) $('arAgStaffBtn').onclick = () => {
+    state.arAgStaffOpen = !state.arAgStaffOpen;
+    if (!state.arAgStaffOpen) {
+      state.arAgCaseQ = '';
+      state.arAgTn = '';
+    }
+    renderArDash();
+  };
+  if ($('arAgKpis')) $('arAgKpis').onclick = e => {
+    const b = e.target.closest('[data-ar-ag-band]');
+    if (b) arAgSetBand(b.getAttribute('data-ar-ag-band'));
+  };
+  if ($('arAgBars')) $('arAgBars').onclick = e => {
+    const b = e.target.closest('[data-ar-ag-band]');
+    if (b) arAgSetBand(b.getAttribute('data-ar-ag-band'));
+  };
+  if ($('arAgOffRank')) $('arAgOffRank').onclick = e => {
+    const hit = e.target.closest('[data-ar-ag-tn]');
+    if (!hit) return;
+    const tn = hit.getAttribute('data-ar-ag-tn') || '';
+    state.arAgTn = tn;
+    state.arAgCaseQ = tn;
+    state.arAgStaffOpen = true;
+    renderArDash();
+    const box = $('arAgStaffBox');
+    if (box) box.scrollIntoView({ block: 'nearest' });
+  };
+  if ($('arAgStatTbl')) $('arAgStatTbl').onclick = e => {
+    const tot = e.target.closest('tr[data-ar-ag-tot]');
+    if (tot) {
+      if (state.arAgBand !== 'all') {
+        state.arAgBand = 'all';
+        state.arAgMarkTot = true;
+      } else {
+        state.arAgMarkTot = !state.arAgMarkTot;
+      }
+      renderArDash();
+      return;
+    }
+    const tr = e.target.closest('tr[data-ar-ag-band]');
+    if (!tr) return;
+    arAgSetBand(tr.getAttribute('data-ar-ag-band'));
+  };
+  if ($('arAgUnitTbl')) $('arAgUnitTbl').onclick = e => {
+    const tr = e.target.closest('tr[data-ar-ag-tn]');
+    if (!tr) return;
+    const tn = tr.getAttribute('data-ar-ag-tn') || '';
+    const hit = e.target.closest('.ar-hit');
+    const same = state.arAgTn === tn && !hit;
+    if (same) {
+      state.arAgTn = '';
+      state.arAgCaseQ = '';
+    } else {
+      state.arAgTn = tn;
+      state.arAgCaseQ = tn;
+      state.arAgStaffOpen = true;
+      if (hit) {
+        const bid = hit.getAttribute('data-ar-ag-band');
+        if (bid) {
+          state.arAgBand = bid;
+          state.arAgMarkTot = false;
+        }
+      }
+    }
+    renderArDash();
+    if (!same) {
+      const box = $('arAgStaffBox');
+      if (box) box.scrollIntoView({ block: 'nearest' });
+    }
+  };
+  if ($('arAgStaffBox')) {
+    $('arAgStaffBox').onclick = e => {
+      if (e.target.closest('[data-ar-ag-close]')) {
+        state.arAgStaffOpen = false;
+        state.arAgCaseQ = '';
+        state.arAgTn = '';
+        renderArDash();
+        return;
+      }
+      if (e.target.closest('[data-ar-ag-snap]')) {
+        const panel = e.target.closest('#arAgStaffBox') || $('arAgStaffBox');
+        snapBlock(panel, e.target.closest('button'));
+      }
+    };
+    $('arAgStaffBox').addEventListener('input', e => {
+      const inp = e.target.closest('[data-ar-ag-q]');
+      if (!inp) return;
+      state.arAgCaseQ = inp.value;
+      const box = $('arAgStaffBox');
+      const scroll = box && box.querySelector('.staff-case-scroll');
+      const nEl = box && box.querySelector('[data-ar-ag-n]');
+      const ctLab = state.arAgCt || '轉租';
+      const agent = state.arAgAgent || '';
+      const band = state.arAgBand || 'all';
+      const pool = arPickRows(ctLab, 'all').filter(r => String(r.agent || '—') === agent);
+      const offices = unitOfficeSet(state.arAgFocus || '全公司');
+      const uniq = pool.filter(r => arKeepOffice(offices, r));
+      const scoped = band === 'all' ? uniq : uniq.filter(r => arAgeBand(r.days) === band);
+      const shown = arCaseFilterRows(scoped, state.arAgCaseQ);
+      if (scroll) scroll.innerHTML = arCaseRowsHtml(scoped, state.arAgCaseQ);
+      if (nEl) nEl.textContent = fmt(shown.length);
+    });
+  }
   function arToggle(setKey, id) {
     const open = new Set(state[setKey] || []);
     if (open.has(id)) open.delete(id); else open.add(id);
@@ -14740,18 +17290,99 @@
     if (hit) state.arStaffOpen = true;
     renderArDash();
   };
-  if ($('arDebtorTable')) $('arDebtorTable').onclick = e => {
-    const sortTh = e.target.closest('th[data-tbl-sort]');
-    if (sortTh) { setTblSort('arDebtor', sortTh.dataset.tblSort); renderArDash(); return; }
+  if ($('arDebtCt')) $('arDebtCt').onchange = e => {
+    state.arDebtCt = e.target.value || '轉租';
+    state.arDebtOff = 'all';
+    renderArDash();
+  };
+  if ($('arDebtOff')) $('arDebtOff').onchange = e => {
+    state.arDebtOff = e.target.value || 'all';
+    renderArDash();
+  };
+  if ($('arDebtBand')) $('arDebtBand').onchange = e => {
+    state.arDebtBand = e.target.value || 'all';
+    renderArDash();
+  };
+  if ($('arDebtStaffBtn')) $('arDebtStaffBtn').onclick = () => {
+    state.arDebtStaffOpen = !state.arDebtStaffOpen;
+    if (!state.arDebtStaffOpen) {
+      state.arDebtTn = '';
+      state.arDebtAddr = '';
+      state.arDebtCaseQ = '';
+    }
+    renderArDash();
+  };
+  if ($('arDebtOffTbl')) $('arDebtOffTbl').onclick = e => {
+    const tr = e.target.closest('tr[data-ar-debt-off]');
+    if (!tr) return;
+    const id = tr.getAttribute('data-ar-debt-off') || 'all';
+    state.arDebtOff = (id !== 'all' && state.arDebtOff === id) ? 'all' : id;
+    renderArDash();
+  };
+  if ($('arDebtTop')) $('arDebtTop').onclick = e => {
     const hit = e.target.closest('[data-ar-agent]');
     if (!hit) return;
     arOpenStaff(hit.getAttribute('data-ar-agent'), hit.getAttribute('data-ar-office'), 'total', '欠款大戶');
   };
-  if ($('arAgentRank')) $('arAgentRank').onclick = e => {
-    const hit = e.target.closest('[data-ar-agent]');
-    if (!hit) return;
-    arOpenStaff(hit.getAttribute('data-ar-agent'), hit.getAttribute('data-ar-office'), 'total', '代管業務');
+  if ($('arDebtorTable')) $('arDebtorTable').onclick = e => {
+    const sortTh = e.target.closest('th[data-tbl-sort]');
+    if (sortTh) { setTblSort('arDebtor', sortTh.dataset.tblSort); renderArDash(); return; }
+    const tr = e.target.closest('tr[data-ar-debt-tn]');
+    if (!tr) return;
+    const tn = tr.getAttribute('data-ar-debt-tn') || '';
+    const addr = tr.getAttribute('data-ar-debt-addr') || '';
+    const same = state.arDebtTn === tn && state.arDebtAddr === addr;
+    if (same) {
+      state.arDebtTn = '';
+      state.arDebtAddr = '';
+      state.arDebtCaseQ = '';
+    } else {
+      state.arDebtTn = tn;
+      state.arDebtAddr = addr;
+      state.arDebtCaseQ = tn;
+      state.arDebtStaffOpen = true;
+    }
+    renderArDash();
+    if (!same) {
+      const box = $('arDebtStaffBox');
+      if (box) box.scrollIntoView({ block: 'nearest' });
+    }
   };
+  if ($('arDebtStaffBox')) {
+    $('arDebtStaffBox').onclick = e => {
+      if (e.target.closest('[data-ar-debt-close]')) {
+        state.arDebtStaffOpen = false;
+        state.arDebtTn = '';
+        state.arDebtAddr = '';
+        state.arDebtCaseQ = '';
+        renderArDash();
+        return;
+      }
+      if (e.target.closest('[data-ar-debt-snap]')) {
+        snapBlock($('arDebtStaffBox'), e.target.closest('button'));
+      }
+    };
+    $('arDebtStaffBox').addEventListener('input', e => {
+      const inp = e.target.closest('[data-ar-debt-q]');
+      if (!inp) return;
+      state.arDebtCaseQ = inp.value;
+      const box = $('arDebtStaffBox');
+      const scroll = box && box.querySelector('.staff-case-scroll');
+      const nEl = box && box.querySelector('[data-ar-debt-n]');
+      const ctLab = state.arDebtCt || '轉租';
+      const band = state.arDebtBand || 'all';
+      const offNow = state.arDebtOff || 'all';
+      const pool = arPickRows(ctLab, 'all');
+      const rows = pool.filter(r => {
+        if (offNow !== 'all' && r.office !== offNow) return false;
+        if (band !== 'all' && arAgeBand(r.days) !== band) return false;
+        return true;
+      });
+      const shown = arCaseFilterRows(rows, state.arDebtCaseQ);
+      if (scroll) scroll.innerHTML = arCaseRowsHtml(rows, state.arDebtCaseQ);
+      if (nEl) nEl.textContent = fmt(shown.length);
+    });
+  }
   $('btnQuery').onclick = () => { state.page = 1; renderAll(); };
   function dashApiBases() {
     const here = location.origin;
