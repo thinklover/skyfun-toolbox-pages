@@ -12,17 +12,21 @@
     'receipt-endorse-deposit'
   ];
 
-  const RECEIPT_SCHEMA_VERSION = 2;
+  const RECEIPT_SCHEMA_VERSION = 3;
+  // v3：送件 1 對 1 通知照會人（盧冠云），照會完畢通知原送件人（與舊版群組推播分開的函式）
+  const RECEIPT_FN = 'receipt-endorsement-v3';
+  // 測試站（非 toolbox.skyfunsystem.com）一律測試模式：不發 LINE、不存檔
+  const TEST_SITE = !/^toolbox\.skyfunsystem\.com$/i.test(location.hostname);
 
   async function callFn(body) {
     const c = window.SKYFUN_SUPABASE || {};
     const url = String(c.url || '').trim().replace(/\/$/, '');
     const key = String(c.anonKey || c.anon_key || '').trim();
     if (!url || !key) throw new Error('尚未設定 Supabase 連線');
-    const r = await fetch(url + '/functions/v1/receipt-endorsement', {
+    const r = await fetch(url + '/functions/v1/' + RECEIPT_FN, {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + key, apikey: key, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(TEST_SITE ? { ...body, dryRun: true } : body)
     });
     try {
       return await r.json();
@@ -47,8 +51,19 @@
     if (btn) btn.classList.toggle('hidden', !show);
   }
 
+  function submitLabel(type) {
+    return type === 'done' ? '照會完畢並通知送件人' : '送出並通知盧冠云';
+  }
+  function repushLabel(type) {
+    return (type === 'done' ? '重新通知送件人' : '重新通知盧冠云') + '（不重複存檔）';
+  }
+
   function syncPanels() {
     const type = $('receipt-endorse-type')?.value || 'submit';
+    const sb = $('receipt-endorse-submit-btn');
+    const rb = $('receipt-endorse-repush-btn');
+    if (sb && !sb.disabled) sb.textContent = submitLabel(type);
+    if (rb && !rb.disabled) rb.textContent = repushLabel(type);
     document.querySelectorAll('[data-receipt-panel]').forEach((el) => {
       const panel = el.getAttribute('data-receipt-panel');
       el.classList.toggle('hidden', panel !== type);
@@ -118,19 +133,20 @@
       if (!j?.ok || j.schemaVersion !== RECEIPT_SCHEMA_VERSION) {
         throw new Error(j?.message || '照會服務版本不符');
       }
+      const who = j.reviewerName || '照會人';
       if (badge) {
         if (j.ready) {
-          badge.textContent = 'LINE 照會群已就緒';
+          badge.textContent = (j.dryRun ? '測試模式（不發 LINE）· ' : '') + 'LINE 通知 ' + who + ' 已就緒';
           badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900';
         } else if (j.lineConfigured) {
-          badge.textContent = '待設定照會群';
+          badge.textContent = (j.dryRun ? '測試模式 · ' : '') + who + ' 尚未綁定 LINE';
           badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900';
         } else {
           badge.textContent = '未設定 LINE';
           badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-900';
         }
       }
-      setStatus(j.ready ? '' : 'LINE 照會群尚未設定，請聯絡管理員。', !j.ready);
+      setStatus(j.ready ? '' : (j.reviewerError || 'LINE 尚未設定') + '，請聯絡管理員。', !j.ready);
     } catch (e) {
       if (badge) {
         badge.textContent = '連線失敗';
@@ -159,7 +175,7 @@
 
     const btn = repushOnly ? $('receipt-endorse-repush-btn') : $('receipt-endorse-submit-btn');
     const otherBtn = repushOnly ? $('receipt-endorse-submit-btn') : $('receipt-endorse-repush-btn');
-    const btnLabel = repushOnly ? '重新推播照會群（不重複存檔）' : '送出並通知照會群';
+    const btnLabel = repushOnly ? repushLabel(payload.formType) : submitLabel(payload.formType);
     if (btn) {
       btn.disabled = true;
       btn.textContent = repushOnly ? '推播中…' : '送出中…';
