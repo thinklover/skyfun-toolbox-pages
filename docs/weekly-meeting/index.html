@@ -627,6 +627,26 @@
         pvShow(Math.max(0, pvList.indexOf(fileBtn)), Number(btn.getAttribute('data-page')) || 1);
         document.getElementById('pvm-close').focus();
       }
+      function openDeckByKey(key, page) {
+        var norm = function (v) { return String(v || '').replace(/\s+/g, '').toLowerCase(); };
+        var k = norm(key);
+        if (!k) return false;
+        var btns = Array.prototype.slice.call(root.querySelectorAll('.pv'));
+        var fileName = function (b) {
+          var h = String(b.getAttribute('data-pv') || '').split('?')[0].split('#')[0];
+          try { h = decodeURIComponent(h); } catch (e) { /* keep */ }
+          return norm(h.split('/').pop());
+        };
+        var hit = btns.find(function (b) { return norm(b.getAttribute('data-title')) === k; })
+          || btns.find(function (b) { return norm(b.getAttribute('data-date')) === k; })
+          || btns.find(function (b) { var f = fileName(b); return f === k || f.replace(/\.[a-z0-9]+$/, '') === k; })
+          || btns.find(function (b) { return norm(b.getAttribute('data-title')).indexOf(k) >= 0; })
+          || btns.find(function (b) { return fileName(b).indexOf(k) >= 0; });
+        if (!hit) return false;
+        pvOpen(hit);
+        if (page > 1) pvShow(pvIdx, page);
+        return true;
+      }
       function pvClose() {
         if (pvm.hidden) return;
         pvm.hidden = true;
@@ -670,6 +690,13 @@
           try { q0 = new URLSearchParams(location.search).get('q') || ''; } catch (e) { q0 = ''; }
           if (searchInput && q0) searchInput.value = q0;
           renderList(q0);
+          /* 深連結：?open=<簡報標題／日期／檔名>&p=<頁碼> 直接開啟指定簡報 */
+          try {
+            var sp0 = new URLSearchParams(location.search);
+            var open0 = String(sp0.get('open') || sp0.get('deck') || '').trim();
+            var page0 = Math.max(1, parseInt(sp0.get('p') || '1', 10) || 1);
+            if (open0) openDeckByKey(open0, page0);
+          } catch (e) { /* ignore */ }
         } catch (err) {
           meta.textContent = '';
           root.innerHTML = '<p class="err">無法載入檔案清單：' + esc(String(err.message || err)) + '</p>';

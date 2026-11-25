@@ -4653,12 +4653,13 @@
 .lite-auth-switch{margin:.85rem 0 0;text-align:center}
 .lite-auth-linkbtn{border:0;background:none;padding:0;color:#0f766e;font-size:.82rem;font-weight:700;text-decoration:underline;cursor:pointer}
 #toolbox-auth-admin-link{display:block;margin-top:.65rem;text-align:center;font-size:.72rem;color:#94a3b8}
+        .deep-link-hit { outline: 3px solid rgba(147, 51, 234, 0.55); outline-offset: 4px; border-radius: 6px; transition: outline-color 0.6s ease; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
 <link rel="stylesheet" href="./css/admin-points.css?v=20261125-weektab">
 <link rel="stylesheet" href="./css/admin-zone.css?v=20261123-exam3">
-<link rel="stylesheet" href="./css/ai-tingting.css?v=20261118-staff-bubble">
+<link rel="stylesheet" href="./css/ai-tingting.css?v=20261125-prod3x">
 <link rel="stylesheet" href="./css/newbie-ui.css?v=20261016-2">
 <link rel="stylesheet" href="./css/growth-compass.css?v=20261011-8">
 <link rel="stylesheet" href="./css/rentmgr-perf.css?v=20261028-kpi-tone">
@@ -5195,7 +5196,7 @@
                     <div class="af-col af-col--admin">
                         <div class="af-col-title">行政</div>
                         <div class="af-group">
-                            <div class="af-group-title">線上表單／雲端</div>
+                            <div class="af-group-title" id="admin-forms-online" data-anchor="admin-forms-online">線上表單／雲端</div>
                             <div class="af-item">
                                 <div class="af-item-name"><span aria-hidden="true">📁</span>中心系統申請表單</div>
                                 <div class="af-links">
@@ -5218,7 +5219,7 @@
                             </div>
                         </div>
                         <div class="af-group">
-                            <div class="af-group-title">複審檢核表</div>
+                            <div class="af-group-title" id="admin-forms-review" data-anchor="admin-forms-review">複審檢核表</div>
                             <div class="af-item">
                                 <div class="af-item-name"><span aria-hidden="true">✅</span>代管複審檢核表（1151101版）</div>
                                 <div class="af-links">
@@ -5242,7 +5243,7 @@
                             </div>
                         </div>
                         <div class="af-group">
-                            <div class="af-group-title">1150327 社宅補充協議</div>
+                            <div class="af-group-title" id="admin-forms-1150327" data-anchor="admin-forms-1150327">1150327 社宅補充協議</div>
                             <div class="af-item">
                                 <div class="af-item-name"><span aria-hidden="true">📄</span>包租契約出租人變更</div>
                                 <div class="af-links">
@@ -10260,7 +10261,7 @@
 
                 <div class="space-y-8">
                     <div>
-                        <h3 class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>預審／複審</h3>
+                        <h3 id="forms-review" data-anchor="forms-review" class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>預審／複審</h3>
                         <div class="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm transition duration-200 ease-out hover:border-purple-200 hover:shadow-md">
                             <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-slate-800 leading-relaxed">複審檢核表（Word 版）</span>
                             <a href="./docs/forms/複審檢核表_Word版.docx" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid shrink-0">↗ 開啟 DOCX</a>
@@ -10268,7 +10269,7 @@
                     </div>
 
                     <div>
-                        <h3 class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>催收／欠租</h3>
+                        <h3 id="forms-collection" data-anchor="forms-collection" class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>催收／欠租</h3>
                         <div class="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm transition duration-200 ease-out hover:border-purple-200 hover:shadow-md">
                             <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-slate-800 leading-relaxed">房租欠款還款協議書（正式公版）</span>
                             <a href="./docs/forms/星鴻租管部_房租欠款還款協議書_正式公版.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid shrink-0">↗ 開啟 PDF</a>
@@ -10276,7 +10277,7 @@
                     </div>
 
                     <div>
-                        <h3 class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>場勘／訪談</h3>
+                        <h3 id="forms-survey" data-anchor="forms-survey" class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>場勘／訪談</h3>
                         <div class="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm transition duration-200 ease-out hover:border-purple-200 hover:shadow-md">
                             <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-slate-800 leading-relaxed">一般包租物件現場場勘訪談表</span>
                             <a href="./docs/forms/%E4%B8%80%E8%88%AC%E5%8C%85%E7%A7%9F%E7%89%A9%E4%BB%B6%E7%8F%BE%E5%A0%B4%E5%A0%B4%E5%8B%98%E8%A8%AA%E8%AB%87%E8%A1%A8.docx" target="_blank" rel="noopener noreferrer" class="btn btn-sm tone-slate-mid shrink-0">↗ 開啟 DOCX</a>
@@ -10284,7 +10285,7 @@
                     </div>
 
                     <div>
-                        <h3 class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>押金／領款</h3>
+                        <h3 id="forms-deposit" data-anchor="forms-deposit" class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>押金／領款</h3>
                         <div class="space-y-3">
                             <div class="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm transition duration-200 ease-out hover:border-purple-200 hover:shadow-md">
                                 <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-slate-800 leading-relaxed">押金讓渡書</span>
@@ -10314,7 +10315,7 @@
                     </div>
 
                     <div>
-                        <h3 class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>契約變更協議書</h3>
+                        <h3 id="forms-contract-change" data-anchor="forms-contract-change" class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>契約變更協議書</h3>
                         <div class="space-y-3">
                             <div class="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm transition duration-200 ease-out hover:border-purple-200 hover:shadow-md">
                                 <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-slate-800 leading-relaxed">115.3.23 包租契約出租人變更協議書</span>
@@ -10336,7 +10337,7 @@
                     </div>
 
                     <div>
-                        <h3 class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>300 億租補</h3>
+                        <h3 id="forms-300b" data-anchor="forms-300b" class="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-700"><span class="inline-block h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-purple-400" aria-hidden="true"></span>300 億租補</h3>
                         <div class="space-y-3">
                             <div class="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm transition duration-200 ease-out hover:border-purple-200 hover:shadow-md">
                                 <span class="flex-1 min-w-0 text-base sm:text-lg font-semibold text-slate-800 leading-relaxed">116 年度三百億元中央租金補貼申請書（社會住宅包租代管適用）</span>
@@ -11779,7 +11780,7 @@
                 <div id="bb-body"></div>
 
                 <div class="bb-notice-block space-y-4 mt-6">
-                    <h3 class="bb-sec-title">📣 簽呈與公司公告</h3>
+                    <h3 class="bb-sec-title" id="bonus-notices" data-anchor="bonus-notices">📣 簽呈與公司公告</h3>
                     <p class="bb-lead" style="margin-top:0">以下為其他公司公告（與上方重點辦法不重複）。請右側打勾「已閱畢知悉」。主管獎金請至首頁「業務主管專區」。</p>
                     <div id="notice-ack-root"></div>
                 </div>
@@ -14725,7 +14726,7 @@
         <script src="./js/rentmgr-perf.js?v=20261028-abn-auth"></script>
         <script src="./js/newbie-tools.js?v=20261016-3"></script>
         <script src="./js/admin-qa.js?v=20261013-5"></script>
-        <script src="./js/ai-tingting.js?v=20261118-staff-sync"></script>
+        <script src="./js/ai-tingting.js?v=20261125-prod3x"></script>
         <script src="./js/reveal.js?v=20261019-8"></script>
         <script src="./js/admin-points-core.js?v=20261124-nosim"></script>
         <script src="./js/admin-points-charts.js?v=20261109-zoom"></script>
@@ -14780,6 +14781,7 @@
         <script src="./js/skyfun-job-titles.js"></script>
         <script src="./js/skyfun-departments.js"></script>
         <script src="./js/toolbox-auth.js?v=20261118-rentmgr-gate"></script>
+        <script src="./js/deep-link.js?v=20261125-prod3x"></script>
         <script src="./js/newbie-exam-data.js?v=20260930-1"></script>
         <script src="./js/newbie-exam.js?v=20261030-1"></script>
         <script src="./js/subsidy-checkin.js?v=20260930-1"></script>
@@ -14859,12 +14861,7 @@
             initLayoutMode();
             if (typeof window.initHomeSearch === 'function') window.initHomeSearch();
             initDisableNumberInputWheel();
-            try {
-                const page = new URLSearchParams(location.search).get('page');
-                if (page && typeof showPage === 'function') {
-                    setTimeout(() => showPage(page), 0);
-                }
-            } catch (e) { /* ignore */ }
+            /* ?page=<代號>#<錨點> 深連結改由 js/deep-link.js 處理：等登入／權限就緒後才切頁，避免權限頁被彈回首頁 */
 
             // 金句改顯示於登入頁，不再彈窗要求按按鈕
             try {
@@ -16872,6 +16869,22 @@
             'rentmanager-line-endorse': true
         };
 
+        /** 把網址同步成 ?page=<代號>（首頁則移除），不新增瀏覽紀錄；深連結待處理時不覆寫 */
+        function syncPageUrl(pageName, opts) {
+            try {
+                if (window.skyfunDeepLink && window.skyfunDeepLink.pending) return;
+                const u = new URL(location.href);
+                if (!pageName || pageName === 'home') u.searchParams.delete('page');
+                else u.searchParams.set('page', pageName);
+                if (opts && opts.hash) u.hash = String(opts.hash).replace(/^#/, '');
+                else if (/^#?[A-Za-z0-9_-]*$/.test(u.hash)) u.hash = '';
+                const next = u.pathname + u.search + u.hash;
+                if (next !== location.pathname + location.search + location.hash) {
+                    history.replaceState(history.state, '', next);
+                }
+            } catch (e) { /* ignore */ }
+        }
+
         function showPage(pageName, opts = {}) {
             if (pageName === 'business-591-listing' && !isSf591PreviewHost()) {
                 pageName = 'business';
@@ -16914,6 +16927,7 @@
             }
             const skipHistory = !!opts.skipHistory;
             const fromPage = lastActivePageName;
+            syncPageUrl(PAGE_ROUTE_MAP[pageName] ? pageName : 'home', opts);
 
             setPageHidden('home-menu', true);
             setPageHidden('layout-header-links', true);

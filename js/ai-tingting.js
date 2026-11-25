@@ -5,6 +5,7 @@
   'use strict';
 
   const MAX_LEN = 500;
+  const MAX_IMAGES = 4;
   const RATE_LIMIT = 3;
   const RATE_WINDOW_MS = 60 * 1000;
   const POLL_MS = 5000;
@@ -13,6 +14,7 @@
   const ZONE_KEY = 'ai-tingting-zone';
   const BACK_KEY = 'ai-tingting-back';
   const STORE_PREFIX = 'skyfun-ait-chats-v1:';
+  const IMG_URL_RE = /^https:\/\/line-bridge-tingting\.dahwork123\.workers\.dev\/img\/[A-Za-z0-9_-]{32,64}(?:_p)?\.(?:jpg|jpeg|png)$/;
 
   let pollTimer = null;
   let pollStartedAt = 0;
@@ -23,9 +25,254 @@
   let store = { activeId: '', sessions: [] };
   let searchQ = '';
   let migratedOnce = false;
+  let lbEl = null;
+  let lbState = { images: [], index: 0, zoomed: false, returnFocus: null };
+
+  /* 安全 linkify：以 DOM 組裝，只把 https:// 網址轉成連結，其餘一律當純文字 */
+  const LINK_RE = /https:\/\/[^\s<>"'`\u3000-\u303f\uff01-\uff0f\uff1a-\uff20\uff3b-\uff40\uff5b-\uff65]+/g;
+  const LINK_TRAIL_RE = /[.,;:!?)\]}'"]+$/;
+  function appendLinkified(parent, text) {
+    const s = String(text == null ? '' : text);
+    let last = 0;
+    let m;
+    LINK_RE.lastIndex = 0;
+    while ((m = LINK_RE.exec(s))) {
+      let url = m[0];
+      const trail = url.match(LINK_TRAIL_RE);
+      if (trail) url = url.slice(0, url.length - trail[0].length);
+      let ok = false;
+      try { ok = url.length > 8 && new URL(url).protocol === 'https:'; } catch (e) { ok = false; }
+      if (!ok) continue;
+      if (m.index > last) parent.appendChild(document.createTextNode(s.slice(last, m.index)));
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.className = 'ait-link';
+      a.textContent = url;
+      parent.appendChild(a);
+      last = m.index + url.length;
+      LINK_RE.lastIndex = last;
+    }
+    if (last < s.length) parent.appendChild(document.createTextNode(s.slice(last)));
+  }
 
   function $(id) {
     return document.getElementById(id);
+  }
+
+  function normalizeImages(raw) {
+    if (!Array.isArray(raw)) return [];
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+      const it = raw[i];
+      if (!it || typeof it !== 'object') continue;
+      const url = String(it.url || '').trim();
+      if (!IMG_URL_RE.test(url)) continue;
+      const prevRaw = String(it.previewUrl || '').trim();
+      const previewUrl = prevRaw && IMG_URL_RE.test(prevRaw) ? prevRaw : url;
+      const alt = String(it.alt || '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 200);
+      out.push({ url: url, previewUrl: previewUrl, alt: alt });
+      if (out.length >= MAX_IMAGES) break;
+    }
+    return out;
+  }
+
+  function imagesEqual(a, b) {
+    const la = normalizeImages(a);
+    const lb = normalizeImages(b);
+    if (la.length !== lb.length) return false;
+    for (let i = 0; i < la.length; i++) {
+      if (la[i].url !== lb[i].url || la[i].previewUrl !== lb[i].previewUrl || la[i].alt !== lb[i].alt) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function ensureLightbox() {
+    if (lbEl && document.body.contains(lbEl)) return lbEl;
+    const root = document.createElement('div');
+    root.className = 'ait-lightbox hidden';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', '圖片放大檢視');
+
+    const bar = document.createElement('div');
+    bar.className = 'ait-lb-bar';
+
+    const meta = document.createElement('div');
+    meta.className = 'ait-lb-meta';
+    const counter = document.createElement('span');
+    counter.className = 'ait-lb-count';
+    const cap = document.createElement('span');
+    cap.className = 'ait-lb-cap';
+    meta.appendChild(counter);
+    meta.appendChild(cap);
+
+    const actions = document.createElement('div');
+    actions.className = 'ait-lb-actions';
+
+    const zoomBtn = document.createElement('button');
+    zoomBtn.type = 'button';
+    zoomBtn.className = 'ait-lb-btn ait-lb-zoom';
+    zoomBtn.textContent = '放大原尺寸';
+
+    const origLink = document.createElement('a');
+    origLink.className = 'ait-lb-btn ait-lb-orig';
+    origLink.target = '_blank';
+    origLink.rel = 'noopener noreferrer';
+    origLink.textContent = '開新分頁看原圖';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'ait-lb-btn ait-lb-close';
+    closeBtn.setAttribute('aria-label', '關閉圖片檢視');
+    closeBtn.textContent = '✕ 關閉';
+
+    actions.appendChild(zoomBtn);
+    actions.appendChild(origLink);
+    actions.appendChild(closeBtn);
+    bar.appendChild(meta);
+    bar.appendChild(actions);
+
+    const stage = document.createElement('div');
+    stage.className = 'ait-lb-stage';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'ait-lb-nav ait-lb-prev';
+    prevBtn.setAttribute('aria-label', '上一張');
+    prevBtn.textContent = '‹';
+
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'ait-lb-nav ait-lb-next';
+    nextBtn.setAttribute('aria-label', '下一張');
+    nextBtn.textContent = '›';
+
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'ait-lb-img-wrap';
+
+    const img = document.createElement('img');
+    img.className = 'ait-lb-img';
+    img.alt = '';
+    img.referrerPolicy = 'no-referrer';
+    imgWrap.appendChild(img);
+
+    stage.appendChild(prevBtn);
+    stage.appendChild(imgWrap);
+    stage.appendChild(nextBtn);
+
+    root.appendChild(bar);
+    root.appendChild(stage);
+
+    function toggleZoom() {
+      lbState.zoomed = !lbState.zoomed;
+      imgWrap.classList.toggle('is-zoomed', lbState.zoomed);
+      zoomBtn.textContent = lbState.zoomed ? '符合視窗' : '放大原尺寸';
+    }
+
+    zoomBtn.addEventListener('click', toggleZoom);
+    img.addEventListener('click', toggleZoom);
+    closeBtn.addEventListener('click', closeLightbox);
+    prevBtn.addEventListener('click', function () {
+      if (lbState.images.length <= 1) return;
+      lbState.index = (lbState.index - 1 + lbState.images.length) % lbState.images.length;
+      renderLightbox();
+    });
+    nextBtn.addEventListener('click', function () {
+      if (lbState.images.length <= 1) return;
+      lbState.index = (lbState.index + 1) % lbState.images.length;
+      renderLightbox();
+    });
+    stage.addEventListener('click', function (e) {
+      if (e.target === stage || e.target === imgWrap) closeLightbox();
+    });
+    root.addEventListener('click', function (e) {
+      if (e.target === root) closeLightbox();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (!lbEl || lbEl.classList.contains('hidden')) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeLightbox();
+      } else if (e.key === 'ArrowLeft' && lbState.images.length > 1) {
+        e.preventDefault();
+        lbState.index = (lbState.index - 1 + lbState.images.length) % lbState.images.length;
+        renderLightbox();
+      } else if (e.key === 'ArrowRight' && lbState.images.length > 1) {
+        e.preventDefault();
+        lbState.index = (lbState.index + 1) % lbState.images.length;
+        renderLightbox();
+      }
+    });
+
+    document.body.appendChild(root);
+    lbEl = root;
+    return lbEl;
+  }
+
+  function renderLightbox() {
+    if (!lbEl || !lbState.images.length) return;
+    const item = lbState.images[lbState.index] || lbState.images[0];
+    const img = lbEl.querySelector('.ait-lb-img');
+    const imgWrap = lbEl.querySelector('.ait-lb-img-wrap');
+    const zoomBtn = lbEl.querySelector('.ait-lb-zoom');
+    const origLink = lbEl.querySelector('.ait-lb-orig');
+    const counter = lbEl.querySelector('.ait-lb-count');
+    const cap = lbEl.querySelector('.ait-lb-cap');
+    const prevBtn = lbEl.querySelector('.ait-lb-prev');
+    const nextBtn = lbEl.querySelector('.ait-lb-next');
+
+    lbState.zoomed = false;
+    if (imgWrap) {
+      imgWrap.classList.remove('is-zoomed');
+      imgWrap.scrollTop = 0;
+      imgWrap.scrollLeft = 0;
+    }
+    if (zoomBtn) zoomBtn.textContent = '放大原尺寸';
+    if (img) {
+      img.src = item.url;
+      img.alt = item.alt || 'AI婷婷附圖';
+    }
+    if (origLink) origLink.href = item.url;
+    if (counter) {
+      counter.textContent = lbState.images.length > 1
+        ? ((lbState.index + 1) + ' / ' + lbState.images.length)
+        : '';
+      counter.classList.toggle('hidden', lbState.images.length <= 1);
+    }
+    if (cap) cap.textContent = item.alt || '';
+    const multi = lbState.images.length > 1;
+    if (prevBtn) prevBtn.classList.toggle('hidden', !multi);
+    if (nextBtn) nextBtn.classList.toggle('hidden', !multi);
+  }
+
+  function openLightbox(images, startIndex) {
+    const safe = normalizeImages(images);
+    if (!safe.length) return;
+    const el = ensureLightbox();
+    lbState.images = safe;
+    lbState.index = Math.max(0, Math.min(startIndex || 0, safe.length - 1));
+    lbState.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    renderLightbox();
+    el.classList.remove('hidden');
+    document.body.classList.add('ait-lb-open');
+    const closeBtn = el.querySelector('.ait-lb-close');
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function closeLightbox() {
+    if (!lbEl) return;
+    lbEl.classList.add('hidden');
+    document.body.classList.remove('ait-lb-open');
+    const rf = lbState.returnFocus;
+    lbState.returnFocus = null;
+    if (rf && document.body.contains(rf)) {
+      try { rf.focus(); } catch (_) {}
+    }
   }
 
   function cfg() {
@@ -265,6 +512,79 @@
     }
   }
 
+  function buildImagesNode(images) {
+    const safe = normalizeImages(images);
+    if (!safe.length) return null;
+    const grid = document.createElement('div');
+    grid.className = 'ait-bubble-images';
+    grid.dataset.count = safe.length === 1 ? '1' : 'multi';
+
+    safe.forEach(function (item, idx) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ait-img-btn';
+      btn.setAttribute('aria-label', item.alt ? ('放大檢視圖片：' + item.alt) : '放大檢視圖片');
+
+      const frame = document.createElement('span');
+      frame.className = 'ait-img-frame';
+
+      const img = document.createElement('img');
+      img.className = 'ait-img-thumb';
+      img.src = item.previewUrl || item.url;
+      img.alt = item.alt || 'AI婷婷附圖';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.referrerPolicy = 'no-referrer';
+
+      img.addEventListener('load', function () {
+        const t = $('ait-thread');
+        if (t && (t.scrollHeight - t.scrollTop - t.clientHeight) < 360) {
+          scrollThreadBottom();
+        }
+      });
+
+      let triedFallback = img.src === item.url;
+      img.addEventListener('error', function () {
+        if (!triedFallback && item.url) {
+          triedFallback = true;
+          img.src = item.url;
+          return;
+        }
+        btn.classList.add('is-err');
+        if (!frame.querySelector('.ait-img-err')) {
+          const errNote = document.createElement('span');
+          errNote.className = 'ait-img-err';
+          errNote.textContent = '圖片載入失敗，點擊查看原圖';
+          frame.appendChild(errNote);
+        }
+      });
+
+      const hint = document.createElement('span');
+      hint.className = 'ait-img-hint';
+      hint.setAttribute('aria-hidden', 'true');
+      hint.textContent = '點擊放大';
+
+      frame.appendChild(img);
+      frame.appendChild(hint);
+      btn.appendChild(frame);
+
+      if (item.alt) {
+        const cap = document.createElement('span');
+        cap.className = 'ait-img-cap';
+        cap.textContent = item.alt;
+        btn.appendChild(cap);
+      }
+
+      btn.addEventListener('click', function () {
+        openLightbox(safe, idx);
+      });
+
+      grid.appendChild(btn);
+    });
+
+    return grid;
+  }
+
   function makeMsg(role, text, meta, opts) {
     const row = document.createElement('div');
     row.className = 'ait-msg ait-msg--' + role + (opts && opts.staff ? ' ait-msg--staff' : '');
@@ -286,10 +606,19 @@
       for (let i = 0; i < 3; i++) typing.appendChild(document.createElement('i'));
       bubble.appendChild(typing);
     } else {
-      const body = document.createElement('div');
-      body.className = 'ait-bubble-text';
-      body.textContent = text || '';
-      bubble.appendChild(body);
+      const imagesNode = (role === 'bot' && !(opts && opts.staff) && opts && opts.images)
+        ? buildImagesNode(opts.images)
+        : null;
+      const bodyText = String(text || '');
+      if (bodyText || !imagesNode) {
+        const body = document.createElement('div');
+        body.className = 'ait-bubble-text';
+        appendLinkified(body, bodyText);
+        bubble.appendChild(body);
+      }
+      if (imagesNode) {
+        bubble.appendChild(imagesNode);
+      }
     }
 
     if (meta) {
@@ -335,9 +664,12 @@
       );
 
       if (it.status === 'answered') {
+        const imgs = normalizeImages(it.images);
+        const answerText = it.answer || (imgs.length ? '' : '（無內容）');
         thread.appendChild(
-          makeMsg('bot', it.answer || '（無內容）', 'AI婷婷 · ' + fmtTime(it.answeredAt || it.createdAt), {
+          makeMsg('bot', answerText, 'AI婷婷 · ' + fmtTime(it.answeredAt || it.createdAt), {
             id: it.id + '-a',
+            images: imgs,
           })
         );
         const staffAns = String(it.staffAnswer || '').trim();
@@ -379,7 +711,8 @@
     const list = store.sessions.filter(function (s) {
       if (!q) return true;
       const blob = [s.title].concat((s.items || []).map(function (it) {
-        return String(it.question || '') + ' ' + String(it.answer || '') + ' ' + String(it.staffAnswer || '');
+        const imgAlts = normalizeImages(it.images).map(function (im) { return im.alt; }).join(' ');
+        return String(it.question || '') + ' ' + String(it.answer || '') + ' ' + imgAlts + ' ' + String(it.staffAnswer || '');
       })).join(' ').toLowerCase();
       return blob.indexOf(q) >= 0;
     });
@@ -469,6 +802,7 @@
       id: it.id,
       question: it.question || '',
       answer: it.answer || '',
+      images: normalizeImages(it.images),
       staffAnswer: it.staffAnswer || '',
       staffRepliedBy: it.staffRepliedBy || '',
       staffRepliedAt: it.staffRepliedAt || null,
@@ -478,7 +812,7 @@
     };
   }
 
-  /** 把伺服器最新的 AI／人工回覆併回本機對話（人工回覆多半是事後補上） */
+  /** 把伺服器最新的 AI／附圖／人工回覆併回本機對話（人工回覆多半是事後補上） */
   function mergeServerItems(serverItems) {
     const byId = new Map();
     (serverItems || []).forEach(function (it) {
@@ -493,6 +827,7 @@
         const next = Object.assign({}, local, {
           question: remote.question || local.question,
           answer: remote.answer || local.answer,
+          images: remote.images,
           staffAnswer: remote.staffAnswer || '',
           staffRepliedBy: remote.staffRepliedBy || '',
           staffRepliedAt: remote.staffRepliedAt || null,
@@ -501,6 +836,7 @@
         });
         if (
           next.answer !== local.answer ||
+          !imagesEqual(next.images, local.images) ||
           next.staffAnswer !== (local.staffAnswer || '') ||
           next.staffRepliedBy !== (local.staffRepliedBy || '') ||
           String(next.staffRepliedAt || '') !== String(local.staffRepliedAt || '') ||
@@ -572,6 +908,7 @@
           id: qid,
           question: data.question || undefined,
           answer: data.answer || '',
+          images: normalizeImages(data.images),
           staffAnswer: data.staffAnswer || '',
           staffRepliedBy: data.staffRepliedBy || '',
           staffRepliedAt: data.staffRepliedAt || null,
@@ -656,6 +993,7 @@
         id: localId,
         question: text,
         answer: '',
+        images: [],
         status: 'pending',
         createdAt: new Date().toISOString(),
       });

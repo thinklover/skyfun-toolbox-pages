@@ -36,9 +36,47 @@
     }
     .q-box { background: #f5f3ff; border: 1px solid #ddd6fe; margin-bottom: 0.45rem; }
     .a-box { background: #f8fafc; border: 1px solid #e2e8f0; }
+    .q-box a, .a-box a { color: #2563eb; text-decoration: underline; word-break: break-all; }
     .a-box.is-staff { background: #ecfdf5; border-color: #a7f3d0; }
     .lbl { font-size: 0.7rem; font-weight: 800; color: #64748b; margin-bottom: 0.25rem; }
     .badge-staff { background: #d1fae5; color: #047857; }
+    .badge-img { background: #e0f2fe; color: #0369a1; }
+    .a-images { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .a-img-btn {
+      appearance: none; padding: 0; border: 1px solid #cbd5e1; border-radius: 0.55rem;
+      background: #fff; overflow: hidden; cursor: zoom-in; display: flex; flex-direction: column;
+      max-width: 11.5rem; text-align: left;
+    }
+    .a-img-btn:hover { border-color: #6d28d9; box-shadow: 0 4px 12px -8px rgba(109, 40, 217, 0.5); }
+    .a-img-btn img { display: block; width: 100%; height: 6.75rem; object-fit: contain; background: #f8fafc; }
+    .a-img-cap {
+      padding: 0.25rem 0.4rem; font-size: 0.7rem; font-weight: 700; color: #475569;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 11.5rem;
+    }
+    .adm-lb {
+      position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column;
+      background: rgba(15, 23, 42, 0.9); color: #f8fafc;
+    }
+    .adm-lb.hidden { display: none; }
+    .adm-lb-bar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 0.5rem; padding: 0.65rem 0.9rem; background: rgba(2, 6, 23, 0.78);
+    }
+    .adm-lb-cap { font-size: 0.84rem; font-weight: 700; color: #e2e8f0; }
+    .adm-lb-actions { display: flex; gap: 0.45rem; }
+    .adm-lb-btn {
+      border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(30, 41, 59, 0.9); color: #fff;
+      border-radius: 999px; padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 700;
+      text-decoration: none; cursor: pointer;
+    }
+    .adm-lb-stage {
+      flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center;
+      padding: 0.75rem; overflow: auto;
+    }
+    .adm-lb-stage img {
+      max-width: 94vw; max-height: calc(100vh - 5rem); object-fit: contain;
+      background: #fff; border-radius: 0.45rem;
+    }
     .reply-box {
       margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px dashed #e2e8f0;
     }
@@ -168,8 +206,27 @@
         if (error) throw new Error(error.message || 'Supabase 錯誤');
         return data;
       }
+      /* 安全 linkify：先切出 https:// 網址，其餘片段一律跳脫 */
+      const LINK_RE = /https:\/\/[^\s<>"'`\u3000-\u303f\uff01-\uff0f\uff1a-\uff20\uff3b-\uff40\uff5b-\uff65]+/g;
+      function escLink(text) {
+        const s = String(text == null ? '' : text);
+        let out = '';
+        let last = 0;
+        let m;
+        LINK_RE.lastIndex = 0;
+        while ((m = LINK_RE.exec(s))) {
+          let url = m[0].replace(/[.,;:!?)\]}'"]+$/, '');
+          let ok = false;
+          try { ok = url.length > 8 && new URL(url).protocol === 'https:'; } catch (e) { ok = false; }
+          if (!ok) continue;
+          out += esc(s.slice(last, m.index)) + '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a>';
+          last = m.index + url.length;
+          LINK_RE.lastIndex = last;
+        }
+        return out + esc(s.slice(last));
+      }
       function esc(s) {
-        return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+        return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
       }
       function fmt(iso) {
         if (!iso) return '—';
@@ -254,13 +311,81 @@
           '<p class="reply-msg" data-reply-msg="' + esc(r.id) + '"></p>' +
         '</div>';
       }
+      const IMG_URL_RE = /^https:\/\/line-bridge-tingting\.dahwork123\.workers\.dev\/img\/[A-Za-z0-9_-]{32,64}(?:_p)?\.(?:jpg|jpeg|png)$/;
+      function normalizeImages(raw) {
+        if (!Array.isArray(raw)) return [];
+        const out = [];
+        for (const it of raw) {
+          if (!it || typeof it !== 'object') continue;
+          const url = String(it.url || '').trim();
+          if (!IMG_URL_RE.test(url)) continue;
+          const prevRaw = String(it.previewUrl || '').trim();
+          const previewUrl = prevRaw && IMG_URL_RE.test(prevRaw) ? prevRaw : url;
+          const alt = String(it.alt || '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 200);
+          out.push({ url, previewUrl, alt });
+          if (out.length >= 4) break;
+        }
+        return out;
+      }
+      let admLb = null;
+      function openAdminLightbox(item) {
+        if (!item || !IMG_URL_RE.test(item.url)) return;
+        if (!admLb) {
+          admLb = document.createElement('div');
+          admLb.className = 'adm-lb hidden';
+          admLb.setAttribute('role', 'dialog');
+          admLb.setAttribute('aria-modal', 'true');
+          const bar = document.createElement('div');
+          bar.className = 'adm-lb-bar';
+          const cap = document.createElement('span');
+          cap.className = 'adm-lb-cap';
+          const actions = document.createElement('div');
+          actions.className = 'adm-lb-actions';
+          const link = document.createElement('a');
+          link.className = 'adm-lb-btn adm-lb-orig';
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = '開新分頁看原圖';
+          const close = document.createElement('button');
+          close.type = 'button';
+          close.className = 'adm-lb-btn adm-lb-close';
+          close.textContent = '✕ 關閉';
+          actions.appendChild(link);
+          actions.appendChild(close);
+          bar.appendChild(cap);
+          bar.appendChild(actions);
+          const stage = document.createElement('div');
+          stage.className = 'adm-lb-stage';
+          const img = document.createElement('img');
+          img.referrerPolicy = 'no-referrer';
+          stage.appendChild(img);
+          admLb.appendChild(bar);
+          admLb.appendChild(stage);
+          const hide = () => admLb.classList.add('hidden');
+          close.addEventListener('click', hide);
+          stage.addEventListener('click', (e) => { if (e.target === stage) hide(); });
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && admLb && !admLb.classList.contains('hidden')) hide();
+          });
+          document.body.appendChild(admLb);
+        }
+        const img = admLb.querySelector('img');
+        const cap = admLb.querySelector('.adm-lb-cap');
+        const link = admLb.querySelector('.adm-lb-orig');
+        img.src = item.url;
+        img.alt = item.alt || 'AI婷婷附圖';
+        cap.textContent = item.alt || 'AI婷婷附圖';
+        link.href = item.url;
+        admLb.classList.remove('hidden');
+      }
       function renderList() {
         const q = String(document.getElementById('search').value || '').trim().toLowerCase();
         const filtered = rows.filter((r) => {
           if (statusFilter && r.status !== statusFilter) return false;
           if (zoneFilter && r.zone !== zoneFilter) return false;
           if (!q) return true;
-          const blob = [r.userName, r.question, r.answer, r.staffAnswer, r.zone, r.status, r.staffRepliedBy].join(' ').toLowerCase();
+          const imgAlts = normalizeImages(r.images).map((im) => im.alt).join(' ');
+          const blob = [r.userName, r.question, r.answer, imgAlts, r.staffAnswer, r.zone, r.status, r.staffRepliedBy].join(' ').toLowerCase();
           return blob.indexOf(q) >= 0;
         });
         const box = document.getElementById('list');
@@ -268,28 +393,66 @@
           box.innerHTML = '<p class="empty">目前沒有符合條件的對話。</p>';
           return;
         }
+        const imagesById = new Map();
         box.innerHTML = filtered.map((r) => {
           const staff = String(r.staffRepliedBy || '').trim();
           const staffAns = String(r.staffAnswer || '').trim();
-          const aiText = r.answer || (r.status === 'pending' ? '（回覆中）' : r.status === 'failed' ? '（失敗）' : '（無內容）');
+          const imgs = normalizeImages(r.images);
+          if (imgs.length) imagesById.set(String(r.id), imgs);
+          const aiText = r.answer || (imgs.length ? '' : (r.status === 'pending' ? '（回覆中）' : r.status === 'failed' ? '（失敗）' : '（無內容）'));
           return '<article class="item" data-id="' + esc(r.id) + '">' +
             '<div class="item-top">' +
               '<span class="item-who">' + esc(r.userName || '（未填姓名）') + '</span>' +
               statusBadge(r.status) +
+              (imgs.length ? '<span class="badge badge-img">附圖 ' + imgs.length + ' 張</span>' : '') +
               (staffAns ? '<span class="badge badge-staff">人工 · ' + esc(staff || '已回覆') + '</span>' : '') +
               '<span class="badge badge-zone">' + esc(zoneLabel(r.zone)) + '</span>' +
               '<span class="item-meta">' + esc(fmt(r.createdAt)) + '</span>' +
               (r.answeredAt ? '<span class="item-meta">AI ' + esc(fmt(r.answeredAt)) + '</span>' : '') +
               (r.staffRepliedAt ? '<span class="item-meta">人工 ' + esc(fmt(r.staffRepliedAt)) + '</span>' : '') +
             '</div>' +
-            '<div class="lbl">問題</div><div class="q-box">' + esc(r.question) + '</div>' +
-            '<div class="lbl">AI婷婷回覆</div><div class="a-box">' + esc(aiText) + '</div>' +
+            '<div class="lbl">問題</div><div class="q-box">' + escLink(r.question) + '</div>' +
+            '<div class="lbl">AI婷婷回覆</div>' +
+            (aiText ? '<div class="a-box">' + escLink(aiText) + '</div>' : '') +
+            (imgs.length ? '<div class="a-images" data-images-for="' + esc(r.id) + '"></div>' : '') +
             (staffAns
-              ? ('<div class="lbl">人工回覆' + (staff ? '（' + esc(staff) + '）' : '') + '</div><div class="a-box is-staff">' + esc(staffAns) + '</div>')
+              ? ('<div class="lbl">人工回覆' + (staff ? '（' + esc(staff) + '）' : '') + '</div><div class="a-box is-staff">' + escLink(staffAns) + '</div>')
               : '') +
             replyFormHtml(r) +
           '</article>';
         }).join('');
+        imagesById.forEach((imgs, rowId) => {
+          const slot = box.querySelector('[data-images-for="' + CSS.escape(rowId) + '"]');
+          if (!slot) return;
+          imgs.forEach((im) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'a-img-btn';
+            btn.setAttribute('aria-label', im.alt ? ('放大檢視：' + im.alt) : '放大檢視圖片');
+            const img = document.createElement('img');
+            img.src = im.previewUrl || im.url;
+            img.alt = im.alt || 'AI婷婷附圖';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.referrerPolicy = 'no-referrer';
+            let triedFallback = img.src === im.url;
+            img.addEventListener('error', () => {
+              if (!triedFallback && im.url) {
+                triedFallback = true;
+                img.src = im.url;
+              }
+            });
+            btn.appendChild(img);
+            if (im.alt) {
+              const cap = document.createElement('span');
+              cap.className = 'a-img-cap';
+              cap.textContent = im.alt;
+              btn.appendChild(cap);
+            }
+            btn.addEventListener('click', () => openAdminLightbox(im));
+            slot.appendChild(btn);
+          });
+        });
       }
       async function sendStaffReply(id) {
         const ta = document.querySelector('[data-reply-input="' + id + '"]');
