@@ -1035,6 +1035,32 @@ async function handle(request, env) {
     return json(saved.ok ? saved : { ok: false, error: saved.error }, request, env, saved.status || 200);
   }
   if (request.method === 'POST' && path === '/api/mgr-report/refresh') {
+    var refreshBody = await request.json().catch(function () { return {}; }) || {};
+    var scope = String(refreshBody.scope || '').trim();
+    if (scope === 'arrears') {
+      var arStep = await withLock(env, async function () {
+        await kvDel(env, KEY.arrearsBuild);
+        var build = { phase: 'arrears', fail: 0 };
+        var jar = await loginSkyfunHttp(env);
+        var guard = 0;
+        while (build.phase === 'arrears' && guard < 30) {
+          await advanceArrears(env, jar, build);
+          guard += 1;
+        }
+        var snap = await kvGet(env, KEY.arrears);
+        return {
+          ok: true,
+          phase: build.phase,
+          scope: 'arrears',
+          fetchedAt: snap && snap.fetchedAt || null,
+          n: snap && snap.rows ? snap.rows.length : 0
+        };
+      });
+      if (arStep && arStep.skipped) {
+        return json({ ok: false, error: '更新忙碌中，請稍后再試' }, request, env, 409);
+      }
+      return json({ ok: true, message: '欠款已更新', step: arStep }, request, env);
+    }
     await kvPut(env, KEY.force, { at: new Date().toISOString() }, 3600);
     var stepped = await withLock(env, function () { return stepJob(env, new Date(), true); });
     return json({ ok: true, message: '已排入更新，完成前仍顯示上一版', step: stepped }, request, env);

@@ -236,7 +236,7 @@
 
   function startApp() {
     var s = document.createElement('script');
-    s.src = 'app.js?v=20261125-2126';
+    s.src = 'app.js?v=20261125-2134';
     s.onload = function () { mgrReportBindUpdate(); };
     document.body.appendChild(s);
   }
@@ -244,14 +244,15 @@
   function mgrReportBindUpdate() {
     var btn = $('btnUpdate');
     if (!btn) return;
-    btn.title = '向公司系統重建快照';
+    btn.title = '向公司系統重建欠款／快照';
+    btn.dataset.mgrBound = '1';
     btn.onclick = async function () {
       if (btn.disabled) return;
       btn.disabled = true;
       var old = btn.textContent;
       btn.textContent = '更新中…';
       try {
-        await window.mgrReportRefresh();
+        await window.mgrReportRefresh({ scope: 'arrears' });
         location.reload();
       } catch (err) {
         alert((err && err.message) || '更新失敗');
@@ -261,14 +262,15 @@
     };
   }
 
-  window.mgrReportRefresh = async function () {
+  window.mgrReportRefresh = async function (opts) {
     var base = apiBase();
     if (!base) throw new Error('管報服務網址尚未設定');
+    var body = opts && typeof opts === 'object' ? opts : {};
     var res = await fetch(base + '/api/mgr-report/refresh', {
       method: 'POST',
       headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
       cache: 'no-store',
-      body: '{}'
+      body: JSON.stringify(body)
     });
     var data = null;
     try { data = await res.json(); } catch (e) { data = null; }

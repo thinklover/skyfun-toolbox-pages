@@ -15434,10 +15434,23 @@
     return d.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
   }
   function fillDataStamp() {
-    const sky = window.SKYFUN_PERF && window.SKYFUN_PERF.fetchedAt;
-    const meta = window.CONTRACTS_META || {};
-    const stamp = sky || meta.fetchedAt || meta.refreshedAt;
-    if ($('updateAt')) $('updateAt').textContent = twAt(stamp);
+    const times = [
+      window.SKYFUN_PERF && window.SKYFUN_PERF.fetchedAt,
+      window.CONTRACTS_META && (window.CONTRACTS_META.fetchedAt || window.CONTRACTS_META.refreshedAt),
+      window.ARREARS && window.ARREARS.fetchedAt,
+      window.RENEWALS && window.RENEWALS.fetchedAt,
+      window.STAFF_HR && window.STAFF_HR.fetchedAt
+    ].filter(Boolean);
+    let latest = '';
+    let latestMs = 0;
+    times.forEach(iso => {
+      const ms = Date.parse(iso);
+      if (!Number.isNaN(ms) && ms >= latestMs) {
+        latestMs = ms;
+        latest = iso;
+      }
+    });
+    if ($('updateAt')) $('updateAt').textContent = twAt(latest || times[0] || '');
     if ($('dataHint')) $('dataHint').textContent = '';
   }
   function renderAll() {
@@ -17507,7 +17520,10 @@
       if (btn) { btn.disabled = false; btn.textContent = prev; }
     }
   }
-  if ($('btnUpdate')) $('btnUpdate').onclick = runDashUpdate;
+  // 工具箱載入器會綁定 Worker 更新；本機「啟動儀表板」才走星鴻擴充擷取。
+  if ($('btnUpdate') && !($('btnUpdate').dataset && $('btnUpdate').dataset.mgrBound) && typeof window.mgrReportRefresh !== 'function') {
+    $('btnUpdate').onclick = runDashUpdate;
+  }
   (async function watchUpdateProg() {
     let sawPull = false;
     for (;;) {
