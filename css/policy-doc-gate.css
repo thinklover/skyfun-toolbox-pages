@@ -252,24 +252,49 @@ body.pdg-open { overflow: hidden; }
   overflow: hidden;
   z-index: 2;
 }
-.pdg-wm-grid {
+.pdg-wm-single {
+  pointer-events: none;
   position: absolute;
-  inset: -20%;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2.5rem 1.5rem;
-  transform: rotate(-28deg);
-  opacity: 0.14;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.3;
 }
-.pdg-wm-grid span {
-  display: block;
-  text-align: center;
-  white-space: nowrap;
-  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: #0f172a;
+.pdg-wm-stamp {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  padding: 0.7em 1em 0.65em;
+  border: 4px solid #e11d48;
+  box-shadow: inset 0 0 0 2px #e11d48;
+  color: #e11d48;
+  background: transparent;
+  box-sizing: border-box;
   user-select: none;
+  white-space: nowrap;
+  line-height: 1.1;
+  transform: rotate(-15deg);
+}
+.pdg-wm-stamp strong {
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-indent: 0.16em;
+  line-height: 1.1;
+  -webkit-text-stroke: 0.6px #e11d48;
+}
+.pdg-wm-stamp small {
+  display: block;
+  font-size: clamp(0.8rem, 2vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-indent: 0.1em;
+  line-height: 1.2;
+  margin-top: 0;
 }
 .pdg-wm-note {
   position: absolute;

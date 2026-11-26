@@ -11,6 +11,8 @@
   const SALT = 'skyfun-manager-bonus:';
   const KEY = 'skyfun-manager-bonus-unlocked';
   const WM = '星鴻內部文件｜僅供內部參考｜禁止外流｜違者須自負法律責任';
+  const WM_TITLE = '星鴻內部文件';
+  const WM_SUB = '謹供參閱　請勿外流';
 
   const INCLUDE = [
     '獎金辦法',
@@ -314,7 +316,7 @@
     document.body.appendChild(root);
 
     const wm = root.querySelector('.pdg-wm');
-    wm.innerHTML = `<div class="pdg-wm-grid">${Array.from({ length: 24 }, () => `<span>${WM}</span>`).join('')}</div>`;
+    wm.innerHTML = `<div class="pdg-wm-single"><span class="pdg-wm-stamp"><strong>${WM_TITLE}</strong><small>${WM_SUB}</small></span></div>`;
 
     root.querySelectorAll('[data-pdg-close]').forEach((el) => el.addEventListener('click', close));
 
@@ -379,68 +381,204 @@
     return root;
   }
 
+  function pdfjsAsset(name) {
+    try {
+      return new URL('./js/vendor/' + name + '?v=3.11.174', document.baseURI).href;
+    } catch (e) {
+      return './js/vendor/' + name + '?v=3.11.174';
+    }
+  }
+
   function loadPdfJs() {
-    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    const workerSrc = pdfjsAsset('pdf.worker.min.js');
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+      return Promise.resolve(window.pdfjsLib);
+    }
     if (loadPdfJs.promise) return loadPdfJs.promise;
     loadPdfJs.promise = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+      s.src = pdfjsAsset('pdf.min.js');
       s.onload = () => {
         if (!window.pdfjsLib) {
+          loadPdfJs.promise = null;
           reject(new Error('預覽元件載入失敗'));
           return;
         }
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
         resolve(window.pdfjsLib);
       };
-      s.onerror = () => reject(new Error('預覽元件載入失敗'));
+      s.onerror = () => {
+        loadPdfJs.promise = null;
+        reject(new Error('預覽元件載入失敗'));
+      };
       document.head.appendChild(s);
     });
     return loadPdfJs.promise;
   }
 
-  function stampWatermark(ctx, w, h, text) {
-    if (!ctx || !w || !h) return;
-    const label = String(text || WM);
-    ctx.save();
-    ctx.globalAlpha = 0.14;
-    ctx.fillStyle = '#0f172a';
-    const fontSize = Math.max(12, Math.min(20, Math.floor(w / 34)));
-    ctx.font = `800 ${fontSize}px "Noto Sans TC","Microsoft JhengHei",sans-serif`;
+  function strokeRoundRect(ctx, x, y, w, h, r) {
+    const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  function glyphSize(ctx, text, fallback) {
+    const m = ctx.measureText(text);
+    const w = m.width;
+    const ascent = Math.abs(m.actualBoundingBoxAscent || 0);
+    const descent = Math.abs(m.actualBoundingBoxDescent || 0);
+    const h = ascent + descent;
+    return { w, h: h > 1 ? h : fallback, ascent: ascent || fallback * 0.85, descent: descent || fallback * 0.15 };
+  }
+
+  function drawStampAt(ctx, x, y, titleSize, subSize, fontFamily) {
+    const title = WM_TITLE;
+    const sub = WM_SUB;
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const stepX = Math.max(160, Math.floor(w / 2.1));
-    const stepY = Math.max(72, Math.floor(h / 5.5));
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = `900 ${titleSize}px ${fontFamily}`;
+    const titleM = glyphSize(ctx, title, titleSize);
+    ctx.font = `700 ${subSize}px ${fontFamily}`;
+    const subM = glyphSize(ctx, sub, subSize);
+    const padX = titleSize * 0.5;
+    const padY = titleSize * 0.36;
+    const gap = Math.max(16, Math.round(titleSize * 0.4));
+    const contentH = titleM.h + gap + subM.h;
+    const boxW = Math.max(titleM.w, subM.w) + padX * 2;
+    const boxH = contentH + padY * 2;
+    const left = x - boxW / 2;
+    const top = y - boxH / 2;
+    ctx.strokeStyle = '#e11d48';
+    ctx.fillStyle = '#e11d48';
+    ctx.lineJoin = 'round';
+    const titleY = y - contentH / 2 + titleM.ascent;
+    const subY = y - contentH / 2 + titleM.h + gap + subM.ascent;
+    ctx.lineWidth = Math.max(2.5, titleSize * 0.07);
+    strokeRoundRect(ctx, left, top, boxW, boxH, Math.max(3, titleSize * 0.08));
+    const inset = Math.max(3, titleSize * 0.08);
+    ctx.lineWidth = Math.max(1.2, titleSize * 0.035);
+    strokeRoundRect(ctx, left + inset, top + inset, boxW - inset * 2, boxH - inset * 2, Math.max(2, titleSize * 0.05));
+    ctx.font = `900 ${titleSize}px ${fontFamily}`;
+    ctx.lineWidth = Math.max(1.2, titleSize * 0.04);
+    ctx.strokeText(title, x, titleY);
+    ctx.fillText(title, x, titleY);
+    ctx.font = `700 ${subSize}px ${fontFamily}`;
+    ctx.lineWidth = Math.max(0.8, subSize * 0.05);
+    ctx.strokeText(sub, x, subY);
+    ctx.fillText(sub, x, subY);
+  }
+
+  function stampWatermark(ctx, w, h) {
+    if (!ctx || !w || !h) return;
+    const fontFamily = '"Noto Sans TC","Noto Sans CJK TC","Microsoft JhengHei","Source Han Sans TC",sans-serif';
+    const titleSize = Math.max(40, Math.min(96, Math.floor(w / 7.5)));
+    const subSize = Math.max(14, Math.round(titleSize * 0.34));
+    ctx.save();
+    ctx.globalAlpha = 0.3;
     ctx.translate(w / 2, h / 2);
-    ctx.rotate((-28 * Math.PI) / 180);
-    for (let y = -h; y <= h; y += stepY) {
-      for (let x = -w; x <= w; x += stepX) {
-        ctx.fillText(label, x, y);
-      }
-    }
+    ctx.rotate((-15 * Math.PI) / 180);
+    drawStampAt(ctx, 0, 0, titleSize, subSize, fontFamily);
     ctx.restore();
+  }
+
+  function pdfRequestUrl(url) {
+    const raw = String(url || '');
+    try {
+      return encodeURI(decodeURI(raw));
+    } catch (e) {
+      return encodeURI(raw);
+    }
+  }
+
+  async function ensureDocsCookie(force) {
+    const api = window.skyfunDocsSession;
+    if (!api || typeof api.ensure !== 'function') return false;
+    try {
+      return !!(await api.ensure(!!force));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function fetchPdfBuffer(url) {
+    const href = pdfRequestUrl(url);
+    const opts = { credentials: 'same-origin' };
+    await ensureDocsCookie(false);
+    let res = await fetch(href, opts);
+    if (res.status === 401) {
+      const ok = await ensureDocsCookie(true);
+      if (ok) res = await fetch(href, opts);
+    }
+    if (!res.ok) {
+      const err = new Error(`檔案載入失敗 HTTP ${res.status}`);
+      throw err;
+    }
+    return res.arrayBuffer();
+  }
+
+  function previewFail(host, err, step) {
+    let reason = String((err && err.message) || err || '未知原因');
+    if (step && reason !== step && !reason.startsWith(step)) {
+      reason = `${step}：${reason}`;
+    } else if (step && !reason) {
+      reason = step;
+    }
+    host.innerHTML = `<p class="pdg-pdf-wait">全文預覽失敗（${escapeHtml(reason)}），請稍後再試。</p>`;
+    const e = err instanceof Error ? err : new Error(reason);
+    e.message = reason;
+    e.alreadyShown = true;
+    throw e;
   }
 
   async function renderProtectedPdf(host, url) {
     if (!host) return;
     host.innerHTML = '<p class="pdg-pdf-wait">全文載入中…</p>';
     host.oncontextmenu = (e) => e.preventDefault();
-    const pdfjsLib = await loadPdfJs();
-    const pdf = await pdfjsLib.getDocument({ url, disableAutoFetch: false }).promise;
-    host.innerHTML = '';
-    const width = Math.max(320, Math.min(host.clientWidth || 860, 980));
-    for (let i = 1; i <= pdf.numPages; i += 1) {
-      const page = await pdf.getPage(i);
-      const base = page.getViewport({ scale: 1 });
-      const viewport = page.getViewport({ scale: width / base.width });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      canvas.className = 'pdg-pdf-page';
-      host.appendChild(canvas);
-      const ctx = canvas.getContext('2d');
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      stampWatermark(ctx, canvas.width, canvas.height, WM);
+    let pdfjsLib;
+    try {
+      pdfjsLib = await loadPdfJs();
+    } catch (err) {
+      previewFail(host, err, '預覽元件載入失敗');
+    }
+    let data;
+    try {
+      data = await fetchPdfBuffer(url);
+    } catch (err) {
+      if (err && err.alreadyShown) throw err;
+      previewFail(host, err, '檔案載入失敗');
+    }
+    let pdf;
+    try {
+      pdf = await pdfjsLib.getDocument({ data, disableAutoFetch: false }).promise;
+    } catch (err) {
+      previewFail(host, err, '檔案解析失敗');
+    }
+    try {
+      host.innerHTML = '';
+      const width = Math.max(320, Math.min(host.clientWidth || 860, 980));
+      for (let i = 1; i <= pdf.numPages; i += 1) {
+        const page = await pdf.getPage(i);
+        const base = page.getViewport({ scale: 1 });
+        const viewport = page.getViewport({ scale: width / base.width });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.className = 'pdg-pdf-page';
+        host.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        stampWatermark(ctx, canvas.width, canvas.height);
+      }
+    } catch (err) {
+      if (err && err.alreadyShown) throw err;
+      previewFail(host, err, '頁面繪製失敗');
     }
   }
 
@@ -506,8 +644,10 @@
       pages.hidden = false;
       const wmLayer = root.querySelector('.pdg-wm');
       if (wmLayer) wmLayer.hidden = true;
-      renderProtectedPdf(pages, href).catch(() => {
-        pages.innerHTML = '<p class="pdg-pdf-wait">全文預覽失敗，請稍後再試。</p>';
+      renderProtectedPdf(pages, href).catch((err) => {
+        if (err && err.alreadyShown) return;
+        const reason = (err && err.message) || '未知原因';
+        pages.innerHTML = `<p class="pdg-pdf-wait">全文預覽失敗（${escapeHtml(reason)}），請稍後再試。</p>`;
       });
     } else {
       frame.removeAttribute('srcdoc');
@@ -661,7 +801,9 @@
     HASH,
     KEY,
     SALT,
-    WM
+    WM,
+    WM_TITLE,
+    WM_SUB
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);

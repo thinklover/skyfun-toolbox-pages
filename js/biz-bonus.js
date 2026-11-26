@@ -43,6 +43,8 @@
     previewModal: false,
     previewDocId: '',
     previewReachedEnd: false,
+    previewFailed: false,
+    previewReady: false,
     previewed: {}
   };
 
@@ -309,7 +311,7 @@
 
   function unlockAckIfNeeded() {
     const sc = document.getElementById('bb-preview-scroll');
-    if (!sc || state.previewReachedEnd) return;
+    if (!sc || state.previewReachedEnd || state.previewFailed || !state.previewReady) return;
     if (sc.scrollHeight - sc.scrollTop - sc.clientHeight <= 24) {
       state.previewReachedEnd = true;
       if (state.previewDocId) state.previewed[state.previewDocId] = true;
@@ -327,20 +329,25 @@
     const file = host?.getAttribute('data-file') || '';
     if (host && file && window.SkyfunPolicyDocGate?.renderProtectedPdf) {
       host.addEventListener('contextmenu', (e) => e.preventDefault());
-      window.SkyfunPolicyDocGate.renderProtectedPdf(host, file).catch(() => {
-        host.innerHTML = '<p>全文預覽失敗，請稍後再試。</p>';
-      });
+      window.SkyfunPolicyDocGate.renderProtectedPdf(host, file)
+        .then(() => {
+          state.previewReady = true;
+          state.previewFailed = false;
+          requestAnimationFrame(() => unlockAckIfNeeded());
+        })
+        .catch((err) => {
+          state.previewReady = false;
+          state.previewFailed = true;
+          const reason = (err && err.message) ? String(err.message) : '未知原因';
+          if (!/全文預覽失敗/.test(host.textContent || '')) {
+            host.innerHTML = `<p>全文預覽失敗（${esc(reason)}），請稍後再試。</p>`;
+          }
+        });
+    } else if (host) {
+      state.previewReady = false;
+      state.previewFailed = true;
+      host.innerHTML = '<p>全文預覽失敗（預覽元件尚未載入），請稍後再試。</p>';
     }
-    requestAnimationFrame(() => {
-      unlockAckIfNeeded();
-      if (sc.scrollHeight <= sc.clientHeight + 8) {
-        state.previewReachedEnd = true;
-        if (state.previewDocId) state.previewed[state.previewDocId] = true;
-        const foot = sc.querySelector('.bb-preview-ack');
-        const doc = findDoc(state.previewDocId);
-        if (foot && doc) foot.outerHTML = ackLabel(doc, { inModal: true });
-      }
-    });
   }
 
   function openPreview(docId) {
@@ -349,12 +356,16 @@
     state.previewDocId = docId;
     state.previewModal = true;
     state.previewReachedEnd = !!state.acks[docId] || !!state.previewed[docId];
+    state.previewFailed = false;
+    state.previewReady = false;
   }
 
   function closePreview() {
     state.previewModal = false;
     state.previewDocId = '';
     state.previewReachedEnd = false;
+    state.previewFailed = false;
+    state.previewReady = false;
   }
 
   function peopleRows(list) {
