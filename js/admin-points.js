@@ -2570,14 +2570,79 @@
   function bonusCellOf(prevErr) {
     return (r) => {
       if (r.bonusPending) return prevErr ? '<span title="上月點數讀取失敗，未套用八折判斷">?</span>' : '計算中…';
-      return money(r.bonus);
+      return `<button type="button" class="apt-bonus-btn" data-bonus-person="${esc(r.name)}" title="看獎金明細">${money(r.bonus)}</button>`;
     };
+  }
+
+  function closeBonusDetail() {
+    const mask = document.getElementById('apt-bonus-mask');
+    const back = mask && mask.__aptBonusBack;
+    mask?.remove();
+    document.removeEventListener('keydown', onBonusDetailKey);
+    if (back && document.contains(back)) back.focus();
+  }
+
+  function onBonusDetailKey(e) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeBonusDetail();
+    }
+  }
+
+  function weeklyRowsForBonus() {
+    if (state.tab === 'area') return weeklyData({ names: areaStaffNames() }).rep.rows;
+    return weeklyData({ leader: state.leader }).rep.rows;
+  }
+
+  function openBonusDetail(name, fromEl) {
+    const row = weeklyRowsForBonus().find((r) => r.name === name);
+    if (!row || row.bonusPending) return;
+    const info = row.bonusBreakdown;
+    if (!info) return;
+    const sum = (info.items || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+    const mismatch = sum !== row.bonus || info.total !== row.bonus;
+    const range = state.meta?.range;
+    const monthLabel = range?.month ? `${range.month} 月業績` : '';
+    const meta = [
+      monthLabel,
+      `月累積 ${row.points} 點`,
+      row.stageLabel || '',
+      row.project ? `專案任務：${row.project}` : '沒有專案任務'
+    ].filter(Boolean).join(' · ');
+    closeBonusDetail();
+    const mask = document.createElement('div');
+    mask.id = 'apt-bonus-mask';
+    mask.className = 'apt-op-mask';
+    mask.__aptBonusBack = fromEl || null;
+    mask.innerHTML = `<div class="apt-op-modal apt-bonus-modal" role="dialog" aria-modal="true" aria-labelledby="apt-bonus-title">
+        <header class="apt-op-head"><b id="apt-bonus-title">${esc(row.name)} 的預估個人獎金明細</b><button type="button" class="apt-op-x" data-bonus-close aria-label="關閉">✕</button></header>
+        <p class="apt-op-tip">${esc(meta)}</p>
+        <div class="apt-table-wrap"><table class="apt-table apt-bonus-table">
+          <thead><tr><th>項目</th><th>計算依據</th><th class="num">金額</th></tr></thead>
+          <tbody>${(info.items || []).map((it) => `<tr${it.amount < 0 ? ' class="apt-bonus-cut"' : it.amount === 0 ? ' class="apt-bonus-zero"' : ''}>
+              <td>${esc(it.name)}</td>
+              <td>${esc(it.basis)}</td>
+              <td class="num">${money(it.amount)}</td>
+            </tr>`).join('')}</tbody>
+          <tfoot><tr>
+            <th colspan="2">合計（與表上預估個人獎金相同）</th>
+            <th class="num">${money(info.total)}</th>
+          </tr></tfoot>
+        </table></div>
+        ${mismatch ? '<p class="apt-op-tip"><b>明細加總與表上金額不一致，請回報。</b></p>' : ''}
+      </div>`;
+    document.body.appendChild(mask);
+    document.addEventListener('keydown', onBonusDetailKey);
+    mask.addEventListener('click', (e) => {
+      if (e.target === mask || e.target.closest('[data-bonus-close]')) closeBonusDetail();
+    });
+    mask.querySelector('[data-bonus-close]')?.focus();
   }
 
   const blockZone = (kind, html) => `<section class="apt-block apt-block--${kind}">${html}</section>`;
 
   const WEEKLY_NOTE = () =>
-    `點欄位標題就用那一欄排序，再點一次反過來；# 是目前排序的名次（同值同名次）。本週點數、審件抽查／正確／良率、客訴件數依所選週（週一～週日）加總；月累積點數、月度級距、預估個人獎金、本月懲處依業績月。不含工讀生。到職未滿一個月（以週結束日判斷）為「新人首月排除」，不發獎金。預估獎金：達 ${Core.STAGE_1} 點 2,000、達 ${Core.STAGE_2} 點 5,000；達 ${Core.STAGE_1} 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000且當月實登點數達 ${Core.BONUS_LVR_MIN_POINTS || 50} 點）；上個業績月未達 ${Core.STAGE_1} 點時，基本＋專案全部打八折（新人首月未達標，次月不打折）。審件良率顏色：90% 以上綠、60%～未滿 90% 黃、未滿 60% 紅（同主管簡報）。`;
+    `點欄位標題就用那一欄排序，再點一次反過來；# 是目前排序的名次（同值同名次）。本週點數、審件抽查／正確／良率、客訴件數依所選週（週一～週日）加總；月累積點數、月度級距、預估個人獎金、本月懲處依業績月。不含工讀生。到職未滿一個月（以週結束日判斷）為「新人首月排除」，不發獎金。預估獎金：達 ${Core.STAGE_1} 點 2,000、達 ${Core.STAGE_2} 點 5,000；達 ${Core.STAGE_1} 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000且當月實登點數達 ${Core.BONUS_LVR_MIN_POINTS || 50} 點）；上個業績月未達 ${Core.STAGE_1} 點時，基本＋專案全部打八折（新人首月未達標，次月不打折）。點「預估個人獎金」可看各項明細。審件良率顏色：90% 以上綠、60%～未滿 90% 黃、未滿 60% 紅（同主管簡報）。`;
 
   /** 組員點數表欄位（組長週月報、區主管週月報共用） */
   function staffCols(prevErr) {
@@ -6379,7 +6444,7 @@
         const good = x.change < 0;
         const p = Math.round(Math.abs(x.change) * 100);
         return `<div class="apt-dv-row">
-          <button type="button" class="apt-name apt-dv-name" data-dur-person="${esc(x.name)}" title="看耗時明細">${esc(x.name)}<small>${x.n} 件</small></button>
+          <button type="button" class="apt-name apt-dv-name" data-dur-person="${esc(x.name)}" title="看耗時明細">${esc(x.name)}</button>
           <span class="apt-dv-track"><i class="apt-dv-mid"></i><i class="apt-dv-bar ${good ? 'is-good' : 'is-bad'}" style="${good ? `right:50%` : `left:50%`};width:${w}"></i></span>
           <span class="apt-dv-val ${p < 1 ? '' : good ? 'is-good' : 'is-bad'}">${p < 1 ? '持平' : `${good ? '快' : '慢'} ${p}%`}</span>
         </div>`;
@@ -9341,6 +9406,12 @@
         const name = pointBtn.dataset.pointPerson;
         state.openPoint = state.openPoint === name ? '' : name;
         render();
+        return;
+      }
+      const bonusBtn = e.target.closest('[data-bonus-person]');
+      if (bonusBtn) {
+        e.preventDefault();
+        openBonusDetail(bonusBtn.dataset.bonusPerson, bonusBtn);
         return;
       }
       const nameBtn = e.target.closest('[data-person]');

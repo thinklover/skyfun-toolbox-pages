@@ -992,14 +992,27 @@
   }
 
   /**
-   * 預估個人獎金：達 250 點 2,000、350 點 5,000；達 250 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。
-   * 實價登錄專案獎金另須當月實登點數 ≥ 50 才加發。
-   * 上個業績月未達 250 點時，基本＋專案全部打八折（115年9月制度首月不適用；
-   * 新人首月未達標，次月不打折——上個業績月月初仍屬新人首月排除者不適用八折）。
+   * 預估個人獎金明細（顯示用）。金額算法與原本 estimateBonus 完全相同，不改公式與數字。
+   * 回傳 { items:[{name,basis,amount}], total, discount }
    */
-  function estimateBonus({ points, project, eligible, hireDate, prevPoints, perf, lvrPoints }) {
-    if (!eligible) return 0;
+  function estimateBonusBreakdown({ points, project, eligible, hireDate, prevPoints, perf, lvrPoints }) {
+    const items = [];
+    if (!eligible) {
+      items.push({
+        name: '新人首月排除',
+        basis: '到職未滿一個月（以週結束日判斷），不發獎金',
+        amount: 0
+      });
+      return { items, total: 0, discount: false };
+    }
     const base = points >= STAGE_2 ? BONUS_STAGE_2 : points >= STAGE_1 ? BONUS_STAGE_1 : 0;
+    const stageBasis =
+      points >= STAGE_2
+        ? `月累積 ${points} 點，達第二階段（${STAGE_2} 點）`
+        : points >= STAGE_1
+          ? `月累積 ${points} 點，達第一階段（${STAGE_1} 點）`
+          : `月累積 ${points} 點，未達第一階段（${STAGE_1} 點）`;
+    items.push({ name: '基本獎金', basis: stageBasis, amount: base });
     let py = perf.year;
     let pm = perf.month - 1;
     if (pm < 1) {
@@ -1016,12 +1029,47 @@
       (prevPoints || 0) < STAGE_1;
     let bonus = base;
     if (points >= STAGE_1) {
-      if (/清冊[＋+]公會對接/.test(project || '')) bonus += BONUS_PROJECT_LIST;
-      if (/實價登錄/.test(project || '') && (Number(lvrPoints) || 0) >= BONUS_LVR_MIN_POINTS) {
-        bonus += BONUS_PROJECT_LVR;
+      if (/清冊[＋+]公會對接/.test(project || '')) {
+        bonus += BONUS_PROJECT_LIST;
+        items.push({
+          name: '專案任務：清冊＋公會對接',
+          basis: `月累積已達 ${STAGE_1} 點加發`,
+          amount: BONUS_PROJECT_LIST
+        });
+      }
+      if (/實價登錄/.test(project || '')) {
+        const lvr = Number(lvrPoints) || 0;
+        const ok = lvr >= BONUS_LVR_MIN_POINTS;
+        if (ok) bonus += BONUS_PROJECT_LVR;
+        items.push({
+          name: '專案任務：實價登錄',
+          basis: ok
+            ? `當月實登 ${lvr} 點，已達門檻 ${BONUS_LVR_MIN_POINTS} 點`
+            : `當月實登 ${lvr} 點，未達門檻 ${BONUS_LVR_MIN_POINTS} 點`,
+          amount: ok ? BONUS_PROJECT_LVR : 0
+        });
       }
     }
-    return discount ? bonus * 0.8 : bonus;
+    if (discount) {
+      const reduced = bonus * 0.8;
+      items.push({
+        name: '上月未達標八折',
+        basis: `上個業績月 ${prevPoints || 0} 點，未達 ${STAGE_1} 點；基本＋專案全部打八折`,
+        amount: reduced - bonus
+      });
+      bonus = reduced;
+    }
+    return { items, total: bonus, discount: !!discount };
+  }
+
+  /**
+   * 預估個人獎金：達 250 點 2,000、350 點 5,000；達 250 點另加專案任務（清冊＋公會對接 3,000、實價登錄 2,000）。
+   * 實價登錄專案獎金另須當月實登點數 ≥ 50 才加發。
+   * 上個業績月未達 250 點時，基本＋專案全部打八折（115年9月制度首月不適用；
+   * 新人首月未達標，次月不打折——上個業績月月初仍屬新人首月排除者不適用八折）。
+   */
+  function estimateBonus(opts) {
+    return estimateBonusBreakdown(opts).total;
   }
 
   /**
@@ -1048,6 +1096,15 @@
         const correct = sumBy(weekChecks, s.name, 'correct');
         const pens = monthIncidents.filter((x) => x.name === s.name).map((x) => x.penalty);
         const eligible = eligibleAt(s.hireDate, week.end);
+        const bonusBreakdown = estimateBonusBreakdown({
+          points,
+          project: s.project,
+          eligible,
+          hireDate: s.hireDate,
+          prevPoints: opts.prevTotals?.get(s.name),
+          perf,
+          lvrPoints: lvrMonthPoints(p)
+        });
         return {
           name: s.name,
           leader: s.leader || '',
@@ -1060,15 +1117,8 @@
           stage,
           stageLabel: stageLabel(stage),
           toNext: points < STAGE_1 ? STAGE_1 - points : points < STAGE_2 ? STAGE_2 - points : 0,
-          bonus: estimateBonus({
-            points,
-            project: s.project,
-            eligible,
-            hireDate: s.hireDate,
-            prevPoints: opts.prevTotals?.get(s.name),
-            perf,
-            lvrPoints: lvrMonthPoints(p)
-          }),
+          bonusBreakdown,
+          bonus: bonusBreakdown.total,
           bonusPending: points >= STAGE_1 && !opts.prevTotals,
           lvrPoints: lvrMonthPoints(p),
           checked,
@@ -2379,6 +2429,7 @@
     areaOfRegion,
     weeklyReport,
     estimateBonus,
+    estimateBonusBreakdown,
     lvrMonthPoints,
     BONUS_LVR_MIN_POINTS,
     BONUS_PROJECT_LVR,
