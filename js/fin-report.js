@@ -224,7 +224,65 @@
     genLeaseEnd: '一般宅租期迄', genKind: '一般宅類型', genCancelDate: '一般宅解約日',
     genSettle: '結清方式', venue: '館別', officeItem: '商辦項目',
     bizCase: '案件類型', clientInfo: '客戶資料', invoiceType: '發票開立類型',
-    invoiceAmount: '發票金額', refundAmount: '退款金額'
+    invoiceAmount: '發票金額', refundAmount: '退款金額',
+    contractType: '合約性質',
+    contractSerial: '合約序號（公司NAS合約資料夾序號）',
+    bizAction: '作業需求',
+    bizIncome: '收入類型',
+    bizRoomAction: '作業需求',
+    bizRefundAction: '作業需求',
+    signedDone: '合約是否已簽約完成？',
+    officeRoom: '辦公室房號',
+    remitAmount: '匯款金額',
+    remitTotal: '匯款總金額',
+    remitDeposit: '匯款押金金額',
+    remitRent: '匯款租金金額',
+    meetDate: '會議室租借日期',
+    meetSlot: '會議室租借時段',
+    remitDate: '匯款日期',
+    remitTail: '匯款後5碼',
+    bizCheckNote: '備註',
+    contractStart: '合約開始日期',
+    contractEnd: '合約到期日期',
+    contractPeriods: '合約期數',
+    periodPrice: '合約每期價格（含稅）',
+    rentTotal: '合約租金總額（不含押金）',
+    invoiceItem: '發票項目',
+    invoiceClient: '客戶資訊',
+    invoiceBuyer: '買受人',
+    invoiceTaxId: '統一編號',
+    invoiceProduct: '發票品名',
+    bizInvoiceNote: '備註',
+    refundClient: '客戶資訊',
+    refundBank: '退押帳戶銀行',
+    refundBranch: '退押帳戶銀行分行',
+    refundName: '退押帳戶戶名',
+    refundAccount: '退押帳戶號碼',
+    refundFee: '是否扣手續費',
+    bizRefundNote: '備註',
+    oldAccountName: '原戶名',
+    oldBank: '原銀行名稱',
+    oldBankCode: '原銀行代碼',
+    oldBranch: '原銀行分行名稱',
+    oldBranchCode: '原銀行分行代碼',
+    oldAccount: '原銀行帳號',
+    newAccountName: '新戶名',
+    newBank: '新銀行名稱',
+    newBankCode: '新銀行代碼',
+    newBranch: '新銀行分行名稱',
+    newBranchCode: '新銀行分行代碼',
+    newAccount: '新銀行帳號',
+    passbookNote: '更換存摺備註',
+    subChangeStart: '轉租變更起始日',
+    pkgChangeStart: '包租變更起始日',
+    feeLandlord: '服務費確認-房東方',
+    feeTenant: '服務費確認-房客方',
+    managePct: '代管費百分比',
+    bizPostKind: '查帳類型',
+    cashAmount: '收現金金額',
+    remitCopy: '匯款影印/傳真費',
+    contractPostage: '郵資費',
+    contractBrand: '商牌'
   };
   const FIN_PAYLOAD_ORDER = [
     'address', 'landlord', 'tenant', 'rent', 'managementFee', 'deposit', 'caseType',
@@ -235,12 +293,106 @@
     'roommates', 'roommate', 'refundType', 'refundDate', 'refundMethod', 'refundSettle', 'refundGap',
     'refundSubleaseStart', 'hasGap', 'subleaseStart', 'changeTarget', 'landlordReason', 'tenantReason',
     'passbookWhy', 'tenantPassbookWhy', 'oldParty', 'newParty', 'changeNote',
+    'oldAccountName', 'oldBank', 'oldBankCode', 'oldBranch', 'oldBranchCode', 'oldAccount',
+    'newAccountName', 'newBank', 'newBankCode', 'newBranch', 'newBranchCode', 'newAccount', 'passbookNote',
     'virtualAccount', 'payerName', 'txDate', 'wrongAccount', 'correctAccount', 'amount', 'reason',
-    'adjustItem', 'feeChange', 'changedAmount', 'abnormalNote',
+    'adjustItem', 'feeChange', 'changedAmount', 'subChangeStart', 'pkgChangeStart', 'abnormalNote',
     'originSerial', 'originAddress', 'missingItems', 'expectCancelDate', 'cancelTogether', 'stopPayStart',
-    'genLeaseStart', 'genLeaseEnd', 'genKind', 'genCancelDate', 'genSettle',
-    'bizCase', 'clientInfo', 'invoiceType', 'invoiceAmount', 'refundAmount', 'note'
+    'genLeaseStart', 'genLeaseEnd', 'genKind', 'feeLandlord', 'feeTenant', 'managePct', 'genCancelDate', 'genSettle',
+    'bizCase', 'contractType', 'contractSerial', 'bizAction', 'bizIncome', 'bizRoomAction', 'bizRefundAction', 'bizPostKind',
+    'signedDone', 'clientInfo', 'officeRoom', 'meetDate', 'meetSlot',
+    'remitAmount', 'cashAmount', 'remitTotal', 'remitDeposit', 'remitRent', 'remitCopy', 'remitDate', 'remitTail', 'bizCheckNote',
+    'contractStart', 'contractEnd', 'contractPeriods', 'periodPrice', 'rentTotal', 'contractPostage', 'contractBrand',
+    'invoiceItem', 'invoiceType', 'invoiceClient', 'invoiceBuyer', 'invoiceTaxId', 'invoiceAmount', 'invoiceProduct', 'bizInvoiceNote',
+    'refundClient', 'refundBank', 'refundBranch', 'refundName', 'refundAccount', 'refundFee', 'refundAmount', 'bizRefundNote', 'note'
   ];
+
+  /* 表單 id/name（fin-xxx-yyy）對到 payload 鍵，僅處理無法由 kebab→camel 直接對上的欄位 */
+  const FIN_FORM_KEY_ALIASES = {
+    'biz-item': 'officeItem',
+    'invoice-tax': 'invoiceTaxId',
+    'expect-cancel': 'expectCancelDate',
+    'stop-start': 'stopPayStart',
+    'biz-refund-client': 'refundClient',
+    'biz-refund-bank': 'refundBank',
+    'biz-refund-branch': 'refundBranch',
+    'biz-refund-name': 'refundName',
+    'biz-refund-account': 'refundAccount',
+    'biz-refund-amount': 'refundAmount',
+    'biz-refund-fee': 'refundFee',
+    'invoice-office-room': 'officeRoom',
+    'meet-date-inv': 'meetDate',
+    'meet-slot-inv': 'meetSlot',
+    'old-acc-name': 'oldAccountName',
+    'new-acc-name': 'newAccountName'
+  };
+
+  function finKebabToCamel(s) {
+    return String(s || '').replace(/-([a-z0-9])/g, function (_, c) {
+      return c.toUpperCase();
+    });
+  }
+
+  function finCleanFormLabel(text) {
+    return String(text || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function finLabelFromFieldEl(el) {
+    if (!el) return '';
+    var field = el.closest ? el.closest('.hr-field') : null;
+    if (field) {
+      var groupLab = field.querySelector('.hr-label');
+      if (groupLab) {
+        var groupText = finCleanFormLabel(groupLab.textContent);
+        if (groupText) return groupText;
+      }
+    }
+    if (el.id) {
+      var esc = (window.CSS && CSS.escape) ? CSS.escape(el.id) : el.id.replace(/"/g, '\\"');
+      var lab = document.querySelector('label[for="' + esc + '"]');
+      if (lab) {
+        var forText = finCleanFormLabel(lab.textContent);
+        if (forText) return forText;
+      }
+    }
+    return '';
+  }
+
+  var finFormLabelCache = null;
+  function finFormLabelMap() {
+    if (finFormLabelCache) return finFormLabelCache;
+    var map = Object.create(null);
+    var root = document.getElementById('fin-form') || document.getElementById('page-finance') || document;
+    var nodes = root.querySelectorAll(
+      'input[id^="fin-"], input[name^="fin-"], select[id^="fin-"], select[name^="fin-"], textarea[id^="fin-"], textarea[name^="fin-"]'
+    );
+    Array.prototype.forEach.call(nodes, function (el) {
+      var label = finLabelFromFieldEl(el);
+      if (!label) return;
+      var slugs = [];
+      if (el.id && el.id.indexOf('fin-') === 0) slugs.push(el.id.slice(4));
+      var name = el.getAttribute('name');
+      if (name && name.indexOf('fin-') === 0) slugs.push(name.slice(4));
+      slugs.forEach(function (slug) {
+        if (!slug || slug.indexOf('files-') === 0 || slug.indexOf('cmp-') === 0) return;
+        var alias = FIN_FORM_KEY_ALIASES[slug];
+        var camel = finKebabToCamel(slug);
+        if (alias && !map[alias]) map[alias] = label;
+        if (camel && !map[camel]) map[camel] = label;
+      });
+    });
+    finFormLabelCache = map;
+    return map;
+  }
+
+  function payloadFieldLabel(key) {
+    if (Object.prototype.hasOwnProperty.call(FIN_PAYLOAD_LABELS, key) && FIN_PAYLOAD_LABELS[key]) {
+      return FIN_PAYLOAD_LABELS[key];
+    }
+    var fromForm = finFormLabelMap()[key];
+    if (fromForm) return fromForm;
+    return key;
+  }
 
   const FIN_RING_LEN = 2 * Math.PI * 42;
   const FIN_DETAIL_TITLE = {
@@ -688,7 +840,7 @@
   }
 
   function cmpFieldLabel(key) {
-    return FIN_PAYLOAD_LABELS[key] || key;
+    return payloadFieldLabel(key);
   }
 
   function checklistKeysForIssue(issue) {
@@ -1181,6 +1333,7 @@
       issueType: r.issueType,
       status: r.status || 'submitted',
       rejectReason: r.rejectReason || '',
+      reviewNote: String(r.reviewNote || r.approveNote || '').trim(),
       handledAt: r.handledAt || null,
       payload: p,
       files: Array.isArray(r.files) ? r.files : [],
@@ -1212,7 +1365,7 @@
       } else {
         v = String(v);
       }
-      out.push({ label: FIN_PAYLOAD_LABELS[k] || k, value: v });
+      out.push({ label: payloadFieldLabel(k), value: v });
     }
     FIN_PAYLOAD_ORDER.forEach(push);
     Object.keys(p).forEach(push);
@@ -1226,7 +1379,7 @@
     if (!keys.length) return '';
     const rows = keys.map((key) => {
       const f = fields[key] || {};
-      const label = FIN_PAYLOAD_LABELS[key] || key;
+      const label = payloadFieldLabel(key);
       const flag = f.override
         ? '<span class="fin-cmp-tag is-fix">系統有誤</span>'
         : (f.ok ? '<span class="fin-cmp-tag is-ok">相符</span>' : '<span class="fin-cmp-tag is-bad">不符</span>');
@@ -1400,19 +1553,35 @@
     return st === 'submitted' || st === 'resubmitted' || st === 'processing';
   }
 
+  function isOfficeCase(r) {
+    return String(r.issueType || '') === ISSUE_OFFICE;
+  }
+
   function renderCaseActions(r) {
     if (!canActOn(r)) return '';
     const st = String(r.status || 'submitted');
     const doingBtn = st === 'processing'
       ? ''
       : '<button type="button" class="fin-act-btn is-doing" data-fin-act="processing" data-fin-id="' + esc(r.id) + '">處理中</button>';
+    const office = isOfficeCase(r);
+    const approveBtn = office
+      ? '<button type="button" class="fin-act-btn is-ok" data-fin-act="approve-toggle" data-fin-id="' + esc(r.id) + '">通過</button>'
+      : '<button type="button" class="fin-act-btn is-ok" data-fin-act="closed" data-fin-id="' + esc(r.id) + '">通過</button>';
+    const approveBox = office
+      ? '<div class="fin-approve-box" data-fin-approve-box="' + esc(r.id) + '" hidden>' +
+        '<label class="fin-note-lab" for="fin-approve-note-' + esc(r.id) + '">通過備註（選填）</label>' +
+        '<textarea id="fin-approve-note-' + esc(r.id) + '" class="fin-approve-ta" rows="2" maxlength="1000" placeholder="可填寫說明，也可空白直接通過"></textarea>' +
+        '<button type="button" class="fin-act-btn is-ok" data-fin-act="closed" data-fin-id="' + esc(r.id) + '">確認通過</button>' +
+        '</div>'
+      : '';
     return '<div class="fin-act-bar">' +
       doingBtn +
-      '<button type="button" class="fin-act-btn is-ok" data-fin-act="closed" data-fin-id="' + esc(r.id) + '">通過</button>' +
+      approveBtn +
       '<button type="button" class="fin-act-btn is-reject" data-fin-act="reject-toggle" data-fin-id="' + esc(r.id) + '">退件</button>' +
       '</div>' +
+      approveBox +
       '<div class="fin-reject-box" data-fin-reject-box="' + esc(r.id) + '" hidden>' +
-        '<label class="sr-only" for="fin-reject-reason-' + esc(r.id) + '">退件原因</label>' +
+        '<label class="fin-note-lab" for="fin-reject-reason-' + esc(r.id) + '">退件原因（必填）</label>' +
         '<textarea id="fin-reject-reason-' + esc(r.id) + '" class="fin-reject-ta" rows="2" maxlength="1000" placeholder="請填退件原因（必填）"></textarea>' +
         '<button type="button" class="fin-act-btn is-reject-confirm" data-fin-act="reject" data-fin-id="' + esc(r.id) + '">確認退件</button>' +
       '</div>';
@@ -1436,7 +1605,9 @@
         : '';
       const reason = r.status === 'rejected' && r.rejectReason
         ? '<div class="fin-detail-reason">退件原因：' + esc(r.rejectReason) + '</div>'
-        : '';
+        : (r.status === 'closed' && r.reviewNote
+          ? '<div class="fin-detail-reason">通過備註：' + esc(r.reviewNote) + '</div>'
+          : '');
       const rejectNote = r.status === 'rejected'
         ? '<div class="fin-detail-type">已退回填寫人；補件重新送出後會回到財務待處理。</div>'
         : '';
@@ -1605,15 +1776,47 @@
     else state.mine.unshift(mapped);
   }
 
-  async function financeSetStatus(id, status) {
-    const res = await rpc('fin_report_finance_set_status', {
+  function isMissingRpcParamError(err) {
+    if (err && String(err.code) === 'PGRST202') return true;
+    const s = String((err && err.message) || (err && err.error) || err || '');
+    return /could not find the function|PGRST202|schema cache|does not exist|無此函數|找不到.*函[數式]/i.test(s);
+  }
+
+  async function financeSetStatus(id, status, note) {
+    const args = {
       p_token: token(),
       p_id: Number(id),
       p_status: status
-    });
-    if (!res?.ok) throw new Error(res?.error || '更新失敗');
-    if (res.row) patchMineRow(res.row);
+    };
+    const trimmed = String(note || '').trim().slice(0, 1000);
+    let res = null;
+    let savedNote = false;
+    /* 後端尚未接收 p_note 時，不可把多出來的參數送出去，否則會通過失敗。 */
+    if (status === 'closed' && trimmed) {
+      try {
+        res = await rpc('fin_report_finance_set_status', Object.assign({}, args, { p_note: trimmed }));
+        if (res && res.ok) {
+          savedNote = true;
+        } else if (isMissingRpcParamError(res && (res.error || res))) {
+          res = null;
+        } else {
+          throw new Error((res && res.error) || '更新失敗');
+        }
+      } catch (err) {
+        if (!isMissingRpcParamError(err)) throw err;
+        res = null;
+      }
+    }
+    if (!res) {
+      res = await rpc('fin_report_finance_set_status', args);
+      if (!res?.ok) throw new Error(res?.error || '更新失敗');
+    }
+    if (res.row) {
+      if (savedNote && !res.row.reviewNote && trimmed) res.row.reviewNote = trimmed;
+      patchMineRow(res.row);
+    }
     renderDash();
+    return { savedNote: savedNote, omittedNote: !!(trimmed && !savedNote) };
   }
 
   async function financeReject(id, reason) {
@@ -1728,16 +1931,35 @@
         return;
       }
       if (!state.mineAll) return;
-      if (act === 'reject-toggle') {
-        const box = document.querySelector('[data-fin-reject-box="' + id + '"]');
-        if (box) box.hidden = !box.hidden;
+      if (act === 'reject-toggle' || act === 'approve-toggle') {
+        const rejectBox = document.querySelector('[data-fin-reject-box="' + id + '"]');
+        const approveBox = document.querySelector('[data-fin-approve-box="' + id + '"]');
+        if (act === 'reject-toggle') {
+          if (rejectBox) rejectBox.hidden = !rejectBox.hidden;
+          if (approveBox) approveBox.hidden = true;
+          if (rejectBox && !rejectBox.hidden) {
+            document.getElementById('fin-reject-reason-' + id)?.focus();
+          }
+        } else {
+          if (approveBox) approveBox.hidden = !approveBox.hidden;
+          if (rejectBox) rejectBox.hidden = true;
+          if (approveBox && !approveBox.hidden) {
+            document.getElementById('fin-approve-note-' + id)?.focus();
+          }
+        }
         return;
       }
       actBtn.disabled = true;
       try {
         if (act === 'processing' || act === 'closed') {
-          await financeSetStatus(id, act);
-          setMsg(act === 'closed' ? '已通過（結案）#' + id : '已改為處理中 #' + id, 'ok');
+          const noteEl = act === 'closed' ? document.getElementById('fin-approve-note-' + id) : null;
+          const note = noteEl ? String(noteEl.value || '').trim() : '';
+          const out = await financeSetStatus(id, act, note);
+          if (act === 'closed' && out && out.omittedNote) {
+            setMsg('已通過（結案）#' + id + '。通過備註尚未寫入（後端函式尚不接收備註）', 'ok');
+          } else {
+            setMsg(act === 'closed' ? '已通過（結案）#' + id : '已改為處理中 #' + id, 'ok');
+          }
         } else if (act === 'reject') {
           const ta = document.getElementById('fin-reject-reason-' + id);
           const reason = String(ta && ta.value || '').trim();

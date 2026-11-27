@@ -1276,6 +1276,33 @@
   border-radius: 0.65rem;
   background: #fff7f8;
 }
+#page-finance .fin-approve-box {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem;
+  border: 1px dashed #86efac;
+  border-radius: 0.65rem;
+  background: #f0fdf4;
+}
+#page-finance .fin-approve-box[hidden] {
+  display: none;
+}
+#page-finance .fin-note-lab {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+}
+#page-finance .fin-approve-ta {
+  width: 100%;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+  min-height: 2.6rem;
+}
 #page-finance .fin-reject-box[hidden] {
   display: none;
 }
