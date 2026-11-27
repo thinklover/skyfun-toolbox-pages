@@ -133,7 +133,7 @@
 
   async function loadLocalLookup() {
     try {
-      var res = await fetch('./lookup-data.json?v=20261125-2101');
+      var res = await fetch('./lookup-data.json?v=20261127-1300');
       if (!res.ok) return null;
       return await res.json();
     } catch (err) {
@@ -236,7 +236,7 @@
 
   function startApp() {
     var s = document.createElement('script');
-    s.src = 'app.js?v=20261125-2134';
+    s.src = 'app.js?v=20261127-1300';
     s.onload = function () { mgrReportBindUpdate(); };
     document.body.appendChild(s);
   }

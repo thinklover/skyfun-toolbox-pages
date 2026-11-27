@@ -1,6 +1,6 @@
 (() => {
   const NAV = ['總表數據管理','案件管理','組織管理','包租管理','政策戶管理','新件管理','續約管理','應收帳管理','業務績效表','證照檢核','開發管理','報修管理'];
-  const LEASE_TARGET_RATE = 0.55;
+  const LEASE_TARGET_RATE = 0.50;
   const WEAK_TARGET_RATE = 0.5;
   const NEW_TARGET_RATE = 0.9;
   const RENEW_TARGET_RATE = 0.8;
@@ -58,12 +58,19 @@
   const C_ACTUAL = '#3b82f6';
   const C_YOY = '#22c55e';
   const LOOKUP = window.DASH_LOOKUP || { owners: {}, settlement: {}, targets: [] };
+  LOOKUP.owners = LOOKUP.owners || {};
+  LOOKUP.owners['基一處'] = '張議陽';
+  LOOKUP.owners['南二處'] = '葉建志';
   const FORECAST_SKIP = new Set(['電服部', '業務支援管理部', '電銷部']);
   const FORECAST = (() => {
     const raw = window.DASH_FORECAST || { rows: [] };
-    return Object.assign({}, raw, {
-      rows: (raw.rows || []).filter(t => t && t.office && !FORECAST_SKIP.has(t.office))
+    const rows = (raw.rows || []).filter(t => t && t.office && !FORECAST_SKIP.has(t.office));
+    rows.forEach(t => {
+      if (t.office === '北五處' && Number(t.year) === 2026) {
+        t.months = Object.assign({}, t.months || {}, { 10: 35, '10': 35 });
+      }
     });
+    return Object.assign({}, raw, { rows });
   })();
 
   const $ = id => document.getElementById(id);
@@ -381,7 +388,7 @@
     arStaffOpen: false,
     arWatchOpen: ['全公司'],
     arWatchFocus: '全公司',
-    arWatchBand: 'all',
+    arWatchBand: 'b30',
     arWatchCt: '轉租',
     arWatchStaffOpen: false,
     arAgOpen: ['全公司'],
@@ -507,6 +514,8 @@
     sumHideZero: true,
     sumArCt: '轉租',
     sumKpiSort: null,
+    sumKpiMarkBu: null,
+    sumKpiMarkReg: null,
     sumClosed: [],
     arCaseQ: '',
     arCaseFold: false
@@ -1036,7 +1045,7 @@
       yoyR: '同期包租率', lastR: '上月包租率',
       yoyH: '同期包租%', lastH: '上月包租%',
       only: '僅計包租', typeFilter: '包租',
-      note: '包租率＝轉租件（含包租）／所選案件類型；目標%固定 55%。簽三年代管＝代管且租期約三年。'
+      note: '包租率＝轉租件（含包租）／所選案件類型；目標%固定 50%。簽三年代管＝代管且租期約三年。'
     };
   }
   function leaseNewRows(start, end, offices, kind) {
@@ -13880,7 +13889,7 @@
       const rows = srcAll.filter(r => arKeepOffice(offices, r));
       return { ...node, kids, rows, m: arPack(rows) };
     };
-    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => n.m && n.m.n) || decorate(scopedUnitTree());
+    const root = pruneIdleSalesOffices(decorate(scopedUnitTree()), n => (n.m && n.m.n) || !!displayOwner(n.id, n.name)) || decorate(scopedUnitTree());
     if (!findUnitNode(root, state.arWatchFocus || '')) state.arWatchFocus = root.id;
     const focus = findUnitNode(root, state.arWatchFocus) || root;
     const band = state.arWatchBand || 'all';
@@ -13936,7 +13945,7 @@
     const bandPack = id => arPack(uniq.filter(r => arAgeBand(r.days) === id));
     const statRows = AR_WATCH_BANDS.map(b => {
       const p = bandPack(b.id);
-      const cls = (band === 'all' ? b.id === 'b30' : b.id === band) ? 'mark' : '';
+      const cls = band === b.id ? 'mark' : '';
       return `<tr class="${cls}" data-ar-wband="${b.id}">
         <td>${esc(b.lab)}</td>
         <td>${fmt(p.n)}</td>
@@ -13949,7 +13958,7 @@
       <th>帳齡</th><th>筆數</th><th>欠款金額</th><th>預計送法務部</th><th>未處理完成未繳款</th>
     </tr></thead><tbody>
       ${statRows}
-      <tr class="total"><td>合計</td><td>${fmt(fm.n)}</td><td>$${fmt(fm.amt)}</td><td>${fmt(fm.legal.n)}</td><td>${fmt(fm.open.n)}</td></tr>
+      <tr class="total${band === 'all' ? ' mark' : ''}" data-ar-wband="all"><td>合計</td><td>${fmt(fm.n)}</td><td>$${fmt(fm.amt)}</td><td>${fmt(fm.legal.n)}</td><td>${fmt(fm.open.n)}</td></tr>
     </tbody></table>`;
     const maxDays = uniq.reduce((s, r) => Math.max(s, Number(r.days) || 0), 0);
     const peak = AR_WATCH_BANDS.slice().sort((a, b) => fm[b.id].amt - fm[a.id].amt || fm[b.id].n - fm[a.id].n)[0];
@@ -14542,12 +14551,9 @@
       const rows = rowsOf(id, which, 'match');
       const n = rows.length;
       const set = unitOfficeSet(id);
-      const people = (set && set.supportCity)
-        ? [...new Set(rows.map(r => r.sl).filter(nm => nm && nm !== '公司' && nm !== '—'))]
-        : staffOf(id);
-      const moved = (set && set.supportCity)
-        ? people.length
-        : people.filter(s => rows.some(r => r.sl === s.name)).length;
+      const roster = orgHrRoster(set).filter(p => !p.left);
+      const people = roster;
+      const moved = roster.filter(p => rows.some(r => r.sl === p.name)).length;
       const tgt = which === 'last' ? sumTargets(set, lastStart, lastEnd) : sumTargets(set, start, end);
       let fcst = 0;
       if (which !== 'last') {
@@ -14644,6 +14650,8 @@
       const fcst = m.fcst || 0;
       return {
         tgt: fcst, n: m.n, hit: fcst ? m.n / fcst : 0,
+        people: m.people || 0,
+        moved: m.moved || 0, avg: m.people ? m.n / m.people : 0,
         leaseN, leaseRate: m.n ? leaseN / m.n : 0,
         weakRate: w.rate, newRate: nw.rate,
         famN: f.mix, famRate: f.rate,
@@ -14899,6 +14907,10 @@
           if (n < 10) return `<span class="neg">${html}</span>`;
           return html;
         }
+        if (key === 'moved') {
+          if (n >= 8) return `<span class="sum-hit">${html}</span>`;
+          return html;
+        }
         if (key === 'famN') {
           if (!off) return html;
           if (n >= 5) return `<span class="sum-hit">${html}</span>`;
@@ -14931,19 +14943,31 @@
       const clsOfK = kind => kind === 'co' ? 'tot'
         : (kind === 'dept' || kind === 'support' || kind === 'tel' || kind === 'bu') ? 'tot-sub'
         : (kind === 'region' ? 'reg' : '');
+      const markOf = tbl => tbl === 'reg'
+        ? (state.sumKpiMarkReg || { id: '全公司', kind: 'co' })
+        : tbl === 'bu'
+          ? (state.sumKpiMarkBu || { id: '營業部', kind: 'co' })
+          : null;
       const arPair = (n, amt) => `${fmt(n)}／$${fmt(amt)}`;
-      const rowOf = leaf => {
+      const rowOf = (leaf, tbl) => {
         const x = kpiOf(leaf.id);
         const ow = leaf.id === '全公司' || leaf.id === '營業部' ? '營運部長' : (displayOwner(leaf.id, leaf.name) || '—');
-        const cls = clsOfK(leaf.kind);
+        const kpiMark = markOf(tbl);
+        const marked = !!(kpiMark && leaf.id === kpiMark.id && leaf.kind === kpiMark.kind);
+        let cls = clsOfK(leaf.kind);
+        if (marked) cls = 'tot';
+        else if (leaf.kind === 'co') cls = 'tot-sub';
         const nameCls = (isOff(leaf.kind) || leaf.kind === 'region') ? ' kpi-name' : '';
         const unitTd = `<td class="sum-unit${leaf.kind === 'scity' ? ' city' : ''}${nameCls}" data-sum-scope="${esc(leaf.id)}"><span>${esc(leaf.name)}</span></td>`;
         const t = (key, html) => tone(leaf.id, leaf.kind, key, x[key], html);
-        return `<tr class="${cls}">
+        return `<tr class="${cls}" data-kpi-row="${esc(leaf.id)}" data-kpi-kind="${esc(leaf.kind)}" data-kpi-tbl="${esc(tbl || 'bu')}">
           ${unitTd}<td>${esc(ow)}</td>
           <td>${fmt(x.tgt)}</td>
           <td>${t('n', fmt(x.n))}</td>
           <td>${t('hit', pct1(x.hit))}</td>
+          <td>${fmt(x.people)}</td>
+          <td>${t('moved', fmt(x.moved))}</td>
+          <td>${(x.avg || 0).toFixed(1)}</td>
           <td>${t('leaseRate', pct1(x.leaseRate))}</td>
           <td>${rkCell(leaf.id, leaf.kind, 'leaseRate')}</td>
           <td>${t('weakRate', pct1(x.weakRate))}</td>
@@ -14962,15 +14986,15 @@
       };
       const head1 = `<tr>
         <th rowspan="2">單位</th><th rowspan="2">單位主管</th>
-        <th class="kpi-g" colspan="3">新媒合達成率100%</th>
-        <th class="kpi-g" colspan="2">包租率55%</th>
+        <th class="kpi-g" colspan="6">新媒合達成率100%</th>
+        <th class="kpi-g" colspan="2">包租率50%</th>
         <th class="kpi-g" colspan="2">政策戶率50%</th>
         <th class="kpi-g" colspan="2">新件率90%</th>
         <th class="kpi-g" colspan="3">續約率80%</th>
         <th class="kpi-g" colspan="3">婚育率</th>
         <th class="kpi-g" colspan="2">應收帳款</th>
       </tr><tr>
-        ${th('tgt', '目標')}${th('n', '新媒合')}${th('hit', '達成率')}
+        ${th('tgt', '目標')}${th('n', '新媒合')}${th('hit', '達成率')}${th('people', '組織')}${th('moved', '實動')}${th('avg', '均件')}
         ${th('leaseRate', '包租率')}${th('leaseRate', '排名')}
         ${th('weakRate', '政策戶')}${th('weakRate', '排名')}
         ${th('newRate', '新件率')}${th('newRate', '排名')}
@@ -14978,11 +15002,11 @@
         ${th('famN', '婚育數')}${th('famRate', '婚育率')}${th('famRate', '排名')}
         ${th('ar1529amt', '帳齡15-29天')}${th('ar30amt', '帳齡30天↑')}
       </tr>`;
-      const kpiWrap = rows => `<div class="sum-tbl-wrap kpi-block"><table class="sum-tbl kpi-all"><thead>${head1}</thead>
-        <tbody>${rows.map(rowOf).join('')}</tbody></table></div>`;
+      const kpiWrap = (rows, tbl) => `<div class="sum-tbl-wrap kpi-block"><table class="sum-tbl kpi-all"><thead>${head1}</thead>
+        <tbody>${rows.map(r => rowOf(r, tbl || 'bu')).join('')}</tbody></table></div>`;
       const kpiSub = t => `<h4 class="kpi-sub">${t}</h4>`;
       const kpiSec = html => `<div class="kpi-sec">${html}</div>`;
-      const kpiNote = '<p class="note">表頭可點選排序。本頁目標＝預估目標。包租率＝轉租件／新媒合。新媒合≥20件藍字、低於10件紅字；包租／政策戶／新件／續約達標藍字、低於平均值紅字；婚育數≥5藍字、0件紅字；帳齡金額大於平均值紅字。應收列筆數／金額。</p>';
+      const kpiNote = '<p class="note">表頭可點選排序。本頁目標＝預估。包租率＝轉租件／新媒合。新媒合≥20件藍字、低於10件紅字；實動≥8人藍字；包租／政策戶／新件／續約達標藍字、低於平均值紅字；婚育數≥5藍字、0件紅字；帳齡金額大於平均值紅字。應收列筆數／金額。</p>';
       const nodeOf = (id, name, kind, depth) => ({ id, name, kind, depth: depth || 0, hasKids: false, isOpen: false, kids: [] });
       const sortNodes = arr => {
         if (!(state.sumKpiSort && state.sumKpiSort.k) || !arr.length) return arr;
@@ -15024,9 +15048,9 @@
           const kids = (REGIONS[scope] || []).filter(o => salesIds.includes(o)).map(o => nodeOf(o, o, 'office', 1));
           buShow = [nodeOf('營業部', '營業部', 'co', 0)].concat(sortNodes(kids));
         }
-        if (buShow.length) blocks.push(kpiSec(kpiSub('營業處指標排名') + kpiNote + kpiWrap(buShow)));
+        if (buShow.length) blocks.push(kpiSec(kpiSub('營業處指標排名') + kpiNote + kpiWrap(buShow, 'bu')));
       }
-      if (regionRows.length) blocks.push(kpiSec(kpiSub('營業區指標排名') + kpiWrap(regionRows)));
+      if (regionRows.length) blocks.push(kpiSec(kpiSub('營業區指標排名') + kpiWrap(regionRows, 'reg')));
       if (scope === '業務支援管理部' || isSupportCityId(scope)) {
         const cities = sortNodes(supportCityLeaves().map(id => nodeOf(id, supportCityName(id), 'scity', 1)));
         blocks.push(kpiSec(kpiWrap([nodeOf('業務支援管理部', '業務支援管理部', 'support', 0)].concat(cities))));
@@ -15404,7 +15428,7 @@
       </tr>`;
     };
     const heads = {
-      match: '<th>營業處</th><th>擔當者</th><th>目標</th><th>預估</th><th>實績</th><th>預估差</th><th>達成率</th><th>排名</th><th class="sum-prog">目標達成進度</th><th>人數</th><th>實動</th><th>稼動%</th><th>均件</th><th>上月比</th><th>差異</th>',
+      match: '<th>營業處</th><th>擔當者</th><th>目標</th><th>預估</th><th>實績</th><th>預估差</th><th>達成率</th><th>排名</th><th class="sum-prog">目標達成進度</th><th>組織</th><th>實動</th><th>稼動%</th><th>均件</th><th>上月比</th><th>差異</th>',
       lease: '<th>營業處</th><th>擔當者</th><th>包租</th><th>代管</th><th>合計</th><th>包租%</th><th>排名</th><th class="sum-prog">包租進度</th><th>目標差%</th><th>代3年</th><th>代轉包</th><th>再媒合</th><th>上月包租%</th><th>上月比</th>',
       weak: '<th>營業處</th><th>擔當者</th><th>政策</th><th>一般</th><th>合計</th><th>政策%</th><th>排名</th><th class="sum-prog">政策進度</th><th>目標差%</th><th>上月政策%</th><th>上月比</th>',
       new: '<th>營業處</th><th>擔當者</th><th>新件%</th><th>排名</th><th class="sum-prog">目標進度</th><th>目標差%</th><th>上月新件%</th><th>上月比</th><th>扣轉銜新件%</th><th>上月扣轉銜</th><th>扣轉銜差異</th>',
@@ -15696,9 +15720,22 @@
       renderSumDash();
       return;
     }
+    const kpiRow = e.target.closest('table.kpi-all tbody tr[data-kpi-row]');
+    if (kpiRow) {
+      const next = {
+        id: kpiRow.getAttribute('data-kpi-row') || '營業部',
+        kind: kpiRow.getAttribute('data-kpi-kind') || 'co'
+      };
+      if ((kpiRow.getAttribute('data-kpi-tbl') || 'bu') === 'reg') state.sumKpiMarkReg = next;
+      else state.sumKpiMarkBu = next;
+      renderSumDash();
+      return;
+    }
     const chip = e.target.closest('[data-sum-scope]');
     if (!chip) return;
     state.sumKpiSort = null;
+    state.sumKpiMarkBu = null;
+    state.sumKpiMarkReg = null;
     state.sumScope = chip.getAttribute('data-sum-scope') || '全公司';
     renderSumDash();
   };
@@ -17115,7 +17152,19 @@
   if ($('arWatchStatTbl')) $('arWatchStatTbl').onclick = e => {
     const tr = e.target.closest('tr[data-ar-wband]');
     if (!tr) return;
-    arWatchSetBand(tr.getAttribute('data-ar-wband'));
+    const next = tr.getAttribute('data-ar-wband') || 'all';
+    const same = (state.arWatchBand || 'all') === next;
+    if (same && state.arWatchStaffOpen) {
+      state.arWatchStaffOpen = false;
+    } else {
+      state.arWatchBand = next;
+      state.arWatchStaffOpen = true;
+    }
+    renderArDash();
+    if (state.arWatchStaffOpen) {
+      const box = $('arWatchStaffBox');
+      if (box) box.scrollIntoView({ block: 'nearest' });
+    }
   };
   if ($('arWatchUnitTbl')) $('arWatchUnitTbl').onclick = e => {
     const btn = e.target.closest('[data-ar-watch-open]');
@@ -17196,19 +17245,24 @@
   };
   if ($('arAgStatTbl')) $('arAgStatTbl').onclick = e => {
     const tot = e.target.closest('tr[data-ar-ag-tot]');
-    if (tot) {
-      if (state.arAgBand !== 'all') {
-        state.arAgBand = 'all';
-        state.arAgMarkTot = true;
-      } else {
-        state.arAgMarkTot = !state.arAgMarkTot;
-      }
-      renderArDash();
-      return;
-    }
-    const tr = e.target.closest('tr[data-ar-ag-band]');
+    const tr = tot || e.target.closest('tr[data-ar-ag-band]');
     if (!tr) return;
-    arAgSetBand(tr.getAttribute('data-ar-ag-band'));
+    const next = tot ? 'all' : (tr.getAttribute('data-ar-ag-band') || 'all');
+    const same = tot
+      ? ((state.arAgBand || 'all') === 'all' && !!state.arAgMarkTot)
+      : ((state.arAgBand || 'all') === next && !state.arAgMarkTot);
+    if (same && state.arAgStaffOpen) {
+      state.arAgStaffOpen = false;
+    } else {
+      state.arAgBand = next;
+      state.arAgMarkTot = !!tot;
+      state.arAgStaffOpen = true;
+    }
+    renderArDash();
+    if (state.arAgStaffOpen) {
+      const box = $('arAgStaffBox');
+      if (box) box.scrollIntoView({ block: 'nearest' });
+    }
   };
   if ($('arAgUnitTbl')) $('arAgUnitTbl').onclick = e => {
     const tr = e.target.closest('tr[data-ar-ag-tn]');

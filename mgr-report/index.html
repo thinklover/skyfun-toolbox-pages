@@ -6,7 +6,7 @@
   <title>社宅管報儀表板｜星鴻包租代管系統</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <link rel="stylesheet" href="styles.css?v=20261125-2134" />
+  <link rel="stylesheet" href="styles.css?v=20261127-1300" />
 </head>
 <body>
   <aside class="side">
@@ -548,7 +548,7 @@
             </div>
           </div>
         </div>
-        <p class="note" id="lzCmpNote">依篩選單位對照階層，可展開所屬營業處。包租率＝包租件／所選案件類型；目標%固定 55%。續約代轉包＝案件類型代管轉包租。簽三年代管＝代管且租期約三年。</p>
+        <p class="note" id="lzCmpNote">依篩選單位對照階層，可展開所屬營業處。包租率＝包租件／所選案件類型；目標%固定 50%。續約代轉包＝案件類型代管轉包租。簽三年代管＝代管且租期約三年。</p>
         <div class="table-scroll unit-detail-scroll" id="lzCmpTable"></div>
         <div class="rev-mid lz-cmp-intel">
           <div class="rev-panel" id="lzCmpJudge"></div>
@@ -1489,11 +1489,11 @@
               <option value="all">全部</option>
             </select>
             <div class="seg" id="arWatchSeg">
-              <button type="button" data-ar-wband="all" class="on">全部</button>
+              <button type="button" data-ar-wband="all">全部</button>
               <button type="button" data-ar-wband="b17">逾期1-7天</button>
               <button type="button" data-ar-wband="b814">逾期8-14天</button>
               <button type="button" data-ar-wband="b1529">逾期15-29天</button>
-              <button type="button" data-ar-wband="b30">逾期30天</button>
+              <button type="button" data-ar-wband="b30" class="on">逾期30天</button>
             </div>
             <button type="button" class="tool-btn" id="arWatchStaffBtn">案件明細</button>
           </div>
@@ -1855,6 +1855,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js"></script>
   <script src="../js/toolbox-auth.js"></script>
-  <script src="loader.js?v=20261125-2134"></script>
+  <script src="loader.js?v=20261127-1300"></script>
 </body>
 </html>
